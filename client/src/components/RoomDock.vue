@@ -4,6 +4,8 @@ import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { useDecor } from '@/composables/useDecor'
 import DecorPiece from '@/components/DecorPiece.vue'
 
+defineEmits(['mood'])
+
 const menu = ref(null)
 const panel = ref(null)
 const open = ref(false)
@@ -149,6 +151,21 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
     </div>
 
     <div v-show="open" ref="menu" class="dock__menu">
+      <button type="button" class="dock__item" @click="$emit('mood')">
+        <span class="dock__glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <path
+              d="M8.5 14.2a4.2 4.2 0 0 0 7 0M9 10h.01M15 10h.01"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+            />
+          </svg>
+        </span>
+        Mood check-in
+      </button>
       <button type="button" class="dock__item" :class="{ 'is-on': inventoryOpen }" @click="showInventory">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">

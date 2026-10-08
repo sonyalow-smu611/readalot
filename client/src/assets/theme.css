@@ -57,6 +57,9 @@ h3,
   --bs-btn-hover-color: var(--rl-surface);
   --bs-btn-active-bg: #2c241e;
   --bs-btn-active-border-color: #2c241e;
+  --bs-btn-disabled-bg: var(--rl-primary);
+  --bs-btn-disabled-border-color: var(--rl-primary);
+  --bs-btn-disabled-color: var(--rl-surface);
   --bs-btn-focus-shadow-rgb: 154, 122, 85;
 }
 

@@ -9,6 +9,8 @@ import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { decorMeta, useDecor } from '@/composables/useDecor'
 import RoomScene from '@/components/room/RoomScene.vue'
 import CurrentlyReadingCard from '@/components/room/CurrentlyReadingCard.vue'
+import MoodCheckInModal from '@/components/modals/MoodCheckInModal.vue'
+import MoodResultModal from '@/components/modals/MoodResultModal.vue'
 import QuoteOfDayModal from '@/components/modals/QuoteOfDayModal.vue'
 import StateView from '@/components/StateView.vue'
 import Shelf from '@/components/Shelf.vue'
@@ -316,6 +318,52 @@ watch([shopOpen, inventoryOpen, drag], ([shop, bag, dragging]) => {
   if (shop || bag || dragging) closeReading()
 })
 
+// --- Mood check-in -----------------------------------------------------------------------
+// Opens by itself on the first visit of the day; the room menu can bring it back any time.
+const MOOD_KEY = 'readalot.moodCheckIn'
+const moodStep = ref(null) // null | 'checkin' | 'result'
+const mood = ref('')
+
+// today's date on this device, e.g. "2026-01-31"
+function today() {
+  const now = new Date()
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+function moodDoneToday() {
+  try {
+    return localStorage.getItem(MOOD_KEY) === today()
+  } catch {
+    return false
+  }
+}
+
+// Answering and skipping both count: the check-in stays away until tomorrow.
+function markMoodDone() {
+  try {
+    localStorage.setItem(MOOD_KEY, today())
+  } catch {
+    // storage unavailable: it will simply ask again on the next visit
+  }
+}
+
+function openMood() {
+  closeReading()
+  moodStep.value = 'checkin'
+}
+
+function submitMood(value) {
+  mood.value = value
+  markMoodDone()
+  moodStep.value = 'result'
+}
+
+function skipMood() {
+  markMoodDone()
+  moodStep.value = null
+}
+
 watch(
   () => bookshelf.moveError,
   (message) => {
@@ -324,6 +372,7 @@ watch(
 )
 
 onMounted(() => {
+  if (!moodDoneToday()) moodStep.value = 'checkin'
   bookshelf.load()
   loadWeather()
   weatherTimer = window.setInterval(loadWeather, WEATHER_REFRESH_MS)
@@ -499,9 +548,11 @@ onBeforeUnmount(() => {
       {{ notice.text }}
     </p>
 
-    <RoomDock />
+    <RoomDock @mood="openMood" />
 
     <QuoteOfDayModal v-if="quoteOpen" @close="quoteOpen = false" />
+    <MoodCheckInModal v-if="moodStep === 'checkin'" @submit="submitMood" @skip="skipMood" />
+    <MoodResultModal v-else-if="moodStep === 'result'" :mood="mood" @close="moodStep = null" />
   </section>
 </template>
 
