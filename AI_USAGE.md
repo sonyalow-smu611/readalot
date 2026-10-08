@@ -57,6 +57,15 @@ and the two services need the team's review before they count as the team's own.
 is a placeholder for the curated, verified list (T12), and its quotes were supplied by the
 assistant from memory and should be checked against the books.
 
+### Quote of the Day dataset (AI-assisted)
+
+On the team's request the assistant downloaded the Goodreads Quotes dataset from Kaggle
+(`abdokamr/good-reads-quotes`) and wrote `server/scripts/importQuotes.js`,
+`server/src/services/dailyQuote.js`, `server/tests/dailyQuote.check.js` and the rewritten
+`server/src/routes/quote.js`. `server/data/quotes.json` is that script's output, not
+AI-written text, and is kept out of git. Which topics and filters to use was the assistant's choice and is the team's
+to change.
+
 Team to review and own: the store's save logic and the decoration drop-target code in
 `RoomView.vue` are interactive logic, which the course asks the team to write or at least fully
 understand.

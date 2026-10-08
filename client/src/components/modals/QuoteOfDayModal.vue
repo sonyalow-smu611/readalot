@@ -16,6 +16,8 @@
         <StateView :loading="loading" :error="error" @retry="load">
           <blockquote class="quote__text">“{{ data?.quoteText }}”</blockquote>
           <p v-if="data?.author" class="text-muted small mb-0">{{ data.author }}</p>
+          <!-- the quote list has no authors, so the topic stands in for the attribution -->
+          <p v-else-if="data?.topic" class="text-muted small mb-0">On {{ data.topic }}</p>
         </StateView>
         <button class="btn btn-primary mt-4" type="button" @click="$emit('close')">Close</button>
       </div>

@@ -104,10 +104,15 @@ test("the book on the chair opens the Currently Reading card", async ({ page }) 
 });
 
 test("the sticky note opens the Quote of the Day", async ({ page }) => {
+  // the real quote changes every day; quotes from the dataset have a topic but no author
+  await page.route("**/api/quote/today", (route) =>
+    route.fulfill({ json: { quoteText: "So many books, so little time.", author: "", topic: "books" } })
+  );
   await page.getByRole("button", { name: "Quote of the day" }).click();
 
   const quote = page.getByRole("dialog", { name: "Quote of the Day" });
-  await expect(quote).toBeVisible();
+  await expect(quote.getByText("“So many books, so little time.”")).toBeVisible();
+  await expect(quote.getByText("On books")).toBeVisible();
   await quote.getByRole("button", { name: "Close" }).click();
   await expect(quote).toBeHidden();
 });

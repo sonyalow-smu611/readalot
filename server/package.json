@@ -7,7 +7,8 @@
     "start": "node src/index.js",
     "seed": "node scripts/seed.js",
     "verify-works": "node scripts/verifyWorks.js",
-    "check": "node tests/compatibility.check.js"
+    "check": "node tests/compatibility.check.js && node tests/dailyQuote.check.js",
+    "import-quotes": "node scripts/importQuotes.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
