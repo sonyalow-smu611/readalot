@@ -3,59 +3,59 @@
     <svg class="chair__art" viewBox="0 0 160 170" aria-hidden="true">
       <defs>
         <linearGradient :id="`${uid}-back`" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#B8946C" />
-          <stop offset="1" stop-color="#93714E" />
+          <stop offset="0" stop-color="#D2BFA3" />
+          <stop offset="1" stop-color="#BDA688" />
         </linearGradient>
         <linearGradient :id="`${uid}-arm`" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#8A6A49" />
-          <stop offset="0.45" stop-color="#AD8961" />
-          <stop offset="1" stop-color="#8A6A49" />
+          <stop offset="0" stop-color="#B8A184" />
+          <stop offset="0.45" stop-color="#CDB99C" />
+          <stop offset="1" stop-color="#B8A184" />
         </linearGradient>
         <linearGradient :id="`${uid}-seat`" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#CBAE8B" />
-          <stop offset="1" stop-color="#B0906B" />
+          <stop offset="0" stop-color="#E0D0B8" />
+          <stop offset="1" stop-color="#CFBBA0" />
         </linearGradient>
       </defs>
 
-      <ellipse cx="80" cy="159" rx="72" ry="9" fill="#3F2E24" opacity="0.2" />
+      <ellipse cx="80" cy="159" rx="72" ry="9" fill="#3F2E24" opacity="0.1" />
 
       <!-- legs -->
-      <path d="M26 140h12l-2 20h-7zM122 140h12l-3 20h-7z" fill="#5C3F2C" />
-      <path d="M52 142h8l-1 14h-5zM100 142h8l-2 14h-5z" fill="#4A3223" />
+      <path d="M26 140h12l-2 20h-7zM122 140h12l-3 20h-7z" fill="#9C876F" />
+      <path d="M52 142h8l-1 14h-5zM100 142h8l-2 14h-5z" fill="#8F7B65" />
 
       <!-- back rest and its cushion -->
       <path
         d="M30 104V46Q30 10 80 10Q130 10 130 46V104Z"
         :fill="`url(#${uid}-back)`"
-        stroke="#5C4030"
-        stroke-width="2.5"
+        stroke="#AD987E"
+        stroke-width="1.6"
       />
-      <path d="M41 100V50Q41 23 80 23Q119 23 119 50V100Z" fill="#C6A682" />
-      <path d="M41 60Q80 50 119 60" fill="none" stroke="#A98A66" stroke-width="1.2" />
-      <g fill="#8A6A49">
+      <path d="M41 100V50Q41 23 80 23Q119 23 119 50V100Z" fill="#DCCBB1" />
+      <path d="M41 60Q80 50 119 60" fill="none" stroke="#C4AF93" stroke-width="1.2" />
+      <g fill="#B8A184">
         <circle cx="60" cy="44" r="1.8" />
         <circle cx="80" cy="40" r="1.8" />
         <circle cx="100" cy="44" r="1.8" />
       </g>
 
       <!-- seat cushion and front panel -->
-      <path d="M38 122h84v18q0 6-6 6H44q-6 0-6-6z" fill="#93714E" stroke="#5C4030" stroke-width="2.5" />
+      <path d="M38 122h84v18q0 6-6 6H44q-6 0-6-6z" fill="#BDA688" stroke="#AD987E" stroke-width="1.6" />
       <path
         d="M36 104Q80 94 124 104V120Q80 130 36 120Z"
         :fill="`url(#${uid}-seat)`"
-        stroke="#5C4030"
-        stroke-width="2.5"
+        stroke="#AD987E"
+        stroke-width="1.6"
         stroke-linejoin="round"
       />
-      <path d="M40 116Q80 125 120 116" fill="none" stroke="#9C7C58" stroke-width="1.2" />
+      <path d="M40 116Q80 125 120 116" fill="none" stroke="#C0AB8F" stroke-width="1.2" />
 
       <!-- rolled arms -->
-      <g stroke="#5C4030" stroke-width="2.5">
+      <g stroke="#AD987E" stroke-width="1.6">
         <path d="M12 86Q12 68 27 68Q42 68 42 86V140Q42 146 36 146H18Q12 146 12 140Z" :fill="`url(#${uid}-arm)`" />
         <path d="M118 86Q118 68 133 68Q148 68 148 86V140Q148 146 142 146H124Q118 146 118 140Z" :fill="`url(#${uid}-arm)`" />
       </g>
       <!-- arm fronts: lighter panel with a piped edge -->
-      <g fill="#BFA07D" stroke="#7E6245" stroke-width="1.2">
+      <g fill="#DBCAB0" stroke="#BBA78C" stroke-width="1.2">
         <path d="M17 88Q17 74 27 74Q37 74 37 88V136Q37 140 33 140H21Q17 140 17 136Z" />
         <path d="M123 88Q123 74 133 74Q143 74 143 88V136Q143 140 139 140H127Q123 140 123 136Z" />
       </g>
@@ -63,12 +63,12 @@
       <!-- throw draped over the right arm -->
       <path
         d="M117 76Q132 60 150 74V118l-5 5-5-5-5 5-5-5-5 5-4-4-4 4Z"
-        fill="#B7705A"
-        stroke="#7F4636"
+        fill="#D3AD9F"
+        stroke="#BC9485"
         stroke-width="1.5"
         stroke-linejoin="round"
       />
-      <path d="M118 86Q133 74 150 86M118 98Q133 87 150 98" fill="none" stroke="#F1E7DA" stroke-width="2" opacity="0.85" />
+      <path d="M118 86Q133 74 150 86M118 98Q133 87 150 98" fill="none" stroke="#F6EEE3" stroke-width="2" opacity="0.85" />
     </svg>
 
     <!-- the open book brings up the Currently Reading card -->
@@ -81,16 +81,16 @@
       @click="$emit('open-book')"
     >
       <svg viewBox="0 0 64 46" aria-hidden="true">
-        <path d="M1 9L32 13 63 9V35L32 40 1 35Z" fill="#3F2E24" />
-        <path d="M4 6Q18 0 32 8V36Q18 29 4 33Z" fill="#FFFDF9" stroke="#6B4A34" stroke-width="1.2" />
-        <path d="M32 8Q46 0 60 6V33Q46 29 32 36Z" fill="#FFFDF9" stroke="#6B4A34" stroke-width="1.2" />
+        <path d="M1 9L32 13 63 9V35L32 40 1 35Z" fill="#6F5847" />
+        <path d="M4 6Q18 0 32 8V36Q18 29 4 33Z" fill="#FFFDF9" stroke="#A38D73" stroke-width="1.2" />
+        <path d="M32 8Q46 0 60 6V33Q46 29 32 36Z" fill="#FFFDF9" stroke="#A38D73" stroke-width="1.2" />
         <g fill="none" stroke="#BEB5AB" stroke-width="1" stroke-linecap="round">
           <path d="M9 11Q18 7 27 11M9 16Q18 12 27 16M9 21Q18 17 27 21M9 26Q16 23 22 25" />
           <path d="M37 11Q46 7 55 11M37 16Q46 12 55 16M37 21Q46 17 55 21M37 26Q46 22 55 26" />
         </g>
         <!-- loose page that turns on hover -->
-        <path class="chair__page" d="M32 8Q46 1 59 7V32Q46 28 32 36Z" fill="#F8F2E9" stroke="#6B4A34" stroke-width="1" />
-        <path d="M30 34v10l2.5-2.5L35 44V34Z" fill="#B7705A" />
+        <path class="chair__page" d="M32 8Q46 1 59 7V32Q46 28 32 36Z" fill="#F8F2E9" stroke="#A38D73" stroke-width="1" />
+        <path d="M30 34v10l2.5-2.5L35 44V34Z" fill="#CD9E8E" />
       </svg>
       <span class="chair__hint">{{ book ? "Currently reading" : "Nothing on the go" }}</span>
     </button>
@@ -143,7 +143,7 @@ const label = computed(() =>
   width: 100%;
   height: auto;
   overflow: visible;
-  filter: drop-shadow(0 2px 2px rgba(63, 46, 36, 0.35));
+  filter: drop-shadow(0 1px 2px rgba(63, 46, 36, 0.22));
 }
 
 .chair__page {

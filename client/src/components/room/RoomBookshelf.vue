@@ -89,8 +89,12 @@ const shelves = computed(() => {
   padding: calc(10 * var(--u));
   border: 2px solid var(--rl-primary);
   border-radius: calc(10 * var(--u));
-  background: linear-gradient(90deg, #5c3f2c, var(--rl-wood) 12%, var(--rl-wood) 88%, #5c3f2c);
-  box-shadow: 0 calc(6 * var(--u)) calc(10 * var(--u)) rgba(63, 46, 36, 0.22);
+  background: linear-gradient(90deg, #4a3223, #63432f 12%, #63432f 88%, #4a3223);
+  /* the strongest shadow in the room: onto the wall behind and the floor below */
+  box-shadow:
+    0 calc(10 * var(--u)) calc(16 * var(--u)) rgba(44, 36, 30, 0.38),
+    calc(5 * var(--u)) 0 calc(12 * var(--u)) rgba(44, 36, 30, 0.2),
+    calc(-3 * var(--u)) 0 calc(8 * var(--u)) rgba(44, 36, 30, 0.12);
   text-align: left;
 }
 
