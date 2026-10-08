@@ -10,6 +10,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import {
   primaryAuthor,
+  spineDip,
   spineHeight,
   spineLean,
   spineWidth,
@@ -42,10 +43,13 @@ const bookStyle = computed(() => ({
   '--spine-bg': look.value.colour,
   '--spine-ink': look.value.ink,
   '--spine-lean': `${spineLean(props.book)}deg`,
-  '--spine-w': `${spineWidth(props.book)}px`,
+  // on a compact shelf the books are kept close to one size
+  '--spine-w': `${props.compact ? spineWidth(props.book, 38, 48) : spineWidth(props.book)}px`,
   '--book-stack': String(props.stack),
-  // a compact shelf sets one height for all its books (--shelf-book-height)
-  height: props.compact ? 'var(--shelf-book-height, 118px)' : `${spineHeight(props.book)}px`,
+  // a compact shelf sets the height of its books (--shelf-book-height), give or take a little
+  height: props.compact
+    ? `calc(var(--shelf-book-height, 118px) - ${spineDip(props.book)}px)`
+    : `${spineHeight(props.book)}px`,
   zIndex: props.stack,
 }))
 
@@ -194,15 +198,15 @@ onBeforeUnmount(endHold)
 }
 
 .book.is-compact .book__spine {
-  padding: 4px 1px 3px;
+  padding: 6px 2px 5px;
 }
 
 .book.is-compact .book__title {
-  font-size: 0.62rem;
+  font-size: 0.74rem;
 }
 
 .book.is-compact .book__author {
-  font-size: 0.42rem;
+  font-size: 0.5rem;
 }
 
 /* Fore-edge of the text block: a few millimetres of paper. */

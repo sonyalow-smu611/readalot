@@ -509,34 +509,59 @@ onBeforeUnmount(() => {
       </header>
 
       <div class="room__scroll">
-        <template v-if="shelfView === 'spines'">
-          <div class="room__bay" data-zone="reading">
-            <Shelf v-model="reading" title="Reading" mode="draggable" group="room" emoji="" compact />
-            <button v-for="item in placedIn('reading')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
-              <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
-              <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-            </button>
+        <!-- One bookcase: wooden posts down the sides and a thick board above each row of
+             books, which carries that row's label. -->
+        <div class="case">
+          <div class="case__rail case__rail--top">
+            <h3 class="case__label">
+              <span class="case__name">Reading</span>
+              <span class="case__count" :aria-label="`${reading.length} books`">{{ reading.length }}</span>
+            </h3>
           </div>
-          <div class="room__bay" data-zone="tbr">
-            <Shelf v-model="tbr" title="To read" mode="draggable" group="room" emoji="" compact />
-            <button v-for="item in placedIn('tbr')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
-              <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
-              <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-            </button>
+          <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="reading">
+            <template v-if="shelfView === 'spines'">
+              <Shelf v-model="reading" mode="draggable" group="room" compact />
+              <button v-for="item in placedIn('reading')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
+                <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
+                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+              </button>
+            </template>
+            <CoverRow v-else :books="reading" />
           </div>
-          <div class="room__bay" data-zone="read">
-            <Shelf v-model="finished" title="Finished" mode="draggable" group="room" emoji="" compact />
-            <button v-for="item in placedIn('read')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
-              <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
-              <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-            </button>
+          <div class="case__rail">
+            <h3 class="case__label">
+              <span class="case__name">To read</span>
+              <span class="case__count" :aria-label="`${tbr.length} books`">{{ tbr.length }}</span>
+            </h3>
           </div>
-        </template>
-        <template v-else>
-          <div class="room__bay room__bay--covers"><CoverRow title="Reading" :books="reading" /></div>
-          <div class="room__bay room__bay--covers"><CoverRow title="To read" :books="tbr" /></div>
-          <div class="room__bay room__bay--covers"><CoverRow title="Finished" :books="finished" /></div>
-        </template>
+          <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="tbr">
+            <template v-if="shelfView === 'spines'">
+              <Shelf v-model="tbr" mode="draggable" group="room" compact />
+              <button v-for="item in placedIn('tbr')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
+                <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
+                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+              </button>
+            </template>
+            <CoverRow v-else :books="tbr" />
+          </div>
+          <div class="case__rail">
+            <h3 class="case__label">
+              <span class="case__name">Finished</span>
+              <span class="case__count" :aria-label="`${finished.length} books`">{{ finished.length }}</span>
+            </h3>
+          </div>
+          <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="read">
+            <template v-if="shelfView === 'spines'">
+              <Shelf v-model="finished" mode="draggable" group="room" compact />
+              <button v-for="item in placedIn('read')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
+                <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
+                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+              </button>
+            </template>
+            <CoverRow v-else :books="finished" />
+          </div>
+          <div class="case__rail case__rail--base" />
+        </div>
       </div>
     </div>
 
@@ -660,7 +685,7 @@ onBeforeUnmount(() => {
 
 .placed--floor { bottom: 6px; z-index: 5; pointer-events: auto; }
 .placed--ledge { bottom: 0; z-index: 4; pointer-events: auto; }
-.placed--shelf { bottom: 10px; z-index: 30; }
+.placed--shelf { bottom: 0; z-index: 30; }
 
 .placed--ledge :deep(.art) { height: calc(40 * var(--u)); }
 
@@ -763,7 +788,7 @@ onBeforeUnmount(() => {
 .room__tools {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
 }
 
 .room__toggle {
@@ -788,14 +813,11 @@ onBeforeUnmount(() => {
   color: var(--rl-primary);
 }
 
-/* the shelves keep a comfortable size and the page scrolls when they do not all fit */
+/* the shelves keep one size and the page scrolls when they do not all fit */
 .room__scroll {
-  --shelf-book-height: 150px;
+  --shelf-book-height: 168px;
   flex: 1 1 auto;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -803,32 +825,134 @@ onBeforeUnmount(() => {
   padding: 4px 10px 84px;
 }
 
+/* --- The bookcase: wooden posts, boards between the rows, a lighter back panel --- */
+.case {
+  --post: 14px;
+  /* grain running along a board, and up a post */
+  --grain-along: repeating-linear-gradient(
+    178.5deg,
+    rgba(44, 36, 30, 0.2) 0 1px,
+    transparent 1px 4px,
+    rgba(255, 253, 249, 0.07) 4px 5px,
+    transparent 5px 9px
+  );
+  --grain-up: repeating-linear-gradient(
+    91.5deg,
+    rgba(44, 36, 30, 0.2) 0 1px,
+    transparent 1px 4px,
+    rgba(255, 253, 249, 0.07) 4px 5px,
+    transparent 5px 9px
+  );
+
+  padding-inline: var(--post);
+  border-radius: 10px 10px 5px 5px;
+  background:
+    var(--grain-up),
+    linear-gradient(90deg, #5c3f2c, #8a6244 var(--post), #8a6244 calc(100% - var(--post)), #5c3f2c);
+  box-shadow:
+    0 0 0 1px rgba(44, 36, 30, 0.6),
+    0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+/* a board: the shelf the row above stands on, and the place for the label of the row below */
+.case__rail {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  margin-inline: calc(-1 * var(--post));
+  padding-inline: calc(var(--post) + 2px);
+  background:
+    var(--grain-along),
+    linear-gradient(180deg, #a07754, #86603f 45%, #6b4a34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 253, 249, 0.28),
+    inset 0 -2px 0 rgba(44, 36, 30, 0.4),
+    0 6px 8px -3px rgba(44, 36, 30, 0.55);
+}
+
+.case__rail--top {
+  height: 40px;
+  border-radius: 10px 10px 0 0;
+}
+
+.case__rail--base {
+  height: 26px;
+  border-radius: 0 0 5px 5px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 253, 249, 0.28),
+    inset 0 -2px 0 rgba(44, 36, 30, 0.4);
+}
+
+/* a brass-edged plate fixed to the board */
+.case__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid #b8943f;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--rl-surface), var(--rl-secondary));
+  box-shadow:
+    0 1px 2px rgba(44, 36, 30, 0.5),
+    inset 0 0 0 1px rgba(255, 253, 249, 0.7);
+  font-family: var(--rl-font-title);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rl-primary);
+}
+
+.case__count {
+  padding-left: 8px;
+  border-left: 1px solid var(--rl-line);
+  font-family: var(--rl-font-body);
+  letter-spacing: 0;
+  color: var(--rl-muted);
+}
+
+/* one row of books in front of the back panel */
 .room__bay {
   position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
+  height: calc(var(--shelf-book-height) + 18px);
+  background:
+    linear-gradient(180deg, rgba(44, 36, 30, 0.3), transparent 26px),
+    linear-gradient(90deg, rgba(44, 36, 30, 0.16), transparent 9%, transparent 91%, rgba(44, 36, 30, 0.16)),
+    #c9b092;
 }
 
 .room__bay--covers {
-  height: 244px;
+  height: 232px;
+  padding: 12px 2px 8px;
 }
 
-/* headroom for a book to lift on hover, and a shelf that keeps its height when empty */
+/* the board below is the shelf, and the books fill the bay so one can lift on hover */
+.room__close :deep(.shelf__plank),
+.room__close :deep(.covers__plank) {
+  display: none;
+}
+
 .room__close :deep(.shelf.is-compact .shelf__books) {
-  min-height: calc(var(--shelf-book-height) + 14px);
-  padding-top: 14px;
+  flex: 1 1 auto;
+  padding: 0 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 46, 36, 0.35) transparent;
 }
 
-.room__close :deep(.shelf__title),
-.room__close :deep(.shelf__count),
+/* a firmer shadow, so pale spines stand clear of the back panel */
+.room__close :deep(.book) {
+  filter: drop-shadow(1px 2px 2px rgba(44, 36, 30, 0.4));
+}
+
 .room__close :deep(.shelf__hint) {
-  color: var(--rl-surface);
-}
-
-.room__close :deep(.shelf__plank) {
-  height: 10px;
-  background: linear-gradient(var(--wood), var(--wood-deep));
+  top: 44%;
+  color: var(--rl-muted);
 }
 
 .room__back {
