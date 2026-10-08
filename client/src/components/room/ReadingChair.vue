@@ -3,59 +3,59 @@
     <svg class="chair__art" viewBox="0 0 160 170" aria-hidden="true">
       <defs>
         <linearGradient :id="`${uid}-back`" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#D2BFA3" />
-          <stop offset="1" stop-color="#BDA688" />
+          <stop offset="0" stop-color="#BFA385" />
+          <stop offset="1" stop-color="#A88A6C" />
         </linearGradient>
         <linearGradient :id="`${uid}-arm`" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#B8A184" />
-          <stop offset="0.45" stop-color="#CDB99C" />
-          <stop offset="1" stop-color="#B8A184" />
+          <stop offset="0" stop-color="#A08265" />
+          <stop offset="0.45" stop-color="#B99C7E" />
+          <stop offset="1" stop-color="#A08265" />
         </linearGradient>
         <linearGradient :id="`${uid}-seat`" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#E0D0B8" />
-          <stop offset="1" stop-color="#CFBBA0" />
+          <stop offset="0" stop-color="#CDB497" />
+          <stop offset="1" stop-color="#B89B7D" />
         </linearGradient>
       </defs>
 
-      <ellipse cx="80" cy="159" rx="72" ry="9" fill="#3F2E24" opacity="0.1" />
+      <ellipse cx="80" cy="159" rx="72" ry="9" fill="#3F2E24" opacity="0.16" />
 
       <!-- legs -->
-      <path d="M26 140h12l-2 20h-7zM122 140h12l-3 20h-7z" fill="#9C876F" />
-      <path d="M52 142h8l-1 14h-5zM100 142h8l-2 14h-5z" fill="#8F7B65" />
+      <path d="M26 140h12l-2 20h-7zM122 140h12l-3 20h-7z" fill="#84694F" />
+      <path d="M52 142h8l-1 14h-5zM100 142h8l-2 14h-5z" fill="#775E47" />
 
       <!-- back rest and its cushion -->
       <path
         d="M30 104V46Q30 10 80 10Q130 10 130 46V104Z"
         :fill="`url(#${uid}-back)`"
-        stroke="#AD987E"
+        stroke="#8E7359"
         stroke-width="1.6"
       />
-      <path d="M41 100V50Q41 23 80 23Q119 23 119 50V100Z" fill="#DCCBB1" />
-      <path d="M41 60Q80 50 119 60" fill="none" stroke="#C4AF93" stroke-width="1.2" />
-      <g fill="#B8A184">
+      <path d="M41 100V50Q41 23 80 23Q119 23 119 50V100Z" fill="#C7AC8E" />
+      <path d="M41 60Q80 50 119 60" fill="none" stroke="#AC8F72" stroke-width="1.2" />
+      <g fill="#A08265">
         <circle cx="60" cy="44" r="1.8" />
         <circle cx="80" cy="40" r="1.8" />
         <circle cx="100" cy="44" r="1.8" />
       </g>
 
       <!-- seat cushion and front panel -->
-      <path d="M38 122h84v18q0 6-6 6H44q-6 0-6-6z" fill="#BDA688" stroke="#AD987E" stroke-width="1.6" />
+      <path d="M38 122h84v18q0 6-6 6H44q-6 0-6-6z" fill="#A88A6C" stroke="#8E7359" stroke-width="1.6" />
       <path
         d="M36 104Q80 94 124 104V120Q80 130 36 120Z"
         :fill="`url(#${uid}-seat)`"
-        stroke="#AD987E"
+        stroke="#8E7359"
         stroke-width="1.6"
         stroke-linejoin="round"
       />
-      <path d="M40 116Q80 125 120 116" fill="none" stroke="#C0AB8F" stroke-width="1.2" />
+      <path d="M40 116Q80 125 120 116" fill="none" stroke="#A98C6F" stroke-width="1.2" />
 
       <!-- rolled arms -->
-      <g stroke="#AD987E" stroke-width="1.6">
+      <g stroke="#8E7359" stroke-width="1.6">
         <path d="M12 86Q12 68 27 68Q42 68 42 86V140Q42 146 36 146H18Q12 146 12 140Z" :fill="`url(#${uid}-arm)`" />
         <path d="M118 86Q118 68 133 68Q148 68 148 86V140Q148 146 142 146H124Q118 146 118 140Z" :fill="`url(#${uid}-arm)`" />
       </g>
       <!-- arm fronts: lighter panel with a piped edge -->
-      <g fill="#DBCAB0" stroke="#BBA78C" stroke-width="1.2">
+      <g fill="#C4A98B" stroke="#A1846A" stroke-width="1.2">
         <path d="M17 88Q17 74 27 74Q37 74 37 88V136Q37 140 33 140H21Q17 140 17 136Z" />
         <path d="M123 88Q123 74 133 74Q143 74 143 88V136Q143 140 139 140H127Q123 140 123 136Z" />
       </g>
@@ -63,8 +63,8 @@
       <!-- throw draped over the right arm -->
       <path
         d="M117 76Q132 60 150 74V118l-5 5-5-5-5 5-5-5-5 5-4-4-4 4Z"
-        fill="#D3AD9F"
-        stroke="#BC9485"
+        fill="#C79B8C"
+        stroke="#A87D6E"
         stroke-width="1.5"
         stroke-linejoin="round"
       />

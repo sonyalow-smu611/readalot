@@ -22,7 +22,6 @@
       />
       <div class="room__light" />
       <WallClock class="room__clock" />
-      <QuoteNote v-if="!readonly" class="room__note" @click="$emit('quote')" />
       <RoomBookshelf
         class="room__bookcase"
         :books="books"
@@ -34,6 +33,9 @@
       >
         <template #ledge="{ zone }">
           <slot name="ledge" :zone="zone" />
+        </template>
+        <template v-if="!readonly" #note>
+          <QuoteNote @click="$emit('quote')" />
         </template>
       </RoomBookshelf>
       <div class="room__rug" />
@@ -79,7 +81,7 @@ defineEmits(["open-shelf", "open-book", "quote", "retry"]);
 
 <style scoped>
 .room {
-  /* strip of wall kept clear above the furniture, for the clock, the note and the credits */
+  /* strip of wall kept clear above the furniture, for the clock and the credits */
   --room-top: 96px;
   /* floor in front of the skirting line, deep enough for furniture to stand on */
   --floor-units: 110;
@@ -158,25 +160,19 @@ defineEmits(["open-shelf", "open-book", "quote", "retry"]);
   width: calc(52 * var(--u));
 }
 
-/* a small note on the strip of wall beside the bookcase */
-.room__note {
-  bottom: calc(286 * var(--u));
-  left: calc(5 * var(--u));
-  width: calc(36 * var(--u));
-}
-
+/* in front of the corner of the bookcase and the foot of the window, as a chair in a room is */
 .room__chair {
   z-index: 3;
-  bottom: calc(-50 * var(--u));
-  left: calc(238 * var(--u));
-  width: calc(122 * var(--u));
+  bottom: calc(-58 * var(--u));
+  left: calc(212 * var(--u));
+  width: calc(152 * var(--u));
 }
 
 .room__rug {
-  bottom: calc(-56 * var(--u));
-  left: calc(224 * var(--u));
-  width: calc(138 * var(--u));
-  height: calc(30 * var(--u));
+  bottom: calc(-66 * var(--u));
+  left: calc(196 * var(--u));
+  width: calc(168 * var(--u));
+  height: calc(36 * var(--u));
   border-radius: 50%;
   border: calc(2 * var(--u)) solid #cfa596;
   background: #cdb89c;
