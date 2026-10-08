@@ -54,6 +54,9 @@ export function normalizeBook(raw = {}) {
     publishedYear: raw.publishedYear ?? null,
     status: raw.status === 'tbr' ? 'want_to_read' : (raw.status ?? 'want_to_read'),
     progress: Number(raw.progress) || 0,
+    // the reader's own rating (1-5, or null) and whether they have reviewed the book
+    myRating: raw.myRating ?? null,
+    reviewed: Boolean(raw.reviewed),
   }
 }
 

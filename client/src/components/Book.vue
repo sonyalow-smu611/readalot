@@ -44,7 +44,8 @@ const bookStyle = computed(() => ({
   '--spine-lean': `${spineLean(props.book)}deg`,
   '--spine-w': `${spineWidth(props.book)}px`,
   '--book-stack': String(props.stack),
-  height: props.compact ? '118px' : `${spineHeight(props.book)}px`,
+  // a compact shelf sets one height for all its books (--shelf-book-height)
+  height: props.compact ? 'var(--shelf-book-height, 118px)' : `${spineHeight(props.book)}px`,
   zIndex: props.stack,
 }))
 

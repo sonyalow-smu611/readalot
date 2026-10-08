@@ -5,11 +5,13 @@
 //   FEATURED — the book floats centre-screen as a big cover, morphing out of its spine (a 2D
 //              position+scale tween; no perspective, per GUARDRAILS.md).
 //   OPEN     — a flat two-page spread; a cover "flap" folds back in 2D (scaleX) to reveal it.
+// Both show the shelf actions for the book (finish, start, review...) when it is on the shelf.
 import { computed, nextTick, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { primaryAuthor, ratingStars } from '@/lib/book'
 import { useBookOpen } from '@/composables/useBookOpen'
 import BookCover from '@/components/BookCover.vue'
+import ShelfBookActions from '@/components/ShelfBookActions.vue'
 
 const { state, read, close, finishClose, getOriginEl } = useBookOpen()
 
@@ -109,18 +111,15 @@ function onBackdropClick() {
     <div v-if="visible" ref="backdrop" class="book-overlay" @click.self="onBackdropClick">
       <button type="button" class="book-overlay__close" aria-label="Close book" @click="close">✕</button>
 
-      <!-- FEATURED: giant cover, tap to read -->
-      <button
-        v-if="view === 'featured'"
-        ref="featuredEl"
-        type="button"
-        class="featured"
-        @click="read"
-      >
-        <!-- a book without a cover image gets a plain cloth cover in its spine colour -->
-        <BookCover class="featured__cover" :cover-url="book?.cover" :title="book?.title" :seed="book?.id" />
-        <span class="featured__hint">Tap to open</span>
-      </button>
+      <!-- FEATURED: giant cover, tap to read; what to do with the book sits under it -->
+      <div v-if="view === 'featured'" ref="featuredEl" class="featured">
+        <button type="button" class="featured__book" @click="read">
+          <!-- a book without a cover image gets a plain cloth cover in its spine colour -->
+          <BookCover class="featured__cover" :cover-url="book?.cover" :title="book?.title" :seed="book?.id" />
+          <span class="featured__hint">Tap to open</span>
+        </button>
+        <ShelfBookActions :book="book" @leave="close" />
+      </div>
 
       <!-- OPEN: flat two-page spread -->
       <div v-else ref="spreadEl" class="spread" role="dialog" aria-label="Book details">
@@ -137,6 +136,7 @@ function onBackdropClick() {
             <span v-for="g in book?.genres" :key="g" class="page__genre">{{ g }}</span>
           </div>
           <p class="page__desc">{{ book?.description }}</p>
+          <ShelfBookActions class="page__actions" :book="book" @leave="close" />
         </div>
         <!-- The flap that folds back (2D) to reveal the right page -->
         <div ref="flapEl" class="spread__flap" aria-hidden="true"></div>
@@ -153,6 +153,7 @@ function onBackdropClick() {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
   background: rgba(28, 27, 25, 0.46);
   backdrop-filter: blur(2px);
 }
@@ -182,6 +183,15 @@ function onBackdropClick() {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 14px;
+  width: min(74vw, 300px);
+  margin: auto;
+}
+
+.featured__book {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 12px;
   padding: 0;
   background: none;
@@ -189,7 +199,7 @@ function onBackdropClick() {
   cursor: pointer;
 }
 
-.featured:focus-visible {
+.featured__book:focus-visible {
   outline: 1px solid var(--paper);
   outline-offset: 4px;
 }
@@ -298,6 +308,10 @@ function onBackdropClick() {
   line-height: 1.5;
   color: var(--ink);
   margin: 0;
+}
+
+.page__actions {
+  margin-top: 14px;
 }
 
 /* The fold-back flap: a cream panel over the right page that scaleX-collapses on open. */

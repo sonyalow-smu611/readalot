@@ -83,7 +83,22 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     }
   }
 
-  // Shows the move at once, then saves it; a failed save puts the book back.
+  // Shows a change to a book's status or progress at once, then saves it; a failed save puts
+  // the book back as it was.
+  async function save(book, changes, failure) {
+    const previous = { status: book.status, progress: book.progress, updatedAt: book.updatedAt }
+    Object.assign(book, changes, { updatedAt: new Date().toISOString() })
+    moveError.value = ''
+
+    try {
+      await updateReadingStatus(book.id, changes)
+    } catch {
+      Object.assign(book, previous)
+      moveError.value = failure
+    }
+  }
+
+  // Move a book to another shelf. Finishing a book also fills in its progress.
   async function setStatus(id, status) {
     if (!BOOK_STATUSES.includes(status)) {
       throw new Error(`Unknown book status: ${status}`)
@@ -91,17 +106,17 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     const book = findBook(id)
     if (!book || book.status === status) return
 
-    const previous = { status: book.status, updatedAt: book.updatedAt }
-    book.status = status
-    book.updatedAt = new Date().toISOString()
-    moveError.value = ''
+    const changes = status === 'read' ? { status, progress: 100 } : { status }
+    await save(book, changes, `Couldn't move "${book.title}". Try again.`)
+  }
 
-    try {
-      await updateReadingStatus(id, { status })
-    } catch {
-      Object.assign(book, previous)
-      moveError.value = `Couldn't move "${book.title}". Try again.`
-    }
+  // How far through a book the reader is, 0-100.
+  async function setProgress(id, progress) {
+    const book = findBook(id)
+    const percent = Math.min(100, Math.max(0, Math.round(Number(progress) || 0)))
+    if (!book || book.progress === percent) return
+
+    await save(book, { progress: percent }, `Couldn't save your progress in "${book.title}". Try again.`)
   }
 
   // Re-file every book on a shelf to one status. Used after a drag so the store matches
@@ -123,6 +138,7 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     findBook,
     setOrder,
     setStatus,
+    setProgress,
     applyShelf,
   }
 })

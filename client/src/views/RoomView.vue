@@ -480,7 +480,9 @@ onBeforeUnmount(() => {
 
     <div v-show="isClose" ref="closeLayer" class="room__close">
       <header class="room__bar">
-        <button type="button" class="room__back" @click="closeShelf">Back</button>
+        <button type="button" class="room__back" aria-label="Back" @click="closeShelf">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+        </button>
         <div class="room__tools">
           <CreditChip tone="light" />
           <div class="room__toggle" role="group" aria-label="How books are shown">
@@ -531,9 +533,9 @@ onBeforeUnmount(() => {
           </div>
         </template>
         <template v-else>
-          <div class="room__bay"><CoverRow title="Reading" :books="reading" /></div>
-          <div class="room__bay"><CoverRow title="To read" :books="tbr" /></div>
-          <div class="room__bay"><CoverRow title="Finished" :books="finished" /></div>
+          <div class="room__bay room__bay--covers"><CoverRow title="Reading" :books="reading" /></div>
+          <div class="room__bay room__bay--covers"><CoverRow title="To read" :books="tbr" /></div>
+          <div class="room__bay room__bay--covers"><CoverRow title="Finished" :books="finished" /></div>
         </template>
       </div>
     </div>
@@ -786,22 +788,36 @@ onBeforeUnmount(() => {
   color: var(--rl-primary);
 }
 
+/* the shelves keep a comfortable size and the page scrolls when they do not all fit */
 .room__scroll {
+  --shelf-book-height: 150px;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  overflow: hidden;
-  padding: 0 10px 8px;
+  gap: 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* room at the end to scroll the last shelf clear of the menu button */
+  padding: 4px 10px 84px;
 }
 
 .room__bay {
   position: relative;
   display: flex;
-  flex: 1 1 0;
+  flex: none;
   flex-direction: column;
-  min-height: 0;
+}
+
+.room__bay--covers {
+  height: 244px;
+}
+
+/* headroom for a book to lift on hover, and a shelf that keeps its height when empty */
+.room__close :deep(.shelf.is-compact .shelf__books) {
+  min-height: calc(var(--shelf-book-height) + 14px);
+  padding-top: 14px;
 }
 
 .room__close :deep(.shelf__title),
@@ -816,13 +832,30 @@ onBeforeUnmount(() => {
 }
 
 .room__back {
-  padding: 4px 2px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border: 0;
+  border-radius: 50%;
   background: transparent;
   color: var(--rl-surface);
-  font-family: var(--font-serif);
-  font-size: 1rem;
   cursor: pointer;
+}
+
+.room__back:hover {
+  background: rgba(255, 253, 249, 0.12);
+}
+
+.room__back svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 @keyframes spark-out {
