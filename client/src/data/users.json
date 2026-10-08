@@ -1,0 +1,82 @@
+[
+  {
+    "id": "usr-001",
+    "name": "Mia Tan",
+    "avatar": "🦉",
+    "neighbourhood": "Tampines",
+    "lat": 1.3496,
+    "lng": 103.9568,
+    "compatibility": 92,
+    "favouriteGenres": ["Fantasy", "Literary Fiction", "Magical Realism"],
+    "topBooks": ["bk-001", "bk-020", "bk-004", "bk-017"],
+    "shelves": {
+      "tbr": ["bk-010", "bk-024", "bk-030"],
+      "reading": ["bk-017"],
+      "read": ["bk-001", "bk-004", "bk-005", "bk-020"]
+    }
+  },
+  {
+    "id": "usr-002",
+    "name": "Arjun Nair",
+    "avatar": "🐢",
+    "neighbourhood": "Jurong East",
+    "lat": 1.3329,
+    "lng": 103.7436,
+    "compatibility": 78,
+    "favouriteGenres": ["Science Fiction", "Non-fiction", "Thriller"],
+    "topBooks": ["bk-002", "bk-016", "bk-027", "bk-012"],
+    "shelves": {
+      "tbr": ["bk-016", "bk-027"],
+      "reading": ["bk-002"],
+      "read": ["bk-009", "bk-012", "bk-018"]
+    }
+  },
+  {
+    "id": "usr-003",
+    "name": "Sofia Lim",
+    "avatar": "🦊",
+    "neighbourhood": "Bishan",
+    "lat": 1.3508,
+    "lng": 103.8485,
+    "compatibility": 85,
+    "favouriteGenres": ["Mystery", "Historical Fiction", "Classic"],
+    "topBooks": ["bk-008", "bk-003", "bk-019", "bk-023"],
+    "shelves": {
+      "tbr": ["bk-003", "bk-019", "bk-014"],
+      "reading": ["bk-015"],
+      "read": ["bk-008", "bk-023", "bk-011"]
+    }
+  },
+  {
+    "id": "usr-004",
+    "name": "Daniel Wong",
+    "avatar": "🐼",
+    "neighbourhood": "Bukit Timah",
+    "lat": 1.3294,
+    "lng": 103.8021,
+    "compatibility": 64,
+    "favouriteGenres": ["Self-Help", "Memoir", "Non-fiction"],
+    "topBooks": ["bk-009", "bk-006", "bk-029", "bk-012"],
+    "shelves": {
+      "tbr": ["bk-012", "bk-006"],
+      "reading": ["bk-009"],
+      "read": ["bk-029", "bk-013"]
+    }
+  },
+  {
+    "id": "usr-005",
+    "name": "Priya Raman",
+    "avatar": "🐙",
+    "neighbourhood": "Punggol",
+    "lat": 1.4043,
+    "lng": 103.902,
+    "compatibility": 71,
+    "favouriteGenres": ["Fantasy", "Science Fiction", "Mystery"],
+    "topBooks": ["bk-021", "bk-002", "bk-028", "bk-008"],
+    "shelves": {
+      "tbr": ["bk-016", "bk-024", "bk-010"],
+      "reading": ["bk-028"],
+      "read": ["bk-021", "bk-002", "bk-008"]
+    }
+  }
+]

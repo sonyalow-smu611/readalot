@@ -1,0 +1,14 @@
+# Dependencies (client/ and server/)
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables — never commit secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor noise
+.DS_Store
+*.log
