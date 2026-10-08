@@ -1,40 +1,19 @@
 import { Router } from "express";
-import { env } from "../services/env.js";
-import { supabase } from "../services/supabase.js";
+import { getDailyQuote } from "../services/dailyQuote.js";
 
 const router = Router();
 
-router.get("/today", async (req, res, next) => {
-  try {
-    if (!env.HAS_SUPABASE) {
-      return res.json(fallbackQuote());
-    }
+// GET /api/quote/today -> { quoteText, author, topic }
+// `author` is empty for quotes from the dataset, which does not record who said them.
+router.get("/today", (req, res) => {
+  const quote = getDailyQuote();
 
-    const { data, error } = await supabase.from("featured_quotes").select("*");
-
-    if (error || !data?.length) {
-      return res.json(fallbackQuote());
-    }
-
-    const day = Math.floor((Date.now() - Date.UTC(new Date().getFullYear(), 0, 0)) / 86400000);
-    const quote = data[day % data.length];
-
-    res.json({
-      id: quote.id,
-      quoteText: quote.quote_text,
-      bookId: quote.book_id,
-      author: quote.author
-    });
-  } catch (err) {
-    next(err);
-  }
+  res.json(
+    quote
+      ? { quoteText: quote.quoteText, author: "", topic: quote.topic }
+      : // the quote list has not been built (see scripts/importQuotes.js)
+        { quoteText: "A room without books is like a body without a soul.", author: "Cicero", topic: "books" }
+  );
 });
-
-function fallbackQuote() {
-  return {
-    quoteText: "A room without books is like a body without a soul.",
-    author: "Cicero"
-  };
-}
 
 export default router;

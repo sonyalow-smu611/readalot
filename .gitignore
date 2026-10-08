@@ -9,6 +9,10 @@ dist/
 .env.*
 !.env.example
 
+# Quote of the Day list, built locally from the Kaggle dataset (see README). Not committed:
+# the dataset's licence is unknown.
+server/data/quotes.json
+
 # Test output
 coverage/
 playwright-report/

@@ -44,6 +44,9 @@ server's memory (reset on restart), mood recommendations use the quotes stored i
 `server/data/works.json`, and books show plain coloured covers. Weather, the room clock and pet
 photos need no key.
 
+**Quote of the Day** needs one extra step: its quote list is not in the repository and is built
+on each machine (see "Quote of the Day" below). Until then the popup shows one built-in quote.
+
 **With Supabase** (shared keys from the team): follow "Database" below, then run
 `npm run seed -w server` once for the demo user, fake readers and sample books.
 
@@ -84,8 +87,9 @@ time.now (room clock), Wikipedia and Dog CEO (pet photos).
 | `npm run dev:server` / `npm run dev:client` | Run API / web app |
 | `npm run build` | Build the client |
 | `npm run seed -w server` | Seed demo user, readers, saved books |
+| `npm run import-quotes -w server -- <folder>` | Rebuild `server/data/quotes.json` from the downloaded Kaggle quotes dataset (see Quote of the Day) |
 | `npm run verify-works -w server` | Verify the mood book list against the quotes API (not written yet, T12) |
-| `npm run check -w server` | Compatibility score assert check |
+| `npm run check -w server` | Assert checks: compatibility score, Quote of the Day picker |
 | `npm run test:e2e` | Playwright tests. First time: `npx playwright install chromium`. Starts its own server and client on ports 3100 and 5174 |
 
 ## Project Structure
@@ -117,7 +121,8 @@ readalot/
 │   ├── src/services/           Books, quotes, works, demo shelf, compatibility, vision, supabase, env
 │   ├── src/middleware/auth.js  Token guard (demo-user fallback)
 │   ├── data/works.json         Books a mood recommendation picks from (starter list, see Known Limits)
-│   ├── scripts/                seed.js, verifyWorks.js
+│   ├── data/quotes.json        Quote of the Day list, built locally from the Kaggle dataset (not in git)
+│   ├── scripts/                seed.js, importQuotes.js, verifyWorks.js
 │   └── tests/                  Assert-style checks
 ├── database/schema.sql         Supabase schema and migration block
 ├── tests/e2e/                  Playwright tests
@@ -152,7 +157,7 @@ All under `/api`, served by `server/src/app.js`.
 | `GET /user-books`, `POST /user-books`, `PATCH /user-books/:id`, `DELETE /user-books/:id` | The reader's shelf and reading status |
 | `GET /books/search?q=`, `GET /books/:id`, reviews and quotes under `/books/:id` | Book search and details |
 | `GET /recommendations?mood=calm\|low\|stressed\|excited[&exclude=<work id>]` | A book for the mood with a quote from it |
-| `GET /quote/today` | Quote of the Day |
+| `GET /quote/today` | Quote of the Day: `quoteText`, `topic` (and `author`, empty for dataset quotes) |
 | `GET /weather[?lat=&lng=]` | Weather for the room window (Singapore by default): `scene`, `temperature`, `isDay`, `sunrise`, `sunset` |
 | `GET /time` | Singapore time for the wall clock |
 | `GET /creatures` | Breed photos for the shop's cats and dogs |
@@ -201,7 +206,8 @@ User shape:
 ## Known Limits
 
 - No login: the auth guard falls back to the seeded demo user (`DEMO_USER_ID`).
-- Quote of the Day may be unfiltered (`safe` needs a premium api-ninjas key).
+- Quote of the Day quotes have no author or book: the dataset only holds the quote text. The popup shows the topic instead ("On books"). Some quotes in it are well-known misattributions.
+- The quotes dataset was scraped from Goodreads by its Kaggle author and its licence is listed as "Unknown", so the quote list is kept out of git for now. Check it against the course rules on scraped data before the final submission. A deployed server needs the list built on it, or it shows the one built-in quote every day.
 - Mood recommendations are limited to the list in `server/data/works.json`. It is a 12-book starter list, not yet curated or verified against the quotes API (T12). Each entry carries a `moods` tag and a `quote` used when `API_NINJAS_KEY` is not set or the API has nothing for that book.
 - Without `GOOGLE_BOOKS_API_KEY`, Google Books lookups run out of quota quickly; a recommended book then shows without a cover, under its own `work-…` id.
 - Google Books returns a limited slice per query, so genre shelves can be thin.
@@ -223,6 +229,20 @@ This is the user’s main profile and home page.
 * The sticky note on the wall opens the **Quote of the Day** popup.
 * The menu button opens the **Shop** and **Inventory**: decorations and pets are bought with credits and dragged onto a shelf or the floor. Credits and placed pieces last until the page is reloaded.
 * Opens the **Mood Check-in** when needed.
+
+### Quote of the Day
+
+The sticky note in My Room opens one quote, the same for every reader all day; it changes at midnight Singapore time.
+
+Quotes come from `server/data/quotes.json`, which is **not committed** (it is in `.gitignore` because the dataset's licence is unknown): each developer, and the deployed server, builds it once with the commands below. If the file is missing the popup shows a single built-in quote. The file holds 1,000 quotes taken from the [Goodreads Quotes dataset on Kaggle](https://www.kaggle.com/datasets/abdokamr/good-reads-quotes) by Abdulrahman Kamr (about 83,000 quotes in 28 CSV files, one per topic). `server/scripts/importQuotes.js` keeps the 100 most-liked quotes from each of ten topics that suit a reading room (books, writing, poetry, knowledge, wisdom, hope, happiness, inspirational, life, time), leaving out anything longer than 220 characters, multi-line, mostly non-Latin, repeated, or with coarse language. The day's quote is picked by date, stepping through the list so none repeats until all have been shown.
+
+To build the list (other topics or limits are set at the top of the script):
+
+```bash
+pip install kagglehub
+python -c "import kagglehub; print(kagglehub.dataset_download('abdokamr/good-reads-quotes'))"
+npm run import-quotes -w server -- <the folder printed above>
+```
 
 ### Mood Check-in
 
