@@ -19,11 +19,11 @@ watch(
 </script>
 
 <template>
-  <p v-if="state.visible" ref="el" class="toast" role="status">{{ state.message }}</p>
+  <p v-if="state.visible" ref="el" class="app-toast" role="status">{{ state.message }}</p>
 </template>
 
 <style scoped>
-.toast {
+.app-toast {
   position: absolute;
   left: 50%;
   bottom: 88px;
@@ -36,7 +36,7 @@ watch(
   font-weight: 600;
   text-align: center;
   background: var(--ink);
-  color: var(--cream);
+  color: var(--paper);
   border: var(--outline);
   border-radius: 999px;
   box-shadow: var(--shadow-sticker-sm);

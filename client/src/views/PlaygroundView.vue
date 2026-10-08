@@ -3,8 +3,9 @@
 // Phase 2a: a throwaway screen for judging the book components before real pages use them.
 // Twelve books sit on two shelves you can drag between. A third shelf scrolls. Loader,
 // empty shelf, sticker, toast and bottom sheet are shown underneath.
-import { onMounted, ref } from 'vue'
-import { useBookshelfStore } from '@/stores/bookshelf'
+import { ref } from 'vue'
+import booksData from '@/data/books.json'
+import { normalizeBook } from '@/lib/book.js'
 import { useToast } from '@/composables/useToast'
 import Bookcase from '@/components/Bookcase.vue'
 import Shelf from '@/components/Shelf.vue'
@@ -15,38 +16,27 @@ import BottomSheet from '@/components/BottomSheet.vue'
 import AppButton from '@/components/AppButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 
-const bookshelf = useBookshelfStore()
+// Mock books only: this screen never touches the reader's saved shelf.
+const books = booksData.map(normalizeBook)
 const { show } = useToast()
 
-const dozen = bookshelf.books.slice(0, 12)
+const dozen = books.slice(0, 12)
 const readingShelf = ref(dozen.slice(0, 6))
 const tbrShelf = ref(dozen.slice(6, 12))
-const scrollShelf = ref(bookshelf.books.slice(12, 22))
+const scrollShelf = ref(books.slice(12, 22))
 const spareShelf = ref([])
 const sheetOpen = ref(false)
 
+// Mirrors where each book was dropped onto the local copies.
 function syncShelves() {
-  bookshelf.applyShelf(
-    readingShelf.value.map((book) => book.id),
-    'reading',
-  )
-  bookshelf.applyShelf(
-    tbrShelf.value.map((book) => book.id),
-    'tbr',
-  )
+  readingShelf.value.forEach((book) => {
+    book.status = 'reading'
+  })
+  tbrShelf.value.forEach((book) => {
+    book.status = 'want_to_read'
+  })
   show('Shelves saved')
 }
-
-onMounted(() => {
-  bookshelf.applyShelf(
-    readingShelf.value.map((book) => book.id),
-    'reading',
-  )
-  bookshelf.applyShelf(
-    tbrShelf.value.map((book) => book.id),
-    'tbr',
-  )
-})
 </script>
 
 <template>

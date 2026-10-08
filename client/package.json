@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
     "bootstrap": "^5.3.8",
     "gsap": "^3.15.0",
     "pinia": "^4.0.3",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.9",
+    "esbuild": "^0.28.2",
     "vite": "^8.3.3"
   }
 }

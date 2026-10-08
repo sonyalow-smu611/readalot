@@ -3,9 +3,6 @@
 // spines look hand-arranged. Every book component (spine, peek, featured, open) reads from
 // here so mock JSON and future Google Books data render identically.
 
-// Cloth spine tokens (CSS variables from theme.css). Ink stays on the type, not the cloth.
-const SPINE_COLORS = ['cloth-navy', 'cloth-oxblood', 'cloth-olive', 'cloth-sand', 'cloth-charcoal']
-
 const MIN_PAGES = 180
 const MAX_PAGES = 830
 const MIN_SPINE_WIDTH = 22
@@ -27,7 +24,10 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value))
 }
 
-/** Normalise any raw book (mock JSON now, Google Books later) into one shape. */
+/**
+ * Normalise any raw book (the API's Book shape, or mock JSON) into one shape. API fields are
+ * kept as they are; `cover` and `rating` are the names the shelf components read.
+ */
 export function normalizeBook(raw = {}) {
   const authors = Array.isArray(raw.authors)
     ? raw.authors
@@ -36,17 +36,24 @@ export function normalizeBook(raw = {}) {
       : ['Unknown']
   const genres = Array.isArray(raw.genres) ? raw.genres : raw.genre ? [raw.genre] : []
 
+  const cover = raw.cover || raw.coverUrl || raw.thumbnail || ''
+  const rating = Number(raw.rating ?? raw.averageRating) || 0
+
   return {
+    ...raw,
     id: raw.id ?? `bk-${hashString(raw.title ?? '')}`,
     title: raw.title ?? 'Untitled',
     authors,
-    cover: raw.cover ?? raw.thumbnail ?? '',
+    cover,
+    coverUrl: cover,
     description: raw.description ?? '',
     genres,
     pageCount: Number(raw.pageCount) || 0,
-    rating: Number(raw.rating) || 0,
+    rating,
+    averageRating: rating,
     publishedYear: raw.publishedYear ?? null,
-    status: raw.status ?? 'tbr',
+    status: raw.status === 'tbr' ? 'want_to_read' : (raw.status ?? 'want_to_read'),
+    progress: Number(raw.progress) || 0,
   }
 }
 
@@ -67,10 +74,6 @@ export function spineWidth(book) {
 /** Spine height varies only slightly, so a row still reads as one shelf. */
 export function spineHeight(book) {
   return BASE_SPINE_HEIGHT + (hashString(book.title) % SPINE_HEIGHT_VARIATION)
-}
-
-export function spineColor(book) {
-  return SPINE_COLORS[hashString(book.title) % SPINE_COLORS.length]
 }
 
 // Most books stand straight. A few tip by two degrees, chosen deterministically.

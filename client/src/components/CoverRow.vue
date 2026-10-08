@@ -4,6 +4,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { useBookOpen } from '@/composables/useBookOpen'
+import BookCover from '@/components/BookCover.vue'
 
 const props = defineProps({
   books: { type: Array, default: () => [] },
@@ -87,7 +88,7 @@ watch(
             :style="{ width: `${cardW}px` }"
             @click="open(book, $event.currentTarget)"
           >
-            <img class="covers__img" :src="book.cover" :alt="`Cover of ${book.title}`" />
+            <BookCover class="covers__img" :cover-url="book.cover" :title="book.title" :seed="book.id" />
             <span class="covers__name">{{ book.title }}</span>
           </button>
         </div>
@@ -170,6 +171,7 @@ watch(
   flex: 1 1 auto;
   width: 100%;
   min-height: 0;
+  aspect-ratio: auto;
   object-fit: cover;
   border-radius: 2px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);

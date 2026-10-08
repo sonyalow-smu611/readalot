@@ -5,10 +5,11 @@ import { createApp } from 'vue'
 // Pinia — Vue's official state store; shares user + bookshelf state across views.
 import { createPinia } from 'pinia'
 
-// Bootstrap 5 — only the reboot, grid and utility layers; components are our own.
-import 'bootstrap/dist/css/bootstrap-reboot.min.css'
-import 'bootstrap/dist/css/bootstrap-grid.min.css'
-import 'bootstrap/dist/css/bootstrap-utilities.min.css'
+// Bootstrap 5 — full stylesheet: grid and utilities everywhere, plus the modal and button
+// components the book and quote dialogs are built on.
+import 'bootstrap/dist/css/bootstrap.min.css'
+// Shared tokens first, then the aliases the room components read.
+import './assets/theme.css'
 import './styles/theme.css'
 import './styles/transitions.css'
 

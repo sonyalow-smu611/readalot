@@ -9,6 +9,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { primaryAuthor, ratingStars } from '@/lib/book'
 import { useBookOpen } from '@/composables/useBookOpen'
+import BookCover from '@/components/BookCover.vue'
 
 const { state, read, close, finishClose, getOriginEl } = useBookOpen()
 
@@ -116,14 +117,15 @@ function onBackdropClick() {
         class="featured"
         @click="read"
       >
-        <img v-if="book?.cover" :src="book.cover" :alt="`Cover of ${book.title}`" class="featured__cover" />
+        <!-- a book without a cover image gets a plain cloth cover in its spine colour -->
+        <BookCover class="featured__cover" :cover-url="book?.cover" :title="book?.title" :seed="book?.id" />
         <span class="featured__hint">Tap to open</span>
       </button>
 
       <!-- OPEN: flat two-page spread -->
       <div v-else ref="spreadEl" class="spread" role="dialog" aria-label="Book details">
         <div class="page page--left">
-          <img v-if="book?.cover" :src="book.cover" :alt="`Cover of ${book?.title}`" class="page__cover" />
+          <BookCover class="page__cover" :cover-url="book?.cover" :title="book?.title" :seed="book?.id" />
         </div>
         <div class="page page--right">
           <h2 class="page__title">{{ book?.title }}</h2>
@@ -194,6 +196,7 @@ function onBackdropClick() {
 
 .featured__cover {
   width: min(60vw, 240px);
+  font-size: 1.3rem;
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border: 1px solid rgba(28, 27, 25, 0.35);

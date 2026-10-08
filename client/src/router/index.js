@@ -2,52 +2,36 @@
 // Vue Router — maps URLs to views so every tab is deep-linkable and the back button works.
 import { createRouter, createWebHistory } from 'vue-router'
 import RoomView from '@/views/RoomView.vue'
-import DiscoverView from '@/views/DiscoverView.vue'
+import BookDetailsView from '@/views/BookDetailsView.vue'
+import DiscoverBooksView from '@/views/DiscoverBooksView.vue'
+import DiscoverPeopleView from '@/views/DiscoverPeopleView.vue'
+import GenreShelfView from '@/views/GenreShelfView.vue'
 import MoodView from '@/views/MoodView.vue'
-import PeopleView from '@/views/PeopleView.vue'
-import ScanView from '@/views/ScanView.vue'
 import PlaygroundView from '@/views/PlaygroundView.vue'
+import ProfileView from '@/views/ProfileView.vue'
+import ReaderRoomView from '@/views/ReaderRoomView.vue'
+import ReaderShelfView from '@/views/ReaderShelfView.vue'
+import ScanBookView from '@/views/ScanBookView.vue'
+import SearchView from '@/views/SearchView.vue'
 
-// `meta` drives the bottom tab bar: order (left→right), label, emoji icon and pill colour.
+// `meta.order` is the tab a page belongs to (left→right in the bottom nav); it decides which
+// way the page slides in. `meta.fullBleed` pages fill the frame and skip the shared header.
 const routes = [
-  { path: '/', redirect: '/room' },
-  {
-    path: '/room',
-    name: 'room',
-    component: RoomView,
-    meta: { tab: true, order: 0, label: 'Room', icon: '🛋️', color: 'butter', title: 'My Room' },
-  },
-  {
-    path: '/discover',
-    name: 'discover',
-    component: DiscoverView,
-    meta: { tab: true, order: 1, label: 'Discover', icon: '🔭', color: 'mint', title: 'Discover' },
-  },
-  {
-    path: '/mood',
-    name: 'mood',
-    component: MoodView,
-    meta: { tab: true, order: 2, label: 'Mood', icon: '🌈', color: 'hot-pink', title: 'Mood' },
-  },
-  {
-    path: '/people',
-    name: 'people',
-    component: PeopleView,
-    meta: { tab: true, order: 3, label: 'People', icon: '👯', color: 'lilac', title: 'People' },
-  },
-  {
-    path: '/scan',
-    name: 'scan',
-    component: ScanView,
-    meta: { tab: true, order: 4, label: 'Scan', icon: '📷', color: 'tangerine', title: 'Scan' },
-  },
-  {
-    path: '/playground',
-    name: 'playground',
-    component: PlaygroundView,
-    meta: { title: 'Playground' },
-  },
-  { path: '/:pathMatch(.*)*', redirect: '/room' },
+  { path: '/', name: 'room', component: RoomView, meta: { title: 'My Room', fullBleed: true, order: 0 } },
+  { path: '/room', redirect: '/' },
+  { path: '/discover', name: 'discover-books', component: DiscoverBooksView, meta: { order: 1 } },
+  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { order: 1 } },
+  { path: '/search', name: 'search', component: SearchView, meta: { order: 1 } },
+  { path: '/people', name: 'discover-people', component: DiscoverPeopleView, meta: { order: 2 } },
+  { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
+  { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 2 } },
+  { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 3 } },
+  { path: '/profile', name: 'profile', component: ProfileView, meta: { order: 4 } },
+  { path: '/books/:id', name: 'book-details', component: BookDetailsView },
+  // Not in the bottom nav; kept reachable until these pages are merged.
+  { path: '/mood', name: 'mood', component: MoodView, meta: { title: 'Mood' } },
+  { path: '/playground', name: 'playground', component: PlaygroundView, meta: { title: 'Playground' } },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
