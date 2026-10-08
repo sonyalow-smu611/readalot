@@ -1,44 +1,60 @@
-<template>
-  <section class="app-shell">
-    <h1 class="h3 mb-3">Mood Check-in</h1>
-    <div class="d-flex flex-wrap gap-2 mb-4">
-      <button
-        v-for="mood in moods"
-        :key="mood"
-        class="btn"
-        :class="selectedMood === mood ? 'btn-success' : 'btn-outline-success'"
-        type="button"
-        @click="chooseMood(mood)"
-      >
-        {{ mood }}
-      </button>
-    </div>
+<script setup>
+// Scaffolded with AI assistance (Phase 1) — see AI_USAGE.md
+import { computed, ref } from 'vue'
+import PageHeader from '@/components/PageHeader.vue'
+import StickerCard from '@/components/StickerCard.vue'
+import AppButton from '@/components/AppButton.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import { useReveal } from '@/composables/useReveal'
+import quotes from '@/data/quotes.json'
 
-    <RouterLink
-      v-if="book"
-      class="d-flex gap-3 text-decoration-none text-dark p-3 border bg-white rounded-2"
-      :to="`/books/${book.id}`"
-    >
-      <BookCover :cover-url="book.coverUrl" :title="book.title" />
-      <div>
-        <h2 class="h5">{{ book.title }}</h2>
-        <p class="small text-muted mb-0">{{ book.description }}</p>
-      </div>
-    </RouterLink>
+const page = ref(null)
+useReveal(page)
+
+const quoteIndex = ref(Math.floor(Math.random() * quotes.length))
+const quote = computed(() => quotes[quoteIndex.value])
+
+function showNextQuote() {
+  quoteIndex.value = (quoteIndex.value + 1) % quotes.length
+}
+</script>
+
+<template>
+  <section ref="page" class="view">
+    <PageHeader
+      data-reveal
+      eyebrow="Read how you feel"
+      title="Mood"
+      subtitle="Books matched to your vibe of the day."
+      emoji="🌈"
+      color="hot-pink"
+    />
+
+    <StickerCard data-reveal color="butter" :tilt="-1" class="mb-4">
+      <Transition name="fade" mode="out-in">
+        <figure :key="quote.id" class="mb-3">
+          <blockquote class="mood-quote mb-2">“{{ quote.text }}”</blockquote>
+          <figcaption class="small fw-semibold">— {{ quote.author }}</figcaption>
+        </figure>
+      </Transition>
+      <AppButton variant="hot-pink" @click="showNextQuote">Another quote ✨</AppButton>
+    </StickerCard>
+
+    <EmptyState
+      data-reveal
+      emoji="🎭"
+      title="Mood matching is getting dressed up"
+      message="Soon you'll pick a vibe (cosy, curious, heartbroken, adventurous) and we'll find the perfect book for it."
+      color="cream"
+    />
   </section>
 </template>
 
-<script setup>
-import { ref } from "vue";
-import BookCover from "../components/BookCover.vue";
-import { getRecommendations } from "../services/api.js";
-
-const moods = ["sad", "stressed", "bored", "reflective", "romantic"];
-const selectedMood = ref("");
-const book = ref(null);
-
-async function chooseMood(mood) {
-  selectedMood.value = mood;
-  book.value = (await getRecommendations(mood)).book;
+<style scoped>
+.mood-quote {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.35;
 }
-</script>
+</style>

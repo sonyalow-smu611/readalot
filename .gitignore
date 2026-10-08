@@ -1,7 +1,23 @@
+# Dependencies (root workspace, client/ and server/)
 node_modules/
+
+# Build output
 dist/
+
+# Environment variables — never commit secrets
 .env
-.DS_Store
+.env.*
+!.env.example
+
+# Quote of the Day list, built locally from the Kaggle dataset (see README). Not committed:
+# the dataset's licence is unknown.
+server/data/quotes.json
+
+# Test output
 coverage/
 playwright-report/
 test-results/
+
+# OS / editor noise
+.DS_Store
+*.log

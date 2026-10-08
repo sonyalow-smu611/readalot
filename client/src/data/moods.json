@@ -1,0 +1,44 @@
+[
+  {
+    "id": "mood-cosy",
+    "emoji": "🫖",
+    "label": "Cosy",
+    "color": "butter",
+    "genres": ["Literary Fiction", "Magical Realism"]
+  },
+  {
+    "id": "mood-adventurous",
+    "emoji": "🗺️",
+    "label": "Adventurous",
+    "color": "mint",
+    "genres": ["Fantasy", "Science Fiction"]
+  },
+  {
+    "id": "mood-curious",
+    "emoji": "🔍",
+    "label": "Curious",
+    "color": "lilac",
+    "genres": ["Non-fiction", "Memoir"]
+  },
+  {
+    "id": "mood-thrilled",
+    "emoji": "⚡",
+    "label": "On edge",
+    "color": "hot-pink",
+    "genres": ["Thriller", "Mystery"]
+  },
+  {
+    "id": "mood-nostalgic",
+    "emoji": "🍂",
+    "label": "Nostalgic",
+    "color": "tangerine",
+    "genres": ["Classic", "Historical Fiction"]
+  },
+  {
+    "id": "mood-hopeful",
+    "emoji": "🌱",
+    "label": "Hopeful",
+    "color": "mint",
+    "genres": ["Self-Help", "Literary Fiction"]
+  }
+]
