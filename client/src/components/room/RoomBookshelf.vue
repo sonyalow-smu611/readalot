@@ -21,6 +21,8 @@
         </span>
         <!-- decorations stand on the plank, in front of the books -->
         <span class="bookcase__ledge"><slot name="ledge" :zone="ZONES[r]" /></span>
+        <!-- something small stuck to the back panel at the free end of the top shelf -->
+        <span v-if="r === 0 && $slots.note" class="bookcase__note" @click.stop><slot name="note" /></span>
       </span>
     </span>
 
@@ -86,9 +88,8 @@ const shelves = computed(() => {
 .bookcase {
   position: relative;
   display: block;
-  padding: calc(10 * var(--u));
+  padding: calc(7 * var(--u));
   border: 2px solid var(--rl-primary);
-  border-radius: calc(10 * var(--u));
   background: linear-gradient(90deg, #4a3223, #63432f 12%, #63432f 88%, #4a3223);
   /* the strongest shadow in the room: onto the wall behind and the floor below */
   box-shadow:
@@ -110,11 +111,11 @@ const shelves = computed(() => {
   padding-top: calc(4 * var(--u));
   border: calc(5 * var(--u)) solid #af8f71;
   border-bottom: 0;
-  border-radius: calc(4 * var(--u));
   background: linear-gradient(180deg, rgba(63, 46, 36, 0.12), transparent 14%), #e2d1bd;
 }
 
 .bookcase__shelf {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -154,6 +155,14 @@ const shelves = computed(() => {
 /* a short row ends with a book leaning on its neighbours */
 .bookcase__books :deep(.spine:last-child:nth-child(n + 3):nth-child(-n + 6)) {
   transform: rotate(-9deg) translateX(calc(3 * var(--u)));
+}
+
+.bookcase__note {
+  position: absolute;
+  top: calc(22 * var(--u));
+  right: calc(7 * var(--u));
+  z-index: 2;
+  width: calc(22 * var(--u));
 }
 
 .bookcase__ledge {
