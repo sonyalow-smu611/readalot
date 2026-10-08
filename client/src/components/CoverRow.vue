@@ -66,7 +66,7 @@ watch(
 
 <template>
   <section class="covers">
-    <h3 class="covers__title">{{ title }}</h3>
+    <h3 v-if="title" class="covers__title">{{ title }}</h3>
     <p v-if="!books.length" class="covers__empty">Nothing on this shelf yet</p>
     <div v-else ref="frame" class="covers__frame">
       <button
@@ -122,13 +122,15 @@ watch(
   font-family: var(--font-serif);
   font-size: 0.85rem;
   font-weight: 500;
-  color: #f6f1e8;
+  color: var(--ink);
 }
 
 .covers__empty {
-  margin: 0;
-  font-size: 0.8rem;
-  color: rgba(246, 241, 232, 0.6);
+  margin: auto 0;
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--ink-muted);
 }
 
 .covers__frame {
@@ -181,7 +183,7 @@ watch(
   flex: none;
   font-family: var(--font-serif);
   font-size: 0.68rem;
-  color: #f6f1e8;
+  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -194,8 +196,8 @@ watch(
   height: 28px;
   border: 0;
   border-radius: 50%;
-  background: rgba(246, 241, 232, 0.92);
-  color: #2a2118;
+  background: var(--rl-primary);
+  color: var(--rl-surface);
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;

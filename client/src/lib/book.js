@@ -68,10 +68,18 @@ export function hasCover(book) {
   return Boolean(book.cover)
 }
 
-/** Spine width grows with page count, so thick books look thick. */
-export function spineWidth(book) {
+/**
+ * Spine width grows with page count, so thick books look thick. A narrower `min`-`max` range
+ * keeps a row of books closer to one size.
+ */
+export function spineWidth(book, min = MIN_SPINE_WIDTH, max = MAX_SPINE_WIDTH) {
   const t = clamp((book.pageCount - MIN_PAGES) / (MAX_PAGES - MIN_PAGES), 0, 1)
-  return Math.round(MIN_SPINE_WIDTH + t * (MAX_SPINE_WIDTH - MIN_SPINE_WIDTH))
+  return Math.round(min + t * (max - min))
+}
+
+/** How many pixels (0-6) a book stands below the tallest on a shelf of one book height. */
+export function spineDip(book) {
+  return hashString(`${book.title}~dip`) % 7
 }
 
 /** Spine height varies only slightly, so a row still reads as one shelf. */
