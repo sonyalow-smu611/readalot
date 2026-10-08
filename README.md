@@ -6,7 +6,8 @@ Minimal Vue + Express + Supabase project skeleton for the reading app.
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.example .env      # fill in the shared keys (ask the team)
+npm run seed -w server    # once: demo user, fake readers, sample books
 npm run dev:server
 npm run dev:client
 ```
@@ -17,21 +18,84 @@ Run the server and client commands in separate terminals.
 - Express API: `http://localhost:3000/api/health`
 - Root `.env` is the only env file. Vite reads it through `client/vite.config.js`.
 
+### Database
+
+One shared Supabase project is used by all developers.
+
+- Fresh project: run `database/schema.sql` in the Supabase SQL editor (skip the "Migration" block at the bottom).
+- Existing project from the older schema: run only the "Migration" block (idempotent).
+- Then run `npm run seed -w server` and copy the printed demo user id into `DEMO_USER_ID`.
+
+### Environment variables
+
+| Variable | Used by | Purpose |
+|----------|---------|---------|
+| `PORT` | server | API port (default 3000) |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | server | Database and auth access |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | client | Browser Supabase client |
+| `GOOGLE_BOOKS_API_KEY` | server | Book search, metadata, similar books |
+| `GOOGLE_CLOUD_PROJECT_ID`, `GOOGLE_CLOUD_VISION_KEY` | server | Scan Book text detection |
+| `GOOGLE_MAPS_API_KEY` | server | Nearby stores (not needed for the map) |
+| `DEMO_USER_ID` | server | Seeded demo profile used when no login token is present |
+| `API_NINJAS_KEY` | server | Quote of the Day and mood quotes (`X-Api-Key`) |
+
+### Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev:server` / `npm run dev:client` | Run API / web app |
+| `npm run build` | Build the client |
+| `npm run seed -w server` | Seed demo user, readers, saved books |
+| `npm run verify-works -w server` | Verify the curated mood book list against the quotes API |
+| `npm run check -w server` | Compatibility score assert check |
+| `npm run test:e2e` | Playwright tests |
+
 ## Project Structure
 
 ```text
 readalot/
-├── client/             Vue 3, Bootstrap, router, shared API client
-├── server/             Express API routes, Supabase, external API calls
-├── database/schema.sql Minimal Supabase table schema
-├── tests/e2e/          Playwright smoke tests
-├── .env.example        Single env template
-└── package.json        Workspace scripts
+├── SPEC.md                     MVP spec, decisions and tickets (T01-T29)
+├── REFERENCE-IMG/              Low-fi reference screens 01-15
+├── client/src/
+│   ├── views/                  One file per route
+│   ├── components/             Shared UI
+│   │   ├── book/               Book Details tabs (About, Reviews, Quotes, Buy, Similar)
+│   │   ├── modals/             Mood, Quote of the Day, Write review, Add quote
+│   │   ├── room/               Room scene, Currently Reading card
+│   │   └── people/             Map, reader bottom sheet
+│   ├── composables/            useAsync, useLocation
+│   ├── router/                 Routes
+│   └── services/api.js         Only place that calls the API
+├── server/
+│   ├── src/routes/             Express routes
+│   ├── src/services/           Books, quotes, compatibility, vision, supabase, env
+│   ├── src/middleware/auth.js  Token guard (demo-user fallback)
+│   ├── data/works.json         Curated, verified works for mood recommendations
+│   ├── scripts/                seed.js, verifyWorks.js
+│   └── tests/                  Assert-style checks
+├── database/schema.sql         Supabase schema and migration block
+├── tests/e2e/                  Playwright tests
+├── .env.example                Single env template
+└── package.json                Workspace scripts
 ```
+
+## Routes
+
+| Path | Screen |
+|------|--------|
+| `/` | My Room (home) |
+| `/discover`, `/discover/:genre` | Discover Books, full genre shelf |
+| `/search` | Global search |
+| `/people`, `/people/:id`, `/people/:id/shelf` | Discover People, Reader Room, reader bookshelf |
+| `/scan` | Scan Book |
+| `/profile` | Profile and settings |
+| `/books/:id` | Book Details (tabs) |
+
+Mood check-in, Quote of the Day, Quick Book Preview, Write review and Add quote are modals, not routes.
 
 ## App Contracts
 
-Use `client/src/services/api.js` from Vue components. Components should not call Google Books, Open-Meteo, Places, Vision, or Supabase data tables directly.
+Use `client/src/services/api.js` from Vue components. Components should not call Google Books, Open-Meteo, Places, Vision, api-ninjas, or Supabase data tables directly.
 
 Book shape:
 
@@ -47,7 +111,10 @@ Book shape:
   publisher,
   publishedDate,
   isbn,
-  averageRating
+  averageRating,
+  ratingsCount,
+  pageCount,
+  buyUrl
 }
 ```
 
@@ -64,6 +131,15 @@ User shape:
   currentlyReading
 }
 ```
+
+## Known Limits
+
+- No login: the auth guard falls back to the seeded demo user (`DEMO_USER_ID`).
+- Quote of the Day may be unfiltered (`safe` needs a premium api-ninjas key).
+- Mood recommendations are limited to the curated list in `server/data/works.json`.
+- Google Books returns a limited slice per query, so genre shelves can be thin.
+- Compatibility is computed per request (O(users)); fine at MVP scale.
+- Desktop shows a centred phone-width column only.
 
 ## App Structure and Page Connections
 

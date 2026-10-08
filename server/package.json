@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "seed": "node scripts/seed.js",
+    "verify-works": "node scripts/verifyWorks.js",
+    "check": "node tests/compatibility.check.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
