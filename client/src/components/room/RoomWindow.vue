@@ -2,7 +2,8 @@
   The bay window on the room wall. The view outside follows the live weather: sun and passing
   birds, drifting clouds, or rain, with a moon when it is clear at night. The temperature
   floats in the top right pane.
-  The frame is drawn on a 164 x 262 grid; the weather scene sits behind it, cut to the glass.
+  The frame is drawn on a grid 164 wide and `rows` tall, so the window can be made taller
+  without stretching its arch; the weather scene sits behind it, cut to the glass.
 -->
 <script setup>
 import { computed, useId } from 'vue'
@@ -13,6 +14,9 @@ const props = defineProps({
   night: { type: Boolean, default: false },
   // whole degrees Celsius, or null when the weather could not be fetched
   temperature: { type: Number, default: null },
+  // height of the frame on its 164-wide grid: the arch and sill keep their size, the glass
+  // between them takes up the rest
+  rows: { type: Number, default: 262 },
 })
 
 const uid = useId()
@@ -31,6 +35,41 @@ const RAIN_DROPS = Array.from({ length: 22 }, (_, index) => {
   }
 })
 
+// The frame's measurements on the grid. Everything below the arch is placed up from the sill.
+const frame = computed(() => {
+  const rows = props.rows
+  const glassTop = 36 // crown of the arch in the glass
+  const glassBottom = rows - 31
+  const glassHeight = glassBottom - glassTop
+  const outer = `M16 50Q82 2 148 50V${rows - 22}H16Z`
+  const glass = `M25 56Q82 16 139 56V${glassBottom}H25Z`
+
+  return {
+    viewBox: `0 0 164 ${rows}`,
+    outer,
+    glass,
+    // the frame with the glass left open
+    surround: `${outer}${glass}`,
+    // the glass outline as fractions of the glass box, so the cut scales with the window
+    cut: `M0 ${20 / glassHeight}Q0.5 ${-20 / glassHeight} 1 ${20 / glassHeight}V1H0Z`,
+    bars: `M82 27V${rows - 29}M21 ${Math.round(glassTop + glassHeight * 0.53)}H143`,
+    sill: `M6 ${rows - 24}H158L164 ${rows - 8}H0Z`,
+    sillEdge: `M8 ${rows - 22}H156`,
+    sheen: [
+      `M25 ${rows - 112}L92 16H112L25 ${rows - 72}Z`,
+      `M70 ${glassBottom}L139 ${rows - 170}V${rows - 138}L86 ${glassBottom}Z`,
+    ],
+    boxStyle: { aspectRatio: `164 / ${rows}` },
+    glassStyle: {
+      top: `${(glassTop / rows) * 100}%`,
+      height: `${(glassHeight / rows) * 100}%`,
+      clipPath: `url(#${uid}-glass)`,
+    },
+    // a fixed step below the arch, however tall the glass is
+    tempStyle: { top: `${(25 / glassHeight) * 100}%` },
+  }
+})
+
 const label = computed(() => {
   const sky = `${SCENE_LABELS[props.scene] ?? 'Cloudy'}${props.night ? ' night' : ''}`
   return props.temperature === null ? `Window view: ${sky}` : `Window view: ${sky}, ${props.temperature} degrees`
@@ -38,9 +77,9 @@ const label = computed(() => {
 </script>
 
 <template>
-  <div class="window" role="img" :aria-label="label">
+  <div class="window" role="img" :aria-label="label" :style="frame.boxStyle">
     <!-- the view outside, cut to the arch of the glass -->
-    <div class="window__glass" :style="{ clipPath: `url(#${uid}-glass)` }">
+    <div class="window__glass" :style="frame.glassStyle">
       <div class="window__pane" :class="[`window__pane--${scene}`, { 'is-night': night }]">
         <template v-if="scene === 'sunny'">
           <span class="window__sun" />
@@ -77,37 +116,35 @@ const label = computed(() => {
           />
         </template>
       </div>
-      <span v-if="temperature !== null" class="window__temp">{{ temperature }}°</span>
+      <span v-if="temperature !== null" class="window__temp" :style="frame.tempStyle">{{ temperature }}°</span>
     </div>
 
-    <svg class="window__frame" viewBox="0 0 164 262" aria-hidden="true">
+    <svg class="window__frame" :viewBox="frame.viewBox" aria-hidden="true">
       <defs>
-        <!-- the glass outline, as fractions of the glass box, so it scales with the window -->
         <clipPath :id="`${uid}-glass`" clipPathUnits="objectBoundingBox">
-          <path d="M0 0.1026Q0.5 -0.1026 1 0.1026V1H0Z" />
+          <path :d="frame.cut" />
         </clipPath>
         <clipPath :id="`${uid}-sheen`">
-          <path d="M25 56Q82 16 139 56V231H25Z" />
+          <path :d="frame.glass" />
         </clipPath>
       </defs>
 
-      <!-- frame, with the glass left open -->
-      <path d="M16 50Q82 2 148 50V240H16ZM25 56Q82 16 139 56V231H25Z" fill="#FFFDF9" fill-rule="evenodd" />
-      <path d="M16 50Q82 2 148 50V240H16Z" fill="none" stroke="#6B4A34" stroke-width="5" />
+      <path :d="frame.surround" fill="#FFFDF9" fill-rule="evenodd" />
+      <path :d="frame.outer" fill="none" stroke="#6B4A34" stroke-width="5" />
 
       <!-- sheen on the glass -->
       <g :clip-path="`url(#${uid}-sheen)`" fill="#FFFFFF">
-        <path d="M25 150L92 16H112L25 190Z" opacity="0.1" />
-        <path d="M70 231L139 92V124L86 231Z" opacity="0.07" />
+        <path :d="frame.sheen[0]" opacity="0.1" />
+        <path :d="frame.sheen[1]" opacity="0.07" />
       </g>
-      <path d="M25 56Q82 16 139 56V231H25Z" fill="none" stroke="#3F2E24" stroke-opacity="0.25" stroke-width="2" />
+      <path :d="frame.glass" fill="none" stroke="#3F2E24" stroke-opacity="0.25" stroke-width="2" />
 
       <!-- glazing bars -->
-      <path d="M82 27V233M21 140H143" fill="none" stroke="#6B4A34" stroke-width="5" />
+      <path :d="frame.bars" fill="none" stroke="#6B4A34" stroke-width="5" />
 
       <!-- sill -->
-      <path d="M6 238H158L164 254H0Z" fill="#6B4A34" stroke="#3F2E24" stroke-width="1" />
-      <path d="M8 240H156" stroke="#8A6548" stroke-width="2" />
+      <path :d="frame.sill" fill="#6B4A34" stroke="#3F2E24" stroke-width="1" />
+      <path :d="frame.sillEdge" stroke="#8A6548" stroke-width="2" />
     </svg>
   </div>
 </template>
@@ -115,7 +152,6 @@ const label = computed(() => {
 <style scoped>
 .window {
   position: relative;
-  aspect-ratio: 164 / 262;
 }
 
 .window__frame {
@@ -128,13 +164,11 @@ const label = computed(() => {
   pointer-events: none;
 }
 
-/* the box around the glass (25,36 to 139,231 on the frame's grid) */
+/* the box around the glass: 25 to 139 across the grid; top and height depend on `rows` */
 .window__glass {
   position: absolute;
-  top: calc(36 / 262 * 100%);
   left: calc(25 / 164 * 100%);
   width: calc(114 / 164 * 100%);
-  height: calc(195 / 262 * 100%);
 }
 
 .window__pane {
@@ -148,7 +182,6 @@ const label = computed(() => {
 /* top right pane, clear of the glazing bars */
 .window__temp {
   position: absolute;
-  top: 13%;
   right: 8%;
   font-family: var(--font-serif);
   font-size: max(11px, calc(12 * var(--u)));
