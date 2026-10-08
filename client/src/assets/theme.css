@@ -1,18 +1,104 @@
 :root {
-  --readalot-ink: #241f1b;
-  --readalot-paper: #fffaf2;
-  --readalot-leaf: #386641;
-  --readalot-berry: #9d3150;
+  --rl-canvas: #f8f2e9;
+  --rl-surface: #fffdf9;
+  --rl-primary: #3f2e24;
+  --rl-secondary: #f1e7da;
+  --rl-accent: #9a7a55;
+  --rl-text: #2c241e;
+  --rl-muted: #7e7065;
+  --rl-placeholder: #d8d2ca;
+  --rl-line: #cdbfaf;
+  --rl-wood: #6b4a34;
+
+  --rl-font-title: Georgia, "Times New Roman", serif;
+  --rl-font-body: Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --rl-radius-card: 12px;
+  --rl-radius-modal: 22px;
+  --rl-column: 430px;
+  --rl-nav-height: 66px;
+
+  --bs-body-bg: var(--rl-canvas);
+  --bs-body-color: var(--rl-text);
+  --bs-body-font-family: var(--rl-font-body);
+  --bs-secondary-color: var(--rl-muted);
+  --bs-border-color: var(--rl-line);
+  --bs-border-radius: var(--rl-radius-card);
+  --bs-link-color: var(--rl-primary);
+  --bs-link-color-rgb: 63, 46, 36;
+  --bs-link-hover-color: var(--rl-accent);
+  --bs-link-hover-color-rgb: 154, 122, 85;
 }
 
 body {
   min-height: 100vh;
-  background: var(--readalot-paper);
-  color: var(--readalot-ink);
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3,
+.h1,
+.h2,
+.h3 {
+  font-family: var(--rl-font-title);
+  font-weight: 700;
+}
+
+.text-muted {
+  color: var(--rl-muted) !important;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--rl-primary);
+  --bs-btn-border-color: var(--rl-primary);
+  --bs-btn-color: var(--rl-surface);
+  --bs-btn-hover-bg: #2c241e;
+  --bs-btn-hover-border-color: #2c241e;
+  --bs-btn-hover-color: var(--rl-surface);
+  --bs-btn-active-bg: #2c241e;
+  --bs-btn-active-border-color: #2c241e;
+  --bs-btn-focus-shadow-rgb: 154, 122, 85;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--rl-primary);
+  --bs-btn-border-color: var(--rl-primary);
+  --bs-btn-hover-bg: var(--rl-secondary);
+  --bs-btn-hover-color: var(--rl-primary);
+  --bs-btn-hover-border-color: var(--rl-primary);
+  --bs-btn-active-bg: var(--rl-primary);
+  --bs-btn-active-border-color: var(--rl-primary);
+  --bs-btn-active-color: var(--rl-surface);
+  --bs-btn-focus-shadow-rgb: 154, 122, 85;
+}
+
+:focus-visible {
+  outline: 2px solid var(--rl-accent);
+  outline-offset: 2px;
+}
+
+/* Phone-width column, centred on larger screens */
+.phone {
+  position: relative;
+  max-width: var(--rl-column);
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin-inline: auto;
+  background: var(--rl-canvas);
+}
+
+@media (min-width: 431px) {
+  body {
+    background: #efe8de;
+  }
+
+  .phone {
+    box-shadow: 0 0 0 1px var(--rl-line), 0 12px 40px rgba(63, 46, 36, 0.12);
+  }
 }
 
 .app-shell {
-  padding-bottom: 4.5rem;
+  padding-bottom: calc(var(--rl-nav-height) + 0.75rem);
 }
 
 .book-cover {
@@ -20,15 +106,27 @@ body {
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: 6px;
-  background: #e8dfd1;
+  background: var(--rl-placeholder);
+  color: var(--rl-primary);
+  font-family: var(--rl-font-title);
+  line-height: 1.2;
+  overflow: hidden;
 }
 
-.bottom-nav {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 10;
-  border-top: 1px solid rgba(36, 31, 27, 0.12);
-  background: rgba(255, 250, 242, 0.96);
+/* Shared modal look (20-24px radius, warm surface, dimmed backdrop) */
+.rl-modal {
+  background: rgba(63, 46, 36, 0.45);
+}
+
+.rl-modal .modal-dialog {
+  max-width: 360px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.rl-modal .modal-content {
+  border: 1px solid var(--rl-line);
+  border-radius: var(--rl-radius-modal);
+  background: var(--rl-surface);
+  box-shadow: 0 18px 50px rgba(44, 36, 30, 0.3);
 }
