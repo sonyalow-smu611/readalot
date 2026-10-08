@@ -12,7 +12,12 @@ import ScanBookView from "../views/ScanBookView.vue";
 import SearchView from "../views/SearchView.vue";
 
 const routes = [
-  { path: "/", name: "room", component: MyRoomView },
+  {
+    path: "/",
+    name: "room",
+    component: MyRoomView,
+    meta: { title: "My Room", fullBleed: true }
+  },
   { path: "/discover", name: "discover-books", component: DiscoverBooksView },
   { path: "/discover/:genre", name: "genre-shelf", component: GenreShelfView },
   { path: "/search", name: "search", component: SearchView },

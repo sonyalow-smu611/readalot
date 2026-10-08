@@ -1,3 +1,4 @@
+import { findDemoBook } from "./demoShelf.js";
 import { env } from "./env.js";
 
 const fallbackBooks = [
@@ -35,7 +36,7 @@ export async function searchGoogleBooks(query) {
 }
 
 export async function getGoogleBook(id) {
-  if (id.startsWith("demo-")) return fallbackBooks[0];
+  if (id.startsWith("demo-")) return findDemoBook(id) || fallbackBooks[0];
 
   const url = new URL(`https://www.googleapis.com/books/v1/volumes/${id}`);
   if (env.GOOGLE_BOOKS_API_KEY) {

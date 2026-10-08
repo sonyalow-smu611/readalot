@@ -42,6 +42,10 @@ export function getUserBooks(id) {
   return request(`/users/${id}/books`);
 }
 
+export function getMyBooks() {
+  return request("/user-books");
+}
+
 export function saveUserBook(data) {
   return request("/user-books", {
     method: "POST",
