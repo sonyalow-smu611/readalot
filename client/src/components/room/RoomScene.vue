@@ -134,10 +134,9 @@ defineEmits(["open-shelf", "open-book", "quote", "retry"]);
 }
 
 .room__window {
-  bottom: calc(92 * var(--u));
-  left: calc(212 * var(--u));
-  width: calc(142 * var(--u));
-  height: calc(226 * var(--u));
+  bottom: calc(76 * var(--u));
+  left: calc(204 * var(--u));
+  width: calc(160 * var(--u));
 }
 
 /* hangs above the gap between the bookcase and the window */
