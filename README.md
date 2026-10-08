@@ -1,19 +1,34 @@
 # Readalot
 
-Minimal Vue + Express + Supabase project skeleton for the reading app.
+A mobile-first social reading web app (IS216 group project): a Vue 3 client and an Express
+API, with Supabase as the database. Each reader gets a virtual reading room with a bookshelf,
+a window showing the live weather, a daily mood check-in that recommends a book, and a shop for
+decorating the room, plus pages to discover books, meet nearby readers and scan books in.
 
 > **Merge branch (`merge-homepage`).** Alric's and Sonya's apps are being combined here page by
-> page. Done so far: the shared shell and the home page (My Room). The other pages still show
-> Sonya's versions; Alric's `DiscoverView`, `PeopleView` and `ScanView` are in `client/src/views/`
-> but not routed until those pages are merged. Course rules and AI policy:
-> [GUARDRAILS.md](GUARDRAILS.md), [AI_USAGE.md](AI_USAGE.md).
+> page. Done so far: the shared shell and the home page (My Room), including the mood check-in.
+> The other pages still show Sonya's versions; Alric's `DiscoverView`, `PeopleView` and
+> `ScanView` are in `client/src/views/` but not routed until those pages are merged.
+> Course rules and AI policy: [GUARDRAILS.md](GUARDRAILS.md), [AI_USAGE.md](AI_USAGE.md).
+> Project brief: [PROJECT.md](PROJECT.md).
+
+### What came from which branch (home page)
+
+| Piece | From |
+|-------|------|
+| Room wall, floor, rug, bookcase, reading chair, Currently Reading card, Quote of the Day | Sonya |
+| Weather window, full bookshelf (spines / covers), shop, inventory, drag-and-drop decor, pets, credits, time API | Alric |
+| Phone frame, route slides, book-open overlay | Alric |
+| Header, bottom nav, theme tokens, API and book data | Sonya |
+| Analog wall clock, quote sticky note, mood check-in and recommendation | New on this branch |
 
 ## Getting Started
 
+Requires Node.js 20 or newer (built with Node 24).
+
 ```bash
-npm install
-cp .env.example .env      # fill in the shared keys (ask the team)
-npm run seed -w server    # once: demo user, fake readers, sample books
+npm install               # once, at the repo root: installs client and server (npm workspaces)
+cp .env.example .env      # optional keys; the app runs with all of them empty
 npm run dev:server
 npm run dev:client
 ```
@@ -23,6 +38,17 @@ Run the server and client commands in separate terminals.
 - Vue app: `http://localhost:5173`
 - Express API: `http://localhost:3000/api/health`
 - Root `.env` is the only env file. Vite reads it through `client/vite.config.js`.
+
+**Without any keys** the app is still demoable: the shelf is a 16-book demo shelf held in the
+server's memory (reset on restart), mood recommendations use the quotes stored in
+`server/data/works.json`, and books show plain coloured covers. Weather, the room clock and pet
+photos need no key.
+
+**With Supabase** (shared keys from the team): follow "Database" below, then run
+`npm run seed -w server` once for the demo user, fake readers and sample books.
+
+On phones the app fills the screen; on wider screens it sits in a centred phone-size frame. In
+Chrome DevTools, device mode at 390 × 844 (or 375 px wide) shows the primary layout.
 
 ### Database
 
@@ -34,16 +60,22 @@ One shared Supabase project is used by all developers.
 
 ### Environment variables
 
-| Variable | Used by | Purpose |
-|----------|---------|---------|
-| `PORT` | server | API port (default 3000) |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | server | Database and auth access |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | client | Browser Supabase client |
-| `GOOGLE_BOOKS_API_KEY` | server | Book search, metadata, similar books |
-| `GOOGLE_CLOUD_PROJECT_ID`, `GOOGLE_CLOUD_VISION_KEY` | server | Scan Book text detection |
-| `GOOGLE_MAPS_API_KEY` | server | Nearby stores (not needed for the map) |
-| `DEMO_USER_ID` | server | Seeded demo profile used when no login token is present |
-| `API_NINJAS_KEY` | server | Quote of the Day and mood quotes (`X-Api-Key`) |
+All are optional. `.env.example` lists them with the same notes.
+
+| Variable | Used by | Purpose | If empty |
+|----------|---------|---------|----------|
+| `PORT` | server | API port | 3000 |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | server | Database and auth access | In-memory demo shelf and a built-in demo user |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | client | Browser Supabase client | No login token is sent |
+| `GOOGLE_BOOKS_API_KEY` | server | Book search, metadata, covers | Keyless quota runs out quickly; placeholder book, no covers |
+| `GOOGLE_CLOUD_PROJECT_ID`, `GOOGLE_CLOUD_VISION_KEY` | server | Scan Book text detection (not built yet, T26) | No effect yet |
+| `GOOGLE_MAPS_API_KEY` | server | Nearby stores (lookup not built yet; not needed for the map) | Empty store list |
+| `DEMO_USER_ID` | server | Seeded demo profile used when no login token is present | Only needed with Supabase |
+| `API_NINJAS_KEY` | server | Quotes for mood recommendations (`X-Api-Key`) | Quotes stored in `server/data/works.json` |
+| `VITE_API_TARGET` | client dev server | Where Vite proxies `/api` | `http://localhost:3000` |
+
+Public APIs that need no key, all called from the server: Open-Meteo (weather), utctime.app and
+time.now (room clock), Wikipedia and Dog CEO (pet photos).
 
 ### Scripts
 
@@ -52,16 +84,20 @@ One shared Supabase project is used by all developers.
 | `npm run dev:server` / `npm run dev:client` | Run API / web app |
 | `npm run build` | Build the client |
 | `npm run seed -w server` | Seed demo user, readers, saved books |
-| `npm run verify-works -w server` | Verify the curated mood book list against the quotes API |
+| `npm run verify-works -w server` | Verify the mood book list against the quotes API (not written yet, T12) |
 | `npm run check -w server` | Compatibility score assert check |
-| `npm run test:e2e` | Playwright tests |
+| `npm run test:e2e` | Playwright tests. First time: `npx playwright install chromium`. Starts its own server and client on ports 3100 and 5174 |
 
 ## Project Structure
 
 ```text
 readalot/
 ├── SPEC.md                     MVP spec, decisions and tickets (T01-T29)
+├── PROJECT.md, GUARDRAILS.md   Project brief; course rules and allowed tech
+├── guidelines/                 Tech stack, code cleanliness, course requirements
+├── AI_USAGE.md                 What AI produced, for the team to review
 ├── REFERENCE-IMG/              Low-fi reference screens 01-15
+├── design-system/              Design tokens and component guidelines
 ├── client/src/
 │   ├── views/                  One file per route
 │   ├── components/             Shared UI
@@ -78,9 +114,9 @@ readalot/
 │   └── services/               api.js (the app's API calls), weather.js and time.js (room window and clock)
 ├── server/
 │   ├── src/routes/             Express routes
-│   ├── src/services/           Books, quotes, compatibility, vision, supabase, env
+│   ├── src/services/           Books, quotes, works, demo shelf, compatibility, vision, supabase, env
 │   ├── src/middleware/auth.js  Token guard (demo-user fallback)
-│   ├── data/works.json         Curated, verified works for mood recommendations
+│   ├── data/works.json         Books a mood recommendation picks from (starter list, see Known Limits)
 │   ├── scripts/                seed.js, verifyWorks.js
 │   └── tests/                  Assert-style checks
 ├── database/schema.sql         Supabase schema and migration block
@@ -105,6 +141,23 @@ Mood check-in, Quote of the Day, Quick Book Preview, Write review and Add quote 
 
 `/?scene=sunny`, `/?scene=cloudy` and `/?scene=rain` preview a window scene without waiting for that weather.
 `/mood` and `/playground` are Alric's placeholder and component-gallery screens; they are not in the bottom nav.
+
+## API
+
+All under `/api`, served by `server/src/app.js`.
+
+| Route | Purpose |
+|-------|---------|
+| `GET /health` | Server is up |
+| `GET /user-books`, `POST /user-books`, `PATCH /user-books/:id`, `DELETE /user-books/:id` | The reader's shelf and reading status |
+| `GET /books/search?q=`, `GET /books/:id`, reviews and quotes under `/books/:id` | Book search and details |
+| `GET /recommendations?mood=calm\|low\|stressed\|excited[&exclude=<work id>]` | A book for the mood with a quote from it |
+| `GET /quote/today` | Quote of the Day |
+| `GET /weather[?lat=&lng=]` | Weather for the room window (Singapore by default): `scene`, `temperature`, `isDay`, `sunrise`, `sunset` |
+| `GET /time` | Singapore time for the wall clock |
+| `GET /creatures` | Breed photos for the shop's cats and dogs |
+| `GET /users/:id`, `/users/:id/books`, `/people/nearby`, `/people/:id/compatibility` | Readers, their shelves and compatibility |
+| `GET /stores/nearby`, `POST /scan-book` | Nearby bookshops and cover scanning (both placeholders for now) |
 
 ## App Contracts
 
