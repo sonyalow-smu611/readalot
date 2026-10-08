@@ -18,7 +18,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("room shows the window weather, the wall clock and the shelf", async ({ page }) => {
-  await expect(page.getByRole("img", { name: "Window view: Rain, 27 degrees" })).toBeVisible();
+  const view = page.getByRole("img", { name: "Window view: Rain, 27 degrees" });
+  await expect(view).toBeVisible();
+  await expect(view.getByText("27°")).toBeVisible();
   // 1767240000 is 2026-01-01 12:00 in Singapore
   await expect(page.getByRole("img", { name: "Singapore time 12:00" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Open bookshelf, \d+ books/ })).toBeVisible();

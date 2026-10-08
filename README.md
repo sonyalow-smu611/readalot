@@ -16,8 +16,8 @@ decorating the room, plus pages to discover books, meet nearby readers and scan 
 
 | Piece | From |
 |-------|------|
-| Room wall, floor, rug, bookcase, reading chair, Currently Reading card, Quote of the Day | Sonya |
-| Weather window, full bookshelf (spines / covers), shop, inventory, drag-and-drop decor, pets, credits, time API | Alric |
+| Room wall, floor, rug, bookcase, bay window frame, reading chair, Currently Reading card, Quote of the Day popup | Sonya |
+| Weather scenes in the window, full bookshelf (spines / covers), shop, inventory, drag-and-drop decor, pets, credits, time API | Alric |
 | Phone frame, route slides, book-open overlay | Alric |
 | Header, bottom nav, theme tokens, API and book data | Sonya |
 | Analog wall clock, quote sticky note, mood check-in and recommendation | New on this branch |

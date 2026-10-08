@@ -1,10 +1,11 @@
 <!--
-  The window on the room wall. The view outside follows the live weather: sun and passing
-  birds, drifting clouds, or rain, with a moon when it is clear at night.
-  Sizes use --u (one unit of the room's reference width) so it scales with the room.
+  The bay window on the room wall. The view outside follows the live weather: sun and passing
+  birds, drifting clouds, or rain, with a moon when it is clear at night. The temperature
+  floats in the top right pane.
+  The frame is drawn on a 164 x 262 grid; the weather scene sits behind it, cut to the glass.
 -->
 <script setup>
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 
 const props = defineProps({
   // 'sunny' | 'cloudy' | 'rain'
@@ -13,6 +14,8 @@ const props = defineProps({
   // whole degrees Celsius, or null when the weather could not be fetched
   temperature: { type: Number, default: null },
 })
+
+const uid = useId()
 
 const SCENE_LABELS = { sunny: 'Clear', cloudy: 'Cloudy', rain: 'Rain' }
 
@@ -36,7 +39,8 @@ const label = computed(() => {
 
 <template>
   <div class="window" role="img" :aria-label="label">
-    <div class="window__frame">
+    <!-- the view outside, cut to the arch of the glass -->
+    <div class="window__glass" :style="{ clipPath: `url(#${uid}-glass)` }">
       <div class="window__pane" :class="[`window__pane--${scene}`, { 'is-night': night }]">
         <template v-if="scene === 'sunny'">
           <span class="window__sun" />
@@ -73,35 +77,87 @@ const label = computed(() => {
           />
         </template>
       </div>
-    </div>
-    <div class="window__sill">
       <span v-if="temperature !== null" class="window__temp">{{ temperature }}°</span>
     </div>
+
+    <svg class="window__frame" viewBox="0 0 164 262" aria-hidden="true">
+      <defs>
+        <!-- the glass outline, as fractions of the glass box, so it scales with the window -->
+        <clipPath :id="`${uid}-glass`" clipPathUnits="objectBoundingBox">
+          <path d="M0 0.1026Q0.5 -0.1026 1 0.1026V1H0Z" />
+        </clipPath>
+        <clipPath :id="`${uid}-sheen`">
+          <path d="M25 56Q82 16 139 56V231H25Z" />
+        </clipPath>
+      </defs>
+
+      <!-- frame, with the glass left open -->
+      <path d="M16 50Q82 2 148 50V240H16ZM25 56Q82 16 139 56V231H25Z" fill="#FFFDF9" fill-rule="evenodd" />
+      <path d="M16 50Q82 2 148 50V240H16Z" fill="none" stroke="#6B4A34" stroke-width="5" />
+
+      <!-- sheen on the glass -->
+      <g :clip-path="`url(#${uid}-sheen)`" fill="#FFFFFF">
+        <path d="M25 150L92 16H112L25 190Z" opacity="0.1" />
+        <path d="M70 231L139 92V124L86 231Z" opacity="0.07" />
+      </g>
+      <path d="M25 56Q82 16 139 56V231H25Z" fill="none" stroke="#3F2E24" stroke-opacity="0.25" stroke-width="2" />
+
+      <!-- glazing bars -->
+      <path d="M82 27V233M21 140H143" fill="none" stroke="#6B4A34" stroke-width="5" />
+
+      <!-- sill -->
+      <path d="M6 238H158L164 254H0Z" fill="#6B4A34" stroke="#3F2E24" stroke-width="1" />
+      <path d="M8 240H156" stroke="#8A6548" stroke-width="2" />
+    </svg>
   </div>
 </template>
 
 <style scoped>
 .window {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  aspect-ratio: 164 / 262;
 }
 
 .window__frame {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: calc(4 * var(--u));
-  border: calc(4 * var(--u)) solid var(--wood);
-  border-radius: calc(3 * var(--u));
-  background: var(--paper);
-  box-shadow: 0 calc(4 * var(--u)) calc(8 * var(--u)) rgba(63, 46, 36, 0.18);
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* the box around the glass (25,36 to 139,231 on the frame's grid) */
+.window__glass {
+  position: absolute;
+  top: calc(36 / 262 * 100%);
+  left: calc(25 / 164 * 100%);
+  width: calc(114 / 164 * 100%);
+  height: calc(195 / 262 * 100%);
 }
 
 .window__pane {
-  position: relative;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
   container-type: size;
   transition: background 1.2s ease;
+}
+
+/* top right pane, clear of the glazing bars */
+.window__temp {
+  position: absolute;
+  top: 13%;
+  right: 8%;
+  font-family: var(--font-serif);
+  font-size: max(11px, calc(12 * var(--u)));
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  opacity: 0.9;
+  /* keeps white readable against a pale morning sky */
+  text-shadow: 0 1px 3px rgba(44, 36, 30, 0.45);
 }
 
 .window__pane--sunny { background: linear-gradient(to bottom, #f3d7a6, #9ec4e0); }
@@ -222,26 +278,6 @@ const label = computed(() => {
     rgba(186, 208, 220, 0.45)
   );
   animation: window-drip 1.6s linear infinite;
-}
-
-.window__sill {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: none;
-  height: calc(16 * var(--u));
-  margin-inline: calc(-5 * var(--u));
-  padding-inline: calc(7 * var(--u));
-  border-radius: calc(2 * var(--u));
-  background: var(--wood);
-  box-shadow: 0 calc(3 * var(--u)) calc(4 * var(--u)) rgba(63, 46, 36, 0.22);
-}
-
-.window__temp {
-  font-family: var(--font-serif);
-  font-size: max(10px, calc(11 * var(--u)));
-  line-height: 1;
-  color: var(--paper);
 }
 
 @keyframes window-glare {
