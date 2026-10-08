@@ -129,22 +129,23 @@ const label = computed(() => {
         </clipPath>
       </defs>
 
-      <path :d="frame.surround" fill="#FFFDF9" fill-rule="evenodd" />
-      <path :d="frame.outer" fill="none" stroke="#6B4A34" stroke-width="5" />
+      <!-- pale painted wood, in the tones of the wall and the chair -->
+      <path :d="frame.surround" fill="#F6EFE4" fill-rule="evenodd" />
+      <path :d="frame.outer" fill="none" stroke="#C7B397" stroke-width="3.5" />
 
       <!-- sheen on the glass -->
       <g :clip-path="`url(#${uid}-sheen)`" fill="#FFFFFF">
         <path :d="frame.sheen[0]" opacity="0.1" />
         <path :d="frame.sheen[1]" opacity="0.07" />
       </g>
-      <path :d="frame.glass" fill="none" stroke="#3F2E24" stroke-opacity="0.25" stroke-width="2" />
+      <path :d="frame.glass" fill="none" stroke="#A8927A" stroke-opacity="0.45" stroke-width="1.5" />
 
       <!-- glazing bars -->
-      <path :d="frame.bars" fill="none" stroke="#6B4A34" stroke-width="5" />
+      <path :d="frame.bars" fill="none" stroke="#DCCDB6" stroke-width="5" />
 
       <!-- sill -->
-      <path :d="frame.sill" fill="#6B4A34" stroke="#3F2E24" stroke-width="1" />
-      <path :d="frame.sillEdge" stroke="#8A6548" stroke-width="2" />
+      <path :d="frame.sill" fill="#CDB99D" stroke="#B5A085" stroke-width="1" />
+      <path :d="frame.sillEdge" stroke="#E6D9C5" stroke-width="2" />
     </svg>
   </div>
 </template>

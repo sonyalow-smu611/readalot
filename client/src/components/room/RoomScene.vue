@@ -61,7 +61,7 @@ import RoomWindow from "./RoomWindow.vue";
 import WallClock from "./WallClock.vue";
 
 // Tall enough that the crown of the window's arch is level with the top of the clock.
-const WINDOW_ROWS = 352;
+const WINDOW_ROWS = 403;
 
 defineProps({
   books: { type: Array, default: () => [] },
@@ -83,11 +83,16 @@ defineEmits(["open-shelf", "open-book", "quote", "retry"]);
   --room-top: 96px;
   /* floor in front of the skirting line, deep enough for furniture to stand on */
   --floor-units: 110;
-  --u: max(0.5px, min(100cqw / 366, (100cqh - var(--room-top)) / (338 + var(--floor-units))));
+  /* how far the bookcase, the tallest piece of furniture, stands above the skirting line */
+  --case-units: 345;
+  --u: max(
+    0.5px,
+    min(100cqw / 366, (100cqh - var(--room-top)) / (var(--case-units) + var(--floor-units)))
+  );
   /* a tall phone has height to spare: give it to the floor, not to bare wall */
   --floor-depth: clamp(
     calc(var(--floor-units) * var(--u)),
-    calc(100cqh - 338 * var(--u) - 170px),
+    calc(100cqh - var(--case-units) * var(--u) - 170px),
     calc(190 * var(--u))
   );
 
@@ -130,55 +135,60 @@ defineEmits(["open-shelf", "open-book", "quote", "retry"]);
   position: absolute;
 }
 
+/* The bookcase is the focal point: the largest and darkest piece, near the middle of the wall,
+   standing in front of the window's edge. The chair and window are kept quieter. */
 .room__bookcase {
+  z-index: 2;
   bottom: calc(-5 * var(--u));
-  left: calc(15 * var(--u));
-  width: calc(186 * var(--u));
-  height: calc(338 * var(--u));
+  left: calc(46 * var(--u));
+  width: calc(200 * var(--u));
+  height: calc(350 * var(--u));
 }
 
 .room__window {
-  bottom: calc(76 * var(--u));
-  left: calc(204 * var(--u));
-  width: calc(160 * var(--u));
+  bottom: calc(84 * var(--u));
+  left: calc(222 * var(--u));
+  width: calc(138 * var(--u));
 }
 
-/* hangs above the gap between the bookcase and the window */
+/* hangs above the bookcase */
 .room__clock {
-  bottom: calc(346 * var(--u));
-  left: calc(157 * var(--u));
+  bottom: calc(352 * var(--u));
+  left: calc(120 * var(--u));
   width: calc(52 * var(--u));
 }
 
+/* a small note on the strip of wall beside the bookcase */
 .room__note {
-  bottom: calc(350 * var(--u));
-  left: calc(34 * var(--u));
-  width: calc(58 * var(--u));
+  bottom: calc(286 * var(--u));
+  left: calc(5 * var(--u));
+  width: calc(36 * var(--u));
 }
 
 .room__chair {
-  bottom: calc(-58 * var(--u));
-  left: calc(198 * var(--u));
-  width: calc(152 * var(--u));
+  z-index: 3;
+  bottom: calc(-50 * var(--u));
+  left: calc(238 * var(--u));
+  width: calc(122 * var(--u));
 }
 
 .room__rug {
-  bottom: calc(-66 * var(--u));
-  left: calc(178 * var(--u));
-  width: calc(192 * var(--u));
-  height: calc(40 * var(--u));
+  bottom: calc(-56 * var(--u));
+  left: calc(224 * var(--u));
+  width: calc(138 * var(--u));
+  height: calc(30 * var(--u));
   border-radius: 50%;
-  border: calc(3 * var(--u)) solid #b7705a;
-  background: #cdb193;
-  box-shadow: 0 0 0 calc(4 * var(--u)) #cdb193;
-  opacity: 0.8;
+  border: calc(2 * var(--u)) solid #cfa596;
+  background: #cdb89c;
+  box-shadow: 0 0 0 calc(4 * var(--u)) #cdb89c;
+  opacity: 0.6;
 }
 
 /* daylight falling through the window onto the floor */
 .room__light {
   bottom: calc(-62 * var(--u));
-  left: calc(96 * var(--u));
-  width: calc(230 * var(--u));
+  left: calc(120 * var(--u));
+  width: calc(220 * var(--u));
   height: calc(62 * var(--u));
   background: linear-gradient(180deg, rgba(255, 246, 220, 0.55), rgba(255, 246, 220, 0));
   clip-path: polygon(52% 0, 100% 0, 58% 100%, 0 100%);
