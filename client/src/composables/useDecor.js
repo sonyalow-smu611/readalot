@@ -28,7 +28,7 @@ export const DECOR_CATALOG = [
   { id: 'pet-bird', name: 'Cockatiel', group: 'Birds', price: 45, surface: 'floor', pet: true, blurb: 'Hops along the floor' },
 ]
 
-const SHELF_ZONES = new Set(['case-top', 'case-low', 'reading', 'tbr', 'read'])
+const SHELF_ZONES = new Set(['case-top', 'case-mid', 'case-low', 'reading', 'tbr', 'read'])
 
 const credits = ref(480)
 const inventory = ref([])

@@ -1,54 +1,89 @@
 <script setup>
-// Far: a straight-on room. Close: the bookshelf fills the phone. Scale and translate only.
+// The home page. Far: the illustrated room. Close: the bookshelf fills the phone.
+// The zoom between them is scale and translate only.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useBookshelfStore } from '@/stores/bookshelf'
-import { spineColor } from '@/lib/book.js'
 import { fetchWeather } from '@/services/weather.js'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
+import { decorMeta, useDecor } from '@/composables/useDecor'
+import RoomScene from '@/components/room/RoomScene.vue'
+import CurrentlyReadingCard from '@/components/room/CurrentlyReadingCard.vue'
+import QuoteOfDayModal from '@/components/modals/QuoteOfDayModal.vue'
+import StateView from '@/components/StateView.vue'
 import Shelf from '@/components/Shelf.vue'
 import CoverRow from '@/components/CoverRow.vue'
 import DecorPiece from '@/components/DecorPiece.vue'
 import CreditChip from '@/components/CreditChip.vue'
 import RoomDock from '@/components/RoomDock.vue'
 import FloorLife from '@/components/FloorLife.vue'
-import RoomClock from '@/components/RoomClock.vue'
-import { decorMeta, useDecor } from '@/composables/useDecor'
 
-const MINI_WIDTHS = [18, 16, 20, 15, 19, 17, 16, 18, 17, 20, 15, 18, 16, 19, 17, 15]
-const MINI_HEIGHTS = [46, 38, 50, 40, 48, 36, 44, 42, 39, 50, 41, 46, 37, 48, 40, 44]
-
-const ZOOM_ORIGIN = '30% 60%'
-const ZOOM_FROM = { scale: 0.42, x: -18, y: 52 }
-const ZOOM_TO = { scale: 1, x: 0, y: 0 }
+const WINDOW_SCENES = ['sunny', 'cloudy', 'rain']
+const WEATHER_REFRESH_MS = 10 * 60 * 1000
 const ZOOM = { duration: 0.55, ease: 'power3.inOut', force3D: false }
+const ZOOM_TO = { scale: 1, x: 0, y: 0 }
 
+const route = useRoute()
 const bookshelf = useBookshelfStore()
 
-const reading = ref(bookshelf.books.filter((book) => book.status === 'reading'))
-const tbr = ref(bookshelf.books.filter((book) => book.status === 'tbr'))
-const finished = ref(bookshelf.books.filter((book) => book.status === 'read'))
-
-const PREVIEW = [
-  { id: 'sunny', label: 'Sunny' },
-  { id: 'cloudy', label: 'Cloudy' },
-  { id: 'rain', label: 'Rain' },
-]
-
-const RAIN_DROPS = Array.from({ length: 22 }, (_, index) => {
-  const column = index % 11
-  const pass = Math.floor(index / 11)
-  return {
-    left: `${3 + column * 8.8}%`,
-    width: 3 + (index % 2),
-    height: 12 + (index % 4) * 2,
-    delay: `${-(pass * 0.95 + column * 0.13)}s`,
-    duration: `${1.35 + (index % 5) * 0.16}s`,
-  }
-})
-
-const weather = ref({ scene: 'cloudy', temperature: null })
+// --- Shelves -----------------------------------------------------------------------------
+// The full bookshelf edits these three lists by drag; the store is told where books landed.
+const reading = ref([])
+const tbr = ref([])
+const finished = ref([])
 const shelfView = ref('spines')
-const preview = ref('sunny')
+
+const storeLayout = computed(() => layoutOf(bookshelf.booksByStatus))
+const shelfLayout = computed(() =>
+  layoutOf({ reading: reading.value, want_to_read: tbr.value, read: finished.value }),
+)
+
+// "which book is on which shelf, in what order", as one comparable string
+function layoutOf(shelves) {
+  return ['reading', 'want_to_read', 'read']
+    .map((status) => shelves[status].map((book) => book.id).join(','))
+    .join('|')
+}
+
+function fillShelves() {
+  if (shelfLayout.value === storeLayout.value) return
+  reading.value = [...bookshelf.booksByStatus.reading]
+  tbr.value = [...bookshelf.booksByStatus.want_to_read]
+  finished.value = [...bookshelf.booksByStatus.read]
+}
+
+function syncShelves() {
+  if (shelfLayout.value === storeLayout.value) return
+  const ids = (list) => list.value.map((book) => book.id)
+  bookshelf.setOrder([...ids(reading), ...ids(tbr), ...ids(finished)])
+  bookshelf.applyShelf(ids(reading), 'reading')
+  bookshelf.applyShelf(ids(tbr), 'want_to_read')
+  bookshelf.applyShelf(ids(finished), 'read')
+}
+
+// Books arriving from the API, or a failed save moving a book back, redraw the shelves;
+// a drag that changed the shelves is saved.
+watch(storeLayout, fillShelves, { immediate: true })
+watch(shelfLayout, syncShelves)
+
+// --- Window ------------------------------------------------------------------------------
+const weather = ref({ scene: 'cloudy', temperature: null, isDay: true })
+let weatherTimer = 0
+
+// /?scene=sunny|cloudy|rain previews a window scene without waiting for that weather
+const preview = computed(() => (WINDOW_SCENES.includes(route.query.scene) ? route.query.scene : null))
+
+const sky = computed(() => ({
+  scene: preview.value ?? (WINDOW_SCENES.includes(weather.value.scene) ? weather.value.scene : 'cloudy'),
+  night: preview.value ? false : weather.value.isDay === false,
+  temperature: typeof weather.value.temperature === 'number' ? weather.value.temperature : null,
+}))
+
+async function loadWeather() {
+  weather.value = await fetchWeather()
+}
+
+// --- Decorations -------------------------------------------------------------------------
 const isClose = ref(false)
 const room = ref(null)
 let blockOpen = false
@@ -60,6 +95,8 @@ const {
   selected,
   hasFood,
   hasDrink,
+  shopOpen,
+  inventoryOpen,
   placeOn,
   pick,
   unplace,
@@ -76,33 +113,6 @@ const roomFurniture = computed(() =>
   placedIn('room').filter((item) => !decorMeta(item.id)?.pet),
 )
 const roomPets = computed(() => placedIn('room').filter((item) => decorMeta(item.id)?.pet))
-
-const closeLayer = ref(null)
-const shelfButton = ref(null)
-let zoomTween = null
-
-const scene = computed(() => {
-  if (preview.value) return preview.value
-  const value = weather.value.scene
-  return value === 'sunny' || value === 'rain' ? value : 'cloudy'
-})
-
-const temperature = computed(() =>
-  typeof weather.value.temperature === 'number' ? weather.value.temperature : null,
-)
-
-const miniBooks = computed(() => bookshelf.books.slice(0, 16))
-const miniTop = computed(() => miniBooks.value.slice(0, 8))
-const miniBottom = computed(() => miniBooks.value.slice(8, 16))
-const isNight = computed(() => (preview.value ? false : weather.value.isDay === false))
-
-function miniStyle(book, index) {
-  return {
-    width: `${MINI_WIDTHS[index % MINI_WIDTHS.length]}px`,
-    height: `${MINI_HEIGHTS[index % MINI_HEIGHTS.length]}px`,
-    background: `linear-gradient(90deg, rgba(255,255,255,0.28), transparent 22%, rgba(0,0,0,0.16)), var(--${spineColor(book)})`,
-  }
-}
 
 function pickItem(uid) {
   if (blockOpen) return
@@ -132,7 +142,7 @@ function release(entry, clientX, clientY) {
       flash(`${meta.name} roams the room floor. Go back first.`, 'bad')
       return
     }
-    const caseRect = room.value?.querySelector('.room__case-frame')?.getBoundingClientRect()
+    const caseRect = room.value?.querySelector('[data-drop="case"]')?.getBoundingClientRect()
     const onCase = caseRect
       && clientX >= caseRect.left - 8
       && clientX <= caseRect.right + 8
@@ -142,7 +152,7 @@ function release(entry, clientX, clientY) {
       flash(`${meta.name} can't go on a shelf.`, 'bad')
       return
     }
-    const rect = room.value?.querySelector('.room__floor')?.getBoundingClientRect()
+    const rect = room.value?.querySelector('[data-drop="floor"]')?.getBoundingClientRect()
     const near = rect
       && clientX >= rect.left - 16
       && clientX <= rect.right - 28
@@ -165,7 +175,7 @@ function release(entry, clientX, clientY) {
 
   const nodes = isClose.value
     ? [...(room.value?.querySelectorAll('.room__bay[data-zone]') || [])]
-    : [...(room.value?.querySelectorAll('.room__row[data-zone]') || [])]
+    : [...(room.value?.querySelectorAll('[data-drop="case"] [data-zone]') || [])]
   let best = null
   nodes.forEach((node) => {
     const rect = node.getBoundingClientRect()
@@ -209,233 +219,215 @@ watch(drag, (value) => {
   window.addEventListener('pointerup', onUp)
 })
 
-function syncShelves() {
-  bookshelf.applyShelf(reading.value.map((book) => book.id), 'reading')
-  bookshelf.applyShelf(tbr.value.map((book) => book.id), 'tbr')
-  bookshelf.applyShelf(finished.value.map((book) => book.id), 'read')
-}
+// --- Zoom into the bookshelf -------------------------------------------------------------
+const closeLayer = ref(null)
+let zoomTween = null
+let zoomFrom = { scale: 0.5, x: 0, y: 0 }
+let zoomOrigin = '30% 60%'
+let shelfTrigger = null
 
 function stopZoom() {
   zoomTween?.kill()
   zoomTween = null
 }
 
-async function openShelf() {
+// The full shelf grows out of the bookcase that was tapped (`rect` is its place on screen).
+async function openShelf(rect) {
   if (isClose.value || placing.value || blockOpen || drag.value) return
   stopZoom()
+  closeReading()
+  const host = room.value.getBoundingClientRect()
+  zoomFrom = { scale: rect.width / host.width, x: 0, y: 0 }
+  zoomOrigin = `${rect.left - host.left + rect.width / 2}px ${rect.top - host.top + rect.height / 2}px`
+  shelfTrigger = document.activeElement
   isClose.value = true
   await nextTick()
   const layer = closeLayer.value
   if (!layer) return
   if (prefersReducedMotion()) {
-    gsap.set(layer, { ...ZOOM_TO, transformOrigin: ZOOM_ORIGIN })
+    gsap.set(layer, { ...ZOOM_TO, transformOrigin: zoomOrigin })
     return
   }
-  zoomTween = gsap.fromTo(layer, ZOOM_FROM, {
+  zoomTween = gsap.fromTo(layer, zoomFrom, {
     ...ZOOM_TO,
     ...ZOOM,
-    transformOrigin: ZOOM_ORIGIN,
+    transformOrigin: zoomOrigin,
     overwrite: 'auto',
   })
 }
 
 function closeShelf() {
-  const layer = closeLayer.value
-  if (!layer || prefersReducedMotion()) {
-    stopZoom()
+  const done = async () => {
     isClose.value = false
-    shelfButton.value?.focus()
+    await nextTick()
+    shelfTrigger?.focus?.()
+  }
+  const layer = closeLayer.value
+  stopZoom()
+  if (!layer || prefersReducedMotion()) {
+    done()
     return
   }
-  stopZoom()
   zoomTween = gsap.to(layer, {
-    ...ZOOM_FROM,
+    ...zoomFrom,
     ...ZOOM,
-    transformOrigin: ZOOM_ORIGIN,
+    transformOrigin: zoomOrigin,
     overwrite: 'auto',
-    onComplete: () => {
-      isClose.value = false
-      shelfButton.value?.focus()
-    },
+    onComplete: done,
   })
 }
 
-onMounted(async () => {
-  weather.value = await fetchWeather()
+// --- Currently Reading card and Quote of the Day -----------------------------------------
+const readingOpen = ref(false)
+const readingCard = ref(null)
+const quoteOpen = ref(false)
+let readingTrigger = null
+
+async function toggleReading() {
+  if (readingOpen.value) {
+    closeReading()
+    return
+  }
+  readingTrigger = document.activeElement
+  readingOpen.value = true
+  await nextTick()
+  readingCard.value?.focus()
+}
+
+function closeReading({ refocus = false } = {}) {
+  if (!readingOpen.value) return
+  readingOpen.value = false
+  if (refocus) readingTrigger?.focus?.()
+}
+
+// A tap anywhere else puts the card away. The chair's book is left to its own click handler.
+function onOutsidePress(event) {
+  if (readingCard.value?.contains(event.target) || event.target.closest?.('.chair__book')) return
+  closeReading()
+}
+
+watch(readingOpen, (open) => {
+  if (open) window.addEventListener('pointerdown', onOutsidePress)
+  else window.removeEventListener('pointerdown', onOutsidePress)
+})
+
+// The shop, the inventory and a decoration being dragged all need the floor the card covers.
+watch([shopOpen, inventoryOpen, drag], ([shop, bag, dragging]) => {
+  if (shop || bag || dragging) closeReading()
+})
+
+watch(
+  () => bookshelf.moveError,
+  (message) => {
+    if (message) flash(message, 'bad')
+  },
+)
+
+onMounted(() => {
+  bookshelf.load()
+  loadWeather()
+  weatherTimer = window.setInterval(loadWeather, WEATHER_REFRESH_MS)
 })
 
 onBeforeUnmount(() => {
   stopZoom()
+  window.clearInterval(weatherTimer)
   window.removeEventListener('pointermove', onMove)
   window.removeEventListener('pointerup', onUp)
+  window.removeEventListener('pointerdown', onOutsidePress)
 })
 </script>
 
 <template>
-  <section ref="room" class="room">
-    <div class="room__far" :class="{ 'is-dim': isClose }">
-      <RoomClock v-if="!isClose" class="room__clock" />
-      <CreditChip v-if="!isClose" class="room__credits" />
-      <div class="room__wall">
-        <div class="room__case">
+  <section ref="room" class="home">
+    <div class="home__far" :class="{ 'is-dim': isClose }" :inert="isClose">
+      <RoomScene
+        :books="bookshelf.books"
+        :current-book="bookshelf.currentlyReading"
+        :weather="sky"
+        :loading="bookshelf.loading"
+        :error="bookshelf.error"
+        :reading-open="readingOpen"
+        @open-shelf="openShelf"
+        @open-book="toggleReading"
+        @quote="quoteOpen = true"
+        @retry="bookshelf.load"
+      >
+        <template #ledge="{ zone }">
           <button
-            ref="shelfButton"
+            v-for="item in placedIn(zone)"
+            :key="item.uid"
             type="button"
-            class="room__case-hit"
-            aria-label="Open bookshelf"
-            @click="openShelf"
-          />
-          <span class="room__case-frame">
-            <span class="room__row" data-zone="case-top">
-              <span class="room__spines" aria-hidden="true">
-                <span
-                  v-for="(book, index) in miniTop"
-                  :key="book.id"
-                  class="room__spine"
-                  :style="miniStyle(book, index)"
-                />
-              </span>
-              <span class="room__ledge">
-                <button
-                  v-for="item in placedIn('case-top')"
-                  :key="item.uid"
-                  type="button"
-                  class="placed placed--ledge"
-                  :style="at(item)"
-                  @click.stop="pickItem(item.uid)"
-                >
-                  <span class="placed__pop" :data-decor-uid="item.uid">
-                    <DecorPiece :kind="item.id" />
-                  </span>
-                  <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">
-                    Remove
-                  </span>
-                </button>
-              </span>
-              <span class="room__plank" aria-hidden="true" />
-            </span>
-            <span class="room__row" data-zone="case-low">
-              <span class="room__spines" aria-hidden="true">
-                <span
-                  v-for="(book, index) in miniBottom"
-                  :key="book.id"
-                  class="room__spine"
-                  :style="miniStyle(book, index + 8)"
-                />
-              </span>
-              <span class="room__ledge">
-                <button
-                  v-for="item in placedIn('case-low')"
-                  :key="item.uid"
-                  type="button"
-                  class="placed placed--ledge"
-                  :style="at(item)"
-                  @click.stop="pickItem(item.uid)"
-                >
-                  <span class="placed__pop" :data-decor-uid="item.uid">
-                    <DecorPiece :kind="item.id" />
-                  </span>
-                  <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">
-                    Remove
-                  </span>
-                </button>
-              </span>
-              <span class="room__plank" aria-hidden="true" />
-            </span>
-          </span>
-        </div>
-
-        <div class="room__window">
-          <div class="room__frame">
-            <div class="room__pane" :class="[`room__pane--${scene}`, { 'is-night': isNight }]">
-              <template v-if="scene === 'sunny'">
-                <span class="room__sun" aria-hidden="true" />
-                <span class="room__glare" aria-hidden="true" />
-                <span
-                  v-for="n in 3"
-                  :key="`bird-${n}`"
-                  class="room__bird"
-                  :class="`room__bird--${n}`"
-                  aria-hidden="true"
-                >
-                  <svg class="room__wing" viewBox="0 0 24 12">
-                    <path
-                      d="M1 9 Q7 1 12 6 Q17 1 23 9"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.6"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                </span>
-              </template>
-              <template v-if="scene === 'cloudy' || scene === 'rain'">
-                <span v-for="n in 4" :key="`cloud-${n}`" class="room__cloud" :class="`room__cloud--${n}`" aria-hidden="true" />
-              </template>
-              <template v-if="scene === 'rain'">
-                <span
-                  v-for="(drop, index) in RAIN_DROPS"
-                  :key="`drop-${index}`"
-                  class="room__drop"
-                  :style="{
-                    left: drop.left,
-                    width: `${drop.width}px`,
-                    height: `${drop.height}px`,
-                    animationDelay: drop.delay,
-                    animationDuration: drop.duration,
-                  }"
-                  aria-hidden="true"
-                />
-              </template>
-            </div>
-          </div>
-          <div class="room__sill">
-            <span v-if="temperature !== null" class="room__temp">{{ temperature }}°</span>
-          </div>
-        </div>
-
-        <div class="room__preview" role="group" aria-label="Preview the window">
-          <button
-            v-for="item in PREVIEW"
-            :key="item.id"
-            type="button"
-            class="room__preview-btn"
-            :class="{ 'is-on': preview === item.id }"
-            @click="preview = item.id"
+            class="placed placed--ledge"
+            :style="at(item)"
+            @click.stop="pickItem(item.uid)"
           >
-            {{ item.label }}
+            <span class="placed__pop" :data-decor-uid="item.uid">
+              <DecorPiece :kind="item.id" />
+            </span>
+            <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">
+              Remove
+            </span>
           </button>
-        </div>
-      </div>
+        </template>
 
-      <div class="room__floor" aria-hidden="true" />
+        <template #floor>
+          <template v-if="!isClose">
+            <button
+              v-for="item in roomFurniture"
+              :key="item.uid"
+              type="button"
+              class="placed placed--floor"
+              :style="at(item)"
+              @click.stop="pickItem(item.uid)"
+            >
+              <span class="placed__pop" :data-decor-uid="item.uid">
+                <DecorPiece :kind="item.id" />
+              </span>
+              <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">
+                Remove
+              </span>
+            </button>
+            <FloorLife
+              :pets="roomPets"
+              :has-food="hasFood"
+              :has-drink="hasDrink"
+              :selected="selected"
+              @pick="pickItem"
+              @remove="unplace"
+            />
+          </template>
+        </template>
+      </RoomScene>
 
-      <template v-if="!isClose">
-        <button
-          v-for="item in roomFurniture"
-          :key="item.uid"
-          type="button"
-          class="placed placed--floor"
-          :style="at(item)"
-          @click.stop="pickItem(item.uid)"
-        >
-          <span class="placed__pop" :data-decor-uid="item.uid">
-            <DecorPiece :kind="item.id" />
-          </span>
-          <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">
-            Remove
-          </span>
-        </button>
-        <FloorLife
-          :pets="roomPets"
-          :has-food="hasFood"
-          :has-drink="hasDrink"
-          :selected="selected"
-          @pick="pickItem"
-          @remove="unplace"
-        />
-      </template>
+      <CreditChip v-if="!isClose" class="home__credits" />
     </div>
+
+    <!-- Opened from the book on the chair -->
+    <Transition name="reading-pop">
+      <div
+        v-if="readingOpen"
+        ref="readingCard"
+        class="home__reading"
+        role="dialog"
+        aria-label="Currently reading"
+        tabindex="-1"
+        @keydown.esc="closeReading({ refocus: true })"
+      >
+        <div v-if="bookshelf.loading || bookshelf.error" class="home__reading-state">
+          <StateView :loading="bookshelf.loading" :error="bookshelf.error" @retry="bookshelf.load" />
+        </div>
+        <CurrentlyReadingCard v-else :book="bookshelf.currentlyReading" />
+        <button
+          type="button"
+          class="home__reading-close"
+          aria-label="Close"
+          @click="closeReading({ refocus: true })"
+        >
+          ✕
+        </button>
+      </div>
+    </Transition>
 
     <div v-show="isClose" ref="closeLayer" class="room__close">
       <header class="room__bar">
@@ -447,6 +439,7 @@ onBeforeUnmount(() => {
               type="button"
               class="room__toggle-btn"
               :class="{ 'is-on': shelfView === 'spines' }"
+              :aria-pressed="shelfView === 'spines'"
               @click="shelfView = 'spines'"
             >
               Spines
@@ -455,6 +448,7 @@ onBeforeUnmount(() => {
               type="button"
               class="room__toggle-btn"
               :class="{ 'is-on': shelfView === 'covers' }"
+              :aria-pressed="shelfView === 'covers'"
               @click="shelfView = 'covers'"
             >
               Covers
@@ -466,21 +460,21 @@ onBeforeUnmount(() => {
       <div class="room__scroll">
         <template v-if="shelfView === 'spines'">
           <div class="room__bay" data-zone="reading">
-            <Shelf v-model="reading" title="Reading" mode="draggable" group="room" emoji="" compact @change="syncShelves" />
+            <Shelf v-model="reading" title="Reading" mode="draggable" group="room" emoji="" compact />
             <button v-for="item in placedIn('reading')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
               <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
               <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
             </button>
           </div>
           <div class="room__bay" data-zone="tbr">
-            <Shelf v-model="tbr" title="To read" mode="draggable" group="room" emoji="" compact @change="syncShelves" />
+            <Shelf v-model="tbr" title="To read" mode="draggable" group="room" emoji="" compact />
             <button v-for="item in placedIn('tbr')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
               <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
               <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
             </button>
           </div>
           <div class="room__bay" data-zone="read">
-            <Shelf v-model="finished" title="Finished" mode="draggable" group="room" emoji="" compact @change="syncShelves" />
+            <Shelf v-model="finished" title="Finished" mode="draggable" group="room" emoji="" compact />
             <button v-for="item in placedIn('read')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
               <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
               <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
@@ -501,318 +495,104 @@ onBeforeUnmount(() => {
     <div v-if="sparkle" :key="sparkle.key" class="spark" :style="{ left: `${sparkle.x}px`, top: `${sparkle.y}px` }" aria-hidden="true">
       <i v-for="n in 7" :key="n" />
     </div>
-    <p v-if="notice" :key="notice.key" class="toast" :class="`toast--${notice.tone}`" role="status">
+    <p v-if="notice" :key="notice.key" class="room-toast" :class="`room-toast--${notice.tone}`" role="status">
       {{ notice.text }}
     </p>
 
     <RoomDock />
+
+    <QuoteOfDayModal v-if="quoteOpen" @close="quoteOpen = false" />
   </section>
 </template>
 
 <style scoped>
-.room {
+.home {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  padding: 0;
   position: relative;
   background: var(--wall);
 }
 
-.room__far {
+.home__far {
   position: relative;
   height: 100%;
-  display: flex;
-  flex-direction: column;
   transition: opacity 0.55s ease;
 }
 
-.room__far.is-dim { opacity: 0.78; }
+.home__far.is-dim { opacity: 0.78; }
 
-.room__clock {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  z-index: 4;
-}
-
-.room__credits {
+.home__credits {
   position: absolute;
   top: 10px;
   right: 12px;
   z-index: 4;
 }
 
-.room__wall {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  background: var(--wall);
-}
-
-.room__floor {
-  flex: none;
-  height: 22%;
-  box-sizing: border-box;
-  background: var(--floor);
-  border-top: 1px solid rgba(28, 27, 25, 0.4);
-}
-
-.room__case {
-  position: absolute;
-  left: 6%;
-  bottom: 0;
-  width: 50%;
-  margin: 0;
-  padding: 0;
-}
-
-.room__case-hit {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-.room__case-frame {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 6px 0;
-  background: #e3dcd0;
-  border: 1px solid rgba(28, 27, 25, 0.22);
-  border-bottom: none;
-  pointer-events: none;
-}
-
-.room__row { display: flex; flex-direction: column; }
-
-.room__spines {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-inline: 2px;
-}
-
-.room__spine {
-  position: relative;
-  flex: none;
-  margin-right: -2px;
-  overflow: hidden;
-  border-radius: 1px 1px 0 0;
-  box-shadow: inset -1px 0 rgba(28, 27, 25, 0.22);
-}
-
-.room__cover {
-  position: absolute;
-  inset: 0;
-  width: 100%;
+/* pets roam the whole strip of floor in front of the chair */
+.home :deep(.life) {
+  right: 18%;
   height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
-.room__spine::after {
-  content: '';
+/* shop pieces are drawn small; on this floor they stand next to a full-size armchair */
+.placed--floor .placed__pop {
+  zoom: 1.8;
+}
+
+.home :deep(.critter__flip) {
+  zoom: 1.4;
+}
+
+.home__reading {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  width: 2px;
-  background: var(--page-edge);
+  inset: auto 15px 76px;
+  z-index: 15;
 }
 
-.room__spine:last-child { margin-right: 0; }
-
-.room__ledge {
-  position: relative;
-  z-index: 3;
-  height: 0;
-  pointer-events: none;
+.home__reading:focus {
+  outline: none;
 }
 
-.room__plank {
-  height: 5px;
-  background: var(--wood);
-  box-shadow: 0 1px 0 var(--wood-deep);
+.home__reading-state {
+  display: grid;
+  place-items: center;
+  min-height: 108px;
+  border: 1px solid var(--rl-line);
+  border-radius: var(--rl-radius-card);
+  background: var(--rl-surface);
+  box-shadow: 0 4px 10px rgba(63, 46, 36, 0.17);
 }
 
-.room__window {
+.home__reading-close {
   position: absolute;
-  top: 8%;
-  right: 7%;
-  bottom: 9%;
-  width: 30%;
-  display: flex;
-  flex-direction: column;
-}
-
-.room__frame {
-  flex: 1 1 auto;
-  min-height: 0;
-  border: 1px solid rgba(28, 27, 25, 0.32);
-  padding: 4px;
-}
-
-.room__pane {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-  container-type: size;
-}
-
-.room__pane--sunny { background: linear-gradient(to bottom, #f3d7a6, #9ec4e0); }
-.room__pane--cloudy { background: linear-gradient(to bottom, #c5d0da, #8ea0b0); }
-.room__pane--rain { background: linear-gradient(to bottom, #5e6c78, #3e4a54); }
-.room__pane.is-night { filter: brightness(0.72); }
-
-.room__sun {
-  position: absolute;
-  top: 12%;
-  left: 16%;
-  width: 28%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #ffe7a3;
-  box-shadow:
-    0 0 10px 4px rgba(255, 226, 150, 0.95),
-    0 0 28px 14px rgba(255, 196, 110, 0.55);
-}
-
-.room__glare {
-  position: absolute;
-  inset: -10%;
-  background: linear-gradient(
-    118deg,
-    transparent 36%,
-    rgba(255, 255, 255, 0.18) 46%,
-    rgba(255, 255, 255, 0.55) 50%,
-    rgba(255, 255, 255, 0.16) 54%,
-    transparent 64%
-  );
-  animation: room-glare 6.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.room__bird {
-  position: absolute;
-  width: 16px;
-  color: #2a2824;
-  animation: room-fly 9s linear infinite;
-}
-
-.room__wing {
-  display: block;
-  width: 100%;
-  height: auto;
-  animation: room-flap 0.42s ease-in-out infinite;
-  transform-origin: center;
-}
-
-.room__bird--1 { top: 28%; animation-duration: 8s; }
-.room__bird--2 { top: 46%; animation-duration: 11s; animation-delay: -4s; }
-.room__bird--3 { top: 18%; width: 12px; animation-duration: 13s; animation-delay: -7s; }
-
-.room__cloud {
-  position: absolute;
-  left: 0;
-  width: 46px;
-  height: 14px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.92);
-  animation: room-drift 22s linear infinite;
-}
-
-.room__cloud::before,
-.room__cloud::after {
-  content: '';
-  position: absolute;
-  background: inherit;
-  border-radius: 50%;
-}
-
-.room__cloud::before {
-  width: 18px;
-  height: 18px;
   top: -10px;
-  left: 8px;
-}
-
-.room__cloud::after {
-  width: 14px;
-  height: 14px;
-  top: -7px;
-  left: 22px;
-}
-
-.room__cloud--1 { top: 18%; animation-duration: 26s; }
-.room__cloud--2 { top: 40%; width: 58px; animation-duration: 34s; animation-delay: -12s; }
-.room__cloud--3 { top: 62%; width: 36px; animation-duration: 20s; animation-delay: -6s; }
-.room__cloud--4 { top: 30%; width: 28px; opacity: 0.75; animation-duration: 30s; animation-delay: -18s; }
-
-.room__pane--rain .room__cloud {
-  background: rgba(210, 216, 222, 0.55);
-}
-
-.room__drop {
-  position: absolute;
-  top: 0;
-  border-radius: 40% 40% 46% 46%;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.35),
-    rgba(226, 236, 242, 0.92) 55%,
-    rgba(186, 208, 220, 0.45)
-  );
-  animation: room-drip 1.6s linear infinite;
-}
-
-.room__sill {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: none;
-  height: 16px;
-  margin-inline: -3px;
-  padding-inline: 5px;
-  background: var(--wood);
-}
-
-.room__temp {
-  font-family: var(--font-serif);
-  font-size: 0.7rem;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--rl-line);
+  border-radius: 50%;
+  background: var(--rl-surface);
+  font-size: 12px;
   line-height: 1;
-  color: var(--paper);
+  color: var(--rl-primary);
+  box-shadow: 0 2px 6px rgba(63, 46, 36, 0.2);
 }
 
-.room__preview {
-  position: absolute;
-  right: 6%;
-  bottom: 4%;
-  display: flex;
-  gap: 4px;
+/* the card rises from the floor, out from under the chair */
+.reading-pop-enter-active,
+.reading-pop-leave-active {
+  transform-origin: 75% 0;
+  transition: transform 0.26s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.18s ease;
 }
 
-.room__preview-btn {
-  padding: 3px 7px;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(28, 27, 25, 0.08);
-  color: var(--ink);
-  font-size: 0.62rem;
-  cursor: pointer;
-}
-
-.room__preview-btn.is-on {
-  background: var(--ink);
-  color: var(--paper);
+.reading-pop-enter-from,
+.reading-pop-leave-to {
+  transform: translateY(14px) scale(0.92);
+  opacity: 0;
 }
 
 .placed {
@@ -825,15 +605,15 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-.placed--floor { bottom: 2px; z-index: 5; }
+.placed--floor { bottom: 6px; z-index: 5; pointer-events: auto; }
 .placed--ledge { bottom: 0; z-index: 4; pointer-events: auto; }
 .placed--shelf { bottom: 10px; z-index: 30; }
 
-.placed--ledge :deep(.art) { height: 42px; }
+.placed--ledge :deep(.art) { height: calc(40 * var(--u)); }
 
 .placed__pop {
   display: block;
-  filter: drop-shadow(0 3px 1px rgba(28, 27, 25, 0.28));
+  filter: drop-shadow(0 3px 1px rgba(63, 46, 36, 0.28));
 }
 
 .placed__remove {
@@ -850,92 +630,12 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.surface {
-  position: absolute;
-  z-index: 8;
-  margin: 0;
-  padding: 0;
-  border: 1.5px dashed rgba(28, 27, 25, 0.5);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.16);
-  cursor: pointer;
-}
-
-.surface--floor {
-  left: 4%;
-  right: 22%;
-  bottom: 0;
-  height: 22%;
-  border-radius: 14px 14px 0 0;
-}
-
-.surface--ledge {
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 48px;
-  pointer-events: auto;
-}
-
-.surface--plank {
-  left: 6px;
-  right: 6px;
-  bottom: 8px;
-  height: 72px;
-  border-color: rgba(246, 241, 232, 0.85);
-  background: rgba(246, 241, 232, 0.12);
-}
-
-.surface__ghost {
-  position: absolute;
-  bottom: 0;
-  transform: translateX(-50%);
-  pointer-events: none;
-  opacity: 0.84;
-  transition: left 0.08s linear;
-}
-
-.surface--ledge :deep(.art),
-.surface--plank :deep(.art) { height: 44px; }
-
-.place-hint {
-  position: absolute;
-  top: 54px;
-  left: 12px;
-  right: 12px;
-  z-index: 25;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 14px;
-  background: rgba(247, 244, 238, 0.96);
-  box-shadow: 0 10px 24px rgba(28, 27, 25, 0.16);
-}
-
-.place-hint p {
-  flex: 1;
-  margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.place-hint button {
-  flex: none;
-  padding: 6px 10px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 0.75rem;
-}
-
 .drag-ghost {
   position: fixed;
   z-index: 40;
   transform: translate(-50%, -100%);
   pointer-events: none;
-  filter: drop-shadow(0 8px 8px rgba(28, 27, 25, 0.2));
+  filter: drop-shadow(0 8px 8px rgba(63, 46, 36, 0.2));
 }
 
 .spark {
@@ -965,7 +665,7 @@ onBeforeUnmount(() => {
 .spark i:nth-child(6) { --a: 100deg; }
 .spark i:nth-child(7) { --a: 150deg; background: #fff; }
 
-.toast {
+.room-toast {
   position: absolute;
   top: 58px;
   right: 10px;
@@ -974,15 +674,15 @@ onBeforeUnmount(() => {
   margin: 0;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(247, 244, 238, 0.96);
-  box-shadow: 0 12px 28px rgba(28, 27, 25, 0.18);
+  background: var(--paper);
+  box-shadow: 0 12px 28px rgba(63, 46, 36, 0.18);
   color: var(--ink);
   font-size: 0.75rem;
   line-height: 1.35;
   animation: toast-life 1.7s ease forwards;
 }
 
-.toast--bad {
+.room-toast--bad {
   background: #f8e8e6;
   color: #8d2218;
   animation-name: toast-bad;
@@ -995,8 +695,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #2a2118;
-  transform-origin: 30% 60%;
+  background: var(--rl-primary);
 }
 
 .room__bar {
@@ -1018,7 +717,7 @@ onBeforeUnmount(() => {
   display: flex;
   padding: 2px;
   border-radius: 999px;
-  background: rgba(246, 241, 232, 0.12);
+  background: rgba(255, 253, 249, 0.12);
 }
 
 .room__toggle-btn {
@@ -1026,14 +725,14 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: rgba(246, 241, 232, 0.7);
+  color: rgba(255, 253, 249, 0.7);
   font-size: 0.72rem;
   cursor: pointer;
 }
 
 .room__toggle-btn.is-on {
-  background: #f6f1e8;
-  color: #2a2118;
+  background: var(--rl-surface);
+  color: var(--rl-primary);
 }
 
 .room__scroll {
@@ -1057,50 +756,22 @@ onBeforeUnmount(() => {
 .room__close :deep(.shelf__title),
 .room__close :deep(.shelf__count),
 .room__close :deep(.shelf__hint) {
-  color: #f6f1e8;
+  color: var(--rl-surface);
 }
 
 .room__close :deep(.shelf__plank) {
   height: 10px;
-  background: linear-gradient(#6d4b32, #3f2918);
+  background: linear-gradient(var(--wood), var(--wood-deep));
 }
 
 .room__back {
   padding: 4px 2px;
   border: 0;
   background: transparent;
-  color: #f6f1e8;
+  color: var(--rl-surface);
   font-family: var(--font-serif);
   font-size: 1rem;
   cursor: pointer;
-}
-
-@keyframes room-glare {
-  0%,
-  100% { transform: translateX(-18%); opacity: 0.35; }
-  50% { transform: translateX(12%); opacity: 0.85; }
-}
-
-@keyframes room-fly {
-  from { transform: translate(-24px, 8px); }
-  to { transform: translate(130px, -16px); }
-}
-
-@keyframes room-flap {
-  0%,
-  100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.35); }
-}
-
-@keyframes room-drift {
-  from { transform: translateX(-70px); }
-  to { transform: translateX(150px); }
-}
-
-@keyframes room-drip {
-  0% { transform: translateY(-18px); opacity: 0; }
-  8% { opacity: 0.95; }
-  100% { transform: translateY(100cqh); opacity: 0.55; }
 }
 
 @keyframes spark-out {
@@ -1125,15 +796,11 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .room__glare,
-  .room__bird,
-  .room__wing,
-  .room__cloud,
-  .room__drop,
   .spark i,
-  .toast,
-  .toast--bad,
-  .surface__ghost {
+  .room-toast,
+  .room-toast--bad,
+  .reading-pop-enter-active,
+  .reading-pop-leave-active {
     animation: none;
     transition: none;
   }

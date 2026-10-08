@@ -1,13 +1,37 @@
-// Scaffolded with AI assistance (Phase 1) — see AI_USAGE.md
+// Scaffolded with AI assistance — see AI_USAGE.md
+// The reader's shelf, shared by the room bookcase, the full bookshelf and the reading chair.
+// Books come from the API (GET /api/user-books) and a status change is saved straight back.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import booksData from '@/data/books.json'
+import { getMyBooks, updateReadingStatus } from '@/services/api.js'
+import { normalizeBook } from '@/lib/book.js'
 
-export const BOOK_STATUSES = ['tbr', 'reading', 'read']
+export const BOOK_STATUSES = ['want_to_read', 'reading', 'read']
 
-// Phase 1: seeded from local mock JSON. Later phases swap the seed for API/backend data.
+// Where each book sits on its shelf is a per-device preference, not server data.
+const ORDER_KEY = 'readalot.shelfOrder'
+
+function readOrder() {
+  try {
+    return JSON.parse(localStorage.getItem(ORDER_KEY)) || []
+  } catch {
+    return []
+  }
+}
+
 export const useBookshelfStore = defineStore('bookshelf', () => {
-  const books = ref(structuredClone(booksData))
+  const saved = ref([])
+  const order = ref(readOrder())
+  const loading = ref(false)
+  const error = ref('')
+  const moveError = ref('')
+
+  // Shelf order first; books this device has never arranged go to the end.
+  const books = computed(() => {
+    const rank = new Map(order.value.map((id, index) => [id, index]))
+    const last = order.value.length
+    return [...saved.value].sort((a, b) => (rank.get(a.id) ?? last) - (rank.get(b.id) ?? last))
+  })
 
   const booksByStatus = computed(() =>
     Object.fromEntries(
@@ -19,18 +43,58 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     Object.fromEntries(BOOK_STATUSES.map((status) => [status, booksByStatus.value[status].length])),
   )
 
-  const currentlyReading = computed(() => booksByStatus.value.reading[0] ?? null)
+  // The book picked up most recently.
+  const currentlyReading = computed(
+    () =>
+      [...booksByStatus.value.reading].sort((a, b) =>
+        String(b.updatedAt).localeCompare(String(a.updatedAt)),
+      )[0] ?? null,
+  )
 
-  function findBook(id) {
-    return books.value.find((book) => book.id === id) ?? null
+  async function load() {
+    loading.value = true
+    error.value = ''
+    try {
+      saved.value = (await getMyBooks()).books.map(normalizeBook)
+    } catch (err) {
+      error.value = err.message || "Couldn't load your shelf."
+    } finally {
+      loading.value = false
+    }
   }
 
-  function setStatus(id, status) {
+  function findBook(id) {
+    return saved.value.find((book) => book.id === id) ?? null
+  }
+
+  function setOrder(ids) {
+    order.value = ids
+    try {
+      localStorage.setItem(ORDER_KEY, JSON.stringify(ids))
+    } catch {
+      // storage unavailable: the order just lasts for this visit
+    }
+  }
+
+  // Shows the move at once, then saves it; a failed save puts the book back.
+  async function setStatus(id, status) {
     if (!BOOK_STATUSES.includes(status)) {
       throw new Error(`Unknown book status: ${status}`)
     }
     const book = findBook(id)
-    if (book) book.status = status
+    if (!book || book.status === status) return
+
+    const previous = { status: book.status, updatedAt: book.updatedAt }
+    book.status = status
+    book.updatedAt = new Date().toISOString()
+    moveError.value = ''
+
+    try {
+      await updateReadingStatus(id, { status })
+    } catch {
+      Object.assign(book, previous)
+      moveError.value = `Couldn't move "${book.title}". Try again.`
+    }
   }
 
   // Re-file every book on a shelf to one status. Used after a drag so the store matches
@@ -39,5 +103,18 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     ids.forEach((id) => setStatus(id, status))
   }
 
-  return { books, booksByStatus, statusCounts, currentlyReading, findBook, setStatus, applyShelf }
+  return {
+    books,
+    booksByStatus,
+    statusCounts,
+    currentlyReading,
+    loading,
+    error,
+    moveError,
+    load,
+    findBook,
+    setOrder,
+    setStatus,
+    applyShelf,
+  }
 })

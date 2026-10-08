@@ -25,6 +25,29 @@ brief, then built and checked locally. Nothing was pushed to any remote.
 | Server skeleton | `server/package.json`, `server/index.js`, `server/routes/*.js` | Express boilerplate, `/api/health`, empty placeholder routers |
 | Docs | `README.md`, `AI_USAGE.md` | Documentation drafts |
 
+## Merge of the two branches: shell and home page (AI-assisted)
+
+The `alric` and `sonya` branches had no shared git history. They were combined on
+`merge-homepage` with an AI coding assistant (Claude Code), following the team's page-by-page
+decisions on which branch each piece comes from. Checked locally in the browser and with the
+Playwright tests in `tests/e2e/room.spec.js`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Merge resolution | `.gitignore`, `README.md`, `client/package.json`, `client/vite.config.js`, `client/index.html`, `client/src/main.js`, `server/package.json` | Combined both sides' config and dependencies |
+| Shell | `client/src/App.vue`, `client/src/router/index.js`, `BottomNav.vue`, `AppHeader.vue`, `PhoneFrame.vue`, `Toast.vue` | Alric's phone frame and route slides with Sonya's header and bottom nav |
+| Theme | `client/src/styles/theme.css`, `client/src/assets/theme.css` | Alric's variable names pointed at Sonya's tokens; class renames that avoid Bootstrap's `.toast` and `.card` |
+| Server | `server/src/app.js`, `server/src/routes/weather.js` (time and creatures routes moved in unchanged) | One weather route that answers in both branches' shapes |
+| Book data | `client/src/stores/bookshelf.js`, `client/src/lib/book.js` | Store loads the shelf from the API; the save-and-roll-back logic is lifted from Sonya's `useMyShelf.js` |
+| Home page | `client/src/views/RoomView.vue`, `components/room/RoomScene.vue`, `RoomBookshelf.vue`, `ReadingChair.vue` | Alric's shop, drag-and-drop and bookshelf logic wired into Sonya's room; drop targets retargeted |
+| New components | `components/room/RoomWindow.vue` (Alric's window lifted out of his view), `WallClock.vue`, `QuoteNote.vue` | Analog clock and sticky note are new; the window scenes are Alric's |
+| Cover fallback | `CoverRow.vue`, `BookOpenOverlay.vue`, `Book.vue` | Books without a cover image use Sonya's `BookCover` placeholder and spine colours |
+| Tests | `tests/e2e/room.spec.js` | Draft end-to-end checks for the home page |
+
+Team to review and own: the store's save logic and the decoration drop-target code in
+`RoomView.vue` are interactive logic, which the course asks the team to write or at least fully
+understand.
+
 ## Team-owned work (not AI)
 
 Per the course rules, the team should implement these later phases themselves (AI may only

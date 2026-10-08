@@ -1,5 +1,6 @@
 /* Scaffolded with AI assistance — see AI_USAGE.md
-   Quiet reading-room theme: warm paper, ink, and one wood tone. */
+   Names the room, shelf and shop components read. The values come from the shared tokens in
+   assets/theme.css, so these pieces follow the same palette and type as the rest of the app. */
 
 :root {
   /* Legacy palette — placeholder views still reference these names */
@@ -11,64 +12,32 @@
   --cream: #FFF8EC;
 
   /* Reading room */
-  --paper: #f7f4ee;
-  --ink: #1c1b19;
-  --ink-muted: rgba(28, 27, 25, 0.62);
-  --wall: #ebe6dc;
-  --floor: #d9d1c4;
-  --wood: #8a6244;
-  --wood-deep: #6e4c34;
+  --paper: var(--rl-surface);
+  --ink: var(--rl-text);
+  --ink-muted: var(--rl-muted);
+  --wall: var(--rl-canvas);
+  --wood: var(--rl-wood);
+  --wood-deep: #5c3f2c;
   --sky: #c5d4e0;
-  --cloth-navy: #2c3a4a;
-  --cloth-oxblood: #6e3a3a;
-  --cloth-olive: #4d5640;
-  --cloth-sand: #c4b49a;
-  --cloth-charcoal: #3a3936;
   --page-edge: #f3efe6;
 
   /* Type */
-  --font-heading: 'Fredoka', system-ui, sans-serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
-  --font-serif: 'Newsreader', Georgia, serif;
+  --font-heading: var(--rl-font-title);
+  --font-body: var(--rl-font-body);
+  --font-serif: var(--rl-font-title);
 
-  /* Shapes — sticker offsets softened to a quiet shadow */
+  /* Shapes */
   --outline: 2px solid var(--ink);
   --radius-sm: 16px;
   --radius-md: 20px;
   --radius-lg: 24px;
-  --shadow-sticker: 0 8px 24px rgba(28, 27, 25, 0.12);
-  --shadow-sticker-sm: 0 2px 8px rgba(28, 27, 25, 0.1);
-
-  /* Hand Bootstrap our tokens so its reboot + utilities match the theme */
-  --bs-body-font-family: var(--font-body);
-  --bs-body-color: var(--ink);
-  --bs-body-bg: var(--wall);
-  --bs-border-color: var(--ink);
+  --shadow-sticker: 0 8px 24px rgba(63, 46, 36, 0.12);
+  --shadow-sticker-sm: 0 2px 8px rgba(63, 46, 36, 0.1);
 }
 
 body {
-  min-height: 100vh;
-  min-height: 100dvh;
-  background-color: var(--wall);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-}
-
-h1, h2, h3, h4, h5, h6,
-.font-heading {
-  font-family: var(--font-heading);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-::selection {
-  background: var(--butter);
-  color: var(--ink);
-}
-
-:focus-visible {
-  outline: 3px solid var(--hot-pink);
-  outline-offset: 3px;
 }
 
 .text-ink-muted {

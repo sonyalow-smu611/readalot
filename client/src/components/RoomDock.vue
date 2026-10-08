@@ -97,13 +97,13 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
           v-for="item in catalog"
           :key="item.id"
           type="button"
-          class="card"
+          class="dock-card"
           @click="askBuy(item)"
         >
-          <span class="card__art"><DecorPiece :kind="item.id" /></span>
-          <span class="card__name">{{ item.name }}</span>
-          <span class="card__price">${{ item.price }}</span>
-          <span class="card__where">{{ item.blurb }}</span>
+          <span class="dock-card__art"><DecorPiece :kind="item.id" /></span>
+          <span class="dock-card__name">{{ item.name }}</span>
+          <span class="dock-card__price">${{ item.price }}</span>
+          <span class="dock-card__where">{{ item.blurb }}</span>
         </button>
       </div>
     </section>
@@ -121,12 +121,12 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               v-for="entry in inventory"
               :key="entry.uid"
               type="button"
-              class="card card--drag"
+              class="dock-card dock-card--drag"
               @pointerdown="grab($event, entry)"
             >
-            <span class="card__art"><DecorPiece :kind="entry.id" /></span>
-            <span class="card__name">{{ meta(entry.id)?.name }}</span>
-            <span class="card__where">{{ meta(entry.id)?.blurb }}</span>
+            <span class="dock-card__art"><DecorPiece :kind="entry.id" /></span>
+            <span class="dock-card__name">{{ meta(entry.id)?.name }}</span>
+            <span class="dock-card__where">{{ meta(entry.id)?.blurb }}</span>
           </button>
         </div>
       </template>
@@ -214,13 +214,13 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   gap: 6px;
   height: 40px;
   padding: 0 12px 0 10px;
-  border: 1px solid rgba(28, 27, 25, 0.12);
+  border: 1px solid rgba(63, 46, 36, 0.12);
   border-radius: 999px;
   background: var(--paper);
   color: var(--ink);
   font-size: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 8px 18px rgba(28, 27, 25, 0.12);
+  box-shadow: 0 8px 18px rgba(63, 46, 36, 0.12);
 }
 
 .dock__item.is-on {
@@ -243,7 +243,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   border-radius: 50%;
   background: var(--ink);
   color: var(--paper);
-  box-shadow: 0 10px 22px rgba(28, 27, 25, 0.22);
+  box-shadow: 0 10px 22px rgba(63, 46, 36, 0.22);
 }
 
 .dock__bars,
@@ -292,8 +292,8 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   align-self: stretch;
   padding: 10px 10px 12px;
   border-radius: 16px;
-  background: rgba(247, 244, 238, 0.96);
-  box-shadow: 0 16px 40px rgba(28, 27, 25, 0.18);
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  box-shadow: 0 16px 40px rgba(63, 46, 36, 0.18);
 }
 
 .panel__bar {
@@ -335,45 +335,45 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   touch-action: pan-x;
 }
 
-.card--drag {
+.dock-card--drag {
   touch-action: none;
   cursor: grab;
 }
 
-.card {
+.dock-card {
   flex: 0 0 112px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   padding: 8px 6px 10px;
-  border: 1px solid rgba(28, 27, 25, 0.08);
+  border: 1px solid rgba(63, 46, 36, 0.08);
   border-radius: 12px;
   background: #fff;
   color: var(--ink);
   text-align: center;
 }
 
-.card__art {
+.dock-card__art {
   display: grid;
   place-items: end center;
   width: 100%;
   height: 64px;
 }
 
-.card__art :deep(.art) {
+.dock-card__art :deep(.art) {
   height: 58px;
 }
 
-.card__name,
-.card__price,
-.card__where {
+.dock-card__name,
+.dock-card__price,
+.dock-card__where {
   font-size: 0.68rem;
   line-height: 1.25;
 }
 
-.card__price,
-.card__where {
+.dock-card__price,
+.dock-card__where {
   color: var(--ink-muted);
 }
 
@@ -382,7 +382,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   padding: 14px;
   border-radius: 16px;
   background: var(--paper);
-  box-shadow: 0 16px 40px rgba(28, 27, 25, 0.2);
+  box-shadow: 0 16px 40px rgba(63, 46, 36, 0.2);
 }
 
 .confirm__title {

@@ -30,13 +30,14 @@ const { credits } = useDecor()
 }
 
 .chip--dark {
-  background: rgba(28, 27, 25, 0.08);
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  box-shadow: 0 2px 6px rgba(63, 46, 36, 0.14);
   color: var(--ink);
 }
 
 .chip--light {
   background: rgba(246, 241, 232, 0.14);
-  color: #f6f1e8;
+  color: var(--paper);
 }
 
 .chip__mark {

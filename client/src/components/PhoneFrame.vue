@@ -30,6 +30,7 @@
   .phone-stage {
     position: relative;
     display: flex;
+    background: #efe8de;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
@@ -43,9 +44,9 @@
     max-width: 480px;
     height: min(880px, calc(100vh - 48px));
     height: min(880px, calc(100dvh - 48px));
-    border: 1px solid rgba(28, 27, 25, 0.16);
+    border: 1px solid var(--rl-line);
     border-radius: 36px;
-    box-shadow: 0 18px 48px rgba(28, 27, 25, 0.12);
+    box-shadow: 0 18px 48px rgba(63, 46, 36, 0.12);
   }
 }
 </style>

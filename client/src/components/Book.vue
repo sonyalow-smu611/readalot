@@ -10,11 +10,11 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import {
   primaryAuthor,
-  spineColor,
   spineHeight,
   spineLean,
   spineWidth,
 } from '@/lib/book'
+import { spineLook } from '@/services/shelves.js'
 import { useBookOpen } from '@/composables/useBookOpen'
 
 const props = defineProps({
@@ -35,11 +35,12 @@ let holdTimer = null
 // This book is the one currently lifted into the overlay.
 const isActive = computed(() => state.book?.id === props.book.id && state.phase !== 'closed')
 
-const color = computed(() => spineColor(props.book))
-const isLightCloth = computed(() => color.value === 'cloth-sand')
+// Same cloth and ink as this book's spine in the room bookcase.
+const look = computed(() => spineLook(props.book))
 
 const bookStyle = computed(() => ({
-  '--spine-bg': `var(--${color.value})`,
+  '--spine-bg': look.value.colour,
+  '--spine-ink': look.value.ink,
   '--spine-lean': `${spineLean(props.book)}deg`,
   '--spine-w': `${spineWidth(props.book)}px`,
   '--book-stack': String(props.stack),
@@ -50,7 +51,6 @@ const bookStyle = computed(() => ({
 const spineClass = computed(() => ({
   'is-holding': holding.value,
   'is-active': isActive.value,
-  'is-light-cloth': isLightCloth.value,
   'is-compact': props.compact,
 }))
 
@@ -174,7 +174,7 @@ onBeforeUnmount(endHold)
   font-size: 0.68rem;
   line-height: 1;
   letter-spacing: 0.04em;
-  color: var(--page-edge);
+  color: var(--spine-ink);
 }
 
 .book__author {
@@ -188,7 +188,8 @@ onBeforeUnmount(endHold)
   font-size: 0.52rem;
   line-height: 1;
   letter-spacing: 0.03em;
-  color: rgba(243, 239, 230, 0.72);
+  color: var(--spine-ink);
+  opacity: 0.72;
 }
 
 .book.is-compact .book__spine {
@@ -201,14 +202,6 @@ onBeforeUnmount(endHold)
 
 .book.is-compact .book__author {
   font-size: 0.42rem;
-}
-
-.book.is-light-cloth .book__title {
-  color: var(--ink);
-}
-
-.book.is-light-cloth .book__author {
-  color: var(--ink-muted);
 }
 
 /* Fore-edge of the text block: a few millimetres of paper. */
