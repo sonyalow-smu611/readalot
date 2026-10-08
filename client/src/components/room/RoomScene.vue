@@ -18,6 +18,7 @@
         :scene="weather.scene"
         :night="weather.night"
         :temperature="weather.temperature"
+        :rows="WINDOW_ROWS"
       />
       <div class="room__light" />
       <WallClock class="room__clock" />
@@ -58,6 +59,9 @@ import ReadingChair from "./ReadingChair.vue";
 import RoomBookshelf from "./RoomBookshelf.vue";
 import RoomWindow from "./RoomWindow.vue";
 import WallClock from "./WallClock.vue";
+
+// Tall enough that the crown of the window's arch is level with the top of the clock.
+const WINDOW_ROWS = 352;
 
 defineProps({
   books: { type: Array, default: () => [] },
