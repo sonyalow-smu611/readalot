@@ -6,6 +6,7 @@
 //   draggable  — vue-draggable-plus (SortableJS) so books can be dragged within and between
 //                shelves; emits `change` so the parent can re-file them.
 // Swiper and drag-and-drop fight over the same row, so a shelf is only ever one of them.
+// On touch a drag starts after a short press, so a swipe across the books still scrolls.
 import { computed } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { Swiper, SwiperSlide } from 'swiper/vue'
@@ -63,6 +64,8 @@ function onWheel(event) {
           v-model="list"
           :group="group"
           :animation="180"
+          :delay="180"
+          :delay-on-touch-only="true"
           class="shelf__books"
           ghost-class="book-ghost"
           @change="onChange"

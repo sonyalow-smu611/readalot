@@ -66,6 +66,14 @@ On the team's request the assistant downloaded the Goodreads Quotes dataset from
 AI-written text, and is kept out of git. Which topics and filters to use was the assistant's choice and is the team's
 to change.
 
+### Full bookshelf actions (AI-assisted)
+
+`ShelfBookActions.vue` (new), the progress and status saving in `stores/bookshelf.js`, the
+scrolling shelves and back arrow in `RoomView.vue`, the `myRating` / `reviewed` fields added
+to `GET /api/user-books` in `server/src/routes/userBooks.js`, and `tests/e2e/bookshelf.spec.js`.
+The Supabase branch of that route change could not be run locally (no keys) and needs a check
+against the shared project.
+
 Team to review and own: the store's save logic and the decoration drop-target code in
 `RoomView.vue` are interactive logic, which the course asks the team to write or at least fully
 understand.

@@ -30,6 +30,14 @@ router.get("/", requireUser, async (req, res, next) => {
 
     if (booksError) throw booksError;
 
+    const { data: reviews, error: reviewsError } = await supabase
+      .from("reviews")
+      .select("book_id")
+      .eq("user_id", req.user.id);
+
+    if (reviewsError) throw reviewsError;
+
+    const reviewedIds = new Set(reviews.map((review) => review.book_id));
     const byId = new Map(saved.map((book) => [book.id, toBook(book)]));
     const books = await Promise.all(
       rows.map(async (row) => ({
@@ -38,6 +46,9 @@ router.get("/", requireUser, async (req, res, next) => {
         id: row.book_id,
         status: row.status,
         progress: row.progress || 0,
+        // the reader's own rating (1-5) and whether they have written a review
+        myRating: row.rating ?? null,
+        reviewed: reviewedIds.has(row.book_id),
         updatedAt: row.updated_at
       }))
     );

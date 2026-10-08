@@ -154,7 +154,7 @@ All under `/api`, served by `server/src/app.js`.
 | Route | Purpose |
 |-------|---------|
 | `GET /health` | Server is up |
-| `GET /user-books`, `POST /user-books`, `PATCH /user-books/:id`, `DELETE /user-books/:id` | The reader's shelf and reading status |
+| `GET /user-books`, `POST /user-books`, `PATCH /user-books/:id`, `DELETE /user-books/:id` | The reader's shelf. Each book carries `status`, `progress` (0-100), `myRating` and `reviewed`; `PATCH` takes `status` and/or `progress` |
 | `GET /books/search?q=`, `GET /books/:id`, reviews and quotes under `/books/:id` | Book search and details |
 | `GET /recommendations?mood=calm\|low\|stressed\|excited[&exclude=<work id>]` | A book for the mood with a quote from it |
 | `GET /quote/today` | Quote of the Day: `quoteText`, `topic` (and `author`, empty for dataset quotes) |
@@ -206,6 +206,7 @@ User shape:
 ## Known Limits
 
 - No login: the auth guard falls back to the seeded demo user (`DEMO_USER_ID`).
+- Review and Rate on a finished book open Book Details, where writing a review or rating is not built yet (T17). On the demo shelf no book counts as reviewed or rated.
 - Quote of the Day quotes have no author or book: the dataset only holds the quote text. The popup shows the topic instead ("On books"). Some quotes in it are well-known misattributions.
 - The quotes dataset was scraped from Goodreads by its Kaggle author and its licence is listed as "Unknown", so the quote list is kept out of git for now. Check it against the course rules on scraped data before the final submission. A deployed server needs the list built on it, or it shows the one built-in quote every day.
 - Mood recommendations are limited to the list in `server/data/works.json`. It is a 12-book starter list, not yet curated or verified against the quotes API (T12). Each entry carries a `moods` tag and a `quote` used when `API_NINJAS_KEY` is not set or the API has nothing for that book.
@@ -225,7 +226,8 @@ This is the user’s main profile and home page.
 * Shows the user’s personalised reading room.
 * Displays the live Singapore weather in the room window and Singapore time on the wall clock.
 * The book on the chair opens the **Currently Reading** card, which leads to **Book Details**.
-* The bookcase shows books from their **Read** and **To Be Read** collections; tapping it opens the full bookshelf (Reading, To read, Finished) as spines or covers. Dragging a book to another shelf saves its reading status.
+* The bookcase shows books from their **Read** and **To Be Read** collections; tapping it opens the full bookshelf (Reading, To read, Finished) as spines or covers. The page scrolls when the shelves do not all fit. Dragging a book to another shelf saves its reading status.
+* Tapping a book on the full bookshelf lifts it out with the actions for its shelf: a **Reading** book has a progress slider and **Finished**; a **To read** book has **Started reading**; a **Finished** book has **Review** and **Rate** until both are done, then **View review and rating**. The review and rating buttons open the book's **Book Details** page.
 * The sticky note on the wall opens the **Quote of the Day** popup.
 * The menu button opens the **Shop** and **Inventory**: decorations and pets are bought with credits and dragged onto a shelf or the floor. Credits and placed pieces last until the page is reloaded.
 * Opens the **Mood Check-in** when needed.
