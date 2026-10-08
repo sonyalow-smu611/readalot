@@ -3,7 +3,7 @@
 // Books come from the API (GET /api/user-books) and a status change is saved straight back.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { getMyBooks, updateReadingStatus } from '@/services/api.js'
+import { getMyBooks, saveUserBook, updateReadingStatus } from '@/services/api.js'
 import { normalizeBook } from '@/lib/book.js'
 
 export const BOOK_STATUSES = ['want_to_read', 'reading', 'read']
@@ -63,6 +63,13 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     }
   }
 
+  // Put a book on a shelf, then re-read the shelf so the room shows it. Throws if the save
+  // fails, so the caller can say so next to the button that was pressed.
+  async function addBook(bookId, status = 'want_to_read') {
+    await saveUserBook({ bookId, status })
+    saved.value = (await getMyBooks()).books.map(normalizeBook)
+  }
+
   function findBook(id) {
     return saved.value.find((book) => book.id === id) ?? null
   }
@@ -112,6 +119,7 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     error,
     moveError,
     load,
+    addBook,
     findBook,
     setOrder,
     setStatus,

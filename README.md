@@ -149,7 +149,8 @@ User shape:
 
 - No login: the auth guard falls back to the seeded demo user (`DEMO_USER_ID`).
 - Quote of the Day may be unfiltered (`safe` needs a premium api-ninjas key).
-- Mood recommendations are limited to the curated list in `server/data/works.json`.
+- Mood recommendations are limited to the list in `server/data/works.json`. It is a 12-book starter list, not yet curated or verified against the quotes API (T12). Each entry carries a `moods` tag and a `quote` used when `API_NINJAS_KEY` is not set or the API has nothing for that book.
+- Without `GOOGLE_BOOKS_API_KEY`, Google Books lookups run out of quota quickly; a recommended book then shows without a cover, under its own `work-…` id.
 - Google Books returns a limited slice per query, so genre shelves can be thin.
 - Compatibility is computed per request (O(users)); fine at MVP scale.
 - Desktop shows a centred phone-width column only.
@@ -172,9 +173,9 @@ This is the user’s main profile and home page.
 
 ### Mood Check-in
 
-The user answers a few short questions about how they feel.
+Opens by itself on the first visit to My Room each day, and from the room menu at any time. The user picks one mood: **Calm, Low, Stressed or Excited**. "Skip for today" (or closing it) keeps it away until tomorrow.
 
-The answers are used to generate a book recommendation and matching quote.
+The mood picks a book from `server/data/works.json` and a quote from that book: the server asks api-ninjas for a quote from the work in one of the mood's categories (Calm = nature / wisdom / philosophy, Low = inspirational / courage / happiness, Stressed = time / freedom / truth, Excited = success / humor / art), then for any quote from the work, then falls back to the line stored with the book.
 
 From the recommendation, the user can:
 

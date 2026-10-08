@@ -1,5 +1,6 @@
 import { findDemoBook } from "./demoShelf.js";
 import { env } from "./env.js";
+import { findWork, workToBook } from "./works.js";
 
 const fallbackBooks = [
   {
@@ -35,8 +36,35 @@ export async function searchGoogleBooks(query) {
   return (data.items || []).map(toBook);
 }
 
+// The best Google Books match for a known title and author, or null if there is none
+// (no match, quota used up, network down).
+export async function findGoogleBook(title, author) {
+  const url = new URL("https://www.googleapis.com/books/v1/volumes");
+  url.searchParams.set("q", `intitle:"${title}" inauthor:"${author}"`);
+  url.searchParams.set("maxResults", "1");
+
+  if (env.GOOGLE_BOOKS_API_KEY) {
+    url.searchParams.set("key", env.GOOGLE_BOOKS_API_KEY);
+  }
+
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!response.ok) return null;
+
+    const [item] = (await response.json()).items || [];
+    return item ? toBook(item) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getGoogleBook(id) {
   if (id.startsWith("demo-")) return findDemoBook(id) || fallbackBooks[0];
+  // a recommended work that had no Google Books match keeps its own id
+  if (id.startsWith("work-")) {
+    const work = findWork(id);
+    return work ? workToBook(work) : fallbackBooks[0];
+  }
 
   const url = new URL(`https://www.googleapis.com/books/v1/volumes/${id}`);
   if (env.GOOGLE_BOOKS_API_KEY) {

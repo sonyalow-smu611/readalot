@@ -44,6 +44,19 @@ Playwright tests in `tests/e2e/room.spec.js`.
 | Cover fallback | `CoverRow.vue`, `BookOpenOverlay.vue`, `Book.vue` | Books without a cover image use Sonya's `BookCover` placeholder and spine colours |
 | Tests | `tests/e2e/room.spec.js` | Draft end-to-end checks for the home page |
 
+### Mood check-in and recommendation (AI-assisted)
+
+Added on the team's request with the same assistant: `MoodCheckInModal.vue`,
+`MoodResultModal.vue`, `MoodSteps.vue`, the once-a-day trigger in `RoomView.vue`,
+`server/src/routes/recommendations.js`, `server/src/services/quotes.js`,
+`server/src/services/works.js`, the 12-book starter list in `server/data/works.json` and
+`tests/e2e/mood-result.spec.js`. The mood vocabulary and category mapping are from `SPEC.md`.
+
+This file lists mood-to-book matching and backend endpoints as team-owned work, so the route
+and the two services need the team's review before they count as the team's own. The book list
+is a placeholder for the curated, verified list (T12), and its quotes were supplied by the
+assistant from memory and should be checked against the books.
+
 Team to review and own: the store's save logic and the decoration drop-target code in
 `RoomView.vue` are interactive logic, which the course asks the team to write or at least fully
 understand.

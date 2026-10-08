@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 
 // The room reads live weather and time; fixed answers keep these checks the same every run.
 test.beforeEach(async ({ page }) => {
+  // today's mood check-in already answered, so it does not open over the room
+  await page.addInitScript(() => {
+    const now = new Date();
+    const pad = (value) => String(value).padStart(2, "0");
+    localStorage.setItem("readalot.moodCheckIn", `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
+  });
   await page.route("**/api/weather*", (route) =>
     route.fulfill({ json: { scene: "rain", temperature: 27, weatherCode: 61, isDay: true } })
   );

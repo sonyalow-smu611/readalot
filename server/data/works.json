@@ -1,1 +1,122 @@
-[]
+[
+  {
+    "id": "work-walden",
+    "title": "Walden",
+    "author": "Henry David Thoreau",
+    "genres": ["Nature"],
+    "pageCount": 352,
+    "description": "Two years in a cabin by a Massachusetts pond, and what living simply taught the man who built it.",
+    "moods": ["calm"],
+    "quote": "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach."
+  },
+  {
+    "id": "work-the-wind-in-the-willows",
+    "title": "The Wind in the Willows",
+    "author": "Kenneth Grahame",
+    "genres": ["Classics"],
+    "pageCount": 256,
+    "description": "Mole, Rat, Badger and the reckless Mr Toad along a quiet English riverbank.",
+    "moods": ["calm"],
+    "quote": "There is nothing, absolutely nothing, half so much worth doing as simply messing about in boats."
+  },
+  {
+    "id": "work-anne-of-green-gables",
+    "title": "Anne of Green Gables",
+    "author": "L. M. Montgomery",
+    "genres": ["Classics"],
+    "pageCount": 320,
+    "description": "A talkative, imaginative orphan is sent by mistake to a brother and sister on Prince Edward Island.",
+    "moods": ["calm", "low"],
+    "quote": "I'm so glad I live in a world where there are Octobers."
+  },
+  {
+    "id": "work-little-women",
+    "title": "Little Women",
+    "author": "Louisa May Alcott",
+    "genres": ["Classics"],
+    "pageCount": 449,
+    "description": "Four sisters grow up, quarrel and find their own paths in Civil War New England.",
+    "moods": ["low"],
+    "quote": "I am not afraid of storms, for I am learning how to sail my ship."
+  },
+  {
+    "id": "work-jane-eyre",
+    "title": "Jane Eyre",
+    "author": "Charlotte Brontë",
+    "genres": ["Classics"],
+    "pageCount": 532,
+    "description": "An orphaned governess falls for her employer and discovers the secret in his house.",
+    "moods": ["low"],
+    "quote": "I am no bird; and no net ensnares me: I am a free human being with an independent will."
+  },
+  {
+    "id": "work-the-secret-garden",
+    "title": "The Secret Garden",
+    "author": "Frances Hodgson Burnett",
+    "genres": ["Classics"],
+    "pageCount": 288,
+    "description": "A lonely girl sent to a Yorkshire manor finds a locked garden and brings it, and the house, back to life.",
+    "moods": ["low", "calm"],
+    "quote": "If you look the right way, you can see that the whole world is a garden."
+  },
+  {
+    "id": "work-alices-adventures-in-wonderland",
+    "title": "Alice's Adventures in Wonderland",
+    "author": "Lewis Carroll",
+    "genres": ["Fantasy"],
+    "pageCount": 192,
+    "description": "A girl follows a white rabbit down a hole into a world where nothing behaves as it should.",
+    "moods": ["stressed"],
+    "quote": "It's no use going back to yesterday, because I was a different person then."
+  },
+  {
+    "id": "work-pride-and-prejudice",
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "genres": ["Classics"],
+    "pageCount": 279,
+    "description": "Elizabeth Bennet spars with the proud Mr Darcy in a comedy of manners and misjudgement.",
+    "moods": ["stressed"],
+    "quote": "Think only of the past as its remembrance gives you pleasure."
+  },
+  {
+    "id": "work-the-great-gatsby",
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "genres": ["Classics"],
+    "pageCount": 180,
+    "description": "A mysterious millionaire throws lavish parties in pursuit of a lost love.",
+    "moods": ["stressed"],
+    "quote": "So we beat on, boats against the current, borne back ceaselessly into the past."
+  },
+  {
+    "id": "work-the-picture-of-dorian-gray",
+    "title": "The Picture of Dorian Gray",
+    "author": "Oscar Wilde",
+    "genres": ["Classics"],
+    "pageCount": 254,
+    "description": "A beautiful young man stays untouched by time while his portrait takes on every mark of the life he leads.",
+    "moods": ["excited"],
+    "quote": "The only way to get rid of a temptation is to yield to it."
+  },
+  {
+    "id": "work-three-men-in-a-boat",
+    "title": "Three Men in a Boat",
+    "author": "Jerome K. Jerome",
+    "genres": ["Humor"],
+    "pageCount": 208,
+    "description": "Three friends and a dog take a rowing holiday up the Thames, and very little goes to plan.",
+    "moods": ["excited"],
+    "quote": "I like work: it fascinates me. I can sit and look at it for hours."
+  },
+  {
+    "id": "work-emma",
+    "title": "Emma",
+    "author": "Jane Austen",
+    "genres": ["Classics"],
+    "pageCount": 474,
+    "description": "A clever, confident young woman sets about arranging her neighbours' love lives and misreads nearly all of them.",
+    "moods": ["excited"],
+    "quote": "One half of the world cannot understand the pleasures of the other."
+  }
+]

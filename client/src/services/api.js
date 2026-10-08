@@ -82,8 +82,12 @@ export function getNearbyStores(lat, lng) {
   return request(`/stores/nearby?lat=${lat}&lng=${lng}`);
 }
 
-export function getRecommendations(mood) {
-  return request(`/recommendations?mood=${encodeURIComponent(mood)}`);
+// A book for the mood with a quote from it. `exclude` is the work shown last, so asking for
+// another recommendation gives a different book.
+export function getRecommendations(mood, exclude = "") {
+  const query = new URLSearchParams({ mood });
+  if (exclude) query.set("exclude", exclude);
+  return request(`/recommendations?${query}`);
 }
 
 export function scanBook(imageBase64) {
