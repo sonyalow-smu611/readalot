@@ -82,6 +82,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       class="dock__fab"
       :class="{ 'is-open': open }"
       :aria-expanded="open"
+      data-tour="menu"
       aria-label="Room menu"
       @click="toggleDock"
     >

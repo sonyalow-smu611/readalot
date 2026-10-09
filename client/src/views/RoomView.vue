@@ -449,7 +449,7 @@ onBeforeUnmount(() => {
         </template>
       </RoomScene>
 
-      <CreditChip v-if="!isClose" class="home__credits" />
+      <CreditChip v-if="!isClose" data-tour="credits" class="home__credits" />
     </div>
 
     <!-- Opened from the book on the chair -->

@@ -1,6 +1,6 @@
 <!-- Small sticky note on the back of the bookcase. Tapping it opens the Quote of the Day. -->
 <template>
-  <button class="note" type="button" aria-haspopup="dialog" aria-label="Quote of the day">
+  <button class="note" type="button" data-tour="quote" aria-haspopup="dialog" aria-label="Quote of the day">
     <span class="note__tape" aria-hidden="true" />
     <span class="note__text" aria-hidden="true">QOTD</span>
   </button>

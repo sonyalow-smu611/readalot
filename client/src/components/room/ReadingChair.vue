@@ -75,6 +75,7 @@
     <button
       class="chair__book"
       type="button"
+      data-tour="chair"
       aria-haspopup="dialog"
       :aria-expanded="expanded"
       :aria-label="label"
