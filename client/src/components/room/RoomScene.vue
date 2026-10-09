@@ -14,6 +14,7 @@
 
     <div class="room__stage">
       <RoomWindow
+        data-tour="window"
         class="room__window"
         :scene="weather.scene"
         :night="weather.night"
@@ -21,7 +22,7 @@
         :rows="WINDOW_ROWS"
       />
       <div class="room__light" />
-      <WallClock class="room__clock" />
+      <WallClock data-tour="clock" class="room__clock" />
       <RoomBookshelf
         class="room__bookcase"
         :books="books"

@@ -1,9 +1,13 @@
 <script setup>
-// Scaffolded with AI assistance — see AI_USAGE.md
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const auth = computed(() => Boolean(route.meta.bare))
 </script>
 
 <template>
-  <div class="phone-stage">
+  <div class="phone-stage" :class="{ 'phone-stage--auth': auth }">
     <div class="phone-frame grain">
       <slot />
     </div>
@@ -47,6 +51,22 @@
     border: 1px solid var(--rl-line);
     border-radius: 36px;
     box-shadow: 0 18px 48px rgba(63, 46, 36, 0.12);
+  }
+
+  /* Sign-in fills the window. The room stays in the phone column. */
+  .phone-stage--auth {
+    padding: 0;
+    background: var(--rl-canvas);
+  }
+
+  .phone-stage--auth .phone-frame {
+    max-width: none;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 }
 </style>

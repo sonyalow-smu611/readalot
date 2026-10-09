@@ -3,6 +3,7 @@
   <div
     ref="root"
     class="bookcase"
+    data-tour="shelf"
     :class="{ 'bookcase--open': canOpen }"
     data-drop="case"
     @click="open"
