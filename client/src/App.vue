@@ -24,7 +24,7 @@ function resetScroll() {
   <PhoneFrame>
     <LoadingScreen v-if="booting" @done="booting = false" />
     <!-- full-bleed pages (the room) draw to the edges and bring their own chrome -->
-    <AppHeader v-if="showChrome && !route.meta.fullBleed" />
+    <AppHeader v-if="showChrome && !route.meta.fullBleed && !route.meta.hideHeader" />
     <main
       ref="main"
       class="app-main"

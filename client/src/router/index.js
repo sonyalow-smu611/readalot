@@ -30,7 +30,7 @@ const routes = [
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 2 } },
   { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 3 } },
-  { path: '/profile', name: 'profile', component: ProfileView, meta: { title: 'Profile', order: 4 } },
+  { path: '/profile', name: 'profile', component: ProfileView, meta: { title: 'Profile', hideHeader: true, order: 4 } },
   { path: '/books/:id', name: 'book-details', component: BookDetailsView },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },
   { path: '/register', name: 'register', component: LoginView, meta: { title: 'Register', bare: true, guest: true, order: 0 } },

@@ -66,6 +66,8 @@ function emptyProfile() {
     age: '',
     religion: '',
     favouriteGenres: [],
+    location: '',
+    discoverable: false,
   }
 }
 
@@ -104,11 +106,13 @@ export const useUserStore = defineStore('user', () => {
       id: user.id,
       email: user.email || '',
       name: meta.name || '',
-      avatar: '🐨',
+      avatar: meta.avatar || '🐨',
       gender: meta.gender || '',
       age: meta.age ?? '',
       religion: meta.religion || '',
       favouriteGenres: Array.isArray(meta.favouriteGenres) ? meta.favouriteGenres : [],
+      location: meta.location || '',
+      discoverable: meta.discoverable === true,
     }
   }
 
