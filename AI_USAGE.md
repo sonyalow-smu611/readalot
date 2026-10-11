@@ -78,6 +78,13 @@ Team to review and own: the store's save logic and the decoration drop-target co
 `RoomView.vue` are interactive logic, which the course asks the team to write or at least fully
 understand.
 
+### Discover Books layout (AI-assisted, layout only)
+
+`components/DiscoverShelf.vue` (new: shelf heading, "See all" link, Swiper row of covers,
+loading skeleton) and the template and styles of `views/DiscoverBooksView.vue` (header, search
+field, filter chips, shelf list, preview modal hookup). The data loading, search, filter
+behaviour and status saving in `DiscoverBooksView.vue` are left as TODOs for Aasim to write.
+
 ## Team-owned work (not AI)
 
 Per the course rules, the team should implement these later phases themselves (AI may only

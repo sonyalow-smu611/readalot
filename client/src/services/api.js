@@ -26,8 +26,11 @@ async function request(path, options = {}) {
   return response.json();
 }
 
-export function searchBooks(query) {
-  return request(`/books/search?q=${encodeURIComponent(query)}`);
+// `limit` is how many results to ask for (the server's default is 12, its max 40)
+export function searchBooks(query, limit) {
+  const params = new URLSearchParams({ q: query });
+  if (limit) params.set("limit", String(limit));
+  return request(`/books/search?${params}`);
 }
 
 export function getBook(id) {

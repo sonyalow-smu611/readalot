@@ -1,13 +1,15 @@
 import { Router } from "express";
 import { requireUser } from "../middleware/auth.js";
-import { getGoogleBook, searchGoogleBooks } from "../services/books.js";
+import { MAX_SEARCH_RESULTS, getGoogleBook, searchGoogleBooks } from "../services/books.js";
 import { supabase } from "../services/supabase.js";
 
 const router = Router();
 
 router.get("/search", async (req, res, next) => {
   try {
-    const books = await searchGoogleBooks(String(req.query.q || ""));
+    // ?limit= asks for more results (the genre page wants 24); kept between 1 and Google's max
+    const limit = Math.min(MAX_SEARCH_RESULTS, Math.max(1, Number.parseInt(req.query.limit, 10) || 12));
+    const books = await searchGoogleBooks(String(req.query.q || ""), limit);
     res.json({ books });
   } catch (err) {
     next(err);
