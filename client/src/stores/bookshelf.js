@@ -3,7 +3,7 @@
 // Books come from the API (GET /api/user-books) and a status change is saved straight back.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { getMyBooks, saveUserBook, updateReadingStatus } from '@/services/api.js'
+import { getMyBooks, removeUserBook, saveUserBook, updateReadingStatus } from '@/services/api.js'
 import { normalizeBook } from '@/lib/book.js'
 
 export const BOOK_STATUSES = ['want_to_read', 'reading', 'read']
@@ -119,6 +119,21 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     await save(book, { progress: percent }, `Couldn't save your progress in "${book.title}". Try again.`)
   }
 
+  // Take a book off the shelf altogether. It disappears at once; a failed delete puts it back
+  // and throws, so the caller can say so next to the book.
+  async function removeBook(id) {
+    const index = saved.value.findIndex((book) => book.id === id)
+    if (index < 0) return
+    const [book] = saved.value.splice(index, 1)
+
+    try {
+      await removeUserBook(id)
+    } catch (err) {
+      saved.value.splice(index, 0, book)
+      throw new Error(`Couldn't remove "${book.title}". Try again.`, { cause: err })
+    }
+  }
+
   // Re-file every book on a shelf to one status. Used after a drag so the store matches
   // whichever shelf each book actually landed on.
   function applyShelf(ids, status) {
@@ -139,6 +154,7 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     setOrder,
     setStatus,
     setProgress,
+    removeBook,
     applyShelf,
   }
 })

@@ -23,6 +23,9 @@ async function request(path, options = {}) {
     throw new Error(error.error || "Request failed");
   }
 
+  // 204 No Content (e.g. a delete) has no body to parse
+  if (response.status === 204) return null;
+
   return response.json();
 }
 
