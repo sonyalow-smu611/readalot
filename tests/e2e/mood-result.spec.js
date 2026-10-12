@@ -2,14 +2,12 @@ import { expect, test } from "@playwright/test";
 
 const WALDEN = {
   mood: "calm",
-  category: "nature",
   workId: "work-walden",
   book: { id: "work-walden", title: "Walden", authors: ["Henry David Thoreau"], coverUrl: "" },
   quote: { quoteText: "I went to the woods because I wished to live deliberately.", author: "Henry David Thoreau", work: "Walden" }
 };
 const WILLOWS = {
   mood: "calm",
-  category: "wisdom",
   workId: "work-the-wind-in-the-willows",
   book: { id: "work-the-wind-in-the-willows", title: "The Wind in the Willows", authors: ["Kenneth Grahame"], coverUrl: "" },
   quote: { quoteText: "There is nothing half so much worth doing as simply messing about in boats.", author: "Kenneth Grahame", work: "The Wind in the Willows" }

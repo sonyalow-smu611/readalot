@@ -1,26 +1,18 @@
 import { Router } from "express";
 import { findGoogleBook } from "../services/books.js";
-import { getRandomQuote } from "../services/quotes.js";
+import { getBookQuote } from "../services/wikimedia.js";
 import { pickWork, workToBook } from "../services/works.js";
 
 const router = Router();
 
-// Each mood maps to a group of quote categories. One is used per request, because the quotes
-// API only returns quotes that match every category it is given.
-const MOOD_CATEGORIES = {
-  calm: ["nature", "wisdom", "philosophy"],
-  low: ["inspirational", "courage", "happiness"],
-  stressed: ["time", "freedom", "truth"],
-  excited: ["success", "humor", "art"]
-};
+const MOODS = new Set(["calm", "low", "stressed", "excited"]);
 
 // GET /api/recommendations?mood=calm[&exclude=<work id>]
 // A book for the mood, with a quote from that book.
 router.get("/", async (req, res, next) => {
   try {
     const mood = String(req.query.mood || "").toLowerCase();
-    const categories = MOOD_CATEGORIES[mood];
-    if (!categories) {
+    if (!MOODS.has(mood)) {
       return res.status(400).json({ error: "Pick a mood: calm, low, stressed or excited." });
     }
 
@@ -29,25 +21,21 @@ router.get("/", async (req, res, next) => {
       return res.status(503).json({ error: "No books to recommend yet." });
     }
 
-    const category = categories[Math.floor(Math.random() * categories.length)];
+    const book = (await findGoogleBook(work.title, work.author)) || workToBook(work);
 
-    // Best match first: a quote from this book in the mood's category, then any quote from
-    // the book, then the line kept with the book in the list.
-    const [book, inCategory] = await Promise.all([
-      findGoogleBook(work.title, work.author),
-      getRandomQuote({ work: work.title, category })
-    ]);
-    const quote = inCategory || (await getRandomQuote({ work: work.title }));
+    // Best match first: a quote looked up on Wikiquote under the title Google Books gives the
+    // book, then under the title in our list (Google's may name an edition, "... Annotated"),
+    // then the line kept with the book in the list.
+    const quote =
+      (await getBookQuote({ title: book.title, authors: [book.authors[0], work.author] })) ||
+      (book.title !== work.title && (await getBookQuote({ title: work.title, authors: [work.author] }))) ||
+      { quoteText: work.quote, sourceUrl: "" };
 
     res.json({
       mood,
-      // only named when the quote really is from that category
-      category: inCategory ? category : null,
       workId: work.id,
-      book: book || workToBook(work),
-      quote: quote
-        ? { ...quote, author: quote.author || work.author, work: work.title }
-        : { quoteText: work.quote, author: work.author, work: work.title, categories: [] }
+      book,
+      quote: { ...quote, author: work.author, work: work.title }
     });
   } catch (err) {
     next(err);

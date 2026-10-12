@@ -31,15 +31,20 @@
                 <h3 class="result__name">{{ data.book.title }}</h3>
                 <p class="result__author">{{ data.book.authors?.join(", ") || "Unknown author" }}</p>
                 <p class="result__reason">
-                  Picked because you're feeling <strong>{{ data.mood }}</strong
-                  ><template v-if="data.category">, with a line on {{ data.category }}</template>.
+                  Picked because you're feeling <strong>{{ data.mood }}</strong>.
                 </p>
               </div>
             </div>
 
             <figure class="result__quote">
               <blockquote>“{{ data.quote.quoteText }}”</blockquote>
-              <figcaption>{{ data.quote.author }}, <cite>{{ data.quote.work }}</cite></figcaption>
+              <figcaption>
+                {{ data.quote.author }}, <cite>{{ data.quote.work }}</cite>
+                <!-- Wikiquote text is CC BY-SA: the quote links back to its page -->
+                <template v-if="data.quote.sourceUrl">
+                  · <a :href="data.quote.sourceUrl" target="_blank" rel="noopener">via Wikiquote</a>
+                </template>
+              </figcaption>
             </figure>
 
             <p v-if="addError" class="result__error" role="alert">{{ addError }}</p>

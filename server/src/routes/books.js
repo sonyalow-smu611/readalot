@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireUser } from "../middleware/auth.js";
 import { getGoogleBook, searchGoogleBooks } from "../services/books.js";
+import { findDemoBook } from "../services/demoShelf.js";
 import { supabase } from "../services/supabase.js";
 
 const router = Router();
@@ -16,7 +17,15 @@ router.get("/search", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const book = await getGoogleBook(req.params.id);
+    const shelved = findDemoBook(req.params.id);
+    // the written-out demo books are not on Google Books; a shelf book that came from Google
+    // is still shown from the shelf's copy when Google cannot be reached
+    const book = shelved?.id.startsWith("demo-")
+      ? shelved
+      : await getGoogleBook(req.params.id).catch((err) => {
+          if (shelved) return shelved;
+          throw err;
+        });
     res.json({ book });
   } catch (err) {
     next(err);

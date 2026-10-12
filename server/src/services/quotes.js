@@ -4,15 +4,13 @@ import { env } from "./env.js";
 
 const RANDOM_QUOTES_URL = "https://api.api-ninjas.com/v2/randomquotes";
 
-// One random quote matching the filters, or null when there is none to show (no key set,
-// the API is unreachable, or nothing matches). Callers decide what to fall back to.
-//   work      partial match on the title of the source work
+// One random quote, or null when there is none to show (no key set, the API is unreachable,
+// or nothing matches). Callers decide what to fall back to.
 //   category  one of the API's categories, e.g. "wisdom"
-export async function getRandomQuote({ work, category } = {}) {
+export async function getRandomQuote({ category } = {}) {
   if (!env.API_NINJAS_KEY) return null;
 
   const url = new URL(RANDOM_QUOTES_URL);
-  if (work) url.searchParams.set("work", work);
   if (category) url.searchParams.set("categories", category);
 
   try {

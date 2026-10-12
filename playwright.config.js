@@ -7,7 +7,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "PORT=3100 npm --workspace server run dev",
+      // no Google Books key: the tests rely on the built-in demo shelf, not a random one
+      command: "PORT=3100 GOOGLE_BOOKS_API_KEY= npm --workspace server run dev",
       url: "http://127.0.0.1:3100/api/health",
       reuseExistingServer: false
     },

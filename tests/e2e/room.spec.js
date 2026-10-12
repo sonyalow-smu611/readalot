@@ -106,7 +106,7 @@ test("the book on the chair opens the Currently Reading card", async ({ page }) 
 });
 
 test("the sticky note opens the Quote of the Day", async ({ page }) => {
-  // the real quote changes every day; quotes from the dataset have a topic but no author
+  // the real quote changes every day
   await page.route("**/api/quote/today", (route) =>
     route.fulfill({ json: { quoteText: "So many books, so little time.", author: "", topic: "books" } })
   );
