@@ -4,8 +4,14 @@ import { nextTick, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { useToast } from '@/composables/useToast'
 
-const { state } = useToast()
+const { state, hide } = useToast()
 const el = ref(null)
+
+function act() {
+  const { run } = state.action
+  hide()
+  run()
+}
 
 watch(
   () => state.visible,
@@ -19,7 +25,10 @@ watch(
 </script>
 
 <template>
-  <p v-if="state.visible" ref="el" class="app-toast" role="status">{{ state.message }}</p>
+  <p v-if="state.visible" ref="el" class="app-toast" role="status">
+    {{ state.message }}
+    <button v-if="state.action" type="button" class="app-toast__action" @click="act">{{ state.action.label }}</button>
+  </p>
 </template>
 
 <style scoped>
@@ -40,5 +49,16 @@ watch(
   border: var(--outline);
   border-radius: 999px;
   box-shadow: var(--shadow-sticker-sm);
+}
+
+.app-toast__action {
+  margin-left: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>

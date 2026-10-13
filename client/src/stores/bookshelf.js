@@ -3,7 +3,7 @@
 // Books come from the API (GET /api/user-books) and a status change is saved straight back.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { getMyBooks, saveUserBook, updateReadingStatus } from '@/services/api.js'
+import { getMyBooks, removeUserBook, saveUserBook, updateReadingStatus } from '@/services/api.js'
 import { normalizeBook } from '@/lib/book.js'
 
 export const BOOK_STATUSES = ['want_to_read', 'reading', 'read']
@@ -68,6 +68,34 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
   async function addBook(bookId, status = 'want_to_read') {
     await saveUserBook({ bookId, status })
     saved.value = (await getMyBooks()).books.map(normalizeBook)
+  }
+
+  // Take a book off the shelf at once, then delete it; a failed delete puts it back.
+  // Returns the removed book, so restoreBook() can undo it.
+  async function removeBook(id) {
+    const book = findBook(id)
+    if (!book) return null
+
+    saved.value = saved.value.filter((item) => item !== book)
+    try {
+      await removeUserBook(id)
+    } catch (err) {
+      saved.value = [...saved.value, book]
+      throw err
+    }
+    return book
+  }
+
+  // Put a removed book back with its shelf, progress and rating. Its place in the shelf
+  // order was never forgotten, so it returns to the same spot.
+  async function restoreBook(book) {
+    await saveUserBook({
+      bookId: book.id,
+      status: book.status,
+      progress: book.progress,
+      rating: book.myRating,
+    })
+    saved.value = [...saved.value, book]
   }
 
   function findBook(id) {
@@ -135,6 +163,8 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     moveError,
     load,
     addBook,
+    removeBook,
+    restoreBook,
     findBook,
     setOrder,
     setStatus,

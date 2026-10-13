@@ -9,7 +9,11 @@ import BookCover from '@/components/BookCover.vue'
 const props = defineProps({
   books: { type: Array, default: () => [] },
   title: { type: String, default: '' },
+  // Edit mode: a × on each cover, which emits `remove`
+  removable: { type: Boolean, default: false },
 })
+
+const emit = defineEmits(['remove'])
 
 const { open } = useBookOpen()
 const frame = ref(null)
@@ -80,17 +84,21 @@ watch(
       </button>
       <div class="covers__window">
         <div ref="track" class="covers__track">
-          <button
-            v-for="book in books"
-            :key="book.id"
-            type="button"
-            class="covers__card"
-            :style="{ width: `${cardW}px` }"
-            @click="open(book, $event.currentTarget)"
-          >
-            <BookCover class="covers__img" :cover-url="book.cover" :title="book.title" :seed="book.id" />
-            <span class="covers__name">{{ book.title }}</span>
-          </button>
+          <div v-for="book in books" :key="book.id" class="covers__slot" :style="{ width: `${cardW}px` }">
+            <button type="button" class="covers__card" @click="open(book, $event.currentTarget)">
+              <BookCover class="covers__img" :cover-url="book.cover" :title="book.title" :seed="book.id" />
+              <span class="covers__name">{{ book.title }}</span>
+            </button>
+            <button
+              v-if="removable"
+              type="button"
+              class="covers__remove"
+              :aria-label="`Remove ${book.title}`"
+              @click="emit('remove', book)"
+            >
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+            </button>
+          </div>
         </div>
       </div>
       <button
@@ -155,8 +163,16 @@ watch(
   will-change: transform;
 }
 
+.covers__slot {
+  position: relative;
+  flex: none;
+  height: 100%;
+  min-height: 0;
+}
+
 .covers__card {
   display: flex;
+  width: 100%;
   flex: none;
   flex-direction: column;
   gap: 4px;
@@ -177,6 +193,31 @@ watch(
   object-fit: cover;
   border-radius: 2px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+.covers__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--rl-surface, #fffdf9);
+  border-radius: 50%;
+  background: var(--rl-primary, #3f2e24);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.covers__remove svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: var(--rl-surface, #fffdf9);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .covers__name {

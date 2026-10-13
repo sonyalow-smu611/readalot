@@ -4,6 +4,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBookshelfStore } from '@/stores/bookshelf'
+import { useToast } from '@/composables/useToast'
 import { fetchWeather } from '@/services/weather.js'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { decorMeta, useDecor } from '@/composables/useDecor'
@@ -12,6 +13,7 @@ import CurrentlyReadingCard from '@/components/room/CurrentlyReadingCard.vue'
 import MoodCheckInModal from '@/components/modals/MoodCheckInModal.vue'
 import MoodResultModal from '@/components/modals/MoodResultModal.vue'
 import QuoteOfDayModal from '@/components/modals/QuoteOfDayModal.vue'
+import RemoveBookModal from '@/components/modals/RemoveBookModal.vue'
 import StateView from '@/components/StateView.vue'
 import Shelf from '@/components/Shelf.vue'
 import CoverRow from '@/components/CoverRow.vue'
@@ -67,6 +69,58 @@ function syncShelves() {
 // a drag that changed the shelves is saved.
 watch(storeLayout, fillShelves, { immediate: true })
 watch(shelfLayout, syncShelves)
+
+// --- Removing books ----------------------------------------------------------------------
+// Edit mode puts a × on every book. "Don't ask again" is remembered on this device; Undo in
+// the toast is the safety net either way.
+const SKIP_CONFIRM_KEY = 'readalot.skipRemoveConfirm'
+const editing = ref(false)
+const removing = ref(null)
+const { show: showToast } = useToast()
+
+function skipConfirm() {
+  try {
+    return localStorage.getItem(SKIP_CONFIRM_KEY) === 'yes'
+  } catch {
+    return false
+  }
+}
+
+function askRemove(book) {
+  if (skipConfirm()) removeBook(book)
+  else removing.value = book
+}
+
+function confirmRemove({ remember }) {
+  const book = removing.value
+  removing.value = null
+  if (remember) {
+    try {
+      localStorage.setItem(SKIP_CONFIRM_KEY, 'yes')
+    } catch {
+      // storage unavailable: it asks again next visit
+    }
+  }
+  removeBook(book)
+}
+
+async function removeBook(book) {
+  try {
+    const removed = await bookshelf.removeBook(book.id)
+    if (!removed) return
+    showToast(`Removed “${removed.title}”`, 5000, { label: 'Undo', run: () => undoRemove(removed) })
+  } catch {
+    showToast(`Couldn't remove “${book.title}”. Try again.`)
+  }
+}
+
+async function undoRemove(book) {
+  try {
+    await bookshelf.restoreBook(book)
+  } catch {
+    showToast(`Couldn't put “${book.title}” back. Try again.`)
+  }
+}
 
 // --- Window ------------------------------------------------------------------------------
 const weather = ref({ scene: 'cloudy', temperature: null, isDay: true })
@@ -261,6 +315,7 @@ async function openShelf(rect) {
 function closeShelf() {
   const done = async () => {
     isClose.value = false
+    editing.value = false
     await nextTick()
     shelfTrigger?.focus?.()
   }
@@ -517,16 +572,25 @@ onBeforeUnmount(() => {
               <span class="case__name">Reading</span>
               <span class="case__count" :aria-label="`${reading.length} books`">{{ reading.length }}</span>
             </h3>
+            <button
+              type="button"
+              class="case__edit"
+              :class="{ 'is-on': editing }"
+              :aria-pressed="editing"
+              @click="editing = !editing"
+            >
+              {{ editing ? 'Done' : 'Edit' }}
+            </button>
           </div>
           <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="reading">
             <template v-if="shelfView === 'spines'">
-              <Shelf v-model="reading" mode="draggable" group="room" compact />
+              <Shelf v-model="reading" mode="draggable" group="room" compact :removable="editing" @remove="askRemove" />
               <button v-for="item in placedIn('reading')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
                 <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
                 <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
               </button>
             </template>
-            <CoverRow v-else :books="reading" />
+            <CoverRow v-else :books="reading" :removable="editing" @remove="askRemove" />
           </div>
           <div class="case__rail">
             <h3 class="case__label">
@@ -536,13 +600,13 @@ onBeforeUnmount(() => {
           </div>
           <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="tbr">
             <template v-if="shelfView === 'spines'">
-              <Shelf v-model="tbr" mode="draggable" group="room" compact />
+              <Shelf v-model="tbr" mode="draggable" group="room" compact :removable="editing" @remove="askRemove" />
               <button v-for="item in placedIn('tbr')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
                 <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
                 <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
               </button>
             </template>
-            <CoverRow v-else :books="tbr" />
+            <CoverRow v-else :books="tbr" :removable="editing" @remove="askRemove" />
           </div>
           <div class="case__rail">
             <h3 class="case__label">
@@ -552,13 +616,13 @@ onBeforeUnmount(() => {
           </div>
           <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="read">
             <template v-if="shelfView === 'spines'">
-              <Shelf v-model="finished" mode="draggable" group="room" compact />
+              <Shelf v-model="finished" mode="draggable" group="room" compact :removable="editing" @remove="askRemove" />
               <button v-for="item in placedIn('read')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
                 <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
                 <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
               </button>
             </template>
-            <CoverRow v-else :books="finished" />
+            <CoverRow v-else :books="finished" :removable="editing" @remove="askRemove" />
           </div>
           <div class="case__rail case__rail--base" />
         </div>
@@ -578,6 +642,7 @@ onBeforeUnmount(() => {
     <RoomDock @mood="openMood" />
 
     <QuoteOfDayModal v-if="quoteOpen" @close="quoteOpen = false" />
+    <RemoveBookModal v-if="removing" :book="removing" @close="removing = null" @remove="confirmRemove" />
     <MoodCheckInModal v-if="moodStep === 'checkin'" @submit="submitMood" @skip="skipMood" />
     <MoodResultModal v-else-if="moodStep === 'result'" :mood="mood" @close="moodStep = null" />
   </section>
@@ -883,6 +948,29 @@ onBeforeUnmount(() => {
   box-shadow:
     inset 0 1px 0 rgba(255, 253, 249, 0.28),
     inset 0 -2px 0 rgba(44, 36, 30, 0.4);
+}
+
+/* Edit / Done, a brass plate like the labels, at the bookcase's top-right corner */
+.case__edit {
+  margin-left: auto;
+  padding: 4px 12px;
+  border: 1px solid #b8943f;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--rl-surface), var(--rl-secondary));
+  box-shadow:
+    0 1px 2px rgba(44, 36, 30, 0.5),
+    inset 0 0 0 1px rgba(255, 253, 249, 0.7);
+  font-family: var(--rl-font-title);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--rl-primary);
+  cursor: pointer;
+}
+
+.case__edit.is-on {
+  background: var(--rl-primary);
+  border-color: var(--rl-primary);
+  color: var(--rl-surface);
 }
 
 /* a brass-edged plate fixed to the board */

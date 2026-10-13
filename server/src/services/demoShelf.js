@@ -39,6 +39,14 @@ export const demoShelf = [
   book(16, "Gone Girl", "Gillian Flynn", "Mystery", 415, 4.1, "read", 100, "A wife vanishes on her anniversary and her husband becomes the prime suspect.")
 ];
 
+// The starting books' details, kept so one taken off the shelf can be put back as itself.
+const startingBooks = structuredClone(demoShelf);
+
 export function findDemoBook(id) {
   return demoShelf.find((item) => item.id === id);
+}
+
+// Details for a demo book whether or not it is on the shelf right now.
+export function demoBookDetails(id) {
+  return findDemoBook(id) || structuredClone(startingBooks.find((item) => item.id === id));
 }
