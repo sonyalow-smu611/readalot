@@ -8,7 +8,12 @@ export async function detectBookFromImage(imageBase64) {
   const detectedText = await detectText(imageBase64);
   if (!detectedText) return { detectedText: "", book: null, confidence: 0 };
 
-  const [book] = await searchGoogleBooks(detectedText);
+  let book = null;
+  try {
+    [book] = await searchGoogleBooks(detectedText);
+  } catch {
+    book = null;
+  }
   return {
     detectedText,
     book: book || null,

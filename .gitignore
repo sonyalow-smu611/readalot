@@ -13,10 +13,17 @@ dist/
 # the dataset's licence is unknown.
 server/data/quotes.json
 
+# Answers from slow outside APIs, saved so restarts reuse them (the demo shelf's random pick,
+# Google Books matches and Wikiquote quotes for mood recommendations). Per machine.
+server/data/*.cache.json
+
 # Test output
 coverage/
 playwright-report/
 test-results/
+
+# Local tool settings
+.claude/
 
 # OS / editor noise
 .DS_Store

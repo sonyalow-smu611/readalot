@@ -52,16 +52,16 @@ function reader(n, username, displayName, favoriteGenres, lat, lng) {
 
 // [title query, genre fallback] per shelf; users pick from this pool by index.
 const bookQueries = [
-  "intitle:Norwegian Wood inauthor:Murakami",
-  "intitle:Pride and Prejudice inauthor:Austen",
-  "intitle:The Hobbit inauthor:Tolkien",
-  "intitle:Dune inauthor:Herbert",
-  "intitle:1984 inauthor:Orwell",
-  "intitle:The Great Gatsby inauthor:Fitzgerald",
-  "intitle:Circe inauthor:Miller",
-  "intitle:The Alchemist inauthor:Coelho",
-  "intitle:Frankenstein inauthor:Shelley",
-  "intitle:Gone Girl inauthor:Flynn"
+  "Norwegian Wood Murakami",
+  "Pride and Prejudice Austen",
+  "The Hobbit Tolkien",
+  "Dune Herbert",
+  "1984 Orwell",
+  "The Great Gatsby Fitzgerald",
+  "Circe Miller",
+  "The Alchemist Coelho",
+  "Frankenstein Shelley",
+  "Gone Girl Flynn"
 ];
 
 // user index (0 = demo, 1-8 = readers) -> [book pool index, status, progress]
@@ -89,7 +89,7 @@ async function ok(label, promise) {
 async function resolveBooks() {
   const books = [];
   for (const query of bookQueries) {
-    const [match] = (await searchGoogleBooks(query)).filter((b) => !b.id.startsWith("demo-"));
+    const [match] = await searchGoogleBooks(query).catch(() => []);
     books.push(match || null);
   }
   if (books.some((b) => !b)) {

@@ -1,6 +1,6 @@
 # Guidelines
 
-Team rules for the IS216 group project. Start with [`../GUARDRAILS.md`](../GUARDRAILS.md) for the short version.
+Team rules for the IS216 group project. [`../GUARDRAILS.md`](../GUARDRAILS.md) is the one-screen reminder.
 
 | File | What it covers |
 |------|----------------|

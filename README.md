@@ -5,10 +5,6 @@ API, with Supabase as the database. Each reader gets a virtual reading room with
 a window showing the live weather, a daily mood check-in that recommends a book, and a shop for
 decorating the room, plus pages to discover books, meet nearby readers and scan books in.
 
-> **Merge branch (`merge-homepage`).** Alric's and Sonya's apps are being combined here page by
-> page. Done so far: the shared shell and the home page (My Room), including the mood check-in.
-> The other pages still show Sonya's versions; Alric's `DiscoverView`, `PeopleView` and
-> `ScanView` are in `client/src/views/` but not routed until those pages are merged.
 > Course rules and AI policy: [GUARDRAILS.md](GUARDRAILS.md), [AI_USAGE.md](AI_USAGE.md).
 > Project brief: [PROJECT.md](PROJECT.md).
 
@@ -39,13 +35,15 @@ Run the server and client commands in separate terminals.
 - Express API: `http://localhost:3000/api/health`
 - Root `.env` is the only env file. Vite reads it through `client/vite.config.js`.
 
-**Without any keys** the app is still demoable: the shelf is a 16-book demo shelf held in the
+**Without any keys** the app is still demoable: the shelf is 16 built-in books held in the
 server's memory (reset on restart), mood recommendations use the quotes stored in
-`server/data/works.json`, and books show plain coloured covers. Weather, the room clock and pet
-photos need no key.
+`server/data/works.json`, and books show plain coloured covers. With `GOOGLE_BOOKS_API_KEY` the
+shelf is 20 novels picked from Google Books and remembered in `server/data/demoShelf.cache.json`.
+Weather, the room clock and pet photos need no key.
 
-**Quote of the Day** needs one extra step: its quote list is not in the repository and is built
-on each machine (see "Quote of the Day" below). Until then the popup shows one built-in quote.
+**Quote of the Day** uses `server/data/quotes.json` when that file has been built (see "Quote of
+the Day" below). Until then, `API_NINJAS_KEY` supplies the day's quote, and with neither the
+popup shows one built-in quote.
 
 **With Supabase** (shared keys from the team): follow "Database" below, then run
 `npm run seed -w server` once for the demo user, fake readers and sample books.
@@ -70,11 +68,12 @@ All are optional. `.env.example` lists them with the same notes.
 | `PORT` | server | API port | 3000 |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | server | Database and auth access | In-memory demo shelf and a built-in demo user |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | client | Browser Supabase client | No login token is sent |
-| `GOOGLE_BOOKS_API_KEY` | server | Book search, metadata, covers | Keyless quota runs out quickly; placeholder book, no covers |
-| `GOOGLE_CLOUD_PROJECT_ID`, `GOOGLE_CLOUD_VISION_KEY` | server | Scan Book text detection (not built yet, T26) | No effect yet |
+| `GOOGLE_BOOKS_API_KEY` | server | Book search, metadata, covers, and the 20-book demo shelf | Keyless quota runs out quickly; search shows a placeholder, book pages error, the shelf is the built-in 16 |
+| `GOOGLE_CLOUD_PROJECT_ID`, `GOOGLE_CLOUD_VISION_KEY` | server | Scan Book text detection | Without the Vision key, scan uses a sample book |
 | `GOOGLE_MAPS_API_KEY` | server | Nearby stores (lookup not built yet; not needed for the map) | Empty store list |
 | `DEMO_USER_ID` | server | Seeded demo profile used when no login token is present | Only needed with Supabase |
-| `API_NINJAS_KEY` | server | Quotes for mood recommendations (`X-Api-Key`) | Quotes stored in `server/data/works.json` |
+| `API_NINJAS_KEY` | server | Mood quote when Wikiquote has nothing; Quote of the Day when `quotes.json` is missing | The line in `works.json`, or one built-in daily quote |
+| `WIKIMEDIA_ENTERPRISE_USERNAME`, `WIKIMEDIA_ENTERPRISE_PASSWORD` | server | Mood quote from the book's Wikiquote page | api-ninjas, then the line in `works.json` |
 | `VITE_API_TARGET` | client dev server | Where Vite proxies `/api` | `http://localhost:3000` |
 
 Public APIs that need no key, all called from the server: Open-Meteo (weather), utctime.app and
@@ -118,10 +117,12 @@ readalot/
 │   └── services/               api.js (the app's API calls), weather.js and time.js (room window and clock)
 ├── server/
 │   ├── src/routes/             Express routes
-│   ├── src/services/           Books, quotes, works, demo shelf, compatibility, vision, supabase, env
+│   ├── src/services/           books (Google Books), quotes and dailyQuote, wikimedia (Wikiquote),
+│   │                           works, demoShelf, cacheFile, compatibility, vision, supabase, env
 │   ├── src/middleware/auth.js  Token guard (demo-user fallback)
 │   ├── data/works.json         Books a mood recommendation picks from (starter list, see Known Limits)
 │   ├── data/quotes.json        Quote of the Day list, built locally from the Kaggle dataset (not in git)
+│   ├── data/*.cache.json       Saved Google Books, demo shelf and Wikiquote answers (not in git)
 │   ├── scripts/                seed.js, importQuotes.js, verifyWorks.js
 │   └── tests/                  Assert-style checks
 ├── database/schema.sql         Supabase schema and migration block
@@ -155,9 +156,9 @@ All under `/api`, served by `server/src/app.js`.
 |-------|---------|
 | `GET /health` | Server is up |
 | `GET /user-books`, `POST /user-books`, `PATCH /user-books/:id`, `DELETE /user-books/:id` | The reader's shelf. Each book carries `status`, `progress` (0-100), `myRating` and `reviewed`; `PATCH` takes `status` and/or `progress` |
-| `GET /books/search?q=`, `GET /books/:id`, reviews and quotes under `/books/:id` | Book search and details |
-| `GET /recommendations?mood=calm\|low\|stressed\|excited[&exclude=<work id>]` | A book for the mood with a quote from it |
-| `GET /quote/today` | Quote of the Day: `quoteText`, `topic` (and `author`, empty for dataset quotes) |
+| `GET /books/search?q=&limit=`, `GET /books/:id`, reviews and quotes under `/books/:id` | Book search and details. Search returns a placeholder book when Google Books cannot be reached; a book page answers 404 or 502 |
+| `GET /recommendations?mood=calm\|low\|stressed\|excited[&exclude=<work id>]` | A book for the mood with a quote from it: `book`, `workId`, `category` (or null), `quote` (`quoteText`, `author`, `work`, `sourceUrl`) |
+| `GET /quote/today` | Quote of the Day: `quoteText`, `author`, `work`, `topic`. Dataset quotes leave `author` empty |
 | `GET /weather[?lat=&lng=]` | Weather for the room window (Singapore by default): `scene`, `temperature`, `isDay`, `sunrise`, `sunset` |
 | `GET /time` | Singapore time for the wall clock |
 | `GET /creatures` | Breed photos for the shop's cats and dogs |
@@ -166,7 +167,7 @@ All under `/api`, served by `server/src/app.js`.
 
 ## App Contracts
 
-Use `client/src/services/api.js` from Vue components. Components should not call Google Books, Open-Meteo, Places, Vision, api-ninjas, or Supabase data tables directly.
+Use `client/src/services/api.js` from Vue components. Components should not call Google Books, Open-Meteo, Places, Vision, api-ninjas, Wikimedia Enterprise, or Supabase data tables directly.
 
 Book shape:
 
@@ -208,9 +209,10 @@ User shape:
 - No login: the auth guard falls back to the seeded demo user (`DEMO_USER_ID`).
 - Review and Rate on a finished book open Book Details, where writing a review or rating is not built yet (T17). On the demo shelf no book counts as reviewed or rated.
 - Quote of the Day quotes have no author or book: the dataset only holds the quote text. The popup shows the topic instead ("On books"). Some quotes in it are well-known misattributions.
-- The quotes dataset was scraped from Goodreads by its Kaggle author and its licence is listed as "Unknown", so the quote list is kept out of git for now. Check it against the course rules on scraped data before the final submission. A deployed server needs the list built on it, or it shows the one built-in quote every day.
-- Mood recommendations are limited to the list in `server/data/works.json`. It is a 12-book starter list, not yet curated or verified against the quotes API (T12). Each entry carries a `moods` tag and a `quote` used when `API_NINJAS_KEY` is not set or the API has nothing for that book.
-- Without `GOOGLE_BOOKS_API_KEY`, Google Books lookups run out of quota quickly; a recommended book then shows without a cover, under its own `work-…` id.
+- The quotes dataset was scraped from Goodreads by its Kaggle author and its licence is listed as "Unknown", so the quote list is kept out of git for now. Check it against the course rules on scraped data before the final submission. A deployed server needs the list built on it, or an `API_NINJAS_KEY`, or it shows the one built-in quote every day.
+- Mood recommendations are limited to the list in `server/data/works.json`. It is a 12-book starter list, not yet curated (T12). The quote is a Wikiquote line when the Wikimedia login is set, then an api-ninjas quote from the work, then the line stored with the book. Wikiquote text is CC BY-SA 4.0 and links back to its page.
+- Google Books is unreliable: search requests often fail with 503 and are retried, and search by `intitle:`, `inauthor:`, `subject:` or `isbn:` returned nothing, so the server searches by plain keywords. Without a key the quota runs out quickly; a recommended book then shows without a cover, under its own `work-…` id. The first demo-shelf build costs many calls and is saved in `demoShelf.cache.json`.
+- Quote of the Day prefers the local dataset, which has no author. api-ninjas is used only when that file is missing, and a server restart during the day can fetch a new api-ninjas quote. The free api-ninjas tier does not allow commercial use.
 - Google Books returns a limited slice per query, so genre shelves can be thin.
 - Compatibility is computed per request (O(users)); fine at MVP scale.
 - Desktop shows a centred phone-width column only.
@@ -229,14 +231,16 @@ This is the user’s main profile and home page.
 * The bookcase shows books from their **Read** and **To Be Read** collections; tapping it opens the full bookshelf (Reading, To read, Finished) as spines or covers. The page scrolls when the shelves do not all fit. Dragging a book to another shelf saves its reading status.
 * Tapping a book on the full bookshelf lifts it out with the actions for its shelf: a **Reading** book has a progress slider and **Finished**; a **To read** book has **Started reading**; a **Finished** book has **Review** and **Rate** until both are done, then **View review and rating**. The review and rating buttons open the book's **Book Details** page.
 * The sticky note on the wall opens the **Quote of the Day** popup.
+* Edit mode on the full bookshelf removes a book, with a confirm step and Undo.
 * The menu button opens the **Shop** and **Inventory**: decorations and pets are bought with credits and dragged onto a shelf or the floor. Credits and placed pieces last until the page is reloaded.
+* Without Supabase the shelf is a demo shelf: 20 novels picked at random from Google Books when that key is set, otherwise 16 built-in books.
 * Opens the **Mood Check-in** when needed.
 
 ### Quote of the Day
 
 The sticky note in My Room opens one quote, the same for every reader all day; it changes at midnight Singapore time.
 
-Quotes come from `server/data/quotes.json`, which is **not committed** (it is in `.gitignore` because the dataset's licence is unknown): each developer, and the deployed server, builds it once with the commands below. If the file is missing the popup shows a single built-in quote. The file holds 1,000 quotes taken from the [Goodreads Quotes dataset on Kaggle](https://www.kaggle.com/datasets/abdokamr/good-reads-quotes) by Abdulrahman Kamr (about 83,000 quotes in 28 CSV files, one per topic). `server/scripts/importQuotes.js` keeps the 100 most-liked quotes from each of ten topics that suit a reading room (books, writing, poetry, knowledge, wisdom, hope, happiness, inspirational, life, time), leaving out anything longer than 220 characters, multi-line, mostly non-Latin, repeated, or with coarse language. The day's quote is picked by date, stepping through the list so none repeats until all have been shown.
+Quotes come from `server/data/quotes.json`, which is **not committed** (it is in `.gitignore` because the dataset's licence is unknown): each developer, and the deployed server, builds it once with the commands below. If the file is missing, the server asks [api-ninjas](https://api-ninjas.com/api/quotes#v2-randomquotes) for one short quote in a single category (writing, art, happiness, courage, love, humor, philosophy, time, freedom or death) and keeps it until midnight Singapore time. With no key either, the popup shows a single built-in quote. The file holds 1,000 quotes taken from the [Goodreads Quotes dataset on Kaggle](https://www.kaggle.com/datasets/abdokamr/good-reads-quotes) by Abdulrahman Kamr (about 83,000 quotes in 28 CSV files, one per topic). `server/scripts/importQuotes.js` keeps the 100 most-liked quotes from each of ten topics that suit a reading room (books, writing, poetry, knowledge, wisdom, hope, happiness, inspirational, life, time), leaving out anything longer than 220 characters, multi-line, mostly non-Latin, repeated, or with coarse language. The day's quote is picked by date, stepping through the list so none repeats until all have been shown.
 
 To build the list (other topics or limits are set at the top of the script):
 
@@ -250,7 +254,7 @@ npm run import-quotes -w server -- <the folder printed above>
 
 Opens by itself on the first visit to My Room each day, and from the room menu at any time. The user picks one mood: **Calm, Low, Stressed or Excited**. "Skip for today" (or closing it) keeps it away until tomorrow.
 
-The mood picks a book from `server/data/works.json` and a quote from that book: the server asks api-ninjas for a quote from the work in one of the mood's categories (Calm = nature / wisdom / philosophy, Low = inspirational / courage / happiness, Stressed = time / freedom / truth, Excited = success / humor / art), then for any quote from the work, then falls back to the line stored with the book.
+The mood picks a book from `server/data/works.json`, looks it up on Google Books, and shows a quote from that book. The quote comes from English Wikiquote through the Wikimedia Enterprise On-demand API when that login is set: the book's own page, then "Title (novel)", then the section about the book on its author's page. If Wikiquote has nothing, the server asks api-ninjas for a quote from the work in one of the mood's categories (Calm = nature / wisdom / philosophy, Low = inspirational / courage / happiness, Stressed = time / freedom / truth, Excited = success / humor / art), then for any quote from the work, then uses the line stored with the book. A Wikiquote line links back to its page.
 
 From the recommendation, the user can:
 

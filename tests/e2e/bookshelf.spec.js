@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
 
 // What happens to a book from the full bookshelf, shelf by shelf. Saves are answered here, so
 // the shared demo shelf stays as it was for the other tests; `saves` records what was sent.

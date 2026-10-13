@@ -97,7 +97,7 @@ Readalot is a mobile-first web app built around four areas that share one book r
 - Reader Room: read-only copy of the My Room scene using their data, compatibility, currently reading, 6-book shelf preview, a "You both shelved" chip row (intersection of both users' books, max 6), and "View full bookshelf".
 
 **Mood and quotes**
-- External quotes API: api-ninjas v2 quotes, called server-side only, key in an environment variable, sent as `X-Api-Key`.
+- External quotes APIs, both called server-side only with credentials in environment variables: api-ninjas v2 quotes for Quote of the Day (sent as `X-Api-Key`), and Wikimedia Enterprise (English Wikiquote) for the quote shown with a mood recommendation. See the README for how each is used.
 - Mood vocabulary (chips and server) is Calm, Low, Stressed, Excited. Each mood maps to a category group; one category is chosen at random per call because the API AND-matches multiple categories: Calm = nature / wisdom / philosophy; Low = inspirational / courage / happiness; Stressed = time / freedom / truth; Excited = success / humor / art.
 - The recommender picks only from a curated JSON list of about 30-40 works, each verified once by a script to return at least one quote via the `work` filter. The Google Books lookup only fetches cover and metadata for the chosen title. Known limit: recommendations are bounded by that list.
 - The mood note textarea is stored client-side only and unused for now.
@@ -115,7 +115,7 @@ Readalot is a mobile-first web app built around four areas that share one book r
 
 **Data and environment**
 - One shared Supabase project for all developers plus a committed seed script (demo user, about 8 fake readers around Singapore, a few saved books).
-- New environment variables: demo user id and the api-ninjas key. Vision and Maps keys already exist (the Maps key is no longer needed for the map itself).
+- New environment variables: demo user id, the api-ninjas key and the Wikimedia Enterprise login. Vision and Maps keys already exist (the Maps key is no longer needed for the map itself).
 
 ## Testing Decisions
 
@@ -123,7 +123,7 @@ Readalot is a mobile-first web app built around four areas that share one book r
 - Highest seam: Playwright end-to-end tests against the running app with the seeded demo user. Existing prior art: one Playwright smoke test.
 - Add one e2e test each for: shelve a book (Discover to Book Details to status), Scan Book (with a stubbed Vision response), and Mood result (with a stubbed quotes response).
 - One assert-style check for the compatibility function, the only non-trivial pure logic. No unit-test framework.
-- External APIs (Google Books, Vision, api-ninjas) are stubbed at the server boundary in tests.
+- External APIs (Google Books, Vision, api-ninjas, Wikimedia Enterprise) are stubbed at the server boundary in tests.
 
 ## Out of Scope
 
@@ -312,7 +312,7 @@ Each ticket is a thin vertical slice (client + server + data where relevant) tha
 |------|------------|
 | Quote of the Day source | api-ninjas v2, daily cache |
 | Safe-content filter | Premium only; accepted risk on free key |
-| Mood-result quote | api-ninjas `work` filter, books limited to curated list |
+| Mood-result quote | Wikiquote page for the book, read through Wikimedia Enterprise (replaced the api-ninjas `work` filter, which matched other works with similar titles); books limited to curated list |
 | Shelf grouping | Status x top genre, max 3 rows, empty-state CTA |
 | Saved quotes | In scope (added by the team), shown on Profile |
 | "..." header menu | Dropped |

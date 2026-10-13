@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
 
 // The room reads live weather and time; fixed answers keep these checks the same every run.
 test.beforeEach(async ({ page }) => {
