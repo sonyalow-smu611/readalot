@@ -1,4 +1,4 @@
-import { findDemoBook } from "./demoShelf.js";
+import { demoBookDetails } from "./demoShelf.js";
 import { env } from "./env.js";
 import { findWork, workToBook } from "./works.js";
 
@@ -59,7 +59,7 @@ export async function findGoogleBook(title, author) {
 }
 
 export async function getGoogleBook(id) {
-  if (id.startsWith("demo-")) return findDemoBook(id) || fallbackBooks[0];
+  if (id.startsWith("demo-")) return demoBookDetails(id) || fallbackBooks[0];
   // a recommended work that had no Google Books match keeps its own id
   if (id.startsWith("work-")) {
     const work = findWork(id);

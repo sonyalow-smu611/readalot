@@ -28,9 +28,11 @@ const props = defineProps({
   // Shared name lets two draggable shelves exchange books.
   group: { type: String, default: 'shelf' },
   compact: { type: Boolean, default: false },
+  // Edit mode: a × on each book (emits `remove`) and no dragging, so a tap can't turn into a drag.
+  removable: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:modelValue', 'change'])
+const emit = defineEmits(['update:modelValue', 'change', 'remove'])
 
 const list = computed({
   get: () => props.modelValue,
@@ -59,7 +61,16 @@ function onWheel(event) {
 
     <div class="shelf__board">
       <!-- Draggable stays mounted even when empty, so a book can be dropped onto a bare shelf. -->
-      <template v-if="mode === 'draggable'">
+      <div v-if="removable && list.length" class="shelf__books">
+        <span v-for="(b, index) in list" :key="b.id" class="shelf__item" :style="{ zIndex: index }">
+          <Book :book="b" :stack="index" :compact="compact" />
+          <button type="button" class="shelf__remove" :aria-label="`Remove ${b.title}`" @click="emit('remove', b)">
+            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+          </button>
+        </span>
+      </div>
+
+      <template v-else-if="mode === 'draggable'">
         <VueDraggable
           v-model="list"
           :group="group"
@@ -171,6 +182,44 @@ function onWheel(event) {
 .shelf__slide:hover,
 .shelf__slide:has(.book.is-holding) {
   z-index: calc(var(--slide-stack, 0) + 20) !important;
+}
+
+.shelf__item {
+  position: relative;
+  display: flex;
+  align-self: flex-end;
+  margin-right: -4px;
+}
+
+.shelf__item:last-child {
+  margin-right: 0;
+}
+
+/* sits just inside the spine's top-right corner, since the row clips anything above it */
+.shelf__remove {
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid var(--rl-surface, #fffdf9);
+  border-radius: 50%;
+  background: var(--rl-primary, #3f2e24);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.shelf__remove svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: var(--rl-surface, #fffdf9);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .shelf__hint {
