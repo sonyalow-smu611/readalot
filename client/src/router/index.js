@@ -26,7 +26,7 @@ const routes = [
   { path: '/discover', name: 'discover-books', component: DiscoverBooksView, meta: { title: 'Discover', subtitle: 'Search, browse and stumble onto gems', hideSearch: true, order: 1 } },
   { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, order: 1 } },
   { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 1 } },
-  { path: '/people', name: 'discover-people', component: DiscoverPeopleView, meta: { order: 2 } },
+  { path: '/people', name: 'discover-people', component: () => import('../views/PeopleView.vue'), meta: { order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 2 } },
   { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 3 } },
