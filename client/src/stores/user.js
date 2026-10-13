@@ -54,7 +54,107 @@ const GUIDE_STEPS = [
     title: 'Room menu',
     copy: 'Open this button for a mood check-in, your inventory, and the shop where decorations are bought.',
   },
+  {
+    id: 'discover-search',
+    to: '/discover',
+    target: '[data-tour="discover-search"]',
+    title: 'Search',
+    copy: 'Type a title or an author. Search opens a results page, and Back brings you here.',
+  },
+  {
+    id: 'discover-filters',
+    to: '/discover',
+    target: '[data-tour="discover-filters"]',
+    title: 'Shelf filters',
+    copy: 'These chips narrow the shelves. For You shows all of them. Genres, Awards, and Community each show their own set.',
+  },
+  {
+    id: 'discover-shelf',
+    to: '/discover',
+    target: '[data-tour="discover-shelf"]',
+    title: 'A shelf',
+    copy: 'Swipe the covers. Tap one for a preview, or See all to open that whole genre.',
+  },
+  {
+    id: 'people-search',
+    to: '/people',
+    target: '[data-tour="people-search"]',
+    title: 'Find a reader',
+    copy: 'Search by name or a favourite genre. The list and the map both follow what you type.',
+  },
+  {
+    id: 'people-map',
+    to: '/people',
+    target: '[data-tour="people-map"]',
+    title: 'Readers on the map',
+    copy: 'Pins are other readers in Singapore. Tap a pin to choose someone, then visit their room.',
+  },
+  {
+    id: 'people-follow',
+    to: '/people',
+    target: '[data-tour="people-follow"]',
+    title: 'Follow',
+    copy: 'Follow keeps that reader. The match score is how much your books and genres overlap.',
+  },
+  {
+    id: 'scan-camera',
+    to: '/scan',
+    target: '[data-tour="scan-camera"]',
+    title: 'The camera',
+    copy: 'Point this at a book cover. If the camera is blocked, you can still add a photo below.',
+  },
+  {
+    id: 'scan-snap',
+    to: '/scan',
+    target: '[data-tour="scan-snap"]',
+    title: 'Snap cover',
+    copy: 'Snap reads the cover and looks up the book. A match opens so you can put it on a shelf.',
+  },
+  {
+    id: 'scan-upload',
+    to: '/scan',
+    target: '[data-tour="scan-upload"]',
+    title: 'Upload a photo',
+    copy: 'A photo of the cover works the same way as the camera.',
+  },
+  {
+    id: 'profile-edit',
+    to: '/profile',
+    target: '[data-tour="profile-edit"]',
+    title: 'Edit profile',
+    copy: 'Change your name, avatar, age, genres, and the rest. It stays on this page.',
+  },
+  {
+    id: 'profile-shelves',
+    to: '/profile',
+    target: '[data-tour="profile-shelves"]',
+    title: 'Your lists',
+    copy: 'Reading, To read, and Finished. Tap a number to see the books in that list.',
+  },
+  {
+    id: 'profile-shop',
+    to: '/profile',
+    target: '[data-tour="profile-shop"]',
+    title: 'Coins',
+    copy: 'This is the same balance as the room. Visit the shop to spend coins on decorations.',
+  },
+  {
+    id: 'profile-map',
+    to: '/profile',
+    target: '[data-tour="profile-map"]',
+    title: 'People map',
+    copy: 'Turn this on if other readers may find your room on the People map.',
+  },
+  {
+    id: 'profile-logout',
+    to: '/profile',
+    target: '[data-tour="profile-logout"]',
+    title: 'Log out',
+    copy: 'This asks before it closes the book. Logging in again skips this tour.',
+  },
 ]
+
+const TOUR_PENDING = 'readalot-tour-pending'
 
 function emptyProfile() {
   return {
@@ -125,10 +225,22 @@ export const useUserStore = defineStore('user', () => {
     ready.value = true
   }
 
+  function expectTour() {
+    sessionStorage.setItem(TOUR_PENDING, '1')
+  }
+
+  function clearTour() {
+    sessionStorage.removeItem(TOUR_PENDING)
+  }
+
   function openGuideIfNew() {
     if (guideStep.value >= 0) return
     if (!profile.value.id || !profile.value.name) return
-    if (localStorage.getItem(guideKey(profile.value.id)) === 'seen') return
+    if (sessionStorage.getItem(TOUR_PENDING) !== '1') return
+    if (localStorage.getItem(guideKey(profile.value.id)) === 'seen') {
+      sessionStorage.removeItem(TOUR_PENDING)
+      return
+    }
     guideStep.value = 0
   }
 
@@ -142,6 +254,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function closeGuide() {
+    sessionStorage.removeItem(TOUR_PENDING)
     if (profile.value.id) localStorage.setItem(guideKey(profile.value.id), 'seen')
     guideStep.value = -1
   }
@@ -172,6 +285,8 @@ export const useUserStore = defineStore('user', () => {
     findReader,
     applySession,
     restore,
+    expectTour,
+    clearTour,
     openGuideIfNew,
     nextGuide,
     closeGuide,

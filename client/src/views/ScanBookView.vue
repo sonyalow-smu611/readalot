@@ -2,15 +2,16 @@
   <section class="app-shell">
     <h1 class="h3 mb-3">Scan Book</h1>
 
-    <div v-if="!cameraError" class="scan__viewfinder mb-3">
+    <div v-if="!cameraError" class="scan__viewfinder mb-3" data-tour="scan-camera">
       <video ref="video" class="scan__video" autoplay playsinline muted aria-label="Camera view" />
       <p v-if="!cameraReady" class="scan__hint">Starting camera…</p>
     </div>
-    <p v-else class="small text-muted" role="status">{{ cameraError }}</p>
+    <p v-else class="small text-muted" data-tour="scan-camera" role="status">{{ cameraError }}</p>
 
     <button
       v-if="!cameraError"
       class="btn btn-primary w-100 mb-2"
+      data-tour="scan-snap"
       type="button"
       :disabled="!cameraReady || scanning"
       @click="snap"
@@ -21,6 +22,7 @@
     <label class="form-label small text-muted mb-1" for="scan-upload">Or upload a photo of the cover</label>
     <input
       id="scan-upload"
+      data-tour="scan-upload"
       class="form-control mb-3"
       type="file"
       accept="image/*"

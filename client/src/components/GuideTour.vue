@@ -59,6 +59,9 @@ function follow() {
   window.clearTimeout(hunt)
   let tries = 0
   const step = () => {
+    const selector = guide.value?.target
+    const target = selector ? document.querySelector(selector) : null
+    if (tries === 0 && target) target.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     if (measure() || tries >= 24) return
     tries += 1
     hunt = window.setTimeout(step, 150)

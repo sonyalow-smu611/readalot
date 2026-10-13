@@ -369,15 +369,8 @@ watch(() => props.hop, (tick) => {
 }
 
 .mascots[data-gaze='cover'] .paw,
-.mascots[data-gaze='cover'] .lid,
-.mascots[data-gaze='peek'] .paw,
-.mascots[data-gaze='peek'] .lid {
+.mascots[data-gaze='cover'] .lid {
   opacity: 1;
-}
-
-.mascots[data-gaze='peek'] .actor--orange .paw,
-.mascots[data-gaze='peek'] .actor--book .lid {
-  opacity: 0;
 }
 
 .mascots[data-gaze='duck'] .actor {

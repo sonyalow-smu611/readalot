@@ -105,6 +105,8 @@ async function submit() {
     return
   }
   user.applySession(result.data.session)
+  if (pending.purpose === 'signup') user.expectTour()
+  else user.clearTour()
   sealed.value = true
   hop.value += 1
   leaveTimer = window.setTimeout(() => {

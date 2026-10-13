@@ -59,11 +59,12 @@ function onSearch() {
         type="search"
         enterkeyhint="search"
         placeholder="Search books or authors"
+        data-tour="discover-search"
         aria-label="Search books or authors"
       />
     </form>
 
-    <div class="discover__chips" role="group" aria-label="Filter shelves">
+    <div class="discover__chips" data-tour="discover-filters" role="group" aria-label="Filter shelves">
       <button
         v-for="filter in FILTERS"
         :key="filter"
@@ -78,8 +79,9 @@ function onSearch() {
     </div>
 
     <DiscoverShelf
-      v-for="shelf in visibleShelves"
+      v-for="(shelf, index) in visibleShelves"
       :key="shelf.key"
+      :data-tour="index === 0 ? 'discover-shelf' : null"
       :title="shelf.title"
       :emoji="shelf.emoji"
       :books="shelf.books"

@@ -222,9 +222,9 @@ async function logout() {
             <h1 class="h3 mb-0 text-truncate">{{ user.profile.name }}</h1>
             <p class="text-muted mb-0 text-truncate">{{ user.profile.email }}</p>
           </div>
-          <button type="button" class="btn btn-outline-primary reader-card__edit" aria-label="Edit profile" @click="startEdit">Edit</button>
+          <button type="button" class="btn btn-outline-primary reader-card__edit" data-tour="profile-edit" aria-label="Edit profile" @click="startEdit">Edit</button>
         </div>
-        <ul class="stats" :aria-busy="bookshelf.loading">
+        <ul class="stats" data-tour="profile-shelves" :aria-busy="bookshelf.loading">
           <li v-for="stat in SHELF_STATS" :key="stat.status">
             <button
               type="button"
@@ -262,7 +262,7 @@ async function logout() {
               {{ decorCount ? `${decorCount} decoration${decorCount === 1 ? '' : 's'} owned` : 'Spend them on decorations and pets for your room.' }}
             </p>
           </div>
-          <button type="button" class="btn btn-primary coins__shop" @click="visitShop">Visit the shop</button>
+          <button type="button" class="btn btn-primary coins__shop" data-tour="profile-shop" @click="visitShop">Visit the shop</button>
         </div>
       </section>
 
@@ -287,6 +287,7 @@ async function logout() {
             type="button"
             role="switch"
             class="switch"
+            data-tour="profile-map"
             :aria-checked="user.profile.discoverable"
             aria-labelledby="discoverable-label"
             aria-describedby="discoverable-note"
@@ -309,7 +310,7 @@ async function logout() {
         </div>
       </section>
 
-      <button type="button" class="logout" @click="confirming = true">Log out</button>
+      <button type="button" class="logout" data-tour="profile-logout" @click="confirming = true">Log out</button>
     </template>
 
     <form v-else ref="form" novalidate @submit.prevent="save">
