@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BookCover from '@/components/BookCover.vue'
 import CreditChip from '@/components/CreditChip.vue'
@@ -41,6 +41,21 @@ const SHELF_STATS = [
   { status: 'read', label: 'Finished', empty: 'No finished books yet.' },
 ]
 
+// The "About you" cards, each edited on its own.
+const ABOUT_FIELDS = [
+  { key: 'gender', label: 'Gender', kind: 'choice', options: GENDERS },
+  { key: 'age', label: 'Age', kind: 'number' },
+  { key: 'religion', label: 'Religion', kind: 'choice', options: FAITHS },
+  { key: 'location', label: 'Location', kind: 'text' },
+]
+
+// What the pop-up says after the People map switch is flipped.
+const PRIVACY_ALERTS = {
+  public: { title: 'You can now be discovered by people!', note: 'Nearby readers can find your room.' },
+  private: { title: 'You are now in private mode!', note: 'You are hidden from the People map.' },
+}
+const PRIVACY_ALERT_MS = 2600
+
 const router = useRouter()
 const user = useUserStore()
 const bookshelf = useBookshelfStore()
@@ -49,6 +64,15 @@ const form = ref(null)
 const listStatus = ref('')
 const listClose = ref(null)
 let listOpener = null
+const removing = ref('')
+const removeBusy = ref(false)
+const removeError = ref('')
+const aboutEditing = ref('')
+const aboutDraft = ref('')
+const aboutError = ref('')
+const aboutBusy = ref(false)
+const privacyAlert = ref('')
+let privacyTimer = null
 const editing = ref(false)
 const confirming = ref(false)
 const errors = ref({})
@@ -69,17 +93,14 @@ const listStat = computed(() => SHELF_STATS.find((stat) => stat.status === listS
 const listBooks = computed(() => (listStatus.value ? bookshelf.booksByStatus[listStatus.value] : []))
 const decorCount = computed(() => inventory.value.length + placed.value.length)
 
-const about = computed(() => [
-  { label: 'Gender', value: user.profile.gender },
-  { label: 'Age', value: user.profile.age },
-  { label: 'Religion', value: user.profile.religion },
-  { label: 'Location', value: user.profile.location },
-])
+const privacyCopy = computed(() => PRIVACY_ALERTS[privacyAlert.value] ?? null)
 
 onMounted(() => {
   user.openGuideIfNew()
   if (!bookshelf.books.length && !bookshelf.loading) bookshelf.load()
 })
+
+onBeforeUnmount(() => clearTimeout(privacyTimer))
 
 async function openList(status, event) {
   listOpener = event.currentTarget
@@ -90,8 +111,47 @@ async function openList(status, event) {
 
 function closeList() {
   listStatus.value = ''
+  removing.value = ''
+  removeError.value = ''
   listOpener?.focus()
   listOpener = null
+}
+
+// Escape backs out of a removal first, then closes the list.
+function listEscape() {
+  if (removing.value) {
+    cancelRemove()
+    return
+  }
+  closeList()
+}
+
+async function askRemove(id) {
+  removing.value = id
+  removeError.value = ''
+  await nextTick()
+  document.getElementById(`keep-${id}`)?.focus()
+}
+
+async function cancelRemove() {
+  const id = removing.value
+  removing.value = ''
+  await nextTick()
+  document.getElementById(`remove-${id}`)?.focus()
+}
+
+async function confirmRemove(id) {
+  removeBusy.value = true
+  removeError.value = ''
+  try {
+    await bookshelf.removeBook(id)
+    removing.value = ''
+    listClose.value?.focus()
+  } catch (err) {
+    removeError.value = err.message
+  } finally {
+    removeBusy.value = false
+  }
 }
 
 // The shop lives in the room, so open it there.
@@ -111,6 +171,7 @@ function startEdit() {
   genres.value = [...saved.favouriteGenres]
   errors.value = {}
   formError.value = ''
+  aboutEditing.value = ''
   editing.value = true
 }
 
@@ -191,15 +252,73 @@ async function save() {
   editing.value = false
 }
 
+async function startAboutEdit(field) {
+  const value = user.profile[field.key]
+  aboutDraft.value = value === '' || value == null ? '' : String(value)
+  aboutError.value = ''
+  aboutEditing.value = field.key
+  await nextTick()
+  document.getElementById(`about-${field.key}`)?.focus()
+}
+
+async function cancelAboutEdit() {
+  const key = aboutEditing.value
+  aboutEditing.value = ''
+  aboutError.value = ''
+  await nextTick()
+  document.getElementById(`about-edit-${key}`)?.focus()
+}
+
+function validateAbout(field, value) {
+  if (field.kind === 'choice' && !value) return 'Choose one, including prefer not to say.'
+  if (field.kind === 'number') {
+    const years = Number(value)
+    if (!Number.isInteger(years) || years < 13 || years > 120) return 'Enter an age from 13 to 120.'
+  }
+  return ''
+}
+
+async function saveAbout(field) {
+  // a number input's v-model hands back a number, so make it text before trimming
+  const draft = String(aboutDraft.value).trim()
+  aboutError.value = validateAbout(field, draft)
+  if (aboutError.value) return
+
+  const details = { [field.key]: field.kind === 'number' ? Number(draft) : draft }
+  aboutBusy.value = true
+  const result = await saveProfile(details)
+  aboutBusy.value = false
+  if (result.error) {
+    aboutError.value = result.error.message
+    return
+  }
+  if (result.data?.user) user.applySession({ user: result.data.user })
+  else user.mergeProfile(details)
+  await cancelAboutEdit()
+}
+
+function showPrivacyAlert(mode) {
+  clearTimeout(privacyTimer)
+  privacyAlert.value = mode
+  privacyTimer = setTimeout(hidePrivacyAlert, PRIVACY_ALERT_MS)
+}
+
+function hidePrivacyAlert() {
+  clearTimeout(privacyTimer)
+  privacyAlert.value = ''
+}
+
 async function toggleDiscoverable() {
   const next = !user.profile.discoverable
   privacyError.value = ''
   privacyBusy.value = true
   user.mergeProfile({ discoverable: next })
+  showPrivacyAlert(next ? 'public' : 'private')
   const result = await saveProfile({ discoverable: next })
   privacyBusy.value = false
   if (result.error) {
     user.mergeProfile({ discoverable: !next })
+    hidePrivacyAlert()
     privacyError.value = result.error.message
   }
 }
@@ -268,12 +387,73 @@ async function logout() {
 
       <section class="block" aria-labelledby="about-title">
         <h2 id="about-title" class="block__title">About you</h2>
-        <dl class="details">
-          <div v-for="item in about" :key="item.label">
-            <dt>{{ item.label }}</dt>
-            <dd :class="{ 'is-empty': !item.value }">{{ item.value || 'Not set' }}</dd>
-          </div>
-        </dl>
+        <ul class="facts">
+          <li
+            v-for="field in ABOUT_FIELDS"
+            :key="field.key"
+            class="fact"
+            :class="{ 'is-editing': aboutEditing === field.key }"
+          >
+            <form
+              v-if="aboutEditing === field.key"
+              novalidate
+              @submit.prevent="saveAbout(field)"
+              @keydown.esc="cancelAboutEdit"
+            >
+              <label class="fact__label" :for="`about-${field.key}`">{{ field.label }}</label>
+              <select
+                v-if="field.kind === 'choice'"
+                :id="`about-${field.key}`"
+                v-model="aboutDraft"
+                class="form-select form-select-sm"
+                :aria-invalid="Boolean(aboutError)"
+                :aria-describedby="aboutError ? 'about-error' : undefined"
+                @change="aboutError = ''"
+              >
+                <option value="" disabled>Choose one</option>
+                <option v-for="option in field.options" :key="option" :value="option">{{ option }}</option>
+              </select>
+              <input
+                v-else
+                :id="`about-${field.key}`"
+                v-model="aboutDraft"
+                class="form-control form-control-sm"
+                :type="field.kind === 'number' ? 'number' : 'text'"
+                :min="field.kind === 'number' ? 13 : undefined"
+                :max="field.kind === 'number' ? 120 : undefined"
+                :inputmode="field.kind === 'number' ? 'numeric' : undefined"
+                :maxlength="field.kind === 'text' ? 60 : undefined"
+                :placeholder="field.kind === 'number' ? 'e.g. 21' : 'e.g. Tampines, Singapore'"
+                :aria-invalid="Boolean(aboutError)"
+                :aria-describedby="aboutError ? 'about-error' : undefined"
+                @input="aboutError = ''"
+              />
+              <p v-if="aboutError" id="about-error" class="field-error" role="alert">{{ aboutError }}</p>
+              <div class="fact__actions">
+                <button type="button" class="btn btn-sm btn-outline-primary" @click="cancelAboutEdit">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-primary" :disabled="aboutBusy">
+                  {{ aboutBusy ? 'Saving…' : 'Save' }}
+                </button>
+              </div>
+            </form>
+            <template v-else>
+              <p class="fact__label">{{ field.label }}</p>
+              <p class="fact__value" :class="{ 'is-empty': !user.profile[field.key] }">
+                {{ user.profile[field.key] || 'Not set' }}
+              </p>
+              <button
+                :id="`about-edit-${field.key}`"
+                type="button"
+                class="fact__edit"
+                :aria-label="`Edit ${field.label.toLowerCase()}`"
+                :disabled="Boolean(aboutEditing)"
+                @click="startAboutEdit(field)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" /></svg>
+              </button>
+            </template>
+          </li>
+        </ul>
       </section>
 
       <section class="block" aria-labelledby="privacy-title">
@@ -298,6 +478,7 @@ async function logout() {
           </button>
         </div>
         <p v-if="privacyError" class="field-error" role="alert">{{ privacyError }}</p>
+        <p class="visually-hidden" role="status">{{ privacyCopy?.title }}</p>
       </section>
 
       <section class="block" aria-labelledby="quotes-title">
@@ -476,7 +657,7 @@ async function logout() {
       </div>
     </form>
     <Teleport to=".phone-frame">
-      <div v-if="listStat" class="list" @keydown.esc="closeList">
+      <div v-if="listStat" class="list" @keydown.esc="listEscape">
         <button type="button" class="list__backdrop" tabindex="-1" aria-hidden="true" @click="closeList" />
         <div class="list__sheet" role="dialog" aria-modal="true" aria-labelledby="list-title">
           <div class="list__head">
@@ -488,7 +669,7 @@ async function logout() {
             </button>
           </div>
           <ul v-if="listBooks.length" class="list__books">
-            <li v-for="book in listBooks" :key="book.id">
+            <li v-for="book in listBooks" :key="book.id" class="list__row">
               <RouterLink class="list__book" :to="`/books/${book.id}`">
                 <BookCover class="list__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
                 <span class="list__text">
@@ -500,6 +681,26 @@ async function logout() {
                   </span>
                 </span>
               </RouterLink>
+              <button
+                v-if="removing !== book.id"
+                :id="`remove-${book.id}`"
+                type="button"
+                class="list__remove"
+                :aria-label="`Remove ${book.title} from ${listStat.label}`"
+                @click="askRemove(book.id)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5" /></svg>
+              </button>
+              <div v-else class="list__confirm">
+                <p class="mb-0">Remove from {{ listStat.label }}?</p>
+                <button :id="`keep-${book.id}`" type="button" class="btn btn-sm btn-outline-primary" @click="cancelRemove">
+                  Keep
+                </button>
+                <button type="button" class="btn btn-sm list__drop" :disabled="removeBusy" @click="confirmRemove(book.id)">
+                  {{ removeBusy ? 'Removing…' : 'Remove' }}
+                </button>
+                <p v-if="removeError" class="field-error list__error" role="alert">{{ removeError }}</p>
+              </div>
             </li>
           </ul>
           <p v-else class="block__empty list__empty">{{ listStat.empty }}</p>
@@ -519,6 +720,37 @@ async function logout() {
           </div>
         </div>
       </div>
+      <Transition name="spot">
+        <div
+          v-if="privacyCopy"
+          :key="privacyAlert"
+          class="spot"
+          :class="`spot--${privacyAlert}`"
+          aria-hidden="true"
+          @click="hidePrivacyAlert"
+        >
+          <div class="spot__card">
+            <div class="spot__mascot">
+              <span class="spot__face">{{ user.profile.avatar }}</span>
+              <template v-if="privacyAlert === 'public'">
+                <span v-for="n in 6" :key="n" class="spot__spark" :style="{ '--i': n }">✦</span>
+                <span class="spot__heart">♥</span>
+              </template>
+              <svg v-else class="spot__mask" viewBox="0 0 100 40">
+                <path
+                  fill-rule="evenodd"
+                  d="M2 14 Q2 4 14 5 Q32 7 50 13 Q68 7 86 5 Q98 4 98 14 Q98 30 80 33 Q62 35 50 24 Q38 35 20 33 Q2 30 2 14Z
+                     M17 19 a10 6 0 1 0 20 0 a10 6 0 1 0 -20 0Z
+                     M63 19 a10 6 0 1 0 20 0 a10 6 0 1 0 -20 0Z"
+                />
+                <path class="spot__shine" d="M10 11 Q20 8 30 10" />
+              </svg>
+            </div>
+            <p class="spot__title">{{ privacyCopy.title }}</p>
+            <p class="spot__note">{{ privacyCopy.note }}</p>
+          </div>
+        </div>
+      </Transition>
     </Teleport>
   </section>
 </template>
@@ -687,36 +919,101 @@ async function logout() {
   min-height: 44px;
 }
 
-.details {
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.details div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 0;
-  border-top: 1px solid var(--rl-line);
+.fact {
+  position: relative;
+  min-width: 0;
+  padding: 12px 40px 12px 14px;
+  border: 1px solid var(--rl-line);
+  border-radius: var(--rl-radius-card);
+  background: var(--rl-surface);
 }
 
-.details div:last-child {
-  border-bottom: 1px solid var(--rl-line);
+/* the card being edited takes the whole row so the field and buttons fit */
+.fact.is-editing {
+  grid-column: 1 / -1;
+  padding-right: 14px;
+  border-color: var(--rl-primary);
 }
 
-.details dt {
+.fact__label {
+  display: block;
+  margin: 0 0 2px;
   color: var(--rl-muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.fact__value {
+  margin: 0;
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fact__value.is-empty {
+  color: var(--rl-muted);
   font-weight: 400;
 }
 
-.details dd {
-  margin: 0;
-  text-align: right;
+.fact__edit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--rl-secondary);
+  color: var(--rl-text);
 }
 
-.details dd.is-empty {
-  color: var(--rl-muted);
+/* a 44px touch target around the small button */
+.fact__edit::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+.fact__edit:hover:not(:disabled) {
+  background: var(--rl-line);
+}
+
+.fact__edit:disabled {
+  opacity: 0.4;
+}
+
+.fact__edit svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fact__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fact__actions .btn {
+  min-height: 36px;
+  padding-inline: 14px;
 }
 
 .setting {
@@ -963,13 +1260,89 @@ async function logout() {
   list-style: none;
 }
 
+.list__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-right: 8px;
+}
+
 .list__book {
   display: flex;
+  flex: 1 1 0;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   padding: 10px 16px;
   color: var(--rl-text);
   text-decoration: none;
+}
+
+.list__remove {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--rl-muted);
+}
+
+.list__remove:hover {
+  background: #fbe9e7;
+  color: #b42318;
+}
+
+.list__remove svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.list__confirm {
+  display: flex;
+  /* its own line under the book, indented to line up with the cover */
+  flex: 0 0 calc(100% - 16px);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px 16px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #fbe9e7;
+  font-size: 0.875rem;
+  animation: confirm-in 0.2s ease;
+}
+
+.list__confirm p:first-child {
+  flex: 1 1 auto;
+}
+
+.list__confirm .btn {
+  min-height: 36px;
+}
+
+.list__drop {
+  background: #b42318;
+  border-color: #b42318;
+  color: #fffdf9;
+}
+
+.list__drop:hover {
+  background: #8d2218;
+  border-color: #8d2218;
+  color: #fffdf9;
+}
+
+.list__error {
+  flex: 1 0 100%;
+  margin: 0;
 }
 
 .list__book:hover {
@@ -1090,6 +1463,172 @@ async function logout() {
   color: #fffdf9;
 }
 
+/* Pop-up after the People map switch: the reader's avatar is the mascot */
+.spot {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(44, 36, 30, 0.32);
+}
+
+.spot__card {
+  width: min(100%, 280px);
+  padding: 22px 18px 18px;
+  border: 1px solid var(--rl-line);
+  border-radius: 22px;
+  background: var(--rl-surface);
+  box-shadow: 0 18px 40px rgba(44, 36, 30, 0.28);
+  text-align: center;
+}
+
+.spot--private .spot__card {
+  background: #2c241e;
+  border-color: #2c241e;
+  color: #fffdf9;
+}
+
+.spot__mascot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  background: var(--rl-secondary);
+}
+
+.spot--private .spot__mascot {
+  background: #4a3d33;
+}
+
+.spot__face {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.spot--public .spot__face {
+  animation: mascot-hop 0.9s cubic-bezier(0.3, 1.4, 0.5, 1) 0.15s 2;
+}
+
+.spot--private .spot__face {
+  animation: mascot-sneak 1.4s ease-in-out 0.5s;
+}
+
+.spot__spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: var(--rl-accent);
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0;
+  transform: rotate(calc(var(--i) * 60deg)) translateY(-56px) rotate(calc(var(--i) * -60deg));
+  animation: spark 1.1s ease-out calc(0.2s + var(--i) * 0.05s) both;
+}
+
+.spot__heart {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  color: #d9534f;
+  font-size: 1.25rem;
+  line-height: 1;
+  animation: heart-float 1.6s ease-out 0.4s both;
+}
+
+.spot__mask {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  width: 70px;
+  margin-left: -35px;
+  overflow: visible;
+  fill: #1b1512;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+  animation: mask-on 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) 0.15s both;
+}
+
+.spot__shine {
+  fill: none;
+  stroke: rgba(255, 253, 249, 0.45);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.spot__title {
+  margin: 0 0 4px;
+  font-family: var(--rl-font-title);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.spot__note {
+  margin: 0;
+  color: var(--rl-muted);
+  font-size: 0.875rem;
+}
+
+.spot--private .spot__note {
+  color: #d9cfc4;
+}
+
+.spot-enter-active {
+  transition: opacity 0.2s ease;
+}
+
+.spot-enter-active .spot__card {
+  animation: spot-pop 0.4s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.spot-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.spot-enter-from,
+.spot-leave-to {
+  opacity: 0;
+}
+
+@keyframes spot-pop {
+  from { transform: scale(0.8); opacity: 0; }
+}
+
+@keyframes mascot-hop {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-14px) rotate(-8deg); }
+  65% { transform: translateY(0) rotate(6deg); }
+}
+
+@keyframes mascot-sneak {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  60% { transform: translateX(6px); }
+}
+
+@keyframes spark {
+  0% { opacity: 0; transform: rotate(calc(var(--i) * 60deg)) translateY(-30px) rotate(calc(var(--i) * -60deg)) scale(0.4); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(calc(var(--i) * 60deg)) translateY(-62px) rotate(calc(var(--i) * -60deg)) scale(1.1); }
+}
+
+@keyframes heart-float {
+  0% { opacity: 0; transform: translateY(8px) scale(0.5); }
+  30% { opacity: 1; transform: translateY(0) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-22px) scale(1); }
+}
+
+@keyframes mask-on {
+  from { opacity: 0; transform: translateY(-40px) rotate(-12deg); }
+}
+
+@keyframes confirm-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
 @keyframes leave-in {
   from { transform: translateY(16px) scale(0.96); opacity: 0; }
 }
@@ -1106,10 +1645,19 @@ async function logout() {
   .leave__card,
   .leave__cover,
   .list__sheet,
+  .list__confirm,
   .switch,
-  .switch__thumb {
+  .switch__thumb,
+  .spot__face,
+  .spot__mask,
+  .spot-enter-active .spot__card {
     animation: none;
     transition: none;
+  }
+
+  .spot__spark,
+  .spot__heart {
+    display: none;
   }
 }
 </style>
