@@ -1,5 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The reader's shelf, shared by the room bookcase, the full bookshelf and the reading chair.
+// The reader's shelf, shared by the room bookcase, its book details and the reading chair.
 // Books come from the API (GET /api/user-books) and a status change is saved straight back.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -70,22 +70,6 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     saved.value = (await getMyBooks()).books.map(normalizeBook)
   }
 
-  // Take a book off the shelf at once, then delete it; a failed delete puts it back.
-  // Returns the removed book, so restoreBook() can undo it.
-  async function removeBook(id) {
-    const book = findBook(id)
-    if (!book) return null
-
-    saved.value = saved.value.filter((item) => item !== book)
-    try {
-      await removeUserBook(id)
-    } catch (err) {
-      saved.value = [...saved.value, book]
-      throw err
-    }
-    return book
-  }
-
   // Put a removed book back with its shelf, progress and rating. Its place in the shelf
   // order was never forgotten, so it returns to the same spot.
   async function restoreBook(book) {
@@ -100,15 +84,6 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
 
   function findBook(id) {
     return saved.value.find((book) => book.id === id) ?? null
-  }
-
-  function setOrder(ids) {
-    order.value = ids
-    try {
-      localStorage.setItem(ORDER_KEY, JSON.stringify(ids))
-    } catch {
-      // storage unavailable: the order just lasts for this visit
-    }
   }
 
   // Shows a change to a book's status or progress at once, then saves it; a failed save puts
@@ -148,10 +123,10 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
   }
 
   // Take a book off the shelf altogether. It disappears at once; a failed delete puts it back
-  // and throws, so the caller can say so next to the book.
+  // and throws, so the caller can say so. Returns the book, for Undo to put back.
   async function removeBook(id) {
     const index = saved.value.findIndex((book) => book.id === id)
-    if (index < 0) return
+    if (index < 0) return null
     const [book] = saved.value.splice(index, 1)
 
     try {
@@ -160,12 +135,7 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
       saved.value.splice(index, 0, book)
       throw new Error(`Couldn't remove "${book.title}". Try again.`, { cause: err })
     }
-  }
-
-  // Re-file every book on a shelf to one status. Used after a drag so the store matches
-  // whichever shelf each book actually landed on.
-  function applyShelf(ids, status) {
-    ids.forEach((id) => setStatus(id, status))
+    return book
   }
 
   return {
@@ -181,10 +151,7 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     removeBook,
     restoreBook,
     findBook,
-    setOrder,
     setStatus,
     setProgress,
-    removeBook,
-    applyShelf,
   }
 })

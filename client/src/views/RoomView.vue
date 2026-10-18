@@ -1,80 +1,36 @@
 <script setup>
-// The home page. Far: the illustrated room. Close: the bookshelf fills the phone.
-// The zoom between them is scale and translate only.
+// The home page: the 3D room. Books are opened straight off its bookcase.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { useToast } from '@/composables/useToast'
 import { fetchWeather } from '@/services/weather.js'
-import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { decorMeta, useDecor } from '@/composables/useDecor'
-import RoomScene from '@/components/room/RoomScene.vue'
+import Room3D from '@/components/room/Room3D.vue'
 import CurrentlyReadingCard from '@/components/room/CurrentlyReadingCard.vue'
 import MoodCheckInModal from '@/components/modals/MoodCheckInModal.vue'
 import MoodResultModal from '@/components/modals/MoodResultModal.vue'
 import QuoteOfDayModal from '@/components/modals/QuoteOfDayModal.vue'
 import RemoveBookModal from '@/components/modals/RemoveBookModal.vue'
 import StateView from '@/components/StateView.vue'
-import Shelf from '@/components/Shelf.vue'
-import CoverRow from '@/components/CoverRow.vue'
+import BookCard from '@/components/book/BookCard.vue'
+import BookDetailsContent from '@/components/book/BookDetailsContent.vue'
+import BottomSheet from '@/components/BottomSheet.vue'
+import { primaryAuthor } from '@/lib/book'
 import DecorPiece from '@/components/DecorPiece.vue'
 import CreditChip from '@/components/CreditChip.vue'
 import RoomDock from '@/components/RoomDock.vue'
-import FloorLife from '@/components/FloorLife.vue'
 
 const WINDOW_SCENES = ['sunny', 'cloudy', 'rain']
 const WEATHER_REFRESH_MS = 10 * 60 * 1000
-const ZOOM = { duration: 0.55, ease: 'power3.inOut', force3D: false }
-const ZOOM_TO = { scale: 1, x: 0, y: 0 }
 
 const route = useRoute()
 const bookshelf = useBookshelfStore()
 
-// --- Shelves -----------------------------------------------------------------------------
-// The full bookshelf edits these three lists by drag; the store is told where books landed.
-const reading = ref([])
-const tbr = ref([])
-const finished = ref([])
-const shelfView = ref('spines')
-
-const storeLayout = computed(() => layoutOf(bookshelf.booksByStatus))
-const shelfLayout = computed(() =>
-  layoutOf({ reading: reading.value, want_to_read: tbr.value, read: finished.value }),
-)
-
-// "which book is on which shelf, in what order", as one comparable string
-function layoutOf(shelves) {
-  return ['reading', 'want_to_read', 'read']
-    .map((status) => shelves[status].map((book) => book.id).join(','))
-    .join('|')
-}
-
-function fillShelves() {
-  if (shelfLayout.value === storeLayout.value) return
-  reading.value = [...bookshelf.booksByStatus.reading]
-  tbr.value = [...bookshelf.booksByStatus.want_to_read]
-  finished.value = [...bookshelf.booksByStatus.read]
-}
-
-function syncShelves() {
-  if (shelfLayout.value === storeLayout.value) return
-  const ids = (list) => list.value.map((book) => book.id)
-  bookshelf.setOrder([...ids(reading), ...ids(tbr), ...ids(finished)])
-  bookshelf.applyShelf(ids(reading), 'reading')
-  bookshelf.applyShelf(ids(tbr), 'want_to_read')
-  bookshelf.applyShelf(ids(finished), 'read')
-}
-
-// Books arriving from the API, or a failed save moving a book back, redraw the shelves;
-// a drag that changed the shelves is saved.
-watch(storeLayout, fillShelves, { immediate: true })
-watch(shelfLayout, syncShelves)
-
 // --- Removing books ----------------------------------------------------------------------
-// Edit mode puts a × on every book. "Don't ask again" is remembered on this device; Undo in
-// the toast is the safety net either way.
+// From the book details. "Don't ask again" is remembered on this device; Undo in the toast is
+// the safety net either way.
 const SKIP_CONFIRM_KEY = 'readalot.skipRemoveConfirm'
-const editing = ref(false)
 const removing = ref(null)
 const { show: showToast } = useToast()
 
@@ -105,6 +61,7 @@ function confirmRemove({ remember }) {
 }
 
 async function removeBook(book) {
+  if (openedBook.value?.id === book.id) closeBook({ removed: true })
   try {
     const removed = await bookshelf.removeBook(book.id)
     if (!removed) return
@@ -140,45 +97,11 @@ async function loadWeather() {
 }
 
 // --- Decorations -------------------------------------------------------------------------
-const isClose = ref(false)
 const room = ref(null)
-let blockOpen = false
+const room3d = ref(null)
 let listening = false
 
-const {
-  placedIn,
-  placing,
-  selected,
-  hasFood,
-  hasDrink,
-  shopOpen,
-  inventoryOpen,
-  placeOn,
-  pick,
-  unplace,
-  drag,
-  notice,
-  sparkle,
-  moveDrag,
-  endDrag,
-  flash,
-  burst,
-} = useDecor()
-
-const roomFurniture = computed(() =>
-  placedIn('room').filter((item) => !decorMeta(item.id)?.pet),
-)
-const roomPets = computed(() => placedIn('room').filter((item) => decorMeta(item.id)?.pet))
-
-function pickItem(uid) {
-  if (blockOpen) return
-  pick(uid)
-}
-
-function at(item) {
-  const x = typeof item.x === 'number' ? item.x : 0.5
-  return { left: `${x * 100}%` }
-}
+const { shopOpen, inventoryOpen, drag, notice, sparkle, moveDrag, endDrag, flash, burst } = useDecor()
 
 function onMove(event) {
   moveDrag(event.clientX, event.clientY)
@@ -193,66 +116,15 @@ function release(entry, clientX, clientY) {
     burst(x - roomRect.left, y - roomRect.top)
   }
 
-  if (meta.surface === 'floor') {
-    if (isClose.value) {
-      flash(`${meta.name} roams the room floor. Go back first.`, 'bad')
-      return
-    }
-    const caseRect = room.value?.querySelector('[data-drop="case"]')?.getBoundingClientRect()
-    const onCase = caseRect
-      && clientX >= caseRect.left - 8
-      && clientX <= caseRect.right + 8
-      && clientY >= caseRect.top - 8
-      && clientY <= caseRect.bottom + 10
-    if (onCase) {
-      flash(`${meta.name} can't go on a shelf.`, 'bad')
-      return
-    }
-    const rect = room.value?.querySelector('[data-drop="floor"]')?.getBoundingClientRect()
-    const near = rect
-      && clientX >= rect.left - 16
-      && clientX <= rect.right - 28
-      && clientY >= rect.top - 36
-      && clientY <= rect.bottom + 18
-    if (!near) {
-      flash(`${meta.name} can't sit there. Drop it on the floor.`, 'bad')
-      return
-    }
-    if (!placeOn('room', (clientX - rect.left) / rect.width, entry)) return
-    mark(clientX, rect.bottom - 6)
-    flash(`${meta.name} is on the floor.`, 'ok')
+  // it goes on the free spot nearest where it was let go
+  const spot = room3d.value?.dropAt(entry, clientX, clientY)
+  if (!spot) {
+    const where = meta.surface === 'floor' ? 'on the floor' : 'on the window seat, nightstand or side table'
+    flash(`Drop ${meta.name} on a glowing spot ${where}.`, 'bad')
     return
   }
-
-  if (isClose.value && shelfView.value !== 'spines') {
-    flash(`Switch to Spines. ${meta.name} sits on a shelf.`, 'bad')
-    return
-  }
-
-  const nodes = isClose.value
-    ? [...(room.value?.querySelectorAll('.room__bay[data-zone]') || [])]
-    : [...(room.value?.querySelectorAll('[data-drop="case"] [data-zone]') || [])]
-  let best = null
-  nodes.forEach((node) => {
-    const rect = node.getBoundingClientRect()
-    const dx = clientX < rect.left ? rect.left - clientX : clientX > rect.right ? clientX - rect.right : 0
-    const inside = clientY >= rect.top - 24 && clientY <= rect.bottom + 28
-    const dy = Math.abs(clientY - rect.bottom)
-    if (dx > 32 || (!inside && dy > 80)) return
-    const score = dx * 2 + Math.min(dy, 90)
-    if (!best || score < best.score) best = { node, rect, score }
-  })
-  if (!best) {
-    flash(`${meta.name} sits on a shelf, not there.`, 'bad')
-    return
-  }
-  const span = best.rect.width || 1
-  if (!placeOn(best.node.dataset.zone, (clientX - best.rect.left) / span, entry)) return
-  mark(
-    Math.min(best.rect.right - 8, Math.max(best.rect.left + 8, clientX)),
-    best.rect.bottom,
-  )
-  flash(`${meta.name} is on the shelf.`, 'ok')
+  mark(clientX, clientY)
+  flash(`${meta.name} is ${spot.name}.`, 'ok')
 }
 
 function onUp(event) {
@@ -261,10 +133,6 @@ function onUp(event) {
   window.removeEventListener('pointerup', onUp)
   listening = false
   if (!entry?.moved) return
-  blockOpen = true
-  window.setTimeout(() => {
-    blockOpen = false
-  }, 400)
   release(entry, event.clientX, event.clientY)
 }
 
@@ -275,63 +143,33 @@ watch(drag, (value) => {
   window.addEventListener('pointerup', onUp)
 })
 
-// --- Zoom into the bookshelf -------------------------------------------------------------
-const closeLayer = ref(null)
-let zoomTween = null
-let zoomFrom = { scale: 0.5, x: 0, y: 0 }
-let zoomOrigin = '30% 60%'
-let shelfTrigger = null
+// --- A book taken off the shelf ----------------------------------------------------------
+const openedBook = ref(null)
+const bookCard = ref(null)
+// the books as a list, for the still picture of the room
+const listOpen = ref(false)
+const SHELF_NAMES = { reading: 'Reading', want_to_read: 'To read', read: 'Finished' }
+let bookTrigger = null
 
-function stopZoom() {
-  zoomTween?.kill()
-  zoomTween = null
-}
-
-// The full shelf grows out of the bookcase that was tapped (`rect` is its place on screen).
-async function openShelf(rect) {
-  if (isClose.value || placing.value || blockOpen || drag.value) return
-  stopZoom()
-  closeReading()
-  const host = room.value.getBoundingClientRect()
-  zoomFrom = { scale: rect.width / host.width, x: 0, y: 0 }
-  zoomOrigin = `${rect.left - host.left + rect.width / 2}px ${rect.top - host.top + rect.height / 2}px`
-  shelfTrigger = document.activeElement
-  isClose.value = true
+async function openBook(book) {
+  bookTrigger = document.activeElement
+  openedBook.value = book
   await nextTick()
-  const layer = closeLayer.value
-  if (!layer) return
-  if (prefersReducedMotion()) {
-    gsap.set(layer, { ...ZOOM_TO, transformOrigin: zoomOrigin })
-    return
-  }
-  zoomTween = gsap.fromTo(layer, zoomFrom, {
-    ...ZOOM_TO,
-    ...ZOOM,
-    transformOrigin: zoomOrigin,
-    overwrite: 'auto',
-  })
+  bookCard.value?.focus()
 }
 
-function closeShelf() {
-  const done = async () => {
-    isClose.value = false
-    editing.value = false
-    await nextTick()
-    shelfTrigger?.focus?.()
-  }
-  const layer = closeLayer.value
-  stopZoom()
-  if (!layer || prefersReducedMotion()) {
-    done()
-    return
-  }
-  zoomTween = gsap.to(layer, {
-    ...zoomFrom,
-    ...ZOOM,
-    transformOrigin: zoomOrigin,
-    overwrite: 'auto',
-    onComplete: done,
-  })
+// The details go at once; the book itself goes back on the shelf (or fades, when removed).
+async function closeBook({ removed = false } = {}) {
+  const { id } = openedBook.value
+  openedBook.value = null
+  await room3d.value?.putBack({ removed })
+  await nextTick()
+  // the button that opened it may have gone (the book changed shelf in the list, or a tap that
+  // skipped the opening); then the book's own button
+  const trigger = bookTrigger?.isConnected
+    ? bookTrigger
+    : room.value?.querySelector(`[data-book-id="${id}"], [data-pin="book:${id}"]`)
+  trigger?.focus?.()
 }
 
 // --- Currently Reading card and Quote of the Day -----------------------------------------
@@ -434,7 +272,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  stopZoom()
   window.clearInterval(weatherTimer)
   window.removeEventListener('pointermove', onMove)
   window.removeEventListener('pointerup', onUp)
@@ -444,67 +281,23 @@ onBeforeUnmount(() => {
 
 <template>
   <section ref="room" class="home">
-    <div class="home__far" :class="{ 'is-dim': isClose }" :inert="isClose">
-      <RoomScene
+    <div class="home__far">
+      <Room3D
+        ref="room3d"
         :books="bookshelf.books"
         :current-book="bookshelf.currentlyReading"
         :weather="sky"
         :loading="bookshelf.loading"
         :error="bookshelf.error"
         :reading-open="readingOpen"
-        @open-shelf="openShelf"
         @open-book="toggleReading"
+        @pick-book="openBook"
+        @list-books="listOpen = true"
         @quote="quoteOpen = true"
         @retry="bookshelf.load"
-      >
-        <template #ledge="{ zone }">
-          <button
-            v-for="item in placedIn(zone)"
-            :key="item.uid"
-            type="button"
-            class="placed placed--ledge"
-            :style="at(item)"
-            @click.stop="pickItem(item.uid)"
-          >
-            <span class="placed__pop" :data-decor-uid="item.uid">
-              <DecorPiece :kind="item.id" />
-            </span>
-            <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">
-              Remove
-            </span>
-          </button>
-        </template>
+      />
 
-        <template #floor>
-          <template v-if="!isClose">
-            <button
-              v-for="item in roomFurniture"
-              :key="item.uid"
-              type="button"
-              class="placed placed--floor"
-              :style="at(item)"
-              @click.stop="pickItem(item.uid)"
-            >
-              <span class="placed__pop" :data-decor-uid="item.uid">
-                <DecorPiece :kind="item.id" />
-              </span>
-              <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">
-                Remove
-              </span>
-            </button>
-            <FloorLife
-              :pets="roomPets"
-              :has-food="hasFood"
-              :has-drink="hasDrink"
-              :selected="selected"
-              @pick="pickItem"
-              @remove="unplace"
-            />
-          </template>
-        </template>
-      </RoomScene>
-
-      <CreditChip v-if="!isClose" data-tour="credits" class="home__credits" />
+      <CreditChip data-tour="credits" class="home__credits" />
     </div>
 
     <!-- Opened from the book on the chair -->
@@ -533,101 +326,56 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <div v-show="isClose" ref="closeLayer" class="room__close">
-      <header class="room__bar">
-        <button type="button" class="room__back" aria-label="Back" @click="closeShelf">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
-        </button>
-        <div class="room__tools">
-          <CreditChip tone="light" />
-          <div class="room__toggle" role="group" aria-label="How books are shown">
-            <button
-              type="button"
-              class="room__toggle-btn"
-              :class="{ 'is-on': shelfView === 'spines' }"
-              :aria-pressed="shelfView === 'spines'"
-              @click="shelfView = 'spines'"
-            >
-              Spines
-            </button>
-            <button
-              type="button"
-              class="room__toggle-btn"
-              :class="{ 'is-on': shelfView === 'covers' }"
-              :aria-pressed="shelfView === 'covers'"
-              @click="shelfView = 'covers'"
-            >
-              Covers
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div class="room__scroll">
-        <!-- One bookcase: wooden posts down the sides and a thick board above each row of
-             books, which carries that row's label. -->
-        <div class="case">
-          <div class="case__rail case__rail--top">
-            <h3 class="case__label">
-              <span class="case__name">Reading</span>
-              <span class="case__count" :aria-label="`${reading.length} books`">{{ reading.length }}</span>
-            </h3>
-            <button
-              type="button"
-              class="case__edit"
-              :class="{ 'is-on': editing }"
-              :aria-pressed="editing"
-              @click="editing = !editing"
-            >
-              {{ editing ? 'Done' : 'Edit' }}
-            </button>
-          </div>
-          <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="reading">
-            <template v-if="shelfView === 'spines'">
-              <Shelf v-model="reading" mode="draggable" group="room" compact :removable="editing" @remove="askRemove" />
-              <button v-for="item in placedIn('reading')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
-                <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
-                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-              </button>
-            </template>
-            <CoverRow v-else :books="reading" :removable="editing" @remove="askRemove" />
-          </div>
-          <div class="case__rail">
-            <h3 class="case__label">
-              <span class="case__name">To read</span>
-              <span class="case__count" :aria-label="`${tbr.length} books`">{{ tbr.length }}</span>
-            </h3>
-          </div>
-          <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="tbr">
-            <template v-if="shelfView === 'spines'">
-              <Shelf v-model="tbr" mode="draggable" group="room" compact :removable="editing" @remove="askRemove" />
-              <button v-for="item in placedIn('tbr')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
-                <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
-                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-              </button>
-            </template>
-            <CoverRow v-else :books="tbr" :removable="editing" @remove="askRemove" />
-          </div>
-          <div class="case__rail">
-            <h3 class="case__label">
-              <span class="case__name">Finished</span>
-              <span class="case__count" :aria-label="`${finished.length} books`">{{ finished.length }}</span>
-            </h3>
-          </div>
-          <div class="room__bay" :class="{ 'room__bay--covers': shelfView === 'covers' }" data-zone="read">
-            <template v-if="shelfView === 'spines'">
-              <Shelf v-model="finished" mode="draggable" group="room" compact :removable="editing" @remove="askRemove" />
-              <button v-for="item in placedIn('read')" :key="item.uid" type="button" class="placed placed--shelf" :style="at(item)" @click.stop="pickItem(item.uid)">
-                <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
-                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-              </button>
-            </template>
-            <CoverRow v-else :books="finished" :removable="editing" @remove="askRemove" />
-          </div>
-          <div class="case__rail case__rail--base" />
-        </div>
+    <BottomSheet v-model:open="listOpen" title="Your books">
+      <StateView
+        v-if="bookshelf.loading || bookshelf.error"
+        :loading="bookshelf.loading"
+        :error="bookshelf.error"
+        @retry="bookshelf.load"
+      />
+      <div v-else-if="!bookshelf.books.length" class="home__list-empty">
+        <strong>Add your first book</strong>
+        <RouterLink to="/discover">Discover books</RouterLink>
+        <RouterLink to="/scan">Scan a cover</RouterLink>
       </div>
-    </div>
+      <template v-else>
+        <section v-for="(name, status) in SHELF_NAMES" :key="status" class="home__list-shelf">
+          <h3 class="home__list-name">{{ name }}</h3>
+          <button
+            v-for="book in bookshelf.booksByStatus[status]"
+            :key="book.id"
+            type="button"
+            class="home__list-book"
+            :data-book-id="book.id"
+            aria-haspopup="dialog"
+            @click="openBook(book)"
+          >
+            <strong>{{ book.title }}</strong> <span>by {{ primaryAuthor(book) }}</span>
+          </button>
+        </section>
+      </template>
+    </BottomSheet>
+
+    <!-- covers the room while a book is out: a tap on it puts the book away, and nothing in the
+         room under it (another book, the chair, a drag to look around) can be reached -->
+    <div v-if="openedBook" class="home__book-backdrop" aria-hidden="true" @click="closeBook" />
+    <BookCard
+      v-if="openedBook"
+      ref="bookCard"
+      class="home__book"
+      role="dialog"
+      aria-label="Book details"
+      tabindex="-1"
+      close-label="Close book"
+      @keydown.esc="closeBook"
+      @close="closeBook"
+    >
+      <BookDetailsContent :book="openedBook" @leave="openedBook = null" />
+      <div class="home__book-links">
+        <RouterLink :to="`/books/${openedBook.id}`">Open book page</RouterLink>
+        <button type="button" class="home__book-remove" @click="askRemove(openedBook)">Remove from shelf</button>
+      </div>
+    </BookCard>
 
     <div v-if="drag?.moved" class="drag-ghost" :style="{ left: `${drag.x}px`, top: `${drag.y}px` }">
       <DecorPiece :kind="drag.id" />
@@ -663,28 +411,11 @@ onBeforeUnmount(() => {
   transition: opacity 0.55s ease;
 }
 
-.home__far.is-dim { opacity: 0.78; }
-
 .home__credits {
   position: absolute;
   top: 10px;
   right: 12px;
   z-index: 4;
-}
-
-/* pets roam the whole strip of floor in front of the chair */
-.home :deep(.life) {
-  right: 18%;
-  height: 100%;
-}
-
-/* shop pieces are drawn small; on this floor they stand next to a full-size armchair */
-.placed--floor .placed__pop {
-  zoom: 1.8;
-}
-
-.home :deep(.critter__flip) {
-  zoom: 1.4;
 }
 
 .home__reading {
@@ -693,6 +424,81 @@ onBeforeUnmount(() => {
   z-index: 15;
 }
 
+
+.home__book-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(127, 85, 57, 0.28);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.home__book-links a {
+  color: #7f5539;
+}
+
+.home__book-remove {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: 700;
+  color: #b42318;
+}
+
+.home__list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.home__list-shelf + .home__list-shelf {
+  margin-top: 14px;
+}
+
+.home__list-name {
+  margin-bottom: 6px;
+  font-family: var(--rl-font-title);
+  font-size: 15px;
+}
+
+.home__list-book {
+  display: block;
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--rl-line);
+  background: none;
+  font-size: 13px;
+  text-align: left;
+  color: var(--rl-text);
+}
+
+.home__list-book span {
+  color: var(--rl-muted);
+}
+
+/* above the list of books on the still picture, which a book can be opened from */
+.home__book-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 44;
+  background: rgba(44, 36, 30, 0.18);
+}
+
+/* the open book's card: 80% of the screen, centred, over the room */
+.home .home__book {
+  position: absolute;
+  inset: 10%;
+  z-index: 45;
+}
+
+.home__book:focus,
 .home__reading:focus {
   outline: none;
 }
@@ -736,41 +542,6 @@ onBeforeUnmount(() => {
 .reading-pop-leave-to {
   transform: translateY(14px) scale(0.92);
   opacity: 0;
-}
-
-.placed {
-  position: absolute;
-  z-index: 6;
-  padding: 0;
-  border: 0;
-  background: none;
-  transform: translateX(-50%);
-  cursor: pointer;
-}
-
-.placed--floor { bottom: 6px; z-index: 5; pointer-events: auto; }
-.placed--ledge { bottom: 0; z-index: 4; pointer-events: auto; }
-.placed--shelf { bottom: 0; z-index: 30; }
-
-.placed--ledge :deep(.art) { height: calc(40 * var(--u)); }
-
-.placed__pop {
-  display: block;
-  filter: drop-shadow(0 3px 1px rgba(63, 46, 36, 0.28));
-}
-
-.placed__remove {
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  transform: translateX(-50%);
-  margin-bottom: 4px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: #b42318;
-  color: #fff;
-  font-size: 0.68rem;
-  white-space: nowrap;
 }
 
 .drag-ghost {
@@ -829,245 +600,6 @@ onBeforeUnmount(() => {
   background: #f8e8e6;
   color: #8d2218;
   animation-name: toast-bad;
-}
-
-.room__close {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--rl-primary);
-}
-
-.room__bar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px 6px;
-}
-
-.room__tools {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.room__toggle {
-  display: flex;
-  padding: 2px;
-  border-radius: 999px;
-  background: rgba(255, 253, 249, 0.12);
-}
-
-.room__toggle-btn {
-  padding: 4px 8px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: rgba(255, 253, 249, 0.7);
-  font-size: 0.72rem;
-  cursor: pointer;
-}
-
-.room__toggle-btn.is-on {
-  background: var(--rl-surface);
-  color: var(--rl-primary);
-}
-
-/* the shelves keep one size and the page scrolls when they do not all fit */
-.room__scroll {
-  --shelf-book-height: 168px;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  /* room at the end to scroll the last shelf clear of the menu button */
-  padding: 4px 10px 84px;
-}
-
-/* --- The bookcase: wooden posts, boards between the rows, a lighter back panel --- */
-.case {
-  --post: 14px;
-  /* grain running along a board, and up a post */
-  --grain-along: repeating-linear-gradient(
-    178.5deg,
-    rgba(44, 36, 30, 0.2) 0 1px,
-    transparent 1px 4px,
-    rgba(255, 253, 249, 0.07) 4px 5px,
-    transparent 5px 9px
-  );
-  --grain-up: repeating-linear-gradient(
-    91.5deg,
-    rgba(44, 36, 30, 0.2) 0 1px,
-    transparent 1px 4px,
-    rgba(255, 253, 249, 0.07) 4px 5px,
-    transparent 5px 9px
-  );
-
-  padding-inline: var(--post);
-  border-radius: 10px 10px 5px 5px;
-  background:
-    var(--grain-up),
-    linear-gradient(90deg, #5c3f2c, #8a6244 var(--post), #8a6244 calc(100% - var(--post)), #5c3f2c);
-  box-shadow:
-    0 0 0 1px rgba(44, 36, 30, 0.6),
-    0 10px 22px rgba(0, 0, 0, 0.35);
-}
-
-/* a board: the shelf the row above stands on, and the place for the label of the row below */
-.case__rail {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  height: 36px;
-  margin-inline: calc(-1 * var(--post));
-  padding-inline: calc(var(--post) + 2px);
-  background:
-    var(--grain-along),
-    linear-gradient(180deg, #a07754, #86603f 45%, #6b4a34);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 253, 249, 0.28),
-    inset 0 -2px 0 rgba(44, 36, 30, 0.4),
-    0 6px 8px -3px rgba(44, 36, 30, 0.55);
-}
-
-.case__rail--top {
-  height: 40px;
-  border-radius: 10px 10px 0 0;
-}
-
-.case__rail--base {
-  height: 26px;
-  border-radius: 0 0 5px 5px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 253, 249, 0.28),
-    inset 0 -2px 0 rgba(44, 36, 30, 0.4);
-}
-
-/* Edit / Done, a brass plate like the labels, at the bookcase's top-right corner */
-.case__edit {
-  margin-left: auto;
-  padding: 4px 12px;
-  border: 1px solid #b8943f;
-  border-radius: 3px;
-  background: linear-gradient(180deg, var(--rl-surface), var(--rl-secondary));
-  box-shadow:
-    0 1px 2px rgba(44, 36, 30, 0.5),
-    inset 0 0 0 1px rgba(255, 253, 249, 0.7);
-  font-family: var(--rl-font-title);
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--rl-primary);
-  cursor: pointer;
-}
-
-.case__edit.is-on {
-  background: var(--rl-primary);
-  border-color: var(--rl-primary);
-  color: var(--rl-surface);
-}
-
-/* a brass-edged plate fixed to the board */
-.case__label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 4px 10px;
-  border: 1px solid #b8943f;
-  border-radius: 3px;
-  background: linear-gradient(180deg, var(--rl-surface), var(--rl-secondary));
-  box-shadow:
-    0 1px 2px rgba(44, 36, 30, 0.5),
-    inset 0 0 0 1px rgba(255, 253, 249, 0.7);
-  font-family: var(--rl-font-title);
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--rl-primary);
-}
-
-.case__count {
-  padding-left: 8px;
-  border-left: 1px solid var(--rl-line);
-  font-family: var(--rl-font-body);
-  letter-spacing: 0;
-  color: var(--rl-muted);
-}
-
-/* one row of books in front of the back panel */
-.room__bay {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: calc(var(--shelf-book-height) + 18px);
-  background:
-    linear-gradient(180deg, rgba(44, 36, 30, 0.3), transparent 26px),
-    linear-gradient(90deg, rgba(44, 36, 30, 0.16), transparent 9%, transparent 91%, rgba(44, 36, 30, 0.16)),
-    #c9b092;
-}
-
-.room__bay--covers {
-  height: 232px;
-  padding: 12px 2px 8px;
-}
-
-/* the board below is the shelf, and the books fill the bay so one can lift on hover */
-.room__close :deep(.shelf__plank),
-.room__close :deep(.covers__plank) {
-  display: none;
-}
-
-.room__close :deep(.shelf.is-compact .shelf__books) {
-  flex: 1 1 auto;
-  padding: 0 8px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(63, 46, 36, 0.35) transparent;
-}
-
-/* a firmer shadow, so pale spines stand clear of the back panel */
-.room__close :deep(.book) {
-  filter: drop-shadow(1px 2px 2px rgba(44, 36, 30, 0.4));
-}
-
-.room__close :deep(.shelf__hint) {
-  top: 44%;
-  color: var(--rl-muted);
-}
-
-.room__back {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--rl-surface);
-  cursor: pointer;
-}
-
-.room__back:hover {
-  background: rgba(255, 253, 249, 0.12);
-}
-
-.room__back svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 @keyframes spark-out {

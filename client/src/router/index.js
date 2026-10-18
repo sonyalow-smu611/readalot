@@ -31,7 +31,7 @@ const routes = [
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 2 } },
   { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 3 } },
   { path: '/profile', name: 'profile', component: ProfileView, meta: { title: 'Profile', hideHeader: true, order: 4 } },
-  { path: '/books/:id', name: 'book-details', component: BookDetailsView },
+  { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },
   { path: '/register', name: 'register', component: LoginView, meta: { title: 'Register', bare: true, guest: true, order: 0 } },
   { path: '/verify', name: 'verify', component: VerifyView, meta: { title: 'Verify email', bare: true, guest: true, order: 0 } },

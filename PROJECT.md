@@ -3,7 +3,69 @@
 **Instructors:** K. J. Shim & Chein Wong  
 **Sections:** G3 / G4
 
+This file has two parts: the **team rules** we build Readalot by, then the **course brief** as
+the teaching team gave it. What the app does is in [SPEC.md](SPEC.md); how to run it is in
+[README.md](README.md).
+
 ---
+
+# Team rules
+
+Rules that keep the app course-compliant, demo-safe and easy for every teammate to read.
+
+## Tech stack
+
+| Layer | Use |
+|-------|-----|
+| Markup, style, script | HTML5, CSS3, JavaScript (ES6+) |
+| UI framework | Vue.js 3 |
+| CSS framework | Bootstrap 5 (plain CSS only where Bootstrap is not enough) |
+| Backend | Express.js (Node.js). IS113 examples are fine to build on |
+| Data | Supabase (Postgres), JSON files, or one other simple store |
+| External data | At least one public API over `fetch` / async HTTP. Axios is fine |
+| Tests | End-to-end tests of every core user journey (Playwright), with run instructions in the README |
+| 3D | Blender to model and export the room, Three.js to draw it in the browser |
+| Version control | GitHub, used for real collaboration, not a last-day upload |
+| Hosting | One simple cloud host: Vercel, Firebase, Render, AWS, GCP or Azure |
+| Libraries | Free and public only; credit them in comments and the presentation |
+
+**Not allowed:** React, Next.js, Angular, Svelte, Nuxt, TypeScript; NestJS, GraphQL,
+microservices, Docker, Kubernetes, serverless-only setups; paid APIs or libraries the graders
+would need a paid plan for; scraping **instead of** a public API (scraping at all must follow
+`robots.txt`, be legal and be credited); copied GitHub apps presented as our own work.
+
+If a tool is on neither list, pick the simplest option already allowed. Chrome is the grading
+browser, and layouts must work from iPhone 6 width up to Bootstrap's XL breakpoint.
+
+## Product and course rules
+
+- Solve a real problem for a named audience; don't start from "what portal can we build?"
+- The site is dynamic: the UI talks to a backend store (create and read, plus update and delete where the feature needs it).
+- Use real public data where it exists. Ask the teaching team before relying on dummy data.
+- Free-tier APIs must survive about 5–6 grader calls per feature per day.
+- Week 13 is a **live** demo: no feature may only work in a recorded video.
+- A live cloud deploy the graders can open.
+
+## AI use
+
+- **Allowed:** search, layout and theme ideas, explaining errors, boilerplate, mock data, drafting test cases.
+- **Not allowed:** AI writing the main business logic, backend endpoints, or critical frontend interactivity, unless the team decides otherwise and records it.
+- Record every AI-written part in [AI_USAGE.md](AI_USAGE.md) (copy it to `README.txt` if the teaching team expects that name) and in a short code comment.
+- AI must **never** push to the remote repo (no `git push`, force-push or any other publish). A teammate reviews the local changes and pushes by hand.
+
+## Code
+
+- Clarity over cleverness: a teammate should understand a file in one pass.
+- One file, component or route does one job; name things after what they do.
+- `const` and `let` only; prefer `async` / `await`; handle errors and empty states, never swallow errors.
+- Keep Vue templates thin. API calls live in `services/`; components never call outside APIs directly.
+- Bootstrap first; custom CSS only for the gaps. Mobile-first.
+- No commented-out code, unused imports or leftover `console.log` in finished work.
+- Comment *why*, not *what*. Credit third-party and AI-written code.
+
+---
+
+# Course brief
 
 ## Synopsis
 

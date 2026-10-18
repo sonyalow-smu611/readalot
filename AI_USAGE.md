@@ -97,3 +97,46 @@ explain errors or suggest boilerplate):
 
 > Note: the course guidelines mention recording AI-only snippets in `README.txt`. Copy or link
 > this file there if the teaching team expects that exact filename.
+
+## 3D room: Blender and Three.js (AI-generated)
+
+An AI coding assistant (Claude Code) built the home page's 3D room: the Blender scene and export
+scripts, and the Three.js frontend including its interactivity (looking around, tapping objects,
+placing decorations, pets, weather, clock). The team asked for all of it to be AI-written.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Blender scene | `client/blender/build_room.py`, `client/blender/render_room.py`, `client/blender/README.md` | Bedroom built from primitives, glTF export, still render |
+| Assets | `client/public/room/bedroom.glb`, `client/src/assets/room/room.webp` | Output of the scripts above |
+| 3D room | `client/src/components/room/Room3D.vue`, `client/src/lib/room3d/*.js` | Loading the room, book spines with titles, lighting and weather, look-around controls, tracking buttons, decorations and pets |
+| Wiring | `client/src/views/RoomView.vue`, `client/src/components/RoomDock.vue`, `client/src/composables/useDecor.js` | Room3D in place of the drawn room; tap to place; new decoration spots. The drawn room's components listed in the merge section above (`RoomScene.vue`, `RoomBookshelf.vue`, `ReadingChair.vue`, `RoomWindow.vue`, `WallClock.vue`, `QuoteNote.vue`, `CoverRow.vue`), and `MyRoomView.vue`, `BayWindow.vue`, `BookSpine.vue`, `BookshelfExpanded.vue`, `WindowScene.vue`, `FloorLife.vue`, `useMyShelf.js`, `roomWeather.js`, were deleted |
+| Tests | `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | Updated for the 3D room |
+
+### Bookshelf, opening a book, the merged room and the window (AI-generated)
+
+Later sessions, again written by Claude Code at the team's request, each change test-first with
+Playwright:
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Bookcase | `client/blender/build_bookshelf.py` | The bookcase and placeholder books ported from the build code in `bookshelf.blend`, stood on the room's left wall; the hero book and its animation copied in |
+| Room | `client/blender/build_room.py`, `client/blender/furniture.blend` | The bedroom rebuilt with the hand-modelled armchair, plant and box copied in |
+| Export | `client/blender/render_room.py` | Procedural colours flattened for glTF; the hero book's animation exported |
+| Books on the shelf | `client/src/lib/room3d/books.js`, `loadRoom.js` | Books in shelf order with seeded sizes, laid out in each shelf's own frame |
+| Opening a book | `client/src/lib/room3d/bookOpen.js`, `client/src/components/room/Room3D.vue` | The fly-out, cover and page animation, skip, close, fade on removal, cover pictures |
+| Book details in the room | `client/src/views/RoomView.vue`, `client/src/components/book/BookDetailsContent.vue` | The details dialog, remove with Undo, the book list without 3D; the full-screen bookshelf removed |
+| Window | `client/src/components/room/WindowView.vue`, `client/src/lib/room3d/weather.js` | The earlier weather view (sun and birds, clouds, rain, moon) shown through the 3D bay window |
+| Store fix | `client/src/stores/bookshelf.js` | Removed a duplicated `removeBook` that stopped Undo from working |
+| Tests | `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | Tests for all of the above |
+
+### Book card, labelled shelves and the Book Details page (AI-generated)
+
+Written by Claude Code at the team's request, following the design system in `design-system/`,
+and checked with Playwright:
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Book card | `client/src/components/book/BookCard.vue`, `client/src/components/book/BookDetailsContent.vue`, `client/src/views/RoomView.vue` | The wood-framed card (80% of the screen); cover or cloth-bound stand-in, shelf buttons with the progress slider, Synopsis, Rating and Reviews |
+| Shelves | `client/src/lib/room3d/books.js`, `client/src/components/room/Room3D.vue` | One bookcase row per shelf, brass name plates on the boards, "+N more" per row, books lifting out when pointed at |
+| Book Details page | `client/src/views/BookDetailsView.vue`, `client/src/router/index.js` | The page as the same card over the room; the old status buttons and stars it used (`ReadingStatusButtons.vue`, `RatingStars.vue`) removed |
+| Tests | `tests/e2e/bookshelf.spec.js` | Updated for the new shelf buttons, rows and page; hover test |

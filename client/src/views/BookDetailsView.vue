@@ -1,74 +1,121 @@
+<!--
+  A book's own page. It is the room's Book details card, at the same size and in the same
+  place, over a soft picture of the room; ✕ goes back to wherever the reader came from.
+  A book on the reader's shelf shows at once from the shelf's copy while the full details load.
+  Written with AI assistance: see AI_USAGE.md.
+-->
 <template>
-  <section class="app-shell">
-    <StateView :loading="loading" :error="error" @retry="load">
-      <template v-if="book">
-        <div class="d-flex gap-3 mb-4">
-          <BookCover :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
-          <div>
-            <h1 class="h3">{{ book.title }}</h1>
-            <p class="text-muted mb-2">{{ book.authors?.join(", ") }}</p>
-            <p v-if="facts" class="text-muted small mb-2">{{ facts }}</p>
-            <ReadingStatusButtons v-model="status" />
-          </div>
-        </div>
-
-        <p v-if="book.genres?.length" class="small text-muted">{{ book.genres.join(" · ") }}</p>
-        <p class="book-details__description">{{ book.description || "No description for this book." }}</p>
-        <!-- Google Books has a rating for only a few books -->
-        <template v-if="book.averageRating">
-          <RatingStars :rating="Math.round(book.averageRating)" />
-          <p class="text-muted small">
-            {{ book.averageRating }} from {{ book.ratingsCount }} {{ book.ratingsCount === 1 ? "rating" : "ratings" }}
-          </p>
-        </template>
-      </template>
-    </StateView>
+  <section class="book-page">
+    <img class="book-page__room" :src="roomArt" alt="" draggable="false" />
+    <BookCard class="book-page__card" close-label="Back" @close="goBack">
+      <BookDetailsContent v-if="book" :book="book" title-tag="h1" :links-to-page="false" />
+      <div v-else-if="loading || (!data && !error)" class="book-page__state" role="status">
+        <span class="spinner-border" aria-hidden="true"></span>
+        Opening the book…
+      </div>
+      <div v-else class="book-page__state" role="alert">
+        <strong>Couldn't open this book.</strong>
+        {{ error || "It may have been taken off the shelves." }}
+        <button type="button" class="btn book-page__retry" @click="load">Retry</button>
+      </div>
+    </BookCard>
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
-import BookCover from "../components/BookCover.vue";
-import RatingStars from "../components/RatingStars.vue";
-import ReadingStatusButtons from "../components/ReadingStatusButtons.vue";
-import StateView from "../components/StateView.vue";
-import { useAsync } from "../composables/useAsync.js";
-import { getBook, saveUserBook } from "../services/api.js";
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import roomArt from "@/assets/room/room.webp";
+import BookCard from "@/components/book/BookCard.vue";
+import BookDetailsContent from "@/components/book/BookDetailsContent.vue";
+import { useAsync } from "@/composables/useAsync.js";
+import { getBook } from "@/services/api.js";
+import { useBookshelfStore } from "@/stores/bookshelf";
 
 const route = useRoute();
-const status = ref("");
+const router = useRouter();
+const bookshelf = useBookshelfStore();
 const { data, error, loading, run } = useAsync(() => getBook(route.params.id));
 
-const book = computed(() => data.value?.book || null);
-
-// publisher, year and length, leaving out whatever Google Books does not have
-const facts = computed(() =>
-  [
-    book.value.publisher,
-    book.value.publishedDate?.slice(0, 4),
-    book.value.pageCount ? `${book.value.pageCount} pages` : ""
-  ]
-    .filter(Boolean)
-    .join(" · ")
-);
+// the full details over the shelf's copy; a detail the server does not have keeps the shelf's
+const book = computed(() => {
+  const shelved = bookshelf.findBook(route.params.id);
+  const full = data.value?.book;
+  if (!full) return shelved;
+  const known = Object.fromEntries(Object.entries(full).filter(([, value]) => value != null && value !== ""));
+  return { ...shelved, ...known };
+});
 
 function load() {
   return run().catch(() => {});
 }
 
-watch(status, async (nextStatus) => {
-  if (nextStatus && book.value) {
-    await saveUserBook({ bookId: book.value.id, status: nextStatus });
-  }
-});
+function goBack() {
+  // straight here from a link: there is nowhere to go back to, so home to the room
+  if (window.history.state?.back) router.back();
+  else router.push("/");
+}
 
-onMounted(load);
+onMounted(() => {
+  load();
+  // which shelf the book is on comes from the reader's shelf
+  if (!bookshelf.books.length && !bookshelf.loading) bookshelf.load();
+});
 </script>
 
 <style scoped>
-/* the description keeps the paragraph breaks Google Books sends */
-.book-details__description {
-  white-space: pre-line;
+.book-page {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: #3a2a1e;
+}
+
+/* the room, out of focus and dimmed, as it is behind the card when a book is opened there */
+.book-page__room {
+  position: absolute;
+  inset: -16px;
+  width: calc(100% + 32px);
+  height: calc(100% + 32px);
+  object-fit: cover;
+  filter: blur(6px) brightness(0.72);
+  pointer-events: none;
+  user-select: none;
+}
+
+.book-page__card {
+  position: absolute;
+  inset: 10%;
+}
+
+.book-page__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 60vh;
+  padding: 0 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  text-align: center;
+  color: #414833;
+}
+
+.book-page__state .spinner-border {
+  color: #7f5539;
+}
+
+.book-page__retry {
+  --bs-btn-font-family: Georgia, "Times New Roman", serif;
+  --bs-btn-font-size: 14px;
+  --bs-btn-color: #fffdf9;
+  --bs-btn-bg: #7f5539;
+  --bs-btn-border-color: #7f5539;
+  --bs-btn-hover-color: #fffdf9;
+  --bs-btn-hover-bg: #414833;
+  --bs-btn-hover-border-color: #414833;
+  --bs-btn-border-radius: 12px;
+  margin-top: 4px;
 }
 </style>

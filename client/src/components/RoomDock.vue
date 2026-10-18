@@ -22,6 +22,7 @@ const {
   confirmBuy,
   cancelBuy,
   startDrag,
+  beginPlace,
 } = useDecor()
 
 function grab(event, entry) {
@@ -116,9 +117,9 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         <h2 class="panel__title">Inventory</h2>
         <button type="button" class="panel__close" @click="inventoryOpen = false">Close</button>
       </header>
-        <p v-if="!inventory.length" class="panel__empty">Buy something in the shop, then drag it into the room.</p>
+        <p v-if="!inventory.length" class="panel__empty">Buy something in the shop, then place it in the room.</p>
         <template v-else>
-          <p class="panel__note">Drag a piece out. It settles on the floor or a shelf, whichever that piece belongs on.</p>
+          <p class="panel__note">Tap a piece, then a glowing spot in the room. Or drag it onto one.</p>
           <div class="panel__row">
             <button
               v-for="entry in inventory"
@@ -126,6 +127,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               type="button"
               class="dock-card dock-card--drag"
               @pointerdown="grab($event, entry)"
+              @click="beginPlace(entry)"
             >
             <span class="dock-card__art"><DecorPiece :kind="entry.id" /></span>
             <span class="dock-card__name">{{ meta(entry.id)?.name }}</span>
