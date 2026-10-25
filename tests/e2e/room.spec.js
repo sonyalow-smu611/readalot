@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/time", (route) =>
     route.fulfill({ json: { unix: 1767240000, abbreviation: "SGT", utcOffset: "+08:00" } })
   );
-  await page.goto("/");
+  await page.goto("/house");
 });
 
 // The room is 3D: the bar of places turns the reader to face something before it is tapped.
@@ -34,7 +34,6 @@ test("room shows the window weather, the wall clock and the shelf", async ({ pag
   await expect(page.getByRole("img", { name: "Singapore time 12:00" })).toBeVisible();
   await turnTo(page, "Bookshelf");
   await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
 });
 
 // The view through the bay window follows the weather: rain here (the weather is answered with

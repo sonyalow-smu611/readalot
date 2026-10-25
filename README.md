@@ -17,6 +17,7 @@ discover books, meet nearby readers and scan books in.
 | Weather view in the window (sun and birds, clouds, rain, moon), shop, inventory, decorations, pets, credits, time API, phone frame, route slides | Alric |
 | Mood check-in and recommendation | `merge-homepage` |
 | 3D room (Blender + Three.js), the `bookshelf.blend` bookcase, books that fly out and open | `merge-homepage`, AI-written (see [AI_USAGE.md](AI_USAGE.md)) |
+| The town home page: pixel-art map drawn in [Phaser 3](https://phaser.io) (MIT), one building per teammate (`client/src/buildings/`) | Dylan, AI-written (see [AI_USAGE.md](AI_USAGE.md)) |
 
 ## Getting Started
 

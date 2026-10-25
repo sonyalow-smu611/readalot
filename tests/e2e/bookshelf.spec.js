@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
     saves.push({ id: route.request().url().split("/").pop(), ...route.request().postDataJSON() });
     return route.fulfill({ json: { userBook: {} } });
   });
-  await page.goto("/");
+  await page.goto("/house");
 });
 
 async function turnToBookshelf(page) {
@@ -299,7 +299,7 @@ test.describe("from the room", () => {
 
     // and its close button goes back to the room
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/house$/);
   });
 
   test("a book can be removed from the shelf, and Undo puts it back", async ({ page }) => {

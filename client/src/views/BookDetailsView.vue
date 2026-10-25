@@ -53,7 +53,7 @@ function load() {
 function goBack() {
   // straight here from a link: there is nowhere to go back to, so home to the room
   if (window.history.state?.back) router.back();
-  else router.push("/");
+  else router.push({ name: "room" });
 }
 
 onMounted(() => {

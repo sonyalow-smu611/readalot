@@ -140,3 +140,20 @@ and checked with Playwright:
 | Shelves | `client/src/lib/room3d/books.js`, `client/src/components/room/Room3D.vue` | One bookcase row per shelf, brass name plates on the boards, "+N more" per row, books lifting out when pointed at |
 | Book Details page | `client/src/views/BookDetailsView.vue`, `client/src/router/index.js` | The page as the same card over the room; the old status buttons and stars it used (`ReadingStatusButtons.vue`, `RatingStars.vue`) removed |
 | Tests | `tests/e2e/bookshelf.spec.js` | Updated for the new shelf buttons, rows and page; hover test |
+
+### Readalot Town: the map home page and the building skeleton (AI-generated)
+
+Written by Claude Code at the team's request (stack chosen by the team: Phaser 3, one map
+picture, invisible hit zones, HTML popups, tweened walkers, a pan/zoom camera), and checked with
+Playwright. The team still needs to agree who owns the town's interactivity (see the AI use rules
+in `PROJECT.md`).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Map and avatar art | `client/scripts/draw-town-map.mjs`, `client/scripts/town-art/*.js`, `client/public/town/map.png`, `client/public/town/avatars/*.png` | The v3 town (Stardew-style buildings, river, lake, roads, farm, park) and the five avatars, drawn pixel by pixel and saved with Playwright |
+| Layout | `client/src/town/places.js` | The four buildings' tap zones, owners and routes, the spawn point and the walkers' paths |
+| Scene | `client/src/town/TownScene.js` | Phaser scene: hit zones over buildings, drag / pinch / wheel camera clamped to the map, the "You" marker, avatars walking the pavements, a load error callback |
+| Town components | `client/src/views/TownView.vue`, `client/src/components/town/TownMap.vue`, `TownHud.vue`, `PlacesMenu.vue`, `PlaceCard.vue` | The town page split into components with props and events |
+| Building skeleton | `client/src/components/shared/BuildingShell.vue`, `WipPanel.vue`, `client/src/buildings/*/` (`HouseView`, `LibraryView`, `CafeView`, `SalonView`, `README.md`) | One folder per teammate; each entry page shows that teammate's existing page inside the shared shell |
+| Routing | `client/src/router/index.js`, `client/src/App.vue`, `client/src/stores/user.js`, `client/src/views/BookDetailsView.vue` | `/` is the town; `/house`, `/library`, `/cafe`, `/salon`; old addresses redirect; signing in opens the town; the bottom tab bar removed; the tour steps follow the new addresses |
+| Tests | `tests/e2e/town.spec.js`, and the new address in the `room`, `bookshelf`, `mood-result` specs | Every building opens and leads back to town; old addresses redirect |

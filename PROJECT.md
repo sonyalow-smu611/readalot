@@ -57,6 +57,13 @@ browser, and layouts must work from iPhone 6 width up to Bootstrap's XL breakpoi
 
 - Clarity over cleverness: a teammate should understand a file in one pass.
 - One file, component or route does one job; name things after what they do.
+- Build the UI from components that talk through props and events: data goes down as props
+  (`defineProps`), changes come back up as emitted events (`defineEmits`). A component never
+  edits its props or reaches into its parent.
+- Every prop is declared with a type, plus `required: true` or a `default`.
+- Views in `views/` hold the state and wire components together. Anything a view draws that has
+  its own job (a card, a menu, a list row, a dialog) is its own component in `components/`.
+- Markup that repeats becomes one component with props, never copy-paste.
 - `const` and `let` only; prefer `async` / `await`; handle errors and empty states, never swallow errors.
 - Keep Vue templates thin. API calls live in `services/`; components never call outside APIs directly.
 - Bootstrap first; custom CSS only for the gaps. Mobile-first.
