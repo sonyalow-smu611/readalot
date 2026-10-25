@@ -157,3 +157,4 @@ in `PROJECT.md`).
 | Building skeleton | `client/src/components/shared/BuildingShell.vue`, `WipPanel.vue`, `client/src/buildings/*/` (`HouseView`, `LibraryView`, `CafeView`, `SalonView`, `README.md`) | One folder per teammate; each entry page shows that teammate's existing page inside the shared shell |
 | Routing | `client/src/router/index.js`, `client/src/App.vue`, `client/src/stores/user.js`, `client/src/views/BookDetailsView.vue` | `/` is the town; `/house`, `/library`, `/cafe`, `/salon`; old addresses redirect; signing in opens the town; the bottom tab bar removed; the tour steps follow the new addresses |
 | Tests | `tests/e2e/town.spec.js`, and the new address in the `room`, `bookshelf`, `mood-result` specs | Every building opens and leads back to town; old addresses redirect |
+| Guide for AI assistants | `AGENTS.md`, `CLAUDE.md` (imports `AGENTS.md`) | Rules, who owns which folder, how a building works, and how to run and check the app |
