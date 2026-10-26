@@ -1,16 +1,21 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Home after signing in: the town. This view only holds the state and wires the town's parts
-// together; each building opens one teammate's page (see src/buildings/).
-import { ref } from 'vue'
+// together; each building opens one teammate's page (see src/buildings/), and each friend's
+// house opens that reader's room. The sky follows the live weather unless a preview is chosen.
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { PLACES } from '@/town/places.js'
+import { ALL_PLACES } from '@/town/places.js'
 import { useUserStore } from '@/stores/user'
+import { fetchWeather } from '@/services/weather.js'
 import TownMap from '@/components/town/TownMap.vue'
 import TownHud from '@/components/town/TownHud.vue'
 import PlacesMenu from '@/components/town/PlacesMenu.vue'
 import PlaceCard from '@/components/town/PlaceCard.vue'
+import WeatherButton from '@/components/town/WeatherButton.vue'
+
+const WEATHER_EVERY = 10 * 60 * 1000
 
 const router = useRouter()
 const { profile } = storeToRefs(useUserStore())
@@ -20,6 +25,33 @@ const selected = ref(null)
 const placesOpen = ref(false)
 const focus = ref(null)
 const hint = ref(true)
+const weather = ref(null)
+const skyMode = ref('live')
+let weatherTimer = null
+
+const sky = computed(() => {
+  const mode = skyMode.value
+  if (mode === 'live') {
+    const w = weather.value
+    return { night: Boolean(w && !w.unavailable && !w.isDay), rain: w?.scene === 'rain' }
+  }
+  return { night: mode === 'night' || mode === 'rainyNight', rain: mode === 'rain' || mode === 'rainyNight' }
+})
+
+async function loadWeather() {
+  try {
+    weather.value = await fetchWeather()
+  } catch {
+    // fetchWeather already falls back; keep whatever sky we had
+  }
+}
+
+onMounted(() => {
+  loadWeather()
+  weatherTimer = setInterval(loadWeather, WEATHER_EVERY)
+})
+
+onBeforeUnmount(() => clearInterval(weatherTimer))
 
 function select(place) {
   selected.value = place
@@ -43,9 +75,10 @@ function enter(place) {
 
 <template>
   <section class="town" aria-label="Readalot Town">
-    <TownMap :focus="focus" :selected-id="selected?.id ?? null" @select="select" @ready="ready = true" />
+    <TownMap :focus="focus" :selected-id="selected?.id ?? null" :sky="sky" @select="select" @ready="ready = true" />
     <TownHud :name="profile.name || 'You'" :avatar="profile.avatar" :places-open="placesOpen" @toggle-places="togglePlaces" />
-    <PlacesMenu :places="PLACES" :open="placesOpen" @go="go" />
+    <PlacesMenu :places="ALL_PLACES" :open="placesOpen" @go="go" />
+    <WeatherButton v-if="ready" :mode="skyMode" :weather="weather" @change="skyMode = $event" />
 
     <Transition name="town-fade">
       <p v-if="hint && ready && !selected" class="town__hint">Drag to look around. Tap a building to go in.</p>

@@ -57,3 +57,36 @@ test("a place card closes with its close button", async ({ page }) => {
   await card.getByRole("button", { name: "Close" }).click();
   await expect(card).toBeHidden();
 });
+
+// Friends' houses sit in the town too; each one opens that reader's room.
+test("a friend's house opens their room", async ({ page }) => {
+  const card = await openPlace(page, "Emma's house");
+  await expect(card.getByText("Emma Tan", { exact: false })).toBeVisible();
+  await card.getByRole("button", { name: "Visit Emma" }).click();
+  await expect(page).toHaveURL(/\/people\/reader-emma$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Emma Tan's Room" })).toBeVisible();
+});
+
+test("every friend's house is in the Places list", async ({ page }) => {
+  await page.getByRole("button", { name: "Places" }).click();
+  const places = page.getByRole("navigation", { name: "Places in town" });
+  for (const name of ["Emma's house", "Ayaan's house", "Sofia's house", "Noah's house"]) {
+    await expect(places.getByRole("button", { name: new RegExp(`^${name}`) })).toBeVisible();
+  }
+});
+
+// The sky follows the live weather; the weather chip steps through a preview of each look.
+test("the weather chip previews day, night and rain", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const chip = page.getByRole("button", { name: /^Weather:/ });
+  await expect(chip).toContainText("Live weather");
+  for (const look of ["Day", "Night", "Rain", "Rainy night"]) {
+    await chip.click();
+    await expect(chip).toContainText("Preview");
+    await expect(chip).toContainText(look);
+  }
+  await chip.click();
+  await expect(chip).toContainText("Live weather");
+  expect(errors).toEqual([]);
+});

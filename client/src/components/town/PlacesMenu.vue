@@ -28,6 +28,8 @@ const emit = defineEmits(['go'])
   flex-direction: column;
   gap: 4px;
   width: min(260px, calc(100% - 28px));
+  max-height: calc(100% - 150px);
+  overflow-y: auto;
   padding: 8px;
   border: 1px solid var(--rl-line);
   border-radius: var(--rl-radius-card, 16px);

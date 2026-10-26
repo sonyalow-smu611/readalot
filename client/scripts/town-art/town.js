@@ -6,7 +6,16 @@
   const MH = 40 * T
   const [map, m] = mk(MW, MH)
   const things = []
-  const place = (spr, X, baseY) => things.push({ spr, X: Math.round(X), Y: Math.round(baseY - spr.height + 1), base: baseY })
+  const place = (spr, X, baseY) => {
+    const thing = { spr, X: Math.round(X), Y: Math.round(baseY - spr.height + 1), base: baseY }
+    things.push(thing)
+    return thing
+  }
+  // spots the app animates on top of the picture (lights, water), in 1x pixels
+  const lamps = []
+  const windows = []
+  const bridges = []
+  const fx = {}
   const groundShadow = (X, Y, W, H) => R(m, X, Y, W, H, 'rgba(30,50,25,0.28)')
 
   // ---------------------------------------------------------------- ground
@@ -76,6 +85,36 @@
   }
   for (let k = 0; k < 80; k++) R(m, lake.x + ri(-lake.rx + 40, lake.rx - 40), lake.y + ri(-lake.ry + 30, lake.ry - 30), ri(4, 10), 1, '#9fd4ee')
 
+  // a waterfall where the river drops over a rocky ledge near the top edge
+  {
+    const top = 3 * T - 14
+    const h = 42
+    const [fx0] = river.reduce((best, p) => (Math.abs(p[1] - top) < Math.abs(best[1] - top) ? p : best))
+    const cx = Math.round(fx0)
+    // a cliff face of stacked boulders, lit from the top left
+    const boulders = [[-150, 14, 22], [-120, 6, 26], [-86, 10, 24], [-58, 4, 22], [58, 4, 22], [88, 10, 24], [120, 6, 26], [152, 14, 22]]
+    for (const [dx, dy, r] of boulders) E(m, cx + dx + 3, top + dy + h / 2 + 6, r, h / 2, 'rgba(30,50,25,0.3)')
+    for (const [dx, dy, r] of boulders) {
+      E(m, cx + dx, top + dy + h / 2, r, h / 2, '#6e665b')
+      E(m, cx + dx - 2, top + dy + h / 2 - 3, r - 3, h / 2 - 4, '#8a8174')
+      E(m, cx + dx - 6, top + dy + h / 2 - 10, Math.round(r / 2), 5, '#a39a8c')
+      R(m, cx + dx - r + 6, top + dy + h - 6, r * 2 - 12, 2, '#544e45')
+    }
+    // the water: a lip at the top, the falling sheet, then foam and a boulder each side
+    R(m, cx - 44, top - 6, 88, 6, '#9fd4ee')
+    R(m, cx - 44, top, 88, h, '#3f8fbf')
+    for (let xx = 0; xx < 86; xx += 4) R(m, cx - 43 + xx, top + ((xx / 4) % 3) * 4, 2, h - ((xx / 4) % 3) * 6, (xx / 4) % 2 ? '#7fc0e3' : '#bfe6f5')
+    R(m, cx - 44, top - 2, 88, 3, '#e8f7fc')
+    E(m, cx, top + h + 6, 54, 11, '#bfe6f5')
+    E(m, cx, top + h + 5, 46, 8, '#e8f7fc')
+    E(m, cx - 10, top + h + 4, 28, 4, '#ffffff')
+    for (const dx of [-48, 50]) {
+      E(m, cx + dx, top + h + 6, 9, 7, '#6e665b')
+      E(m, cx + dx - 1, top + h + 4, 6, 4, '#a39a8c')
+    }
+    fx.waterfall = { x: cx - 44, y: top - 2, w: 88, h: h + 8 }
+  }
+
   // ---------------------------------------------------------------- roads
   // x/y/w/h in tiles; asphalt with a pale kerb and a pavement strip on each side
   const ROADS = [
@@ -131,6 +170,7 @@
 
   // bridges where the main road and the south road cross the river
   const roadBridge = (X1, X2, Y, H, horizontal) => {
+    bridges.push(horizontal ? [X1, Y - WALK, X2 - X1, H + WALK * 2] : [X1 - WALK, Y, X2 - X1 + WALK * 2, H])
     if (horizontal) {
       R(m, X1, Y - WALK, X2 - X1, H + WALK * 2, '#cfc6b4')
       R(m, X1, Y, X2 - X1, H, '#5d5f6c')
@@ -186,6 +226,7 @@
     }
   })
   place(footbridge, 40.5 * T, 7.4 * T + 6)
+  bridges.push([40.5 * T, 7.4 * T + 6 - footbridge.height, footbridge.width, footbridge.height])
 
   // dock into the lake
   const dock = sprite(36, 120, (x) => {
@@ -195,6 +236,8 @@
     R(x, 33, 0, 3, 120, '#8a5432')
   })
   things.push({ spr: dock, X: 12 * T - 18, Y: 31.6 * T, base: 31.6 * T + 1 })
+  // things floating over the lake, which fish swim under
+  fx.overLake = [[12 * T - 18, 31.6 * T, dock.width, dock.height]]
 
   // ---------------------------------------------------------------- plaza with fountain
   const plaza = { x: 25 * T, y: 9 * T, w: 9 * T, h: 8 * T }
@@ -257,6 +300,7 @@
       R(x, 2, 4, 2, 2, '#fffbe0')
     })
     place(s, cx - 5, baseY)
+    lamps.push([cx, baseY - 44])
   }
 
   function phoneBooth(cx, baseY) {
@@ -321,6 +365,7 @@
       R(x, 62, 43, 6, 1, '#e8f7fc')
     })
     place(s, cx - 48, baseY)
+    fx.fountain = { spout: [cx + 1, baseY - 62], basin: [cx + 1, baseY - 22] }
   }
 
   function umbrellaTable(cx, baseY, a, b) {
@@ -352,33 +397,25 @@
     place(s, x1, baseY)
   }
 
-  function car(X, baseY, col, vertical) {
-    const s = vertical
-      ? sprite(30, 54, (x) => {
-          R(x, 0, 4, 30, 48, col)
-          R(x, 3, 12, 24, 12, '#3d4a5a')
-          R(x, 3, 34, 24, 8, '#3d4a5a')
-          R(x, 4, 24, 22, 10, shade(col, 1.15))
-          R(x, 3, 0, 6, 4, '#ffe08a')
-          R(x, 21, 0, 6, 4, '#ffe08a')
-          R(x, 3, 52, 6, 2, '#d0453d')
-          R(x, 21, 52, 6, 2, '#d0453d')
-        })
-      : sprite(56, 30, (x) => {
-          R(x, 2, 0, 52, 30, col)
-          R(x, 10, 3, 12, 24, '#3d4a5a')
-          R(x, 36, 3, 8, 24, '#3d4a5a')
-          R(x, 22, 4, 14, 22, shade(col, 1.15))
-          R(x, 54, 3, 2, 6, '#ffe08a')
-          R(x, 54, 21, 2, 6, '#ffe08a')
-          R(x, 0, 3, 2, 6, '#d0453d')
-          R(x, 0, 21, 2, 6, '#d0453d')
-        })
-    place(s, X, baseY)
-  }
+  // a car seen from above, facing right; the app drives and turns it, so it is not on the map
+  const carSprite = (col) =>
+    sprite(56, 30, (x) => {
+      R(x, 2, 0, 52, 30, col)
+      R(x, 10, 3, 12, 24, '#3d4a5a')
+      R(x, 36, 3, 8, 24, '#3d4a5a')
+      R(x, 22, 4, 14, 22, shade(col, 1.15))
+      R(x, 54, 3, 2, 6, '#ffe08a')
+      R(x, 54, 21, 2, 6, '#ffe08a')
+      R(x, 0, 3, 2, 6, '#d0453d')
+      R(x, 0, 21, 2, 6, '#d0453d')
+    })
 
   // ---------------------------------------------------------------- buildings, Stardew style
+  // the glass of every window drawn while a building is being drawn, so it can light up at night
+  let windowLog = null
   const window2 = (x, X, Y, w, h, o = {}) => {
+    const archH = o.arch ? w / 2 - 3 : 0
+    windowLog?.push([X + 3, Y + 3 - archH, w - 6, h - 6 + archH])
     const frame = o.frame ?? '#f4efe2'
     if (o.shutters) {
       R(x, X - 7, Y, 6, h, o.shutters)
@@ -448,6 +485,7 @@
     const pad = 20
     const W = o.w + ov * 2 + pad * 2
     const H = o.wallH + roofH + (o.above ?? 30) + (o.porch ? 18 : 6)
+    windowLog = []
     const s = sprite(W, H, (x) => {
       const L = ov + pad
       const eave = (o.above ?? 30) + roofH
@@ -500,10 +538,14 @@
         R(x, L + o.w + 3, py - 46, 5, 44, '#f4efe2')
       }
     })
+    const lit = windowLog
+    windowLog = null
     const X = o.x - (o.overhang ?? 10) - pad
     groundShadow(o.x + o.w + 4, o.base_y - o.wallH * 0.6, 14, o.wallH * 0.6)
-    place(s, X, o.base_y + (o.porch ? 12 : 0))
-    return { left: o.x - ov, right: o.x + o.w + ov, top: o.base_y - o.wallH - o.roofH - (o.above ?? 30), bottom: o.base_y + (o.porch ? 12 : 0) }
+    const art = place(s, X, o.base_y + (o.porch ? 12 : 0))
+    // sprite() adds a 1 px outline, so the drawing sits 1 px in from the sprite's corner
+    for (const [wx, wy, ww, wh] of lit) windows.push([art.X + 1 + wx, art.Y + 1 + wy, ww, wh])
+    return { left: o.x - ov, right: o.x + o.w + ov, top: o.base_y - o.wallH - o.roofH - (o.above ?? 30), bottom: o.base_y + (o.porch ? 12 : 0), art }
   }
 
   // ---------------------------------------------------------------- the four places
@@ -627,16 +669,17 @@
   }), 50.4 * T, ROW3 + 2)
 
   // ---------------------------------------------------------------- filler buildings
+  // the five small houses are friends' homes; their ids are the art names places.js uses
   const filler = (o) => building({ above: 26, ...o })
-  filler({ x: 1 * T, base_y: ROW1, w: 4.2 * T, wallH: 70, roofH: 56, roof: 'gable', roofC: '#4a7fb0', wall: '#8a8f99', texture: 'plank', roundWindow: true,
+  zones['cottage-grey'] = filler({ x: 1 * T, base_y: ROW1, w: 4.2 * T, wallH: 70, roofH: 56, roof: 'gable', roofC: '#4a7fb0', wall: '#8a8f99', texture: 'plank', roundWindow: true,
     decor: (x, L, eave, cx) => { window2(x, L + 12, eave + 18, 26, 26, { frame: '#e6f0e6', shutters: '#5fb59b' }); door2(x, L + 4.2 * T - 46, eave + 70 - 8 - 44, 26, 44, '#5a8ab0') } })
-  filler({ x: 49 * T, base_y: ROW1, w: 4 * T, wallH: 66, roofH: 50, roof: 'hip', roofC: '#5a8a4a', wall: '#f0e2c4', texture: 'siding', chimney: 0.7,
+  zones['cottage-green'] = filler({ x: 49 * T, base_y: ROW1, w: 4 * T, wallH: 66, roofH: 50, roof: 'hip', roofC: '#5a8a4a', wall: '#f0e2c4', texture: 'siding', chimney: 0.7,
     decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 18, 26, 26, { shutters: '#5a8a4a' }); door2(x, L + 4 * T - 42, eave + 66 - 8 - 44, 26, 44, '#a8683f') } })
-  filler({ x: 0.6 * T, base_y: ROW2, w: 3.6 * T, wallH: 64, roofH: 50, roof: 'hip', roofC: '#8a5432', wall: '#b9a8d8', texture: 'siding',
+  zones['cottage-lilac'] = filler({ x: 0.6 * T, base_y: ROW2, w: 3.6 * T, wallH: 64, roofH: 50, roof: 'hip', roofC: '#8a5432', wall: '#b9a8d8', texture: 'siding',
     decor: (x, L, eave, cx) => { window2(x, L + 8, eave + 16, 24, 24, { box: '#6b4226' }); door2(x, L + 3.6 * T - 36, eave + 64 - 8 - 42, 24, 42, '#5a4a8a') } })
-  filler({ x: 17.4 * T, base_y: ROW2, w: 4.4 * T, wallH: 72, roofH: 58, roof: 'gable', roofC: '#4a7fb0', wall: '#f4f2ec', texture: 'siding', roundWindow: true, chimney: 0.8,
+  zones['cottage-white'] = filler({ x: 17.4 * T, base_y: ROW2, w: 4.4 * T, wallH: 72, roofH: 58, roof: 'gable', roofC: '#4a7fb0', wall: '#f4f2ec', texture: 'siding', roundWindow: true, chimney: 0.8,
     decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 20, 26, 26, { shutters: '#4a7fb0' }); door2(x, L + 4.4 * T - 44, eave + 72 - 8 - 46, 28, 46, '#4a7fb0', { glass: true }) } })
-  filler({ x: 24.6 * T, base_y: ROW2, w: 4.4 * T, wallH: 70, roofH: 56, roof: 'hip', roofC: '#c0563f', wall: '#f2d7a0', texture: 'brick', chimney: 0.2,
+  zones['cottage-brick'] = filler({ x: 24.6 * T, base_y: ROW2, w: 4.4 * T, wallH: 70, roofH: 56, roof: 'hip', roofC: '#c0563f', wall: '#f2d7a0', texture: 'brick', chimney: 0.2,
     decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 20, 26, 26, { box: '#6b4226' }); window2(x, L + 4.4 * T - 36, eave + 20, 26, 26, { box: '#6b4226' }); door2(x, cx - 13, eave + 70 - 8 - 44, 26, 44, '#3f6b5a') } })
 
   // farm in the top right: barn, silo, crops
@@ -673,6 +716,7 @@
   fenceRun(46 * T, 55.4 * T, 12.9 * T, '#c08a5a')
 
   // lighthouse by the lake
+  fx.lighthouse = [21.6 * T + 24, 37.6 * T - 110]
   place(sprite(46, 130, (x) => {
     fillPoly(x, [[8, 120], [38, 120], [32, 26], [14, 26]], '#f4efe2')
     for (const y0 of [36, 66, 96]) polyRows([[8, 120], [38, 120], [32, 26], [14, 26]], (y, a, b) => (y >= y0 && y < y0 + 14 ? R(x, a, y, b - a, 1, '#c0392f') : null))
@@ -683,11 +727,12 @@
     R(x, 19, 104, 9, 16, '#5a3a24')
   }), 21.6 * T, 37.6 * T)
   // a rowing boat
-  place(sprite(54, 20, (x) => {
+  const boat = place(sprite(54, 20, (x) => {
     fillPoly(x, [[0, 4], [54, 4], [46, 18], [8, 18]], '#a8683f')
     R(x, 4, 4, 46, 3, '#7a4a2a')
     R(x, 18, 7, 18, 3, '#c08050')
   }), 6 * T, 36.2 * T)
+  fx.overLake.push([boat.X, boat.Y, boat.spr.width, boat.spr.height])
   // campfire clearing and tent, top left
   E(m, 6 * T, 7.2 * T, 64, 30, '#b8925a')
   E(m, 6 * T, 7.2 * T, 60, 27, '#c9a46a')
@@ -697,6 +742,8 @@
     fillPoly(x, [[8, 12], [22, 12], [15, 0]], '#e3732f')
     fillPoly(x, [[11, 12], [19, 12], [15, 4]], '#ffd34a')
   }), 6 * T - 15, 7.4 * T + 6)
+  // the bottom of the flames, where the app's fire burns
+  fx.campfire = [6 * T + 1, 7.4 * T + 6 - 10]
   place(sprite(62, 44, (x) => {
     fillPoly(x, [[0, 44], [62, 44], [31, 0]], '#d9a84a')
     fillPoly(x, [[22, 44], [40, 44], [31, 18]], '#5a3a24')
@@ -705,9 +752,14 @@
   bench(7.8 * T, 7.8 * T, true)
 
   // ---------------------------------------------------------------- street things
-  for (const lx of [3, 9, 15, 21, 25, 29, 35, 47, 53]) lamp(lx * T, ROW1 + 4)
-  for (const lx of [5, 13, 27, 35, 41, 50]) lamp(lx * T, 20 * T + WALK + 30)
-  for (const lx of [4, 10, 18, 26]) lamp(lx * T, 30 * T + WALK + 30)
+  // lamps well apart: each one lights a wide pool of street at night
+  for (const lx of [9, 19, 35, 53]) lamp(lx * T, ROW1 + 4)
+  for (const lx of [8, 27, 50]) lamp(lx * T, 20 * T + WALK + 30)
+  for (const lx of [7, 22]) lamp(lx * T, 30 * T + WALK + 30)
+  // the side roads: below the salon's road, by the south bridge, where the trails cross the north road
+  lamp(48 * T, 32 * T + WALK + 30)
+  lamp(30 * T - WALK / 2, 35.6 * T)
+  lamp(24 * T + WALK / 2, 8.8 * T)
   phoneBooth(21.2 * T, ROW1 + 2)
   phoneBooth(33 * T, 34.6 * T)
   busStop(18 * T, 20 * T + WALK + 34)
@@ -718,17 +770,13 @@
   bench(plaza.x + plaza.w - 50, plaza.y + plaza.h - 26)
   lamp(plaza.x + 8, plaza.y + plaza.h / 2 + 20)
   lamp(plaza.x + plaza.w - 8, plaza.y + plaza.h / 2 + 20)
-  car(4 * T, 18 * T + 32, '#d0453d')
-  car(27 * T, 18 * T + 2, '#3d6fd0')
-  car(49 * T, 18 * T + 32, '#e3b04b')
-  car(22 * T + 2, 4 * T, '#f4efe2', true)
-  car(30 * T + 34, 24 * T, '#5fb59b', true)
-  car(10 * T, 28 * T + 32, '#9a5a7c')
+  const CARS = { red: '#d0453d', blue: '#3d6fd0', yellow: '#e3b04b', white: '#f4efe2', teal: '#5fb59b', plum: '#9a5a7c' }
 
   // park in the bottom right
   E(m, 44 * T, 37.4 * T, 60, 26, '#4f8f3a')
   E(m, 44 * T, 37.4 * T, 56, 23, '#3f8fbf')
   E(m, 44 * T, 37.4 * T, 46, 16, '#5fb4d9')
+  fx.pond = { x: 44 * T, y: 37.4 * T, rx: 56, ry: 23 }
   for (const [bx, by] of [[38 * T, 34.4 * T], [47 * T, 34.4 * T]]) bench(bx, by)
   for (const [px, py] of [[36 * T, 38 * T], [52 * T, 38.6 * T]]) {
     place(sprite(50, 30, (x) => {
@@ -757,6 +805,8 @@
     ]
     for (const [a, b2, c, d] of boxes) if (x0 > a * T - r && x0 < c * T + r && y0 > b2 * T - r && y0 < d * T + 20) return true
     if (y0 > 6 * T && y0 < 8.4 * T && x0 > 4 * T && x0 < 50 * T) return true
+    const falls = fx.waterfall
+    if (Math.abs(x0 - (falls.x + falls.w / 2)) < 150 + r && y0 > falls.y - 20 && y0 < falls.y + falls.h + 70) return true
     for (const t of clearSpots) if (Math.hypot(t[0] - x0, t[1] - y0) < t[2] + r + 6) return true
     return false
   }
@@ -775,6 +825,9 @@
   things.sort((a, b) => a.base - b.base)
   for (const t of things) m.drawImage(t.spr, t.X, t.Y)
 
+  // everything below is in map pixels (2x)
+  const x2 = (v) => Math.round(v * 2)
+  const box = ([X, Y, W, H]) => ({ x: x2(X), y: x2(Y), w: x2(W), h: x2(H) })
   return {
     map: scaled(map, 2),
     mapSize: [MW * 2, MH * 2],
@@ -782,4 +835,21 @@
       Object.entries(zones).map(([id, b]) => [id, { x: Math.round(b.left * 2), y: Math.round(b.top * 2), w: Math.round((b.right - b.left) * 2), h: Math.round((b.bottom - b.top) * 2) }]),
     ),
     avatars: avatarSprites.map((s, i) => ({ id: AVATARS[i].name.toLowerCase(), png: scaled(s, 2) })),
+    buildings: Object.entries(zones).map(([id, b]) => ({ id, png: scaled(b.art.spr, 2) })),
+    cars: Object.entries(CARS).map(([id, col]) => ({ id, png: scaled(carSprite(col), 2) })),
+    data: {
+      buildings: Object.fromEntries(Object.entries(zones).map(([id, b]) => [id, box([b.art.X, b.art.Y, b.art.spr.width, b.art.spr.height])])),
+      cars: Object.keys(CARS),
+      lamps: lamps.map(([a, b]) => [x2(a), x2(b)]),
+      windows: windows.map(box),
+      bridges: bridges.map(box),
+      river: river.filter((p, i) => i % 2 === 0 || i === river.length - 1).map(([a, b]) => [x2(a), x2(b)]),
+      lake: { x: x2(lake.x), y: x2(lake.y), rx: x2(lake.rx), ry: x2(lake.ry) },
+      overLake: fx.overLake.map(box),
+      pond: { x: x2(fx.pond.x), y: x2(fx.pond.y), rx: x2(fx.pond.rx), ry: x2(fx.pond.ry) },
+      waterfall: box([fx.waterfall.x, fx.waterfall.y, fx.waterfall.w, fx.waterfall.h]),
+      fountain: { spout: fx.fountain.spout.map(x2), basin: fx.fountain.basin.map(x2) },
+      lighthouse: fx.lighthouse.map(x2),
+      campfire: fx.campfire.map(x2),
+    },
   }

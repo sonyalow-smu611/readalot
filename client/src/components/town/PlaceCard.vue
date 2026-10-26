@@ -53,6 +53,17 @@ onMounted(() => card.value?.focus())
   outline: none;
 }
 
+/* on a laptop the card stays card-sized, in the middle at the bottom */
+@media (min-width: 768px) {
+  .place-card {
+    left: 50%;
+    right: auto;
+    width: 420px;
+    margin-left: -210px;
+    bottom: 28px;
+  }
+}
+
 .place-card__top {
   display: flex;
   align-items: center;

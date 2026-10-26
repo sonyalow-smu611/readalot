@@ -20,9 +20,14 @@ const browser = await chromium.launch()
 try {
   const page = await browser.newPage()
   const result = await page.evaluate(code)
-  mkdirSync(out('avatars'), { recursive: true })
+  for (const dir of ['avatars', 'buildings', 'cars']) mkdirSync(out(dir), { recursive: true })
   save('map.png', result.map)
   for (const avatar of result.avatars) save(`avatars/${avatar.id}.png`, avatar.png)
+  // each building again on its own, for the hover pop, and the cars that drive around
+  for (const building of result.buildings) save(`buildings/${building.id}.png`, building.png)
+  for (const car of result.cars) save(`cars/${car.id}.png`, car.png)
+  // where the lamps, windows, water and buildings are, for the animations in src/town/
+  writeFileSync(fileURLToPath(new URL('../src/town/map-data.json', import.meta.url)), JSON.stringify(result.data) + '\n')
   console.log(`Town map ${result.mapSize.join(' x ')} saved to ${out('map.png')}`)
   console.log('Building boxes for src/town/places.js:', JSON.stringify(result.zones, null, 2))
 } finally {

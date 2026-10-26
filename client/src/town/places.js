@@ -1,6 +1,8 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The town's layout in map pixels (public/town/map.png is MAP_W x MAP_H). The boxes come from
 // `npm --workspace client run draw-map`: when a building moves in the art, paste its new box here.
+// The same command writes map-data.json (lamps, windows, water) for the animations; don't edit that.
+import { getCurrentlyReading, getDemoReader } from '@/services/peopleDemo.js'
 
 export const MAP_W = 3584
 export const MAP_H = 2560
@@ -53,17 +55,46 @@ export const PLACES = [
   },
 ]
 
+// Friends' houses: each small house in town is the home of a reader you know, and tapping it
+// visits their room. `art` names the house in the picture (public/town/buildings/<art>.png).
+// The readers come from the demo people service until real friends are in the API.
+const FRIEND_HOMES = [
+  { reader: 'reader-emma', art: 'cottage-white', x: 1094, y: 1452, w: 322, h: 312 },
+  { reader: 'reader-ayaan', art: 'cottage-brick', x: 1554, y: 1460, w: 322, h: 304 },
+  { reader: 'reader-sofia', art: 'cottage-lilac', x: 18, y: 1484, w: 270, h: 280 },
+  { reader: 'reader-noah', art: 'cottage-grey', x: 44, y: 820, w: 309, h: 304 },
+]
+
+export const FRIEND_HOUSES = FRIEND_HOMES.flatMap(({ reader: id, ...home }) => {
+  const reader = getDemoReader(id)
+  if (!reader) return []
+  const first = reader.displayName.split(' ')[0]
+  const book = getCurrentlyReading(reader)
+  return [
+    {
+      id: `friend-${id}`,
+      name: `${first}'s house`,
+      tab: 'Friend',
+      label: first,
+      accent: '#5f7f4a',
+      blurb: `${reader.displayName}: “${reader.tagline}”${book ? ` Reading ${book.title} right now.` : ''}`,
+      enter: `Visit ${first}`,
+      route: { name: 'reader-room', params: { id } },
+      ...home,
+    },
+  ]
+})
+
+// Everything you can tap on the map.
+export const ALL_PLACES = [...PLACES, ...FRIEND_HOUSES]
+
 // Where the town opens: on the pavement outside your front door.
 export const SPAWN = { x: 666, y: 1790 }
 
-// The five characters (public/town/avatars/<id>.png, 56 x 112).
+// The five characters a reader can pick in the salon (public/town/avatars/<id>.png, 60 x 116).
 export const AVATARS = ['rosie', 'maya', 'rex', 'jay', 'nova']
+// More people who live in town; they only walk around.
+export const TOWNSFOLK = ['theo', 'pip', 'ivy', 'stella', 'leo', 'finn', 'luna', 'fern', 'hazel']
 
-// Readers walking the pavements. Each loops through its points and back to the first.
-export const WALKERS = [
-  { avatar: 'rosie', speed: 60, points: [[60, 1140], [3500, 1140]] },
-  { avatar: 'maya', speed: 55, points: [[40, 1780], [1880, 1780]] },
-  { avatar: 'rex', speed: 65, points: [[3500, 1292], [60, 1292]] },
-  { avatar: 'jay', speed: 50, points: [[1396, 60], [1396, 1100]] },
-  { avatar: 'nova', speed: 55, points: [[2060, 1340], [2060, 2520]] },
-]
+// Everyone wanders the pavements once, each at their own pace (map pixels a second); see roads.js.
+export const WALKERS = [...AVATARS, ...TOWNSFOLK].map((avatar, i) => ({ avatar, speed: 48 + ((i * 7) % 18) }))

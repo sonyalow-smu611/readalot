@@ -1,7 +1,8 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The Phaser canvas with the town on it, plus its zoom buttons and loading / error states.
-// It says which building was tapped (select); the parent says which one to glide to (focus).
+// It says which building was tapped (select); the parent says which one to glide to (focus) and
+// what the weather is (sky).
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Phaser from 'phaser'
 import TownScene from '@/town/TownScene.js'
@@ -11,6 +12,8 @@ const props = defineProps({
   focus: { type: Object, default: null },
   // the building whose card is open; null clears its outline
   selectedId: { type: String, default: null },
+  // how the town looks: { night, rain }
+  sky: { type: Object, default: () => ({ night: false, rain: false }) },
 })
 const emit = defineEmits(['select', 'ready'])
 
@@ -39,6 +42,11 @@ watch(
   },
 )
 
+watch(
+  () => props.sky,
+  (sky) => scene?.setSky(sky),
+)
+
 onMounted(() => {
   scene = new TownScene({
     reducedMotion,
@@ -51,6 +59,7 @@ onMounted(() => {
       state.value = 'error'
     },
   })
+  scene.setSky(props.sky)
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: host.value,
