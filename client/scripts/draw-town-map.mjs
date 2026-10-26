@@ -2,9 +2,9 @@
 // Draws the town (client/public/town/map.png) and the five avatars (client/public/town/avatars/).
 // Run it again after changing the art: `npm --workspace client run draw-map`.
 //
-// The art lives in town-art/ as plain browser code: helpers.js, avatars.js, town.js run in that
-// order inside one function, in Playwright's Chromium (already installed for the e2e tests), so
-// every pixel comes out exactly the same each run. It prints the main buildings' boxes; copy them
+// The art lives in town-art/ as plain browser code, plus src/lib/avatar/draw.js for the
+// characters: they run in order inside one function, in Playwright's Chromium (already installed
+// for the e2e tests), so every pixel comes out exactly the same each run. It prints the main buildings' boxes; copy them
 // into src/town/places.js when a building moves.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -14,7 +14,13 @@ const art = (name) => readFileSync(fileURLToPath(new URL(`./town-art/${name}`, i
 const out = (path) => fileURLToPath(new URL(`../public/town/${path}`, import.meta.url))
 const save = (path, dataUrl) => writeFileSync(out(path), Buffer.from(dataUrl.split(',')[1], 'base64'))
 
-const code = `(() => {\n${art('helpers.js')}\n${art('avatars.js')}\n${art('town.js')}\n})()`
+// The characters are drawn by the app's own module, so the salon and the map always agree. It
+// gets its own scope so its pixel helpers don't clash with helpers.js.
+const avatarModule = readFileSync(fileURLToPath(new URL('../src/lib/avatar/draw.js', import.meta.url)), 'utf8')
+  .replace(/^export /gm, '')
+const drawAvatar = `const { drawAvatar } = (() => {\n${avatarModule}\nreturn { drawAvatar }\n})()`
+
+const code = `(() => {\n${drawAvatar}\n${art('helpers.js')}\n${art('avatars.js')}\n${art('town.js')}\n})()`
 
 const browser = await chromium.launch()
 try {
