@@ -97,3 +97,84 @@ explain errors or suggest boilerplate):
 
 > Note: the course guidelines mention recording AI-only snippets in `README.txt`. Copy or link
 > this file there if the teaching team expects that exact filename.
+
+## 3D room: Blender and Three.js (AI-generated)
+
+An AI coding assistant (Claude Code) built the home page's 3D room: the Blender scene and export
+scripts, and the Three.js frontend including its interactivity (looking around, tapping objects,
+placing decorations, pets, weather, clock). The team asked for all of it to be AI-written.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Blender scene | `client/blender/build_room.py`, `client/blender/render_room.py`, `client/blender/README.md` | Bedroom built from primitives, glTF export, still render |
+| Assets | `client/public/room/bedroom.glb`, `client/src/assets/room/room.webp` | Output of the scripts above |
+| 3D room | `client/src/components/room/Room3D.vue`, `client/src/lib/room3d/*.js` | Loading the room, book spines with titles, lighting and weather, look-around controls, tracking buttons, decorations and pets |
+| Wiring | `client/src/views/RoomView.vue`, `client/src/components/RoomDock.vue`, `client/src/composables/useDecor.js` | Room3D in place of the drawn room; tap to place; new decoration spots. The drawn room's components listed in the merge section above (`RoomScene.vue`, `RoomBookshelf.vue`, `ReadingChair.vue`, `RoomWindow.vue`, `WallClock.vue`, `QuoteNote.vue`, `CoverRow.vue`), and `MyRoomView.vue`, `BayWindow.vue`, `BookSpine.vue`, `BookshelfExpanded.vue`, `WindowScene.vue`, `FloorLife.vue`, `useMyShelf.js`, `roomWeather.js`, were deleted |
+| Tests | `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | Updated for the 3D room |
+
+### Bookshelf, opening a book, the merged room and the window (AI-generated)
+
+Later sessions, again written by Claude Code at the team's request, each change test-first with
+Playwright:
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Bookcase | `client/blender/build_bookshelf.py` | The bookcase and placeholder books ported from the build code in `bookshelf.blend`, stood on the room's left wall; the hero book and its animation copied in |
+| Room | `client/blender/build_room.py`, `client/blender/furniture.blend` | The bedroom rebuilt with the hand-modelled armchair, plant and box copied in |
+| Export | `client/blender/render_room.py` | Procedural colours flattened for glTF; the hero book's animation exported |
+| Books on the shelf | `client/src/lib/room3d/books.js`, `loadRoom.js` | Books in shelf order with seeded sizes, laid out in each shelf's own frame |
+| Opening a book | `client/src/lib/room3d/bookOpen.js`, `client/src/components/room/Room3D.vue` | The fly-out, cover and page animation, skip, close, fade on removal, cover pictures |
+| Book details in the room | `client/src/views/RoomView.vue`, `client/src/components/book/BookDetailsContent.vue` | The details dialog, remove with Undo, the book list without 3D; the full-screen bookshelf removed |
+| Window | `client/src/components/room/WindowView.vue`, `client/src/lib/room3d/weather.js` | The earlier weather view (sun and birds, clouds, rain, moon) shown through the 3D bay window |
+| Store fix | `client/src/stores/bookshelf.js` | Removed a duplicated `removeBook` that stopped Undo from working |
+| Tests | `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | Tests for all of the above |
+
+### Book card, labelled shelves and the Book Details page (AI-generated)
+
+Written by Claude Code at the team's request, following the design system in `design-system/`,
+and checked with Playwright:
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Book card | `client/src/components/book/BookCard.vue`, `client/src/components/book/BookDetailsContent.vue`, `client/src/views/RoomView.vue` | The wood-framed card (80% of the screen); cover or cloth-bound stand-in, shelf buttons with the progress slider, Synopsis, Rating and Reviews |
+| Shelves | `client/src/lib/room3d/books.js`, `client/src/components/room/Room3D.vue` | One bookcase row per shelf, brass name plates on the boards, "+N more" per row, books lifting out when pointed at |
+| Book Details page | `client/src/views/BookDetailsView.vue`, `client/src/router/index.js` | The page as the same card over the room; the old status buttons and stars it used (`ReadingStatusButtons.vue`, `RatingStars.vue`) removed |
+| Tests | `tests/e2e/bookshelf.spec.js` | Updated for the new shelf buttons, rows and page; hover test |
+
+### Readalot Town: the map home page and the building skeleton (AI-generated)
+
+Written by Claude Code at the team's request (stack chosen by the team: Phaser 3, one map
+picture, invisible hit zones, HTML popups, tweened walkers, a pan/zoom camera), and checked with
+Playwright. The team still needs to agree who owns the town's interactivity (see the AI use rules
+in `PROJECT.md`).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Map and avatar art | `client/scripts/draw-town-map.mjs`, `client/scripts/town-art/*.js`, `client/public/town/map.png`, `client/public/town/avatars/*.png` | The v3 town (Stardew-style buildings, river, lake, roads, farm, park) and the five avatars, drawn pixel by pixel and saved with Playwright |
+| Layout | `client/src/town/places.js` | The four buildings' tap zones, owners and routes, the spawn point and the walkers' paths |
+| Scene | `client/src/town/TownScene.js` | Phaser scene: hit zones over buildings, drag / pinch / wheel camera clamped to the map, the "You" marker, avatars walking the pavements, a load error callback |
+| Town components | `client/src/views/TownView.vue`, `client/src/components/town/TownMap.vue`, `TownHud.vue`, `PlacesMenu.vue`, `PlaceCard.vue` | The town page split into components with props and events |
+| Building skeleton | `client/src/components/shared/BuildingShell.vue`, `WipPanel.vue`, `client/src/buildings/*/` (`HouseView`, `LibraryView`, `CafeView`, `SalonView`, `README.md`) | One folder per teammate; each entry page shows that teammate's existing page inside the shared shell |
+| Routing | `client/src/router/index.js`, `client/src/App.vue`, `client/src/stores/user.js`, `client/src/views/BookDetailsView.vue` | `/` is the town; `/house`, `/library`, `/cafe`, `/salon`; old addresses redirect; signing in opens the town; the bottom tab bar removed; the tour steps follow the new addresses |
+| Tests | `tests/e2e/town.spec.js`, and the new address in the `room`, `bookshelf`, `mood-result` specs | Every building opens and leads back to town; old addresses redirect |
+| Guide for AI assistants | `AGENTS.md`, `CLAUDE.md` (imports `AGENTS.md`) | Rules, who owns which folder, how a building works, and how to run and check the app |
+
+### Readalot Town: friends' houses, traffic, moving water, weather and hover (AI-generated)
+
+Written by Claude Code at Dylan's request for the town (Dylan's part), and checked with
+Playwright. As with the first town work, the team still needs to agree who owns the town's
+interactivity (see the AI use rules in `PROJECT.md`).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Map art | `client/scripts/town-art/town.js`, `client/scripts/draw-town-map.mjs`, `client/public/town/map.png`, `client/public/town/buildings/*.png`, `client/public/town/cars/*.png`, `client/src/town/map-data.json` | A waterfall over a rocky ledge on the river; parked cars taken off the picture and saved as sprites; each building saved on its own; lamp, window, river, lake, fountain, lighthouse, campfire and bridge positions written to `map-data.json` |
+| Townsfolk | `client/scripts/town-art/avatars.js`, `client/public/town/avatars/*.png`, `client/src/town/places.js` | Nine more Habbo-style characters drawn from Dylan's reference pictures (Theo, Pip, Ivy, Stella, Leo, Finn, Luna, Fern, Hazel), so each walker in town is different; the salon's five choices are unchanged |
+| Friends' houses | `client/src/town/places.js` | The four small houses belong to the demo readers in `services/peopleDemo.js`; each has a card and opens `/people/:id` |
+| Roads | `client/src/town/roads.js` | The road network and a Traveller that turns at random at junctions, keeping left (cars) or to a pavement (walkers) |
+| Traffic | `client/src/town/traffic.js` | Cars that drive on the left, turn corners, leave and re-enter the map and switch on headlights at night; readers that wander the pavements with a step bounce and pauses |
+| Water | `client/src/town/water.js` | The waterfall pouring with spray, ripples flowing down the river, glints on the lake, fish swimming in the lake and park pond, the fountain spraying |
+| Campfire | `client/src/town/fire.js` | Flames, sparks and smoke over the campfire by the tent, with a flickering glow that lights the clearing at night |
+| Weather | `client/src/town/sky.js`, `client/src/town/rain.js`, `client/src/components/town/WeatherButton.vue`, `client/src/views/TownView.vue`, `client/src/components/town/TownMap.vue` | Night and rain tints, lamps, lit windows and a lighthouse beam after dark, windblown rain with splashes; the live weather from `services/weather.js` every 10 minutes, and a chip to preview Day / Night / Rain / Rainy night |
+| Scene | `client/src/town/TownScene.js`, `client/src/components/town/PlacesMenu.vue` | Buildings and friends' houses pop when pointed at or tapped; floating name tags over friends' houses; the Places list scrolls |
+| Laptop view | `client/src/components/PhoneFrame.vue`, `client/src/router/index.js`, `client/src/components/town/PlaceCard.vue` | A `wide` route setting that lets a page fill a laptop window instead of the phone column; the town uses it, and its place card stays card-sized |
+| Tests | `tests/e2e/town.spec.js` | A friend's house opens their room; every friend is in Places; the weather chip steps through each look without errors |

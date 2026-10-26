@@ -1,4 +1,7 @@
 <script setup>
+// Scaffolded with AI assistance — see AI_USAGE.md
+// The scene behind Log in, Register, Verify and Welcome: the real town map drifting by, the
+// pixel cats sitting on it, and the page's form in a card like the town's panels.
 import { ref } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { bookSpots } from '@/lib/floatBooks'
@@ -19,6 +22,14 @@ const rightBooks = bookSpots([
   [66, 78],
 ])
 const sheet = ref(null)
+const leaving = ref(false)
+
+// The map rushes up as if the camera drops into town. Resolves when the page can change.
+function enterTown() {
+  if (prefersReducedMotion()) return Promise.resolve()
+  leaving.value = true
+  return new Promise((done) => window.setTimeout(done, 600))
+}
 
 function shake() {
   if (!sheet.value || prefersReducedMotion()) return
@@ -29,11 +40,14 @@ function shake() {
   )
 }
 
-defineExpose({ shake })
+defineExpose({ shake, enterTown })
 </script>
 
 <template>
-  <section class="stage">
+  <section class="stage" :class="{ 'is-leaving': leaving }">
+    <div class="town" aria-hidden="true">
+      <div class="town__map" />
+    </div>
     <FloatingBooks class="air" :books="rightBooks" aria-hidden="true" />
     <DeskMascots :gaze="props.gaze" :page-nudge="props.pageNudge" :spines="props.spines" :hop="props.hop" />
     <div class="pane">
@@ -55,9 +69,58 @@ defineExpose({ shake })
   align-items: stretch;
   justify-content: center;
   padding: 0;
-  background:
-    radial-gradient(circle at 80% 12%, rgba(255, 253, 249, 0.9), transparent 28%),
-    var(--rl-canvas);
+  /* the town's grass, in case a very wide screen runs past the map's edge */
+  background: #6fb24f;
+}
+
+/* The real town map at 1:1, so its pixels stay crisp. It pans one whole pixel per step. */
+.town {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  transform-origin: 30% 60%;
+  transition: transform 0.6s ease-in;
+}
+
+.town::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(30, 26, 36, 0) 55%, rgba(30, 26, 36, 0.28) 100%);
+}
+
+.town__map {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3584px;
+  height: 2560px;
+  margin-top: -1180px;
+  background: url('/town/map.png') no-repeat;
+  image-rendering: pixelated;
+  transform: translateX(-300px);
+  animation: pan 168s steps(1684, end) infinite alternate;
+}
+
+@keyframes pan {
+  to { transform: translateX(-1984px); }
+}
+
+.stage.is-leaving .town {
+  transform: scale(2.4);
+}
+
+.stage :deep(.mascots),
+.air,
+.pane {
+  transition: opacity 0.3s ease;
+}
+
+.stage.is-leaving :deep(.mascots),
+.stage.is-leaving .air,
+.stage.is-leaving .pane {
+  opacity: 0;
 }
 
 .air {
@@ -94,13 +157,8 @@ defineExpose({ shake })
   border: 1px solid var(--rl-line);
   border-radius: var(--rl-radius-modal);
   padding: 28px 14px 20px;
-  box-shadow: 0 12px 32px rgba(63, 46, 36, 0.08);
-  transition: transform 0.28s ease, box-shadow 0.28s ease;
-}
-
-.sheet:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 36px rgba(63, 46, 36, 0.16);
+  /* the same card as the town's place cards */
+  box-shadow: 0 14px 36px rgba(63, 46, 36, 0.25);
 }
 
 .sheet :deep(h1) {
@@ -204,6 +262,11 @@ defineExpose({ shake })
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .town__map {
+    animation: none;
+  }
+
+  .town,
   .sheet,
   .sheet :deep(.btn-primary),
   .sheet :deep(.btn-primary::after),
@@ -212,7 +275,6 @@ defineExpose({ shake })
     transition: none;
   }
 
-  .sheet:hover,
   .sheet :deep(.btn-primary:hover),
   .sheet :deep(.btn-primary:active),
   .sheet :deep(.btn-outline-primary:active) {

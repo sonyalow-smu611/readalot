@@ -109,9 +109,12 @@ async function submit() {
   else user.clearTour()
   sealed.value = true
   hop.value += 1
-  leaveTimer = window.setTimeout(() => {
-    router.push({ name: user.profileComplete ? 'profile' : 'welcome' })
-  }, prefersReducedMotion() ? 400 : 1500)
+  // the tick plays, then a returning reader drops into town (about 1.5s in all); a new reader
+  // stays on this scene for Welcome
+  leaveTimer = window.setTimeout(async () => {
+    if (user.profileComplete) await stage.value?.enterTown()
+    router.push({ name: user.profileComplete ? 'town' : 'welcome' })
+  }, prefersReducedMotion() ? 400 : 900)
 }
 
 async function resend() {

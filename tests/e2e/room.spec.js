@@ -14,63 +14,62 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/time", (route) =>
     route.fulfill({ json: { unix: 1767240000, abbreviation: "SGT", utcOffset: "+08:00" } })
   );
-  await page.goto("/");
+  await page.goto("/house");
 });
 
+// The room is 3D: the bar of places turns the reader to face something before it is tapped.
+async function turnTo(page, place) {
+  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: place }).click();
+  // let the turn finish
+  await page.waitForTimeout(900);
+}
+
 test("room shows the window weather, the wall clock and the shelf", async ({ page }) => {
+  await turnTo(page, "Window");
   const view = page.getByRole("img", { name: "Window view: Rain, 27 degrees" });
   await expect(view).toBeVisible();
   await expect(view.getByText("27°")).toBeVisible();
   // 1767240000 is 2026-01-01 12:00 in Singapore
+  await turnTo(page, "Clock");
   await expect(page.getByRole("img", { name: "Singapore time 12:00" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Open bookshelf, \d+ books/ })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
+  await turnTo(page, "Bookshelf");
+  await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
 });
 
-test("bookcase opens the full bookshelf with spines and covers", async ({ page }) => {
-  await page.getByRole("button", { name: /Open bookshelf/ }).click();
+// The view through the bay window follows the weather: rain here (the weather is answered with
+// rain above), birds on a clear day.
+test("rain falls past the bay window when it rains", async ({ page }) => {
+  await turnTo(page, "Window");
+  const view = page.getByTestId("window-view");
 
-  for (const shelf of ["Reading", "To read", "Finished"]) {
-    await expect(page.getByText(shelf, { exact: true })).toBeVisible();
-  }
-  await expect(page.getByRole("button", { name: "Norwegian Wood by Haruki Murakami" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Covers" }).click();
-  await expect(page.getByRole("button", { name: "Previous covers" }).first()).toBeVisible();
-
-  await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByRole("button", { name: "Room menu" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Back" })).toBeHidden();
+  await expect(view).toBeVisible();
+  expect(await view.getByTestId("raindrop").count()).toBeGreaterThan(0);
+  await expect(view.getByTestId("bird")).toHaveCount(0);
 });
 
-test("dragging a book to another shelf saves its new status", async ({ page }) => {
-  // answered here so the shared demo shelf is left as it was for the other tests
-  await page.route("**/api/user-books/*", (route) => route.fulfill({ json: { userBook: {} } }));
+test("birds fly past the bay window on a clear day", async ({ page }) => {
+  await page.route("**/api/weather*", (route) =>
+    route.fulfill({ json: { scene: "sunny", temperature: 31, weatherCode: 0, isDay: true } })
+  );
+  await page.reload();
+  await turnTo(page, "Window");
+  const view = page.getByTestId("window-view");
 
-  await page.getByRole("button", { name: /Open bookshelf/ }).click();
-  const reading = page.locator('.room__bay[data-zone="reading"]');
-  // let the zoom into the bookshelf finish before measuring where the books are
-  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+  await expect(view).toBeVisible();
+  await expect(view.getByTestId("bird")).toHaveCount(3);
+  await expect(view.getByTestId("bird").first()).toBeVisible();
+});
+
+test("the bookcase turns you to your books, in the room", async ({ page }) => {
+  await page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).click();
+
+  await expect(page.getByRole("button", { name: "Norwegian Wood by Haruki Murakami" })).toBeInViewport();
   await page.waitForTimeout(700);
-  const saved = page.waitForRequest((request) => request.method() === "PATCH");
-
-  // moved by hand in small steps: the shelves only pick up a drag that travels
-  const from = await page.getByRole("button", { name: "Dune by Frank Herbert" }).boundingBox();
-  const to = await reading.getByRole("button", { name: "Norwegian Wood by Haruki Murakami" }).boundingBox();
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(from.x + from.width / 2 - 10, from.y + from.height / 2 - 20, { steps: 4 });
-  await page.mouse.move(to.x + to.width + 30, to.y + to.height / 2, { steps: 12 });
-  await page.waitForTimeout(300);
-  await page.mouse.up();
-
-  const request = await saved;
-  expect(request.url()).toContain("/api/user-books/demo-shelf-15");
-  expect(request.postDataJSON()).toEqual({ status: "reading" });
-  await expect(reading.getByRole("button", { name: "Dune by Frank Herbert" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Back" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Spines" })).toHaveCount(0);
 });
 
-test("buying a decoration spends credits and it can be placed on a shelf", async ({ page }) => {
+test("buying a decoration spends credits and it can be placed in the room", async ({ page }) => {
   await expect(page.getByText("480").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Room menu" }).click();
@@ -79,18 +78,14 @@ test("buying a decoration spends credits and it can be placed on a shelf", async
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByText("440").first()).toBeVisible();
 
-  // drag the vase out of the inventory onto the top shelf of the bookcase
-  const piece = page.getByRole("region", { name: "Inventory" }).getByRole("button", { name: /Clay vase/ });
-  const shelf = page.locator('[data-zone="case-top"]');
-  const from = await piece.boundingBox();
-  const to = await shelf.boundingBox();
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(to.x + to.width * 0.7, to.y + to.height * 0.8, { steps: 8 });
-  await page.mouse.up();
+  // pick the vase, then tap one of the glowing spots it can stand on
+  await page.getByRole("region", { name: "Inventory" }).getByRole("button", { name: /Clay vase/ }).click();
+  await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Clay vase");
+  await turnTo(page, "Window");
+  await page.getByRole("button", { name: /^Put Clay vase on the window seat/ }).locator("visible=true").first().click();
 
-  await expect(page.getByRole("status")).toHaveText("Clay vase is on the shelf.");
-  await expect(shelf.locator(".placed")).toHaveCount(1);
+  await expect(page.getByRole("status")).toHaveText(/^Clay vase is on the window seat/);
+  await expect(page.getByRole("button", { name: "Clay vase", exact: true })).toHaveCount(1);
 });
 
 test("the book on the chair opens the Currently Reading card", async ({ page }) => {
@@ -101,15 +96,16 @@ test("the book on the chair opens the Currently Reading card", async ({ page }) 
   await expect(card.getByRole("link")).toHaveAttribute("href", "/books/demo-shelf-1");
 
   // a tap anywhere else puts it away
-  await page.getByRole("img", { name: /Singapore time/ }).click();
+  await turnTo(page, "Window");
   await expect(card).toBeHidden();
 });
 
-test("the sticky note opens the Quote of the Day", async ({ page }) => {
+test("the corkboard opens the Quote of the Day", async ({ page }) => {
   // the real quote changes every day; quotes from the dataset have a topic but no author
   await page.route("**/api/quote/today", (route) =>
     route.fulfill({ json: { quoteText: "So many books, so little time.", author: "", topic: "books" } })
   );
+  await turnTo(page, "Corkboard");
   await page.getByRole("button", { name: "Quote of the day" }).click();
 
   const quote = page.getByRole("dialog", { name: "Quote of the Day" });

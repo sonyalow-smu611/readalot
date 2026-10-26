@@ -1,22 +1,23 @@
 # Readalot
 
 A mobile-first social reading web app (IS216 group project): a Vue 3 client and an Express
-API, with Supabase as the database. Each reader gets a virtual reading room with a bookshelf,
-a window showing the live weather, a daily mood check-in that recommends a book, and a shop for
-decorating the room, plus pages to discover books, meet nearby readers and scan books in.
+API, with Supabase as the database. Each reader gets a 3D reading room (modelled in Blender,
+drawn with Three.js) with their books on the bookcase, the live weather through the window, a
+daily mood check-in that recommends a book, and a shop for decorating the room, plus pages to
+discover books, meet nearby readers and scan books in.
 
-> Course rules and AI policy: [GUARDRAILS.md](GUARDRAILS.md), [AI_USAGE.md](AI_USAGE.md).
-> Project brief: [PROJECT.md](PROJECT.md).
+> What the app is and why: [SPEC.md](SPEC.md). Course brief and team rules (tech stack, AI
+> policy, code style): [PROJECT.md](PROJECT.md). AI-written code: [AI_USAGE.md](AI_USAGE.md).
 
 ### What came from which branch (home page)
 
 | Piece | From |
 |-------|------|
-| Room wall, floor, rug, bookcase, bay window frame, reading chair, Currently Reading card, Quote of the Day popup | Sonya |
-| Weather scenes in the window, full bookshelf (spines / covers), shop, inventory, drag-and-drop decor, pets, credits, time API | Alric |
-| Phone frame, route slides, book-open overlay | Alric |
-| Header, bottom nav, theme tokens, API and book data | Sonya |
-| Analog wall clock, quote sticky note, mood check-in and recommendation | New on this branch |
+| Room layout, Currently Reading card, Quote of the Day popup, header, bottom nav, theme tokens, API and book data | Sonya |
+| Weather view in the window (sun and birds, clouds, rain, moon), shop, inventory, decorations, pets, credits, time API, phone frame, route slides | Alric |
+| Mood check-in and recommendation | `merge-homepage` |
+| 3D room (Blender + Three.js), the `bookshelf.blend` bookcase, books that fly out and open | `merge-homepage`, AI-written (see [AI_USAGE.md](AI_USAGE.md)) |
+| The town home page: pixel-art map drawn in [Phaser 3](https://phaser.io) (MIT), one building per teammate (`client/src/buildings/`) | Dylan, AI-written (see [AI_USAGE.md](AI_USAGE.md)) |
 
 ## Getting Started
 
@@ -89,32 +90,58 @@ time.now (room clock), Wikipedia and Dog CEO (pet photos).
 | `npm run import-quotes -w server -- <folder>` | Rebuild `server/data/quotes.json` from the downloaded Kaggle quotes dataset (see Quote of the Day) |
 | `npm run verify-works -w server` | Verify the mood book list against the quotes API (not written yet, T12) |
 | `npm run check -w server` | Assert checks: compatibility score, Quote of the Day picker |
-| `npm run test:e2e` | Playwright tests. First time: `npx playwright install chromium`. Starts its own server and client on ports 3100 and 5174 |
+| `npm run test:e2e` | Playwright tests (see Testing). First time: `npx playwright install chromium` |
+
+## Testing
+
+End-to-end tests in `tests/e2e/` drive the running app with Playwright, the way a reader would:
+through labelled buttons and visible text, never internal structure.
+
+```bash
+npx playwright install chromium   # first time only
+npm run test:e2e                  # all tests, headless Chrome
+npx playwright test tests/e2e/room.spec.js            # one file
+npx playwright test -g "birds fly past"               # tests whose name matches
+npx playwright show-report        # the last run's report
+```
+
+- The run starts its own API (port 3100, no Google Books key, so the built-in 16-book demo shelf) and client (port 5174). Close anything on those ports first.
+- Every test starts signed in (`tests/e2e/fixtures.js`). Live answers are mocked with `page.route`: the weather, the time, and every save to the shelf, so runs are repeatable and the shared demo shelf is never changed.
+- Headless Chrome draws the 3D room (WebGL), so the room tests really turn and tap it. A full run takes about 4 minutes.
+
+| File | Covers |
+|------|--------|
+| `room.spec.js` | The window's weather (rain, birds on a clear day), the clock, turning to the bookshelf, buying and placing a decoration, the chair's Currently Reading card, the corkboard's Quote of the Day |
+| `bookshelf.spec.js` | Books in shelf order and sizes, tapping a book (it flies out and opens, skip, reduced motion, real and failed covers), the details and their actions (start, progress, finish, review, rate), remove and Undo, focus and keyboard, the book list without 3D |
+| `mood-result.spec.js` | The mood check-in and its recommendation |
+| `smoke.spec.js` | Every tab loads |
+| `scan-book.spec.js`, `shelve-book.spec.js` | Placeholders (skipped) |
 
 ## Project Structure
 
 ```text
 readalot/
-├── SPEC.md                     MVP spec, decisions and tickets (T01-T29)
-├── PROJECT.md, GUARDRAILS.md   Project brief; course rules and allowed tech
-├── guidelines/                 Tech stack, code cleanliness, course requirements
-├── AI_USAGE.md                 What AI produced, for the team to review
+├── SPEC.md                     What the app is, and the decisions behind it
+├── PROJECT.md                  Team rules, then the course brief
+├── AI_USAGE.md                 What AI wrote, for the team to review
 ├── REFERENCE-IMG/              Low-fi reference screens 01-15
-├── design-system/              Design tokens and component guidelines
-├── client/src/
-│   ├── views/                  One file per route
-│   ├── components/             Shared UI
-│   │   ├── book/               Book Details tabs (About, Reviews, Quotes, Buy, Similar)
-│   │   ├── modals/             Mood, Quote of the Day, Write review, Add quote
-│   │   ├── room/               Room scene: window, wall clock, quote note, bookcase, chair
-│   │   └── people/             Map, reader bottom sheet
-│   ├── composables/            useAsync, useLocation, useDecor (shop and decorations), useBookOpen
-│   ├── stores/bookshelf.js     The reader's shelf (Pinia), loaded from and saved to the API
-│   ├── lib/                    Book shape helpers, GSAP motion wrapper
-│   ├── assets/theme.css        Shared colour, type and radius tokens
-│   ├── styles/                 Aliases onto those tokens for the room components, route transitions
-│   ├── router/                 Routes
-│   └── services/               api.js (the app's API calls), weather.js and time.js (room window and clock)
+├── design-system/              Design tokens and component notes
+├── client/
+│   ├── blender/                The 3D room: .blend files and the scripts that build and export it (its own README)
+│   ├── public/room/bedroom.glb The exported room
+│   └── src/
+│       ├── views/              One file per route (RoomView is My Room)
+│       ├── components/         Shared UI
+│       │   ├── room/           Room3D (the 3D room), WindowView (the weather outside), Currently Reading card
+│       │   ├── book/           Book Details tabs, and the details shown when a book is opened in the room
+│       │   ├── modals/         Mood, Quote of the Day, Remove book, Write review, Add quote
+│       │   └── people/         Map, reader sheet, chat
+│       ├── lib/room3d/         Loading the room, the books on the shelf, opening a book, look-around, lighting
+│       ├── composables/        useAsync, useDecor (shop and decorations), useBookOpen, ...
+│       ├── stores/bookshelf.js The reader's shelf (Pinia), loaded from and saved to the API
+│       ├── assets/             theme.css (colour, type and radius tokens), the room's still picture
+│       ├── router/             Routes
+│       └── services/           api.js (the app's API calls), weather.js and time.js, peopleDemo.js
 ├── server/
 │   ├── src/routes/             Express routes
 │   ├── src/services/           books (Google Books), quotes and dailyQuote, wikimedia (Wikiquote),
@@ -216,6 +243,10 @@ User shape:
 - Google Books returns a limited slice per query, so genre shelves can be thin.
 - Compatibility is computed per request (O(users)); fine at MVP scale.
 - Desktop shows a centred phone-width column only.
+- Changing the 3D room needs Blender 5 (see `client/blender/README.md`); the exported `bedroom.glb` and still picture are committed, so running the app does not.
+- A book's real cover only shows on the 3D book when its image host allows it (CORS); otherwise the book gets a cloth cover with its title. Google Books thumbnails may not allow it.
+- Decorations, pets and credits are kept in memory only and reset when the page reloads.
+- Discover People, Reader Room, follow and chat use four fictional sample readers kept in the browser (see Discover People), not real accounts.
 
 ## App Structure and Page Connections
 
@@ -223,22 +254,25 @@ The app is built around four main areas: **My Room, Discover Books, Discover Peo
 
 ### My Room
 
-This is the user’s main profile and home page.
+The reader's home page: a 3D bedroom built in Blender (`client/blender/`) and drawn with
+Three.js. The reader stands in the middle and drags, pinches or scrolls to look around, or uses
+the bar of places along the bottom (Bookshelf, Chair, Window, Corkboard, Clock). Everything that
+can be tapped is a labelled button over the 3D scene.
 
-* Shows the user’s personalised reading room.
-* Displays the live Singapore weather in the room window and Singapore time on the wall clock.
-* The book on the chair opens the **Currently Reading** card, which leads to **Book Details**.
-* The bookcase shows books from their **Read** and **To Be Read** collections; tapping it opens the full bookshelf (Reading, To read, Finished) as spines or covers. The page scrolls when the shelves do not all fit. Dragging a book to another shelf saves its reading status.
-* Tapping a book on the full bookshelf lifts it out with the actions for its shelf: a **Reading** book has a progress slider and **Finished**; a **To read** book has **Started reading**; a **Finished** book has **Review** and **Rate** until both are done, then **View review and rating**. The review and rating buttons open the book's **Book Details** page.
-* The sticky note on the wall opens the **Quote of the Day** popup.
-* Edit mode on the full bookshelf removes a book, with a confirm step and Undo.
-* The menu button opens the **Shop** and **Inventory**: decorations and pets are bought with credits and dragged onto a shelf or the floor. Credits and placed pieces last until the page is reloaded.
+* **Bookshelf:** each of the reader's shelves has a row of the bookcase to itself, top to bottom **To be read**, **Reading** (at eye level), **Finished**, named on a brass plate on the row's board with how many books it holds. The books stand with their titles on the spines and keep their own size from visit to visit; a book pointed at (or focused) lifts a little up and out of its row. Books that do not fit in a row show as "+N more" on its board.
+* **Opening a book:** tapping a spine plays the animation designed in `bookshelf.blend`: the book slides out, flies to the reader with its cover facing them, the cover opens and the pages flip. A tap skips to the end, and reduced motion skips it altogether. Then the book's details show on a wood-framed card: the cover (or a cloth-bound stand-in with the title), title, author, stars and genres, the shelf buttons **Want to read / Reading / Finished reading**, then Synopsis, Rating and Reviews. Choosing **Reading** brings up a progress slider; a **Finished** book offers **Review** and **Rate** (they open Book Details) until both are done. **Remove from shelf** asks first, then offers Undo. Closing puts the book back on the shelf.
+* **Window:** the bay window shows the live Singapore weather: the sun with birds flying past, drifting clouds, rain, or the moon at night, with the temperature. The room's light follows it, and the table lamp comes on at night. `/?scene=sunny|cloudy|rain` previews a scene.
+* **Clock:** the wall clock shows Singapore time.
+* **Armchair:** the open book on the chair opens the **Currently Reading** card, which leads to Book Details.
+* **Corkboard:** opens the **Quote of the Day**.
+* **Room menu:** the **Shop** and **Inventory**: decorations and pets are bought with credits and placed on the window seat, nightstand, side table or floor; pets wander the floor. They last until the page is reloaded.
+* **Mood Check-in:** opens when needed (see below).
+* On a device that cannot draw 3D, the room is a still picture and **Bookshelf** lists the books instead.
 * Without Supabase the shelf is a demo shelf: 20 novels picked at random from Google Books when that key is set, otherwise 16 built-in books.
-* Opens the **Mood Check-in** when needed.
 
 ### Quote of the Day
 
-The sticky note in My Room opens one quote, the same for every reader all day; it changes at midnight Singapore time.
+The corkboard in My Room opens one quote, the same for every reader all day; it changes at midnight Singapore time.
 
 Quotes come from `server/data/quotes.json`, which is **not committed** (it is in `.gitignore` because the dataset's licence is unknown): each developer, and the deployed server, builds it once with the commands below. If the file is missing, the server asks [api-ninjas](https://api-ninjas.com/api/quotes#v2-randomquotes) for one short quote in a single category (writing, art, happiness, courage, love, humor, philosophy, time, freedom or death) and keeps it until midnight Singapore time. With no key either, the popup shows a single built-in quote. The file holds 1,000 quotes taken from the [Goodreads Quotes dataset on Kaggle](https://www.kaggle.com/datasets/abdokamr/good-reads-quotes) by Abdulrahman Kamr (about 83,000 quotes in 28 CSV files, one per topic). `server/scripts/importQuotes.js` keeps the 100 most-liked quotes from each of ten topics that suit a reading room (books, writing, poetry, knowledge, wisdom, hope, happiness, inspirational, life, time), leaving out anything longer than 220 characters, multi-line, mostly non-Latin, repeated, or with coarse language. The day's quote is picked by date, stepping through the list so none repeats until all have been shown.
 
@@ -279,9 +313,9 @@ Selecting a book leads to the **Book Details** page.
 
 ### Book Details
 
-This is the main information page shared across the app.
+This is the main information page shared across the app. It is the same wood-framed card as a book opened in the room (`components/book/BookCard.vue` round `BookDetailsContent.vue`), over a soft picture of the room; ✕ goes back.
 
-It contains:
+Built so far: cover, metadata, reading status (with progress), synopsis, rating and community reviews. Planned:
 
 * book metadata
 * synopsis
@@ -308,6 +342,15 @@ Selecting a reader opens their **Reader Room**, where users can view:
 * shared books
 
 Users can then follow or connect with them.
+
+For now this is a local demo with **four fictional sample readers** in
+`client/src/services/peopleDemo.js`, kept in the browser rather than in Supabase:
+
+* The map is OpenStreetMap over Singapore (needs internet) with a pin per reader; it does not pan or zoom, so the pins stay aligned. Search filters the pins.
+* Compatibility uses the formula above against the demo reader's 4 books and 3 favourite genres; it is illustrative, not a production score.
+* **Visit Room** shows the reader's profile, currently reading, favourite and shared genres, shared books and a full sample bookshelf that can be filtered by status.
+* Follow and chat last across refreshes in the same browser (`localStorage` keys `readalot_demo_following_v1` and `readalot_demo_messages_v1`). In chat, "View as" switches sides to simulate a reply. It is not a real messaging service: do not type private information.
+* Restoring API-based readers and real account checks is needed before production.
 
 ### Scan Book
 

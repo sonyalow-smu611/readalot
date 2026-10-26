@@ -3,14 +3,14 @@
 // The single fullscreen layer that owns a book once it's lifted off the shelf. Mounted once
 // in App.vue; driven entirely by the shared useBookOpen() state.
 //   FEATURED — the book floats centre-screen as a big cover, morphing out of its spine (a 2D
-//              position+scale tween; no perspective, per GUARDRAILS.md).
+//              position+scale tween).
 //   OPEN     — a flat two-page spread; a cover "flap" folds back in 2D (scaleX) to reveal it.
 // Both show the shelf actions for the book (finish, start, review...) when it is on the shelf.
 import { computed, nextTick, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
-import { primaryAuthor, ratingStars } from '@/lib/book'
 import { useBookOpen } from '@/composables/useBookOpen'
 import BookCover from '@/components/BookCover.vue'
+import BookDetailsContent from '@/components/book/BookDetailsContent.vue'
 import ShelfBookActions from '@/components/ShelfBookActions.vue'
 
 const { state, read, close, finishClose, getOriginEl } = useBookOpen()
@@ -26,8 +26,6 @@ const spreadEl = ref(null)
 const flapEl = ref(null)
 
 const book = computed(() => state.book)
-const author = computed(() => (book.value ? primaryAuthor(book.value) : ''))
-const stars = computed(() => (book.value ? ratingStars(book.value) : 0))
 
 // A 2D "FLIP": tween an element from where its origin spine sits to its own resting spot.
 function morphFromOrigin(el) {
@@ -127,16 +125,7 @@ function onBackdropClick() {
           <BookCover class="page__cover" :cover-url="book?.cover" :title="book?.title" :seed="book?.id" />
         </div>
         <div class="page page--right">
-          <h2 class="page__title">{{ book?.title }}</h2>
-          <p class="page__author">by {{ author }}</p>
-          <p class="page__rating" :aria-label="`${stars} out of 5 stars`">
-            <span v-for="n in 5" :key="n" :class="{ dim: n > stars }">★</span>
-          </p>
-          <div class="page__genres">
-            <span v-for="g in book?.genres" :key="g" class="page__genre">{{ g }}</span>
-          </div>
-          <p class="page__desc">{{ book?.description }}</p>
-          <ShelfBookActions class="page__actions" :book="book" @leave="close" />
+          <BookDetailsContent :book="book" :show-cover="false" @leave="close" />
         </div>
         <!-- The flap that folds back (2D) to reveal the right page -->
         <div ref="flapEl" class="spread__flap" aria-hidden="true"></div>
@@ -259,59 +248,6 @@ function onBackdropClick() {
   object-fit: cover;
   border: 1px solid rgba(28, 27, 25, 0.35);
   border-radius: 1px;
-}
-
-.page__title {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: 1.35rem;
-  margin-bottom: 2px;
-}
-
-.page__author {
-  color: var(--ink-muted);
-  font-family: var(--font-serif);
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-}
-
-.page__rating {
-  color: var(--wood-deep);
-  letter-spacing: 0.12em;
-  margin-bottom: 10px;
-}
-
-.page__rating .dim {
-  color: rgba(28, 27, 25, 0.22);
-}
-
-.page__genres {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.page__genre {
-  display: inline-block;
-  padding: 0 6px;
-  font-family: var(--font-serif);
-  font-size: 0.75rem;
-  color: var(--ink-muted);
-  background: transparent;
-  border: 1px solid rgba(28, 27, 25, 0.22);
-  border-radius: 2px;
-}
-
-.page__desc {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--ink);
-  margin: 0;
-}
-
-.page__actions {
-  margin-top: 14px;
 }
 
 /* The fold-back flap: a cream panel over the right page that scaleX-collapses on open. */

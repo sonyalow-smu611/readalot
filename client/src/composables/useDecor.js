@@ -28,7 +28,8 @@ export const DECOR_CATALOG = [
   { id: 'pet-bird', name: 'Cockatiel', group: 'Birds', price: 45, surface: 'floor', pet: true, blurb: 'Hops along the floor' },
 ]
 
-const SHELF_ZONES = new Set(['case-top', 'case-mid', 'case-low', 'reading', 'tbr', 'read'])
+// small surfaces in the 3D room
+const SHELF_ZONES = new Set(['seat', 'nightstand', 'side-table'])
 
 const credits = ref(480)
 const inventory = ref([])
@@ -174,16 +175,11 @@ export function useDecor() {
 
   const placingMeta = computed(() => (placing.value ? decorMeta(placing.value.id) : null))
 
-  function placedIn(zone) {
-    return placed.value.filter((item) => item.zone === zone)
-  }
-
   return {
     catalog: DECOR_CATALOG,
     credits,
     inventory,
     placed,
-    placedIn,
     shopOpen,
     inventoryOpen,
     pending,

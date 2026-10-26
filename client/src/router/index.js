@@ -1,14 +1,11 @@
 // Scaffolded with AI assistance (Phase 1) — see AI_USAGE.md
-// Vue Router — maps URLs to views so every tab is deep-linkable and the back button works.
+// Vue Router — maps URLs to views so every building is deep-linkable and the back button works.
 import { createRouter, createWebHistory } from 'vue-router'
-import RoomView from '@/views/RoomView.vue'
 import BookDetailsView from '@/views/BookDetailsView.vue'
-import DiscoverBooksView from '@/views/DiscoverBooksView.vue'
 import DiscoverPeopleView from '@/views/DiscoverPeopleView.vue'
 import GenreShelfView from '@/views/GenreShelfView.vue'
 import MoodView from '@/views/MoodView.vue'
 import PlaygroundView from '@/views/PlaygroundView.vue'
-import ProfileView from '@/views/ProfileView.vue'
 import ReaderRoomView from '@/views/ReaderRoomView.vue'
 import ReaderShelfView from '@/views/ReaderShelfView.vue'
 import ScanBookView from '@/views/ScanBookView.vue'
@@ -18,25 +15,33 @@ import VerifyView from '@/views/VerifyView.vue'
 import WelcomeView from '@/views/WelcomeView.vue'
 import { useUserStore } from '@/stores/user'
 
-// `meta.order` is the tab a page belongs to (left→right in the bottom nav); it decides which
-// way the page slides in. `meta.fullBleed` pages fill the frame and skip the shared header.
+// `meta.order` decides which way a page slides in: deeper pages (higher) slide in from the
+// right. `meta.fullBleed` pages fill the frame and skip the shared header.
 const routes = [
-  { path: '/', name: 'room', component: RoomView, meta: { title: 'My Room', fullBleed: true, order: 0 } },
-  { path: '/room', redirect: '/' },
-  { path: '/discover', name: 'discover-books', component: DiscoverBooksView, meta: { title: 'Discover', subtitle: 'Search, browse and stumble onto gems', hideSearch: true, order: 1 } },
-  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, order: 1 } },
-  { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 1 } },
-  { path: '/people', name: 'discover-people', component: () => import('../views/PeopleView.vue'), meta: { order: 2 } },
+  // The town is home; each building opens one teammate's page (src/buildings/).
+  // Phaser loads only with the town.
+  { path: '/', name: 'town', component: () => import('@/views/TownView.vue'), meta: { title: 'Town', fullBleed: true, wide: true, order: 0 } },
+  { path: '/house', name: 'house', component: () => import('@/buildings/house/HouseView.vue'), meta: { title: 'My Room', fullBleed: true, order: 1 } },
+  { path: '/library', name: 'library', component: () => import('@/buildings/library/LibraryView.vue'), meta: { title: 'Library', fullBleed: true, order: 1 } },
+  { path: '/cafe', name: 'cafe', component: () => import('@/buildings/cafe/CafeView.vue'), meta: { title: 'Cafe', fullBleed: true, order: 1 } },
+  { path: '/salon', name: 'salon', component: () => import('@/buildings/salon/SalonView.vue'), meta: { title: 'Hair Salon', fullBleed: true, wide: true, order: 1 } },
+  // The old addresses, and the names the pages link to, now open the buildings.
+  { path: '/room', name: 'room', redirect: { name: 'house' } },
+  { path: '/discover', name: 'discover-books', redirect: { name: 'library' } },
+  { path: '/people', name: 'discover-people', redirect: { name: 'cafe' } },
+  { path: '/profile', name: 'profile', redirect: { name: 'salon' } },
+  // Pages opened from inside a building
+  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, order: 2 } },
+  { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
-  { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 2 } },
-  { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 3 } },
-  { path: '/profile', name: 'profile', component: ProfileView, meta: { title: 'Profile', hideHeader: true, order: 4 } },
-  { path: '/books/:id', name: 'book-details', component: BookDetailsView },
+  { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 3 } },
+  { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 2 } },
+  { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },
   { path: '/register', name: 'register', component: LoginView, meta: { title: 'Register', bare: true, guest: true, order: 0 } },
   { path: '/verify', name: 'verify', component: VerifyView, meta: { title: 'Verify email', bare: true, guest: true, order: 0 } },
   { path: '/welcome', name: 'welcome', component: WelcomeView, meta: { title: 'Welcome', bare: true, order: 0 } },
-  // Not in the bottom nav; kept reachable until these pages are merged.
+  // Not in the town yet; kept reachable until these pages are merged.
   { path: '/mood', name: 'mood', component: MoodView, meta: { title: 'Mood' } },
   { path: '/playground', name: 'playground', component: PlaygroundView, meta: { title: 'Playground' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -51,11 +56,11 @@ router.beforeEach(async (to) => {
   const user = useUserStore()
   if (!user.ready) await user.restore()
   if (user.signedIn && to.meta.guest) {
-    return { name: user.profileComplete ? 'profile' : 'welcome' }
+    return { name: user.profileComplete ? 'town' : 'welcome' }
   }
   if (!user.signedIn && !to.meta.guest) return { name: 'login' }
   if (user.signedIn && user.profileComplete && to.name === 'welcome') {
-    return { name: 'profile' }
+    return { name: 'town' }
   }
   if (user.signedIn && !user.profileComplete && to.name !== 'welcome') {
     return { name: 'welcome' }
@@ -63,7 +68,7 @@ router.beforeEach(async (to) => {
   return true
 })
 
-// Slide toward the tab the user tapped: moving right slides content left, and vice versa.
+// Going deeper (town → building → book) slides the page in from the right; coming back, from the left.
 router.afterEach((to, from) => {
   const toOrder = to.meta.order ?? 0
   const fromOrder = from.meta.order ?? toOrder
