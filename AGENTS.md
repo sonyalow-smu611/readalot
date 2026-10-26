@@ -59,8 +59,13 @@ Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /l
 ## Shared data between parts
 
 - `stores/user.js` → `profile`: `profile.avatar` is the emoji the Profile page shows.
-  `profile.character` (`rosie`, `maya`, `rex`, `jay` or `nova`) is the town character; the salon
-  sets it, the town reads it. Sprites: `client/public/town/avatars/<id>.png`.
+  `profile.character` is the reader's town character: part ids (`{ base: 'maya', hair: 'bun', … }`),
+  always complete and valid. Parts, prices and the five presets live in
+  `client/src/lib/avatar/catalogue.js`. Two ways to draw one, from the same ids:
+  `<CharacterFigure>` (smooth chibi illustration: the salon, Welcome, the loading screen) and
+  `<CharacterSprite>` (the town's pixel sprite, via `lib/avatar/draw.js`, which the map script
+  also uses for `client/public/town/avatars/<id>.png`). Both live in `components/shared/`.
+  Welcome and the salon set it.
 - `stores/bookshelf.js` → the reader's books and reading status, used by the room and book pages.
 
 ## Map
@@ -74,7 +79,7 @@ client/
     components/town/      TownMap, TownHud, PlacesMenu, PlaceCard
     components/shared/    BuildingShell, WipPanel
     buildings/            house/, library/, cafe/, salon/ — one per teammate
-    views/                TownView, the old pages (Room, DiscoverBooks, People, Profile), and
+    views/                TownView, the old pages (Room, DiscoverBooks, People), and
                           pages opened from inside buildings (search, book details, scan…)
     components/           room/, book/, people/, modals/ and other existing parts
     stores/ services/ router/ lib/
