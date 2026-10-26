@@ -3,7 +3,7 @@
 // Home after signing in: the town. This view only holds the state and wires the town's parts
 // together; each building opens one teammate's page (see src/buildings/), and each friend's
 // house opens that reader's room. The sky follows the live weather unless a preview is chosen.
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ALL_PLACES } from '@/town/places.js'
@@ -18,7 +18,8 @@ import WeatherButton from '@/components/town/WeatherButton.vue'
 const WEATHER_EVERY = 10 * 60 * 1000
 
 const router = useRouter()
-const { profile } = storeToRefs(useUserStore())
+const user = useUserStore()
+const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
 const selected = ref(null)
@@ -53,7 +54,18 @@ onMounted(() => {
 
 onBeforeUnmount(() => clearInterval(weatherTimer))
 
+// The first-time tour flies the camera to the building it is talking about.
+watch(
+  () => (ready.value ? guide.value?.focus : null),
+  (id) => {
+    if (id) go(id)
+  },
+  { immediate: true },
+)
+
 function select(place) {
+  // during the tour the camera's glide outlines the building; its card would cover the tour's
+  if (guide.value) return
   selected.value = place
   placesOpen.value = false
   hint.value = false

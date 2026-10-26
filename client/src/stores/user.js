@@ -3,8 +3,88 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import usersData from '@/data/users.json'
 import { currentSession, watchAuth } from '@/services/auth.js'
+import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 
+// A new reader's first tour. It starts in the town: the camera flies to each building (focus:
+// a place id from town/places.js, which TownView glides to), then the town's buttons are pointed
+// out (found by their labels), then it visits each building. A step with no target and no
+// focus shows its card over a dimmed screen.
 const GUIDE_STEPS = [
+  {
+    id: 'town-welcome',
+    to: '/',
+    target: null,
+    title: 'Welcome to Readalot Town',
+    copy: 'This is your town. Drag the map to look around, and tap a building to go inside. Each building is a part of Readalot.',
+  },
+  {
+    id: 'town-house',
+    to: '/',
+    target: null,
+    focus: 'house',
+    title: 'Your house',
+    copy: 'This blue house is yours. Inside is My Room: your bookshelf, the window with the live weather, and the chair with the book you are reading.',
+  },
+  {
+    id: 'town-library',
+    to: '/',
+    target: null,
+    focus: 'library',
+    title: 'The library',
+    copy: 'Discover books here: search for a title, browse shelves by genre, and open any book to read about it.',
+  },
+  {
+    id: 'town-cafe',
+    to: '/',
+    target: null,
+    focus: 'cafe',
+    title: 'The cafe',
+    copy: 'Meet other readers. See who reads like you, find them on the map, and follow them.',
+  },
+  {
+    id: 'town-salon',
+    to: '/',
+    target: null,
+    focus: 'salon',
+    title: 'The hair salon',
+    copy: 'Restyle your character here, and edit your profile, your lists and your privacy.',
+  },
+  {
+    id: 'town-friend',
+    to: '/',
+    target: null,
+    focus: 'friend-reader-emma',
+    title: 'Friends’ houses',
+    copy: 'The small houses belong to readers you know. Tap one to visit their room and see their shelves.',
+  },
+  {
+    id: 'town-places',
+    to: '/',
+    target: '[aria-controls="town-places"]',
+    title: 'Places',
+    copy: 'Lost? Places lists every building and every friend’s house. Pick one and the map takes you there.',
+  },
+  {
+    id: 'town-weather',
+    to: '/',
+    target: '.weather-button',
+    title: 'Live weather',
+    copy: 'The sky follows the real weather in Singapore. Tap it to preview day, night and rain.',
+  },
+  {
+    id: 'town-scan',
+    to: '/',
+    target: '[aria-label="Scan a book"]',
+    title: 'Scan a book',
+    copy: 'Point your camera at a cover to put a book on your shelves.',
+  },
+  {
+    id: 'town-you',
+    to: '/',
+    target: '[aria-label="Your profile"]',
+    title: 'That’s you',
+    copy: 'Your name opens the Hair Salon, where you restyle your character and edit your profile. Next, a look inside your house.',
+  },
   {
     id: 'window',
     to: '/house',
@@ -118,6 +198,13 @@ const GUIDE_STEPS = [
     copy: 'A photo of the cover works the same way as the camera.',
   },
   {
+    id: 'salon-studio',
+    to: '/salon',
+    target: '[data-tour="salon-studio"]',
+    title: 'The style studio',
+    copy: 'Pick a look, roll a surprise, or change your hair, skin, outfit and extras. The mirror shows each change, and Save look keeps it.',
+  },
+  {
     id: 'profile-edit',
     to: '/salon',
     target: '[data-tour="profile-edit"]',
@@ -162,6 +249,8 @@ function emptyProfile() {
     email: '',
     name: '',
     avatar: '🐨',
+    // the town character, always complete and valid (see lib/avatar/catalogue.js)
+    character: normaliseCharacter(null),
     gender: '',
     age: '',
     religion: '',
@@ -207,6 +296,7 @@ export const useUserStore = defineStore('user', () => {
       email: user.email || '',
       name: meta.name || '',
       avatar: meta.avatar || '🐨',
+      character: normaliseCharacter(meta.character),
       gender: meta.gender || '',
       age: meta.age ?? '',
       religion: meta.religion || '',
@@ -267,6 +357,7 @@ export const useUserStore = defineStore('user', () => {
     profile.value = {
       ...profile.value,
       ...details,
+      character: normaliseCharacter(details.character ?? profile.value.character),
       id: profile.value.id,
       email: profile.value.email,
     }
