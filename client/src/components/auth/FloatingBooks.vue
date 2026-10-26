@@ -1,4 +1,6 @@
 <script setup>
+// Scaffolded with AI assistance — see AI_USAGE.md
+// Little books drifting in the air; the pointer shoves them aside (lib/floatBooks.js).
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { mountFloatingBooks } from '@/lib/floatBooks'
 
@@ -50,12 +52,15 @@ onBeforeUnmount(() => stop())
 
 .flyer {
   position: absolute;
-  border-radius: 2px 5px 5px 2px;
+  /* rounded, with the characters' dark outline and a soft shadow */
+  border: 2.5px solid #3b2a35;
+  border-radius: 3px 7px 7px 3px;
   background:
-    linear-gradient(var(--band), var(--band)) 14% 12% / 72% 22% no-repeat,
-    linear-gradient(var(--page), var(--page)) 14% 42% / 72% 36% no-repeat,
+    linear-gradient(var(--band), var(--band)) 5px 5px / calc(100% - 10px) 5px no-repeat,
+    linear-gradient(var(--page), var(--page)) 5px 14px / calc(100% - 10px) 8px no-repeat,
+    linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)) 0 0 / 4px 100% no-repeat,
     var(--cover);
-  box-shadow: 2px 3px 0 rgba(63, 46, 36, 0.12);
+  box-shadow: 0 6px 12px rgba(30, 26, 36, 0.25);
   transform: rotate(var(--tilt));
 }
 
