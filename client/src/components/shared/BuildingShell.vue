@@ -9,18 +9,22 @@ defineProps({
   // the building's colour (the header)
   accent: { type: String, default: '#7f5539' },
   subtitle: { type: String, default: '' },
-  // true for pages that fill the screen and scroll themselves (the 3D room); false adds the
+  // true for pages that fill the screen and scroll themselves (the room); false adds the
   // usual page padding and scrolling
   flush: { type: Boolean, default: false },
+  // where the back button goes and what it says: the town, unless a page inside a building
+  // goes back to that building instead
+  back: { type: [String, Object], default: () => ({ name: 'town' }) },
+  backLabel: { type: String, default: 'Back to town' },
 })
 </script>
 
 <template>
   <div class="building-shell">
     <header class="building-shell__header" :style="{ background: accent }">
-      <RouterLink :to="{ name: 'town' }" class="building-shell__back">
+      <RouterLink :to="back" class="building-shell__back">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-        Back to town
+        {{ backLabel }}
       </RouterLink>
       <div class="building-shell__titles">
         <h1 class="building-shell__title">{{ title }}</h1>

@@ -1,0 +1,87 @@
+{
+  "wall": "#f9dec1",
+  "wallShade": "#f3cdae",
+  "wallDeep": "#e8bf9f",
+  "ceiling": "#f3d2b4",
+  "skirting": "#f3eee0",
+  "skirtingShade": "#d9c2a2",
+  "floor": "#b0b39c",
+  "floorShade": "#9c9f88",
+  "floorLine": "#8f927c",
+  "floorLight": "#c2c4ae",
+
+  "cream": "#f3eee0",
+  "creamShade": "#d9c2a2",
+  "paper": "#f9f3e6",
+  "paperShade": "#e6dccb",
+
+  "wood": "#d2ac72",
+  "woodLight": "#e2c48e",
+  "woodShade": "#ac8a68",
+  "woodDark": "#94755c",
+  "woodDeep": "#7a5d4d",
+  "brown": "#574f3c",
+  "brownDeep": "#3b342a",
+  "cork": "#c9a46a",
+  "corkShade": "#b08a55",
+
+  "sage": "#adb6a1",
+  "sageLight": "#c4cbb8",
+  "sageShade": "#8f9a84",
+  "olive": "#766e55",
+  "oliveDeep": "#51543f",
+  "leaf": "#7f9a62",
+  "leafLight": "#a3b884",
+  "leafDark": "#56703f",
+
+  "pink": "#e6a68d",
+  "pinkLight": "#f2c7b4",
+  "pinkShade": "#c98a73",
+  "rose": "#b4836a",
+
+  "mustard": "#e0b65e",
+  "mustardShade": "#c0954a",
+  "gold": "#f2d48a",
+  "lampShade": "#f5d98c",
+  "lampLit": "#fff4c2",
+  "windowGlow": "#ffe08a",
+
+  "blue": "#7f9bb0",
+  "blueShade": "#617d92",
+  "blueLight": "#a9c0cf",
+  "teal": "#8fb5b0",
+  "tealShade": "#6f9690",
+
+  "grey": "#b8b3a8",
+  "greyShade": "#97928a",
+  "slate": "#6e6a62",
+  "red": "#c0563f",
+
+  "outline": "#1e1a24",
+  "string": "#94755c",
+
+  "books": [
+    ["#7f9bb0", "#f9f3e6"],
+    ["#e6a68d", "#3b342a"],
+    ["#8f9a84", "#f9f3e6"],
+    ["#e0b65e", "#3b342a"],
+    ["#b4836a", "#f9f3e6"],
+    ["#766e55", "#f2d48a"],
+    ["#8fb5b0", "#3b342a"],
+    ["#ac8a68", "#f9f3e6"],
+    ["#c0563f", "#f9f3e6"],
+    ["#adb6a1", "#3b342a"]
+  ],
+  "bookBand": "#f2d48a",
+
+  "tints": {
+    "clear": "#ffffff",
+    "cloudy": "#e4e2dc",
+    "rain": "#c4c9d4",
+    "night": "#7a84bd",
+    "rainyNight": "#69719f"
+  },
+  "lampGlow": "#ffe2a8",
+  "bulbGlow": "#ffd27a",
+  "windowSpill": "#a3b3e6"
+}

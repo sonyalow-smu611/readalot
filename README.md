@@ -127,19 +127,19 @@ readalot/
 ├── REFERENCE-IMG/              Low-fi reference screens 01-15
 ├── design-system/              Design tokens and component notes
 ├── client/
-│   ├── blender/                The 3D room: .blend files and the scripts that build and export it (its own README)
-│   ├── public/room/bedroom.glb The exported room
+│   ├── blender/                The old 3D room (no longer used by the app): .blend files and their scripts
+│   ├── public/room/strip/      The room's sprites, drawn by scripts/draw-room.mjs (npm run draw-room)
 │   └── src/
-│       ├── views/              One file per route (RoomView is My Room)
+│       ├── views/              One file per route
+│       ├── buildings/house/    My Room (its own README): RoomView, components/ (RoomStrip, WindowView, Currently Reading card),
+│       │                       strip/ (the layout as data, palette, painting, books, scrolling), assets/ (still picture)
 │       ├── components/         Shared UI
-│       │   ├── room/           Room3D (the 3D room), WindowView (the weather outside), Currently Reading card
 │       │   ├── book/           Book Details tabs, and the details shown when a book is opened in the room
 │       │   ├── modals/         Mood, Quote of the Day, Remove book, Write review, Add quote
 │       │   └── people/         Map, reader sheet, chat
-│       ├── lib/room3d/         Loading the room, the books on the shelf, opening a book, look-around, lighting
 │       ├── composables/        useAsync, useDecor (shop and decorations), useBookOpen, ...
 │       ├── stores/bookshelf.js The reader's shelf (Pinia), loaded from and saved to the API
-│       ├── assets/             theme.css (colour, type and radius tokens), the room's still picture
+│       ├── assets/             theme.css (colour, type and radius tokens), the room picture Book Details uses
 │       ├── router/             Routes
 │       └── services/           api.js (the app's API calls), weather.js and time.js, peopleDemo.js
 ├── server/
@@ -243,7 +243,7 @@ User shape:
 - Google Books returns a limited slice per query, so genre shelves can be thin.
 - Compatibility is computed per request (O(users)); fine at MVP scale.
 - Desktop shows a centred phone-width column only.
-- Changing the 3D room needs Blender 5 (see `client/blender/README.md`); the exported `bedroom.glb` and still picture are committed, so running the app does not.
+- The room's art is drawn by `client/scripts/draw-room.mjs` (`npm --workspace client run draw-room`), with Playwright's Chromium; the sprites are committed, so running the app does not need it.
 - A book's real cover only shows on the 3D book when its image host allows it (CORS); otherwise the book gets a cloth cover with its title. Google Books thumbnails may not allow it.
 - Decorations, pets and credits are kept in memory only and reset when the page reloads.
 - Discover People, Reader Room, follow and chat use four fictional sample readers kept in the browser (see Discover People), not real accounts.
@@ -254,13 +254,16 @@ The app is built around four main areas: **My Room, Discover Books, Discover Peo
 
 ### My Room
 
-The reader's home page: a 3D bedroom built in Blender (`client/blender/`) and drawn with
-Three.js. The reader stands in the middle and drags, pinches or scrolls to look around, or uses
-the bar of places along the bottom (Bookshelf, Chair, Window, Corkboard, Clock). Everything that
-can be tapped is a labelled button over the 3D scene.
+The reader's room (Your house in the town): one wide pixel-art picture of the room, side on,
+drawn in the town's style. It goes left to right: the bay window nook, the reading chair and
+coffee table, the bookshelf, the clock and corkboard, then the bed. The reader swipes, drags,
+scrolls or uses the arrow keys to move along it, or uses the bar of places along the bottom
+(Window, Chair, Bookshelf, Clock, Corkboard, Bed). Everything that can be tapped is a labelled
+button over the picture. At night the room takes the town's blue tint, and its lamps light their
+corners. How to add or move furniture: `client/src/buildings/house/README.md`.
 
-* **Bookshelf:** each of the reader's shelves has a row of the bookcase to itself, top to bottom **To be read**, **Reading** (at eye level), **Finished**, named on a brass plate on the row's board with how many books it holds. The books stand with their titles on the spines and keep their own size from visit to visit; a book pointed at (or focused) lifts a little up and out of its row. Books that do not fit in a row show as "+N more" on its board.
-* **Opening a book:** tapping a spine plays the animation designed in `bookshelf.blend`: the book slides out, flies to the reader with its cover facing them, the cover opens and the pages flip. A tap skips to the end, and reduced motion skips it altogether. Then the book's details show on a wood-framed card: the cover (or a cloth-bound stand-in with the title), title, author, stars and genres, the shelf buttons **Want to read / Reading / Finished reading**, then Synopsis, Rating and Reviews. Choosing **Reading** brings up a progress slider; a **Finished** book offers **Review** and **Rate** (they open Book Details) until both are done. **Remove from shelf** asks first, then offers Undo. Closing puts the book back on the shelf.
+* **Bookshelf:** each of the reader's shelves has a row of the bookshelf to itself, named on a plate on its board, top to bottom **To be read**, **Currently reading** (at eye level), **Finished reading**. The spines keep their own size and colour from visit to visit; a book pointed at (or focused) lifts a little out of its row. Tapping the bookshelf itself opens **My Shelf**: every book, a row per shelf, with genre chips and a search, laid out like the Library.
+* **Opening a book:** tapping a spine lifts the book out, flies it up as its cover (its own cover picture, or cloth with its title) and swings the cover open. A tap skips to the end, and reduced motion skips it altogether. Then the book's details show on a card in the town's style (like the town's place cards): a tab naming its shelf, the cover (or a cloth-bound stand-in with the title), title, author, stars and genres, the shelf buttons **Want to read / Reading / Finished reading**, then Synopsis, Rating and Reviews. Choosing **Reading** brings up a progress slider; a **Finished** book offers **Review** and **Rate** (they open Book Details) until both are done. **Remove from shelf** asks first, then offers Undo. Closing puts the book back on the shelf.
 * **Window:** the bay window shows the live Singapore weather: the sun with birds flying past, drifting clouds, rain, or the moon at night, with the temperature. The room's light follows it, and the table lamp comes on at night. `/?scene=sunny|cloudy|rain` previews a scene.
 * **Clock:** the wall clock shows Singapore time.
 * **Armchair:** the open book on the chair opens the **Currently Reading** card, which leads to Book Details.
@@ -313,7 +316,7 @@ Selecting a book leads to the **Book Details** page.
 
 ### Book Details
 
-This is the main information page shared across the app. It is the same wood-framed card as a book opened in the room (`components/book/BookCard.vue` round `BookDetailsContent.vue`), over a soft picture of the room; ✕ goes back.
+This is the main information page shared across the app. It is the same card as a book opened in the room or on My Shelf (`components/book/BookCard.vue` round `BookDetailsContent.vue`), in the town's design system on the town's parchment canvas; ✕ goes back.
 
 Built so far: cover, metadata, reading status (with progress), synopsis, rating and community reviews. Planned:
 

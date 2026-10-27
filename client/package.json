@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "draw-map": "node scripts/draw-town-map.mjs"
+    "draw-map": "node scripts/draw-town-map.mjs",
+    "draw-room": "node scripts/draw-room.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

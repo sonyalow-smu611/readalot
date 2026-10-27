@@ -108,8 +108,8 @@ placing decorations, pets, weather, clock). The team asked for all of it to be A
 |------|-------|------------------|
 | Blender scene | `client/blender/build_room.py`, `client/blender/render_room.py`, `client/blender/README.md` | Bedroom built from primitives, glTF export, still render |
 | Assets | `client/public/room/bedroom.glb`, `client/src/assets/room/room.webp` | Output of the scripts above |
-| 3D room | `client/src/components/room/Room3D.vue`, `client/src/lib/room3d/*.js` | Loading the room, book spines with titles, lighting and weather, look-around controls, tracking buttons, decorations and pets |
-| Wiring | `client/src/views/RoomView.vue`, `client/src/components/RoomDock.vue`, `client/src/composables/useDecor.js` | Room3D in place of the drawn room; tap to place; new decoration spots. The drawn room's components listed in the merge section above (`RoomScene.vue`, `RoomBookshelf.vue`, `ReadingChair.vue`, `RoomWindow.vue`, `WallClock.vue`, `QuoteNote.vue`, `CoverRow.vue`), and `MyRoomView.vue`, `BayWindow.vue`, `BookSpine.vue`, `BookshelfExpanded.vue`, `WindowScene.vue`, `FloorLife.vue`, `useMyShelf.js`, `roomWeather.js`, were deleted |
+| 3D room | `client/src/buildings/house/components/Room3D.vue`, `client/src/buildings/house/room3d/*.js` | Loading the room, book spines with titles, lighting and weather, look-around controls, tracking buttons, decorations and pets |
+| Wiring | `client/src/buildings/house/RoomView.vue`, `client/src/buildings/house/components/RoomDock.vue`, `client/src/composables/useDecor.js` | Room3D in place of the drawn room; tap to place; new decoration spots. The drawn room's components listed in the merge section above (`RoomScene.vue`, `RoomBookshelf.vue`, `ReadingChair.vue`, `RoomWindow.vue`, `WallClock.vue`, `QuoteNote.vue`, `CoverRow.vue`), and `MyRoomView.vue`, `BayWindow.vue`, `BookSpine.vue`, `BookshelfExpanded.vue`, `WindowScene.vue`, `FloorLife.vue`, `useMyShelf.js`, `roomWeather.js`, were deleted |
 | Tests | `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | Updated for the 3D room |
 
 ### Bookshelf, opening a book, the merged room and the window (AI-generated)
@@ -122,10 +122,10 @@ Playwright:
 | Bookcase | `client/blender/build_bookshelf.py` | The bookcase and placeholder books ported from the build code in `bookshelf.blend`, stood on the room's left wall; the hero book and its animation copied in |
 | Room | `client/blender/build_room.py`, `client/blender/furniture.blend` | The bedroom rebuilt with the hand-modelled armchair, plant and box copied in |
 | Export | `client/blender/render_room.py` | Procedural colours flattened for glTF; the hero book's animation exported |
-| Books on the shelf | `client/src/lib/room3d/books.js`, `loadRoom.js` | Books in shelf order with seeded sizes, laid out in each shelf's own frame |
-| Opening a book | `client/src/lib/room3d/bookOpen.js`, `client/src/components/room/Room3D.vue` | The fly-out, cover and page animation, skip, close, fade on removal, cover pictures |
-| Book details in the room | `client/src/views/RoomView.vue`, `client/src/components/book/BookDetailsContent.vue` | The details dialog, remove with Undo, the book list without 3D; the full-screen bookshelf removed |
-| Window | `client/src/components/room/WindowView.vue`, `client/src/lib/room3d/weather.js` | The earlier weather view (sun and birds, clouds, rain, moon) shown through the 3D bay window |
+| Books on the shelf | `client/src/buildings/house/room3d/books.js`, `loadRoom.js` | Books in shelf order with seeded sizes, laid out in each shelf's own frame |
+| Opening a book | `client/src/buildings/house/room3d/bookOpen.js`, `client/src/buildings/house/components/Room3D.vue` | The fly-out, cover and page animation, skip, close, fade on removal, cover pictures |
+| Book details in the room | `client/src/buildings/house/RoomView.vue`, `client/src/components/book/BookDetailsContent.vue` | The details dialog, remove with Undo, the book list without 3D; the full-screen bookshelf removed |
+| Window | `client/src/buildings/house/components/WindowView.vue`, `client/src/buildings/house/room3d/weather.js` | The earlier weather view (sun and birds, clouds, rain, moon) shown through the 3D bay window |
 | Store fix | `client/src/stores/bookshelf.js` | Removed a duplicated `removeBook` that stopped Undo from working |
 | Tests | `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | Tests for all of the above |
 
@@ -136,10 +136,52 @@ and checked with Playwright:
 
 | Area | Files | What AI produced |
 |------|-------|------------------|
-| Book card | `client/src/components/book/BookCard.vue`, `client/src/components/book/BookDetailsContent.vue`, `client/src/views/RoomView.vue` | The wood-framed card (80% of the screen); cover or cloth-bound stand-in, shelf buttons with the progress slider, Synopsis, Rating and Reviews |
-| Shelves | `client/src/lib/room3d/books.js`, `client/src/components/room/Room3D.vue` | One bookcase row per shelf, brass name plates on the boards, "+N more" per row, books lifting out when pointed at |
+| Book card | `client/src/components/book/BookCard.vue`, `client/src/components/book/BookDetailsContent.vue`, `client/src/buildings/house/RoomView.vue` | The wood-framed card (80% of the screen); cover or cloth-bound stand-in, shelf buttons with the progress slider, Synopsis, Rating and Reviews |
+| Shelves | `client/src/buildings/house/room3d/books.js`, `client/src/buildings/house/components/Room3D.vue` | One bookcase row per shelf, brass name plates on the boards, "+N more" per row, books lifting out when pointed at |
 | Book Details page | `client/src/views/BookDetailsView.vue`, `client/src/router/index.js` | The page as the same card over the room; the old status buttons and stars it used (`ReadingStatusButtons.vue`, `RatingStars.vue`) removed |
 | Tests | `tests/e2e/bookshelf.spec.js` | Updated for the new shelf buttons, rows and page; hover test |
+
+### My Room as a side-on pixel-art panorama (AI-generated)
+
+Written by Claude Code at Sonz's request, from the spec in `docs/specs/room-panorama-strip.md`,
+with the style taken from `REFERENCE-IMG/16_*` and `17_*`. It replaces the 3D room. Its code was
+first moved into the house building's folder, and an earlier pixel-art restyle of the 3D room was
+dropped in favour of this.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Move | `client/src/buildings/house/` | RoomView, WindowView, the Currently Reading card and RoomDock moved into the house building's folder; the 3D room (`Room3D.vue`, `room3d/*.js`) removed |
+| Art | `client/scripts/draw-room.mjs`, `client/scripts/room-art/room.js`, `client/public/room/strip/*.png` | 58 room sprites drawn with the town's helpers and outline: bay window, curtains, fairy lights, window seat, armchair, lamps, tables, bookshelf, clock, corkboard, dresser, bed, posters, plants, bunting and small props |
+| Layout | `client/src/buildings/house/strip/layout.js`, `palette.json`, `README.md` (house folder) | The room as data (pieces, parts, decoration spots, pet walk line, lights) and how to add or move a piece |
+| Room | `client/src/buildings/house/components/RoomStrip.vue`, `strip/paint.js`, `strip/scroll.js`, `strip/books.js`, `strip/flight.js` | The canvas at whole-number scale, wall shadows and hanging strings, the town's tints with stepped lamp light at night, sideways scrolling (wheel, drag, keys, the bar of places), the hint, books on the shelf, a book's 2D flight off the shelf, decorations and pets |
+| Window | `client/src/buildings/house/components/WindowView.vue` | Pixel-art sky, sun and moon, birds, clouds and rain, and the town across the street with its windows lit at night |
+| Still | `client/src/buildings/house/assets/room-still.png` | The room drawn once, for before it loads or when its pictures can't load |
+| Panels | `components/RoomDock.vue`, `components/CurrentlyReadingCard.vue`, `RoomView.vue`, `HouseView.vue` | The town's chips, round buttons and place-card style, in the house's colour from `town/places.js` |
+| Tests | `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | New tests for scrolling, the parts in order, the hint, the night window and whole-number scaling; the "without 3D" tests now cover the room's pictures failing to load |
+
+### Labelled bookshelf, My Shelf and the book card in the town's style (AI-generated)
+
+Written by Claude Code at Sonz's request, from the spec in `docs/specs/room-shelf-page-and-book-card.md`
+(layout from `REFERENCE-IMG/18_my_shelf_layout_library.png`).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shelf labels | `client/src/buildings/house/components/RoomStrip.vue`, `strip/books.js`, `client/src/services/shelves.js` | Plates on the bookshelf's boards (To be read, Currently reading, Finished reading); the three names shared by the room, My Shelf and the book card; tapping the bookshelf opens My Shelf; the room keeps its place between visits |
+| My Shelf | `client/src/buildings/house/ShelfView.vue`, `client/src/router/index.js`, `client/src/components/shared/BuildingShell.vue`, `client/src/components/DiscoverShelf.vue` | The page (search, genre chips, a row per shelf with the Library's row component); a route; an optional back target and label on the building header; an optional empty message on the shelf row |
+| Book card | `client/src/components/book/BookCard.vue`, `BookDetailsContent.vue`, `client/src/views/BookDetailsView.vue`, `client/src/buildings/house/components/BookDialog.vue` | The card in the town's design system (the place cards' surface, line, radius and shadow; the cafe's tags; chips and buttons in the building's colour; a shelf tab); one dialog for the room and My Shelf; the Book Details page on the town's canvas (the old 3D room picture, `client/src/assets/room/room.webp`, removed) |
+| Tests | `tests/e2e/my-shelf.spec.js`, `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | My Shelf's journey; the new row names; the bookshelf opening My Shelf; the fallback opening My Shelf |
+
+### My Room on a laptop, scrollable My Shelf rows and the furniture library (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the spec in
+`docs/specs/room-desktop-shelf-scroll-furniture.md`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Laptop view | `client/src/router/index.js`, `client/src/buildings/house/components/RoomStrip.vue`, `RoomView.vue`, `components/BookDialog.vue` | My Room and My Shelf fill the window like the town (`wide` routes). The room goes one size up to fill a wide window, cutting only plain wall, or else is centred. Resizing keeps the middle of the view. The cards keep a readable width. The bar of places lets taps through between its buttons |
+| My Shelf rows | `client/src/buildings/house/components/ShelfRow.vue`, `ShelfView.vue` | A row of covers that scrolls natively (swipe, Shift + wheel, scrollbar), by mouse drag without opening a book, with Previous / Next, and with the arrow keys (one tab stop per row). It replaces the shared carousel on My Shelf only |
+| Furniture library | `client/src/buildings/house/furniture.js`, `client/scripts/room-art/room.js`, `strip/layout.js`, `strip/paint.js`, `components/DecorArt.vue`, `components/RoomDock.vue`, `client/src/composables/useDecor.js` | 5 pieces of wall art, 3 plants, 3 reading chairs and 3 cats, drawn with the town's helpers. Wall spots and the reading-nook spot. Placed pieces are painted into the room's canvas. A chair swaps with the armchair. Cats walk, sit and nap on their own canvas, tinted for the weather. The Shop is grouped, with pixel thumbnails; the old vector cats are removed |
+| Tests | `tests/e2e/house-desktop.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/my-shelf.spec.js`, `tests/e2e/room.spec.js` | The laptop journey, the furniture journey and the scrolling rows. The room and My Shelf tests now run in a phone-sized window |
 
 ### Readalot Town: the map home page and the building skeleton (AI-generated)
 

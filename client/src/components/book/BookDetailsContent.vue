@@ -2,13 +2,16 @@
   What a reader sees about a book once it is open, top to bottom: the cover (a made-up cloth
   book with the title on it when there is no picture), the title, author, stars and genres,
   which shelf it is on (Reading shows a progress slider), then Synopsis, Rating and Reviews.
-  Shown in the room's Book details card and in the book overlay's open spread.
+  Shown in the Book details card (in My Room, on My Shelf and on the book's own page) and in the
+  book overlay's open spread, in the town's design system.
   Written with AI assistance: see AI_USAGE.md.
 -->
 <template>
   <article class="details">
     <!-- hero -->
     <header class="details__hero">
+      <!-- which of the reader's shelves it's on, like the tab on the town's place cards -->
+      <span v-if="shelfLabel" class="details__tab">{{ shelfLabel }}</span>
       <div v-if="showCover" class="details__cover">
         <img
           v-if="coverUrl && !coverFailed"
@@ -147,7 +150,7 @@
 <script setup>
 import { computed, defineComponent, h, ref, watch } from 'vue'
 import { primaryAuthor } from '@/lib/book'
-import { spineLook } from '@/services/shelves.js'
+import { shelfName, spineLook } from '@/services/shelves.js'
 import { getReviews } from '@/services/api.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 
@@ -206,6 +209,7 @@ watch(coverUrl, () => {
 // the shelf's own copy of the book, so a move shows here straight away
 const shelved = computed(() => (props.book ? bookshelf.findBook(props.book.id) : null))
 const status = computed(() => shelved.value?.status ?? '')
+const shelfLabel = computed(() => shelfName(status.value))
 const page = computed(() => `/books/${props.book?.id}`)
 const saving = ref(false)
 const statusError = ref('')
@@ -276,25 +280,22 @@ function formatDate(value) {
 </script>
 
 <style scoped>
-/* Design-system tokens (design-system/tokens.json), kept local to the card. */
+/* The town's design system (src/assets/theme.css), as on the town's place cards and the cafe:
+   warm dark text, muted captions, Georgia titles, a fine line between sections, cream pill
+   tags. --book-accent is the colour of the building the card was opened in. */
 .details {
-  --ds-surface: #fffdf9;
-  --ds-primary: #7f5539;
-  --ds-primary-pressed: #414833;
-  --ds-accent: #b08968;
-  --ds-clay: #9c6644;
-  --ds-text: #414833;
-  --ds-muted: #656d4a;
-  --ds-line: #ddb892;
-  --ds-serif: Georgia, 'Times New Roman', serif;
+  --accent: var(--book-accent, var(--rl-primary));
+  --tag: #f3e8da;
+  --soft: #f4ede4;
+  --soft-line: #e0d2c2;
 
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font-family: var(--ds-serif);
-  font-size: 15px;
-  line-height: 22px;
-  color: var(--ds-text);
+  font-family: var(--rl-font-body);
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--rl-text);
 }
 
 /* --- Hero ------------------------------------------------------------------------------- */
@@ -305,39 +306,49 @@ function formatDate(value) {
   text-align: center;
 }
 
+.details__tab {
+  margin-bottom: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.3px;
+  color: var(--rl-surface);
+}
+
 .details__cover {
   width: min(46%, 150px);
   aspect-ratio: 2 / 3;
   margin-bottom: 16px;
-  filter: drop-shadow(0 8px 10px rgba(52, 33, 20, 0.35));
+  filter: drop-shadow(0 8px 14px rgba(63, 46, 36, 0.22));
 }
 
 .details__cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 3px 6px 6px 3px;
+  border-radius: 6px;
 }
 
-/* A cloth-bound book: a darker spine on the left, a framed title plate on the front, and a
-   sliver of page edges showing on the right. */
+/* A cloth-bound book: a darker spine on the left and a framed title plate on the front. */
 .fake-book {
   position: relative;
   display: flex;
   width: 100%;
   height: 100%;
-  border-radius: 3px 6px 6px 3px;
+  border-radius: 6px;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 40%, rgba(0, 0, 0, 0.1)),
     var(--cloth);
   color: var(--cloth-ink);
-  box-shadow: 3px 0 0 -1px #f3eadc, 5px 1px 0 -2px #e2d3bd;
 }
 
 .fake-book__spine {
   flex: 0 0 11%;
-  border-radius: 3px 0 0 3px;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.12) 70%, rgba(255, 255, 255, 0.18));
+  border-radius: 6px 0 0 6px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.1) 70%, rgba(255, 255, 255, 0.16));
 }
 
 .fake-book__face {
@@ -350,8 +361,6 @@ function formatDate(value) {
   margin: 10px 10px 10px 8px;
   padding: 10px 6px;
   border: 1px solid currentColor;
-  outline: 1px solid currentColor;
-  outline-offset: -5px;
   opacity: 0.92;
   overflow: hidden;
   container-type: inline-size;
@@ -363,6 +372,7 @@ function formatDate(value) {
   -webkit-line-clamp: 4;
   overflow: hidden;
   /* sized to the plate, so a long word fits whole on a small cover */
+  font-family: var(--rl-font-title);
   font-size: clamp(11px, 16cqi, 16px);
   line-height: 1.25;
   font-weight: 700;
@@ -375,6 +385,7 @@ function formatDate(value) {
 }
 
 .fake-book__author {
+  font-family: var(--rl-font-title);
   font-size: 11px;
   line-height: 14px;
   font-style: italic;
@@ -382,24 +393,23 @@ function formatDate(value) {
 
 .details__title {
   margin: 0 0 2px;
-  font-family: var(--ds-serif);
+  font-family: var(--rl-font-title);
   font-size: 22px;
   line-height: 28px;
   font-weight: 700;
-  color: var(--ds-text);
+  color: var(--rl-text);
 }
 
 .details__author {
   margin: 0 0 6px;
-  font-style: italic;
-  color: var(--ds-muted);
+  color: var(--rl-muted);
 }
 
 .details__facts {
   margin: -4px 0 6px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 18px;
-  color: var(--ds-muted);
+  color: var(--rl-muted);
 }
 
 .details__stars {
@@ -410,28 +420,29 @@ function formatDate(value) {
 }
 
 .details__stars-value {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--ds-muted);
+  color: var(--rl-muted);
 }
 
+/* the cafe's tags */
 .details__genres {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
 }
 
 .details__genre {
-  padding: 4px 10px;
-  font-family: var(--ds-serif);
-  font-size: 12px;
-  line-height: 16px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: var(--tag);
+  font-family: var(--rl-font-body);
+  font-size: 11px;
+  line-height: 14px;
   font-weight: 700;
-  color: var(--ds-text);
-  background: rgba(255, 253, 249, 0.6);
-  border: 1px solid var(--ds-line);
+  color: var(--rl-text);
 }
 
 /* --- Stars ------------------------------------------------------------------------------ */
@@ -445,69 +456,89 @@ function formatDate(value) {
 }
 
 .details :deep(.stars--big) {
-  font-size: 40px;
+  font-size: 36px;
   letter-spacing: 6px;
 }
 
 .details :deep(.stars__back) {
-  color: rgba(65, 72, 51, 0.18);
+  color: var(--rl-placeholder);
 }
 
 .details :deep(.stars__fill) {
   position: absolute;
   inset: 0 auto 0 0;
   overflow: hidden;
-  color: var(--ds-clay);
+  color: #e0b65e;
 }
 
-/* --- Status ----------------------------------------------------------------------------- */
+/* --- Status: the town's chips, the chosen one filled in the building's colour ------------ */
+.details__status {
+  gap: 6px;
+}
+
 .details__status-btn,
 .details__link-btn {
   --bs-btn-padding-y: 8px;
-  --bs-btn-font-family: var(--ds-serif);
-  --bs-btn-font-size: 14px;
-  --bs-btn-font-weight: 400;
-  --bs-btn-color: var(--ds-primary);
-  --bs-btn-bg: rgba(255, 253, 249, 0.55);
-  --bs-btn-border-color: var(--ds-primary);
-  --bs-btn-hover-color: var(--ds-primary);
-  --bs-btn-hover-bg: var(--ds-surface);
-  --bs-btn-hover-border-color: var(--ds-primary);
-  --bs-btn-active-color: var(--ds-surface);
-  --bs-btn-active-bg: var(--ds-primary-pressed);
-  --bs-btn-active-border-color: var(--ds-primary-pressed);
-  --bs-btn-disabled-color: var(--ds-primary);
-  --bs-btn-disabled-bg: transparent;
-  --bs-btn-disabled-border-color: var(--ds-primary);
-  --bs-btn-focus-shadow-rgb: 127, 85, 57;
-  --bs-btn-border-radius: 12px;
+  --bs-btn-font-family: var(--rl-font-body);
+  --bs-btn-font-size: 13px;
+  --bs-btn-font-weight: 700;
+  --bs-btn-color: var(--rl-text);
+  --bs-btn-bg: var(--rl-surface);
+  --bs-btn-border-color: var(--rl-line);
+  --bs-btn-hover-color: var(--rl-text);
+  --bs-btn-hover-bg: var(--soft);
+  --bs-btn-hover-border-color: var(--rl-line);
+  --bs-btn-active-color: var(--rl-surface);
+  --bs-btn-active-bg: var(--accent);
+  --bs-btn-active-border-color: var(--accent);
+  --bs-btn-disabled-color: var(--rl-muted);
+  --bs-btn-disabled-bg: var(--rl-surface);
+  --bs-btn-disabled-border-color: var(--rl-line);
+  --bs-btn-focus-shadow-rgb: 63, 46, 36;
+  --bs-btn-border-radius: 999px;
+  min-height: 40px;
   line-height: 18px;
+}
+
+/* a toggle group of separate chips, not one joined bar */
+.details__status > .details__status-btn {
+  flex: 1;
+  border-radius: 999px !important;
+  margin-left: 0 !important;
 }
 
 .details__status-btn.is-active,
 .details__link-btn.is-active {
-  --bs-btn-color: var(--ds-surface);
-  --bs-btn-bg: var(--ds-primary);
-  --bs-btn-hover-color: var(--ds-surface);
-  --bs-btn-hover-bg: var(--ds-primary-pressed);
-  --bs-btn-hover-border-color: var(--ds-primary-pressed);
+  --bs-btn-color: var(--rl-surface);
+  --bs-btn-bg: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-color: var(--rl-surface);
+  --bs-btn-hover-bg: var(--accent);
+  --bs-btn-hover-border-color: var(--accent);
+}
+
+/* the main action, like the place card's "Go inside"; the quieter one, the cafe's secondary */
+.details__link-btn {
+  --bs-btn-border-radius: 12px;
+  --bs-btn-bg: var(--soft);
+  --bs-btn-border-color: var(--soft-line);
+  min-height: 44px;
 }
 
 .details__error {
   margin: -8px 0 0;
   font-size: 13px;
   font-weight: 700;
-  color: #9b2c1f;
+  color: #a23d3d;
 }
 
-/* The panel under the status buttons (progress, or review and rate) */
+/* The panel under the status chips (progress, or review and rate): the cafe's card */
 .details__panel {
   margin: -6px 0 0;
-  padding: 12px;
-  border: 1px solid var(--ds-line);
-  border-radius: 12px;
-  background: rgba(255, 253, 249, 0.7);
-  box-shadow: 0 1px 2px rgba(65, 72, 51, 0.1);
+  padding: 12px 14px;
+  border: 1px solid var(--soft-line);
+  border-radius: 16px;
+  background: var(--rl-surface);
 }
 
 .details__progress {
@@ -524,7 +555,7 @@ function formatDate(value) {
 }
 
 .details__progress-label output {
-  color: var(--ds-muted);
+  color: var(--rl-muted);
 }
 
 .details__slider {
@@ -534,32 +565,32 @@ function formatDate(value) {
 .details__slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--ds-accent) var(--fill), var(--ds-line) var(--fill));
+  background: linear-gradient(90deg, var(--accent) var(--fill), var(--rl-placeholder) var(--fill));
 }
 
 .details__slider::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--ds-line);
+  background: var(--rl-placeholder);
 }
 
 .details__slider::-moz-range-progress {
   height: 6px;
   border-radius: 999px;
-  background: var(--ds-accent);
+  background: var(--accent);
 }
 
 .details__slider::-webkit-slider-thumb {
   margin-top: -6px;
-  background: var(--ds-primary);
+  background: var(--accent);
 }
 
 .details__slider::-moz-range-thumb {
-  background: var(--ds-primary);
+  background: var(--accent);
 }
 
 .details__slider:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(127, 85, 57, 0.3);
+  box-shadow: 0 0 0 3px rgba(63, 46, 36, 0.2);
 }
 
 .details__finished {
@@ -586,30 +617,22 @@ function formatDate(value) {
 /* --- Sections --------------------------------------------------------------------------- */
 .details__section {
   padding-top: 14px;
-  border-top: 1px solid rgba(127, 85, 57, 0.28);
+  border-top: 1px solid var(--rl-line);
 }
 
 .details__heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin: 0 0 8px;
-  font-family: var(--ds-serif);
-  font-size: 18px;
+  font-family: var(--rl-font-title);
+  font-size: 17px;
   line-height: 24px;
   font-weight: 700;
-  color: var(--ds-text);
-}
-
-.details__heading::before {
-  content: '❦';
-  font-size: 15px;
-  color: var(--ds-clay);
+  color: var(--rl-text);
 }
 
 .details__synopsis {
   margin: 0;
   white-space: pre-line;
+  color: var(--rl-text);
 }
 
 .details__rating {
@@ -622,34 +645,34 @@ function formatDate(value) {
 
 .details__rating-score {
   margin: 8px 0 0;
-  font-size: 18px;
-  color: var(--ds-muted);
+  font-size: 16px;
+  color: var(--rl-muted);
 }
 
 .details__rating-score strong {
-  font-size: 28px;
-  line-height: 34px;
-  color: var(--ds-text);
+  font-family: var(--rl-font-title);
+  font-size: 26px;
+  line-height: 32px;
+  color: var(--rl-text);
 }
 
 .details__rating-count {
   margin: 0;
-  font-size: 13px;
-  color: var(--ds-muted);
+  font-size: 12px;
+  color: var(--rl-muted);
 }
 
 .details__note {
   margin: 0;
-  font-size: 14px;
-  color: var(--ds-muted);
+  font-size: 13px;
+  color: var(--rl-muted);
 }
 
 .details__retry {
   padding: 0 0 0 4px;
-  font-family: var(--ds-serif);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--ds-primary);
+  color: var(--accent);
   vertical-align: baseline;
 }
 
@@ -660,11 +683,12 @@ function formatDate(value) {
   margin: 0;
 }
 
+/* each review, the cafe's reader card */
 .details__review {
-  padding: 12px;
-  border: 1px solid var(--ds-line);
-  border-radius: 12px;
-  background: rgba(255, 253, 249, 0.7);
+  padding: 12px 14px;
+  border: 1px solid #e9dece;
+  border-radius: 16px;
+  background: var(--rl-surface);
 }
 
 .details__review-top {
@@ -672,8 +696,8 @@ function formatDate(value) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 4px;
-  font-size: 13px;
-  color: var(--ds-muted);
+  font-size: 12px;
+  color: var(--rl-muted);
 }
 
 .details__review-text {
