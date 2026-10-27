@@ -1,11 +1,9 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// A decoration's picture in the Shop, the inventory and while it's dragged. A piece from the
-// furniture library shows its own room sprite, scaled up a whole number of times so it stays
-// crisp, as large as fits `fit` CSS px (a cat, one frame of its sheet). Anything else is the
-// Shop's drawing.
+// A decoration's picture in the Shop, the inventory and while it's dragged: its own room sprite,
+// scaled up a whole number of times so it stays crisp, as large as fits `fit` CSS px (a cat, one
+// frame of its sheet).
 import { computed } from 'vue'
-import DecorPiece from '@/components/DecorPiece.vue'
 import { furnitureSprite } from '@/buildings/house/furniture.js'
 import SPRITES from '@/buildings/house/strip/sprites.json'
 
@@ -35,7 +33,6 @@ const art = computed(() => {
   <span v-if="sprite" class="decor-art" :style="art.box">
     <img class="decor-art__sheet" :src="`/room/strip/${sprite}.png`" :style="art.image" alt="" />
   </span>
-  <DecorPiece v-else :kind="kind" />
 </template>
 
 <style scoped>

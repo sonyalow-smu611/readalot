@@ -82,18 +82,18 @@ test("buying a decoration spends credits and it can be placed in the room", asyn
 
   await page.getByRole("button", { name: "Room menu" }).click();
   await page.getByRole("button", { name: "Shop" }).click();
-  await page.getByRole("button", { name: /Clay vase/ }).click();
+  await page.getByRole("button", { name: /Succulent trio/ }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByText("440").first()).toBeVisible();
+  await expect(page.getByText("450").first()).toBeVisible();
 
-  // pick the vase, then tap one of the glowing spots it can stand on
-  await page.getByRole("region", { name: "Inventory" }).getByRole("button", { name: /Clay vase/ }).click();
-  await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Clay vase");
+  // pick the succulents, then tap one of the glowing spots they can stand on
+  await page.getByRole("region", { name: "Inventory" }).getByRole("button", { name: /Succulent trio/ }).click();
+  await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Succulent trio");
   await turnTo(page, "Window");
-  await page.getByRole("button", { name: /^Put Clay vase on the window seat/ }).locator("visible=true").first().click();
+  await page.getByRole("button", { name: /^Put Succulent trio on the window seat/ }).locator("visible=true").first().click();
 
-  await expect(page.getByRole("status")).toHaveText(/^Clay vase is on the window seat/);
-  await expect(page.getByRole("button", { name: "Clay vase", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("status")).toHaveText(/^Succulent trio is on the window seat/);
+  await expect(page.getByRole("button", { name: "Succulent trio", exact: true })).toHaveCount(1);
 });
 
 test("the book on the chair opens the Currently Reading card", async ({ page }) => {

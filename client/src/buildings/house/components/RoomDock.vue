@@ -34,7 +34,7 @@ function meta(id) {
   return catalog.find((item) => item.id === id)
 }
 
-// the Shop's items by group (Vases, Wall art, Cats…), in catalog order
+// the Shop's items by group (Wall art, Reading chairs, Plants, Cats), in catalog order
 const groups = computed(() => {
   const byName = new Map()
   for (const item of catalog) {
