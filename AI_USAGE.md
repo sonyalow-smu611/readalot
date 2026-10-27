@@ -171,6 +171,18 @@ Written by Claude Code at Sonz's request, from the spec in `docs/specs/room-shel
 | Book card | `client/src/components/book/BookCard.vue`, `BookDetailsContent.vue`, `client/src/views/BookDetailsView.vue`, `client/src/buildings/house/components/BookDialog.vue` | The card in the town's design system (the place cards' surface, line, radius and shadow; the cafe's tags; chips and buttons in the building's colour; a shelf tab); one dialog for the room and My Shelf; the Book Details page on the town's canvas (the old 3D room picture, `client/src/assets/room/room.webp`, removed) |
 | Tests | `tests/e2e/my-shelf.spec.js`, `tests/e2e/room.spec.js`, `tests/e2e/bookshelf.spec.js` | My Shelf's journey; the new row names; the bookshelf opening My Shelf; the fallback opening My Shelf |
 
+### My Room on a laptop, scrollable My Shelf rows and the furniture library (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the spec in
+`docs/specs/room-desktop-shelf-scroll-furniture.md`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Laptop view | `client/src/router/index.js`, `client/src/buildings/house/components/RoomStrip.vue`, `RoomView.vue`, `components/BookDialog.vue` | My Room and My Shelf fill the window like the town (`wide` routes). The room goes one size up to fill a wide window, cutting only plain wall, or else is centred. Resizing keeps the middle of the view. The cards keep a readable width. The bar of places lets taps through between its buttons |
+| My Shelf rows | `client/src/buildings/house/components/ShelfRow.vue`, `ShelfView.vue` | A row of covers that scrolls natively (swipe, Shift + wheel, scrollbar), by mouse drag without opening a book, with Previous / Next, and with the arrow keys (one tab stop per row). It replaces the shared carousel on My Shelf only |
+| Furniture library | `client/src/buildings/house/furniture.js`, `client/scripts/room-art/room.js`, `strip/layout.js`, `strip/paint.js`, `components/DecorArt.vue`, `components/RoomDock.vue`, `client/src/composables/useDecor.js` | 5 pieces of wall art, 3 plants, 3 reading chairs and 3 cats, drawn with the town's helpers. Wall spots and the reading-nook spot. Placed pieces are painted into the room's canvas. A chair swaps with the armchair. Cats walk, sit and nap on their own canvas, tinted for the weather. The Shop is grouped, with pixel thumbnails; the old vector cats are removed |
+| Tests | `tests/e2e/house-desktop.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/my-shelf.spec.js`, `tests/e2e/room.spec.js` | The laptop journey, the furniture journey and the scrolling rows. The room and My Shelf tests now run in a phone-sized window |
+
 ### Readalot Town: the map home page and the building skeleton (AI-generated)
 
 Written by Claude Code at the team's request (stack chosen by the team: Phaser 3, one map

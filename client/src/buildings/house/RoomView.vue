@@ -319,10 +319,13 @@ onBeforeUnmount(() => {
   z-index: 4;
 }
 
+/* across the bottom of the room on a phone; the same width, centred, on a wide window */
 .home__reading {
   position: absolute;
   inset: auto 15px 76px;
   z-index: 15;
+  max-width: 450px;
+  margin-inline: auto;
 }
 
 

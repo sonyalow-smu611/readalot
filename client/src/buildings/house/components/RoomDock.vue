@@ -1,8 +1,8 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { useDecor } from '@/composables/useDecor'
-import DecorPiece from '@/components/DecorPiece.vue'
+import DecorArt from '@/buildings/house/components/DecorArt.vue'
 
 defineEmits(['mood'])
 
@@ -33,6 +33,16 @@ function grab(event, entry) {
 function meta(id) {
   return catalog.find((item) => item.id === id)
 }
+
+// the Shop's items by group (Vases, Wall art, Cats…), in catalog order
+const groups = computed(() => {
+  const byName = new Map()
+  for (const item of catalog) {
+    if (!byName.has(item.group)) byName.set(item.group, [])
+    byName.get(item.group).push(item)
+  }
+  return [...byName].map(([name, items]) => ({ name, items }))
+})
 
 function toggleDock() {
   open.value = !open.value
@@ -97,18 +107,23 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </header>
       <p class="panel__note">Swipe the row. Each card says where that piece can sit.</p>
       <div class="panel__row">
-        <button
-          v-for="item in catalog"
-          :key="item.id"
-          type="button"
-          class="dock-card"
-          @click="askBuy(item)"
-        >
-          <span class="dock-card__art"><DecorPiece :kind="item.id" /></span>
-          <span class="dock-card__name">{{ item.name }}</span>
-          <span class="dock-card__price">${{ item.price }}</span>
-          <span class="dock-card__where">{{ item.blurb }}</span>
-        </button>
+        <div v-for="group in groups" :key="group.name" class="panel__group" role="group" :aria-label="group.name">
+          <p class="panel__group-name" aria-hidden="true">{{ group.name }}</p>
+          <div class="panel__group-items">
+            <button
+              v-for="item in group.items"
+              :key="item.id"
+              type="button"
+              class="dock-card"
+              @click="askBuy(item)"
+            >
+              <span class="dock-card__art"><DecorArt :kind="item.id" /></span>
+              <span class="dock-card__name">{{ item.name }}</span>
+              <span class="dock-card__price">${{ item.price }}</span>
+              <span class="dock-card__where">{{ item.blurb }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -129,7 +144,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               @pointerdown="grab($event, entry)"
               @click="beginPlace(entry)"
             >
-            <span class="dock-card__art"><DecorPiece :kind="entry.id" /></span>
+            <span class="dock-card__art"><DecorArt :kind="entry.id" /></span>
             <span class="dock-card__name">{{ meta(entry.id)?.name }}</span>
             <span class="dock-card__where">{{ meta(entry.id)?.blurb }}</span>
           </button>
@@ -367,6 +382,25 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   overscroll-behavior-x: contain;
   padding-bottom: 4px;
   touch-action: pan-x;
+}
+
+/* each group in the Shop's row: its name over its cards */
+.panel__group {
+  flex-shrink: 0;
+}
+
+.panel__group-name {
+  margin: 0 0 4px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rl-muted);
+}
+
+.panel__group-items {
+  display: flex;
+  gap: 10px;
 }
 
 .dock-card--drag {

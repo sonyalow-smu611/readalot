@@ -1,5 +1,9 @@
 import { expect, test } from "./fixtures.js";
 
+// a phone-sized window, where the room is wider than the screen (the laptop view has its own
+// journey, house-desktop.spec.js)
+test.use({ viewport: { width: 480, height: 720 } });
+
 // The room reads live weather and time; fixed answers keep these checks the same every run.
 test.beforeEach(async ({ page }) => {
   // today's mood check-in already answered, so it does not open over the room
@@ -212,7 +216,7 @@ for (const [device, viewport, deviceScaleFactor] of [
 
     test("the room is drawn at a whole number of device pixels per pixel of art", async ({ page }) => {
       await roomShown(page);
-      const { across, down, crisp } = await page.locator(".strip canvas").evaluate((canvas) => {
+      const { across, down, crisp } = await page.locator(".strip canvas").first().evaluate((canvas) => {
         const { width, height } = canvas.getBoundingClientRect();
         return {
           across: (width * devicePixelRatio) / canvas.width,

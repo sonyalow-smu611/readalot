@@ -1,5 +1,9 @@
 import { expect, test } from "./fixtures.js";
 
+// a phone-sized window, where the room is wider than the screen (the laptop view has its own
+// journey, house-desktop.spec.js)
+test.use({ viewport: { width: 480, height: 720 } });
+
 // My Shelf: every book on the reader's shelf, opened from the bookshelf in My Room. Saves are
 // answered here, so the shared demo shelf stays as it was for the other tests.
 const SHELVES = [
@@ -127,4 +131,106 @@ test("a shelf that cannot load says so, and Retry tries again", async ({ page })
   fail = false;
   await retry.click();
   await expect(row(page, "To be read")).toBeVisible();
+});
+
+// --- Rows that scroll sideways, on a laptop ---------------------------------------------------
+
+test.describe("a long row on a laptop", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  // twenty more books to read, so the To be read row is far wider than the window
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/user-books", async (route) => {
+      if (route.request().method() !== "GET") return route.fallback();
+      const response = await route.fetch();
+      const { books, ...rest } = await response.json();
+      const extra = Array.from({ length: 20 }, (_, k) => ({
+        ...books[0],
+        id: `long-row-${k + 1}`,
+        title: `Long Row Book ${k + 1}`,
+        authors: ["Row Writer"],
+        status: "want_to_read",
+      }));
+      await route.fulfill({ json: { ...rest, books: [...books, ...extra] } });
+    });
+    await page.goto("/house/shelf");
+    await expect(row(page, "To be read").getByRole("button", { name: /^Long Row Book 1\b/ })).toBeVisible();
+    // the app's opening screen has gone from over the page
+    await expect(page.getByText("Opening your shelf")).toBeHidden();
+  });
+
+  const toRead = (page) => row(page, "To be read");
+  const covers = (page) => toRead(page).getByRole("list").first();
+  const across = (page) => covers(page).evaluate((el) => ({ left: el.scrollLeft, most: el.scrollWidth - el.clientWidth }));
+
+  test("Next and Previous page through the row, each off at its end", async ({ page }) => {
+    const previous = toRead(page).getByRole("button", { name: "Previous books in To be read" });
+    const next = toRead(page).getByRole("button", { name: "Next books in To be read" });
+    await expect(previous).toBeDisabled();
+    await expect(next).toBeEnabled();
+
+    await next.click();
+    await expect.poll(async () => (await across(page)).left).toBeGreaterThan(200);
+    await expect(previous).toBeEnabled();
+
+    // to the end: the last book in view, Next off
+    for (let n = 0; n < 10 && (await next.isEnabled()); n++) {
+      await next.click();
+      await page.waitForTimeout(400);
+    }
+    await expect(next).toBeDisabled();
+    await expect(toRead(page).getByRole("button", { name: /^Long Row Book 20\b/ })).toBeInViewport();
+  });
+
+  test("a sideways swipe scrolls the row; a plain wheel scrolls the page, not the row", async ({ page }) => {
+    const box = await covers(page).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + 60);
+    await page.mouse.wheel(400, 0);
+    await expect.poll(async () => (await across(page)).left).toBeGreaterThan(100);
+
+    // once it has settled on a cover
+    await page.waitForTimeout(800);
+    const left = (await across(page)).left;
+    const pageTop = () => page.locator(".building-shell__body").evaluate((el) => el.scrollTop);
+    await page.mouse.wheel(0, 300);
+    await expect.poll(pageTop).toBeGreaterThan(0);
+    expect((await across(page)).left).toBe(left);
+  });
+
+  test("dragging the row with the mouse scrolls it without opening a book; a click opens one", async ({ page }) => {
+    const box = await covers(page).boundingBox();
+    const y = box.y + 60;
+    await page.mouse.move(box.x + 600, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 300, y, { steps: 8 });
+    await page.mouse.up();
+    await expect.poll(async () => (await across(page)).left).toBeGreaterThan(200);
+    await page.waitForTimeout(300);
+    await expect(page.getByRole("dialog", { name: "Book details" })).toHaveCount(0);
+
+    await toRead(page).getByRole("button", { name: /^Long Row Book 9\b/ }).click();
+    await expect(page.getByRole("dialog", { name: "Book details" })).toBeVisible();
+  });
+
+  test("the arrow keys move along the row, keeping the cover in view, and Tab leaves the row", async ({ page }) => {
+    const cover = (n) => toRead(page).getByRole("listitem").nth(n).getByRole("button");
+    await cover(0).focus();
+    for (let n = 0; n < 14; n++) await page.keyboard.press("ArrowRight");
+    await expect(cover(14)).toBeFocused();
+    await expect(cover(14)).toBeInViewport({ ratio: 1 });
+    expect((await across(page)).left).toBeGreaterThan(0);
+
+    await page.keyboard.press("ArrowLeft");
+    await expect(cover(13)).toBeFocused();
+
+    // one Tab and focus is out of this row's covers (on the next row's buttons or covers)
+    await page.keyboard.press("Tab");
+    expect(await toRead(page).getByRole("list").first().evaluate((el) => el.contains(document.activeElement))).toBe(false);
+  });
+
+  test("a row whose covers all fit has no Previous or Next", async ({ page }) => {
+    const reading = row(page, "Currently reading");
+    await expect(reading.getByRole("listitem").first()).toBeVisible();
+    await expect(reading.getByRole("button", { name: /^(Previous|Next) books in/ })).toHaveCount(0);
+  });
 });

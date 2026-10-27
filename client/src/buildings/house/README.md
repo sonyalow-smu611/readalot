@@ -8,7 +8,10 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `HouseView.vue` | The building's entry view, inside the shared `BuildingShell` |
 | `RoomView.vue` | The room page: the room, the Currently Reading card, book details, modals, the menu |
 | `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf |
+| `furniture.js` | **The furniture library:** pieces in the room's pixel style that the reader buys in the Shop |
 | `components/RoomStrip.vue` | The room itself: scrolling, the tappable spots, the shelf's name plates, books, decorations, pets |
+| `components/ShelfRow.vue` | One shelf on My Shelf: a sideways row of covers that scrolls by swipe, wheel, drag, buttons or arrow keys |
+| `components/DecorArt.vue` | A decoration's picture in the Shop and inventory: a furniture piece's own sprite, kept crisp |
 | `components/BookDialog.vue` | A book's card over the page, used by the room and My Shelf (remove with Undo included) |
 | `components/WindowView.vue` | The view through the window: sky, weather and the town across the street |
 | `strip/layout.js` | **What stands where.** Every piece, the parts of the room, decoration spots, lights |
@@ -80,6 +83,45 @@ furniture as its `y`.
   decorations readers have already placed will move. You can change `at`, where a slot is drawn.
 - **`WALK`:** the line along the floor that pets walk on. It's also where visitors could walk later.
 - **`LIGHTS`:** the window's cool light at night, each lamp's pool of warm light, and the fairy lights.
+
+## The furniture library
+
+Readers furnish the room from the Shop with pieces drawn in the room's own style. Each piece
+is a line in `furniture.js` plus a sprite. The Shop's catalog takes the list in, so buying,
+the inventory and the glowing spots work for it as for any decoration. A placed piece is painted
+into the room's canvas, so it gets the same shadows, weather tints and lamplight as the room's own
+pieces. An invisible button over it makes it tappable.
+
+To add a piece:
+
+1. **Draw it** in `client/scripts/room-art/room.js`, in the "furniture library" section at the
+   end, with `add(id, width, height, draw)` as for any piece.
+2. **Redraw:** `npm --workspace client run draw-room`.
+3. **List it** in `FURNITURE` in `furniture.js`:
+
+   ```js
+   { id: 'poster-moon', name: 'Moon poster', group: 'Wall art', price: 25, sprite: 'poster-moon', surface: 'wall', blurb: 'On the wall' },
+   ```
+
+   `group` is its row in the Shop. `surface` says where it can go:
+   - `wall`: a wall spot, and it hangs centred on the spot. The spots are `WALL` in
+     `strip/layout.js`, on open wall clear of everything that can be tapped
+   - `floor`: a spot on the floor
+   - `shelf`: the window seat, side table or nightstand
+   - `chair`: the reading nook, in place of the armchair. One chair at a time: a new one sends
+     the last back to the inventory, and putting it away brings the armchair back
+
+   A **cat** also has `pet: true`. Its sprite is a sheet of four frames, `walk`, `step`, `sit`
+   and `sleep`, drawn with `catSheet` in the art script. Cats walk along `WALK`, sit, and
+   sometimes nap. They're drawn on their own canvas over the room, tinted for the weather.
+   With reduced motion they sit still.
+
+## On a laptop
+
+My Room and My Shelf fill the window, like the town; their routes are `wide`. The room keeps
+its whole-number scale. If the room would come out narrower than the window, it's drawn one
+size up, as long as that cuts no more than plain wall (24 art px, above the bunting) off the
+top. Otherwise it's centred. The cards over the room keep a readable width and stay centred.
 
 ## Colours
 

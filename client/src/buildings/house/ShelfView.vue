@@ -2,13 +2,13 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // My Shelf: every book on the reader's shelf, opened from the bookshelf in My Room. Laid out like
 // the Library: a search box, genre chips, then one row of covers per shelf (To be read, Currently
-// reading, Finished reading). A chip shows one genre in every row; the search narrows by title or
+// reading, Finished reading), each scrolling sideways. A chip shows one genre in every row; the search narrows by title or
 // author. A cover opens the book's card, the same as in the room.
 import { computed, nextTick, onMounted, ref } from 'vue'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
-import DiscoverShelf from '@/components/DiscoverShelf.vue'
 import StateView from '@/components/StateView.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
+import ShelfRow from '@/buildings/house/components/ShelfRow.vue'
 import { SHELVES } from '@/services/shelves.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { PLACES } from '@/town/places.js'
@@ -128,8 +128,9 @@ onMounted(() => bookshelf.load())
             class="my-shelf__row"
             :data-shelf="row.status"
             :aria-label="`${row.label}, ${row.count} ${row.count === 1 ? 'book' : 'books'}`">
-            <DiscoverShelf
+            <ShelfRow
               :title="`${row.label} · ${row.count}`"
+              :shelf="row.label"
               :emoji="row.emoji"
               :books="row.books"
               :loading="bookshelf.loading && !bookshelf.books.length"
@@ -206,15 +207,6 @@ onMounted(() => bookshelf.load())
   border-color: var(--house-accent);
   background: var(--house-accent);
   color: var(--rl-surface);
-}
-
-.my-shelf__row :deep(.discover-shelf__title) {
-  font-family: var(--rl-font-title);
-  color: var(--rl-text);
-}
-
-.my-shelf__row :deep(.discover-shelf__empty) {
-  color: var(--rl-muted);
 }
 
 .my-shelf__empty {
