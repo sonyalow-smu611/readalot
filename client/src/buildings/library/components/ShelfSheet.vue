@@ -46,7 +46,7 @@ onMounted(() => panel.value?.focus())
       <div class="shelf-sheet__body">
         <div v-if="loading" class="shelf-sheet__grid" aria-label="Loading books">
           <div v-for="n in SKELETON_CARDS" :key="n">
-            <SkeletonBlock height="120px" radius="8px" class="mb-2" />
+            <SkeletonBlock height="150px" radius="10px" class="mb-2" />
             <SkeletonBlock width="80%" height="10px" />
           </div>
         </div>
@@ -98,7 +98,8 @@ onMounted(() => panel.value?.focus())
   display: flex;
   flex-direction: column;
   max-height: 78%;
-  padding: 14px 16px 18px;
+  /* on a wide screen the sheet keeps its books in from the edges, like My Shelf */
+  padding: 14px max(16px, calc((100% - 1240px) / 2)) 18px;
   border-top: 3px solid var(--library-accent, var(--rl-primary));
   border-radius: var(--rl-radius-modal) var(--rl-radius-modal) 0 0;
   background: var(--rl-surface);
@@ -144,10 +145,19 @@ onMounted(() => panel.value?.focus())
   overflow-y: auto;
 }
 
+/* covers the size of My Shelf's (108 px), as many to a row as fit; on a phone, three to a row */
 .shelf-sheet__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px 12px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 108px));
+  justify-content: space-between;
+  gap: 18px 12px;
+}
+
+@media (min-width: 576px) {
+  .shelf-sheet__grid {
+    justify-content: start;
+    gap: 22px 16px;
+  }
 }
 
 .shelf-sheet__state {

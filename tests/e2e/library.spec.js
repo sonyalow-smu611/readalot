@@ -9,9 +9,9 @@ const BOOKS = [
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/books/search**", (route) => route.fulfill({ json: { books: BOOKS } }));
-  // the live weather, fixed: rain at 27 degrees by day
+  // the live weather, fixed: steady rain at 27 degrees by day
   await page.route("**/api/weather*", (route) =>
-    route.fulfill({ json: { scene: "rain", temperature: 27, weatherCode: 61, isDay: true } })
+    route.fulfill({ json: { scene: "rain", temperature: 27, weatherCode: 63, isDay: true } })
   );
   await page.goto("/library");
 });
@@ -49,9 +49,60 @@ test("the help desk puts the reader in the search bar", async ({ page }) => {
 
   const search = page.getByRole("searchbox", { name: "Search books or authors" });
   await expect(search).toBeFocused();
+  // the search bar asks what you're looking for, so it's clear where to type
+  await expect(page.getByText("The librarian is listening: type a title or an author, then press Enter.")).toBeVisible();
+  await expect(search).toHaveAttribute("placeholder", "What are you looking for?");
   await search.fill("dune");
-  await search.press("Enter");
+  await page.getByRole("search").getByRole("button", { name: "Search" }).click();
   await expect(page).toHaveURL(/\/search\?q=dune$/);
+});
+
+test("the help desk's prompt goes away when the reader clicks elsewhere", async ({ page }) => {
+  await page.getByRole("button", { name: "Help desk: search for any book" }).click();
+  const prompt = page.getByText("The librarian is listening", { exact: false });
+  await expect(prompt).toBeVisible();
+  await page.getByRole("region", { name: /The library hall/ }).click({ position: { x: 5, y: 5 } });
+  await expect(prompt).toBeHidden();
+});
+
+test("each lamp turns off and on by itself when tapped, and is remembered", async ({ page }) => {
+  const deskLamp = page.getByRole("button", { name: "Help desk lamp", exact: true });
+  const ceilingLamp = page.getByRole("button", { name: "Help desk ceiling lamp" });
+  await expect(deskLamp).toHaveAttribute("aria-pressed", "true");
+
+  await deskLamp.click();
+  await expect(deskLamp).toHaveAttribute("aria-pressed", "false");
+  // the other lamps stay on
+  await expect(ceilingLamp).toHaveAttribute("aria-pressed", "true");
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Help desk lamp", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await page.getByRole("button", { name: "Help desk lamp", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Help desk lamp", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("tapping the search bar itself opens it up too", async ({ page }) => {
+  await page.getByRole("searchbox", { name: "Search books or authors" }).click();
+  await expect(page.getByText("The librarian is listening", { exact: false })).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Search books or authors" })).toHaveAttribute("placeholder", "What are you looking for?");
+});
+
+test("rain falls on the windows only while it rains, harder in a downpour", async ({ page }) => {
+  await expect(page.locator('.hall__rain[data-rain="steady"]').first()).toBeAttached();
+
+  await page.route("**/api/weather*", (route) =>
+    route.fulfill({ json: { scene: "rain", temperature: 24, weatherCode: 95, isDay: true } })
+  );
+  await page.reload();
+  await expect(page.getByRole("img", { name: "Weather outside: Heavy rain, 24 degrees" })).toBeVisible();
+  await expect(page.locator('.hall__rain[data-rain="heavy"]').first()).toBeAttached();
+
+  await page.route("**/api/weather*", (route) =>
+    route.fulfill({ json: { scene: "sunny", temperature: 31, weatherCode: 0, isDay: true } })
+  );
+  await page.reload();
+  await expect(page.getByRole("img", { name: "Weather outside: Sunny, 31 degrees" })).toBeVisible();
+  await expect(page.locator(".hall__rain")).toHaveCount(0);
 });
 
 test("the library shows the live weather, and follows it after dark", async ({ page }) => {
