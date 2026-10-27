@@ -20,6 +20,8 @@ const START_ZOOM = 0.6
 const TAP_SLOP = 10
 // How much a building grows when you point at it.
 const POP_SCALE = 1.06
+// How far the glow round a chosen building reaches, in map pixels.
+const HALO = 28
 // How close the camera comes while following you, and how far it leans in at a door.
 const FOLLOW_ZOOM = 0.8
 const DOOR_ZOOM = 1.4
@@ -61,7 +63,9 @@ export default class TownScene extends Phaser.Scene {
   create() {
     if (!this.textures.exists('map')) return
     this.add.image(0, 0, 'map').setOrigin(0)
-    this.highlight = this.add.graphics().setDepth(SKY_DEPTH + 20)
+    // the glow round the chosen building: above the night sky, below the name tags
+    this.halo = this.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 1).setDepth(SKY_DEPTH + 20).setVisible(false)
+    this.haloFor = null
 
     const cam = this.cameras.main
     cam.setBounds(0, 0, MAP_W, MAP_H)
@@ -150,8 +154,11 @@ export default class TownScene extends Phaser.Scene {
     const popping = this.pops[id]
     if (!popping || this.reducedMotion) return
     const { image, art } = popping
-    // its lit windows (at night) grow with it
-    const onUpdate = () => this.sky.scaleWindows(art, image.scale, image.x, image.y)
+    // its lit windows (at night) and its glow grow with it
+    const onUpdate = () => {
+      this.sky.scaleWindows(art, image.scale, image.x, image.y)
+      if (this.haloFor === id) this.halo.setScale(image.scale)
+    }
     this.tweens.killTweensOf(image)
     if (up) {
       image.setVisible(true)
@@ -187,7 +194,7 @@ export default class TownScene extends Phaser.Scene {
     const pill = this.add.graphics()
     pill.fillStyle(0xfffdf9, 0.96).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2)
     pill.lineStyle(4, accent, 1).strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2)
-    // above the selection outline, which would otherwise cut through the name
+    // above the chosen building's glow, which would otherwise wash over the name
     const tag = this.add.container(place.x + place.w / 2, place.y + 4, [pill, text]).setDepth(SKY_DEPTH + 30)
     if (!this.reducedMotion) this.tweens.add({ targets: tag, y: tag.y - 8, duration: 1400, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
   }
@@ -205,11 +212,61 @@ export default class TownScene extends Phaser.Scene {
     this.onSelect?.(place)
   }
 
+  // Lights a soft glow round the building's own shape, or puts it out when place is null.
   outline(place) {
-    this.highlight?.clear()
-    if (!place) return
-    this.highlight.lineStyle(8, 0xfffdf9, 0.95)
-    this.highlight.strokeRoundedRect(place.x - 6, place.y - 6, place.w + 12, place.h + 12, 14)
+    const art = place && (place.art ?? place.id)
+    const box = art && mapData.buildings[art]
+    this.tweens.killTweensOf(this.halo)
+    if (!box) {
+      this.haloFor = null
+      this.halo.setVisible(false)
+      return
+    }
+    this.haloFor = place.id
+    this.halo
+      .setTexture(this.haloTexture(art))
+      .setPosition(box.x + box.w / 2, box.y + box.h + HALO)
+      .setScale(1)
+      .setAlpha(0)
+      .setVisible(true)
+    this.tweens.add({ targets: this.halo, alpha: 1, duration: this.reducedMotion ? 0 : 200 })
+    if (!this.reducedMotion) {
+      this.tweens.add({ targets: this.halo, alpha: 0.65, delay: 200, duration: 1000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
+    }
+  }
+
+  // The glow for one building, drawn once from its picture: a soft white haze round its outline,
+  // with a hole where the building is so the glow never covers it.
+  haloTexture(art) {
+    const key = `halo-${art}`
+    if (this.textures.exists(key)) return key
+    const picture = this.textures.get(`building-${art}`).getSourceImage()
+    const w = picture.width
+    const h = picture.height
+    const shape = document.createElement('canvas')
+    shape.width = w
+    shape.height = h
+    const s = shape.getContext('2d')
+    s.drawImage(picture, 0, 0)
+    s.globalCompositeOperation = 'source-in'
+    s.fillStyle = '#ffffff'
+    s.fillRect(0, 0, w, h)
+
+    const glow = document.createElement('canvas')
+    glow.width = w + HALO * 2
+    glow.height = h + HALO * 2
+    const g = glow.getContext('2d')
+    g.shadowColor = '#fffbe6'
+    // a wide haze, then a brighter edge close in
+    g.shadowBlur = HALO
+    for (let i = 0; i < 3; i++) g.drawImage(shape, HALO, HALO)
+    g.shadowBlur = HALO / 4
+    for (let i = 0; i < 2; i++) g.drawImage(shape, HALO, HALO)
+    g.shadowBlur = 0
+    g.globalCompositeOperation = 'destination-out'
+    g.drawImage(shape, HALO, HALO)
+    this.textures.addCanvas(key, glow)
+    return key
   }
 
   // Glide to a place (from the Places list) and select it.
@@ -257,7 +314,7 @@ export default class TownScene extends Phaser.Scene {
     const place = ALL_PLACES.find((p) => p.id === id)
     if (!place || this.busy) return
     this.busy = true
-    this.highlight?.clear()
+    this.outline(null)
     // a building still grown from being pointed at would cover its door
     this.pop(place.id, false)
     if (!this.following) {
