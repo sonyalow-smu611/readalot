@@ -1,7 +1,7 @@
 <!--
   My Room, side on: one wide pixel-art picture of the room (a dollhouse with its front wall
   taken off) that the reader moves along sideways. Swipe, drag, scroll or use the arrow keys;
-  the bar of places slides to each part of the room.
+  the Places menu slides to each part of the room.
 
   The room is painted onto one canvas at art resolution from the layout (strip/layout.js) and
   stretched by a whole number of device pixels with hard edges, so it is never blurred. Everything
@@ -12,10 +12,15 @@
   Furniture from the Shop is painted into the room too; its cats walk about on a canvas of their own.
 
   Until the room's pictures have loaded, and when they cannot (or the device cannot draw on a
-  canvas), a still picture of the room stands in, with the bar of places opening things directly.
+  canvas), a still picture of the room stands in, with the Places menu opening things directly.
 -->
 <template>
-  <div ref="root" class="strip" :class="{ 'is-ready': ready, 'is-locked': bookPhase !== 'closed', 'is-visit': !editable }">
+  <div
+    ref="root"
+    class="strip"
+    :class="{ 'is-ready': ready, 'is-locked': bookPhase !== 'closed' }"
+    :style="{ '--room-wall': theme.wall }"
+  >
     <div
       ref="scroller"
       class="strip__scroller"
@@ -35,6 +40,11 @@
           <canvas v-show="ready" ref="canvas" class="strip__canvas" />
           <!-- the cats from the furniture library, drawn over the room as they walk about -->
           <canvas v-show="ready" ref="catCanvas" class="strip__canvas strip__pets" aria-hidden="true" />
+          <!-- the weather outside, floating just above the window it's seen through -->
+          <div class="strip__weather" role="img" :aria-label="windowLabel" :style="weatherStyle">
+            <span class="strip__weather-icon" :class="`is-${weatherIcon}`" aria-hidden="true" />
+            <span v-if="weather.temperature !== null">{{ weather.temperature }}°</span>
+          </div>
 
           <div v-if="ready" class="strip__layer">
             <div class="strip__pin strip__window" data-tour="window" :style="boxStyle(spots.window)" />
@@ -114,6 +124,18 @@
               <span class="strip__tip">{{ boardLabel }}</span>
             </button>
 
+            <!-- the lamps: a tap switches each one off or on -->
+            <button
+              v-for="lamp in LAMPS"
+              :key="lamp.id"
+              type="button"
+              class="strip__pin strip__hit placed-art strip__lamp"
+              :aria-label="lamp.name"
+              :aria-pressed="lamps[lamp.id] !== false"
+              :style="boxStyle(lampBoxes[lamp.id])"
+              @click="switchLamp(lamp.id)"
+            />
+
             <!-- the furniture placed in the room: drawn in the room itself, each with an invisible
                  button over it (a cat's follows it as it walks) -->
             <template v-for="item in placed" :key="item.uid">
@@ -156,12 +178,6 @@
       </div>
     </div>
 
-    <!-- the weather outside, pinned in the corner opposite the coins -->
-    <div class="strip__weather" role="img" :aria-label="windowLabel">
-      <span class="strip__weather-icon" :class="`is-${weatherIcon}`" aria-hidden="true" />
-      <span v-if="weather.temperature !== null">{{ weather.temperature }}°</span>
-    </div>
-
     <Transition name="strip-hint">
       <p v-if="hinting" class="strip__hint" aria-hidden="true">{{ hintText }}</p>
     </Transition>
@@ -183,11 +199,7 @@
       <button type="button" class="strip__cancel" @click="cancelPlace">Cancel</button>
     </p>
 
-    <nav class="strip__places" aria-label="Places in the room">
-      <button v-for="part in PARTS" :key="part.id" type="button" class="strip__place" @click="goTo(part.id)">
-        {{ part.label }}
-      </button>
-    </nav>
+    <PlacesMenu class="strip__menu" :places="PARTS" @go="goTo" />
   </div>
 </template>
 
@@ -201,12 +213,14 @@ let lastLeft = 0
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, toRef, watch } from 'vue'
 import stillArt from '@/buildings/house/assets/room-still.png'
 import WindowView from '@/buildings/house/components/WindowView.vue'
+import PlacesMenu from '@/buildings/house/components/PlacesMenu.vue'
 import { decorMeta, fitsZone, useDecor } from '@/composables/useDecor'
 import { furnitureSprite } from '@/buildings/house/furniture.js'
 import { primaryAuthor } from '@/lib/book'
 import { prefersReducedMotion } from '@/lib/motion'
 import { fetchSingaporeTime } from '@/services/time.js'
-import { PARTS, ROOM, SLOTS, SPRITES, WALK, glassOf, hotspots, shelfRows as rowBoxes } from '@/buildings/house/strip/layout.js'
+import { LAMPS } from '@/buildings/house/lamps.js'
+import { PARTS, PIECES, ROOM, SLOTS, SPRITES, WALK, boxOf, glassOf, hotspots, shelfRows as rowBoxes } from '@/buildings/house/strip/layout.js'
 import { layoutBooks, spineBox } from '@/buildings/house/strip/books.js'
 import { paintCats, paintRoom, spriteIds } from '@/buildings/house/strip/paint.js'
 import { createScroll } from '@/buildings/house/strip/scroll.js'
@@ -222,6 +236,8 @@ const SCENE_LABELS = { sunny: 'Clear', cloudy: 'Cloudy', rain: 'Rain' }
 // the most plain wall that may be cut off the top of the room to fill a wide window, in art
 // pixels: the bunting hangs below it
 const CUT = 24
+// spots with room for one piece, which a new one swaps with: never taken
+const ONE_SPOT = new Set(['chair', 'curtains', 'bed'])
 const PET_SPEED = 26 // art pixels a second
 // a cat's steps: how long each frame of its walk shows, in seconds; how often it falls asleep
 // when it stops, and for how long it rests (seconds)
@@ -231,7 +247,8 @@ const CAT_REST = { sit: [1, 4], sleep: [6, 10] }
 // the box a cat's button covers, in art pixels
 const CAT_BOX = { w: 28, h: 18 }
 const HINT_KEY = 'readalot.roomHint'
-// px kept clear along the bottom for the bar of places: spare height goes to floor there first
+// px kept clear along the bottom for the round room menu button: spare height goes to floor there
+// first
 const BAR = 64
 const HINT_MS = 4500
 
@@ -254,10 +271,16 @@ const props = defineProps({
   boardLabel: { type: String, default: 'Quote of the day' },
   // how many visitors' notes are on the corkboard (up to three are drawn on it)
   notes: { type: Number, default: 0 },
+  // the house's look (from themes.js): its wall and floor colours and its own curtains, bedding,
+  // lamps and rug
+  theme: { type: Object, required: true },
+  // each lamp on or off: { 'floor-lamp': true, … }
+  lamps: { type: Object, default: () => ({}) },
 })
 // open-book: the Currently Reading card; pick-book: a book tapped on the shelf; open-shelf: the
 // bookshelf itself tapped (or asked for before the room has loaded), for My Shelf
-const emit = defineEmits(['open-book', 'pick-book', 'open-shelf', 'quote', 'retry'])
+// toggle-lamp: a lamp tapped, with its id
+const emit = defineEmits(['open-book', 'pick-book', 'open-shelf', 'quote', 'retry', 'toggle-lamp'])
 
 const { placing, placingMeta, drag, selected, pick, unplace, placeOn, cancelPlace, flash } = useDecor()
 const placed = toRef(props, 'furniture')
@@ -280,6 +303,11 @@ const size = ref({ scale: 1, unit: 1, rows: ROOM.height, above: 0 })
 const offset = computed(() => size.value.above)
 
 const glass = glassOf()
+// the box each lamp fills, for its switch
+const lampBoxes = Object.fromEntries(LAMPS.map(({ id }) => [id, boxOf(PIECES.find((piece) => piece.id === id))]))
+// the top of the curtain rod: the weather chip sits just above it, centred on the window
+const rod = PIECES.find((piece) => piece.sprite === 'curtain-rod')
+const ABOVE_ROD = rod.y - SPRITES['curtain-rod'].h - 3
 const spots = hotspots()
 const rows = rowBoxes()
 const shelf = computed(() => layoutBooks(rows, props.books))
@@ -328,6 +356,8 @@ function pointStyle(point) {
   return { left: `${point.x * unit}px`, top: `${(offset.value + point.y) * unit}px` }
 }
 
+const weatherStyle = computed(() => pointStyle({ x: glass.x + glass.w / 2, y: ABOVE_ROD }))
+
 // a row's name plate, centred on the board the row stands on (its box in the layout), at its
 // left end, clear of the row below
 const BOARD = 5 // art pixels thick
@@ -346,7 +376,7 @@ const noteStyle = computed(() => {
 })
 
 // Works out the whole number of device pixels per art pixel at which the room's height fits.
-// Height to spare becomes more floor below the room (clear of the bar of places), then more wall.
+// Height to spare becomes more floor below the room (clear of the room menu button), then more wall.
 // On a wide window where the room would come out narrower than the window, it's drawn one size
 // up instead if that only cuts plain wall (above the bunting) off the top; otherwise it's centred.
 function measure() {
@@ -397,6 +427,8 @@ function paint() {
       time: readClock(),
       extras: extras.value,
       notes: props.notes,
+      theme: props.theme,
+      lamps: props.lamps,
     })
   })
 }
@@ -459,10 +491,10 @@ function slotName(slot) {
   return slot.name ?? ZONE_NAMES[slot.zone]
 }
 
-// pets wander off, so only the pieces that stay put take a spot. The reading nook is never taken:
-// a new chair swaps with the one there.
+// pets wander off, so only the pieces that stay put take a spot. The reading nook, the window and
+// the bed are never taken: a new chair (curtains, bedding) swaps with the one there.
 function takenSlot(slot) {
-  if (slot.zone === 'chair') return false
+  if (ONE_SPOT.has(slot.zone)) return false
   return placed.value.some((item) => !isPet(item) && item.zone === slot.zone && Math.abs(item.x - slot.x) < 0.04)
 }
 
@@ -472,9 +504,24 @@ function slotOf(item) {
   return slots.reduce((best, slot) => (!best || Math.abs(slot.x - item.x) < Math.abs(best.x - item.x) ? slot : best), null)
 }
 
+// A piece that takes the place of the room's own (curtains, bedding): each of its sprites, drawn
+// where the piece it replaces stands, in that piece's layer. null for any other piece.
+function swapsOf(item) {
+  const swaps = decorMeta(item.id)?.swaps
+  if (!swaps) return null
+  return Object.entries(swaps).map(([id, sprite]) => {
+    const piece = PIECES.find((own) => own.id === id)
+    const { w, h } = SPRITES[sprite]
+    return { sprite, box: { x: piece.x, y: piece.y - h, w, h }, layer: piece.layer, replaces: id }
+  })
+}
+
 // A placed piece: its sprite, the box it fills in the room (hung centred on a wall spot, or
-// standing on its spot) and the layer it's drawn in. null for cats, which walk about.
+// standing on its spot) and the layer it's drawn in. null for cats, which walk about. A piece
+// that takes the place of the room's own is the first of them (its button covers that one).
 function artOf(item) {
+  const swaps = swapsOf(item)
+  if (swaps) return swaps[0]
   const sprite = !isPet(item) && furnitureSprite(item.id)
   const slot = sprite && slotOf(item)
   if (!slot) return null
@@ -491,7 +538,7 @@ function artOf(item) {
 // what the room paints for them, after its own pieces in each layer
 const extras = computed(() =>
   placed.value
-    .map(artOf)
+    .flatMap((item) => swapsOf(item) ?? [artOf(item)])
     .filter(Boolean)
     .map(({ sprite, box, layer, replaces }) => ({ sprite, x: box.x, y: box.y + box.h, layer, replaces })),
 )
@@ -584,8 +631,13 @@ function loop(now) {
 }
 
 function placeAt(slot) {
-  const name = placingMeta.value?.name
-  if (placeOn(slot.zone, slot.x)) flash(`${name} is ${slotName(slot)}.`, 'ok')
+  const meta = placingMeta.value
+  if (placeOn(slot.zone, slot.x)) flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${slotName(slot)}.`, 'ok')
+}
+
+function switchLamp(id) {
+  if (scroll?.wasDrag()) return
+  emit('toggle-lamp', id)
 }
 
 function pickItem(uid) {
@@ -623,7 +675,7 @@ function inView(x) {
   return x > left + 10 && x < left + scroller.value.clientWidth / size.value.unit - 10
 }
 
-// The bar of places slides to each part. Before the room has loaded, the places that open
+// The Places menu slides to each part. Before the room has loaded, the places that open
 // something open it.
 function goTo(id) {
   if (!ready.value) {
@@ -747,7 +799,9 @@ watch(placing, async (entry) => {
   if (!freeSlots.value.some((slot) => inView(slot.at.x)) && freeSlots.value[0]) centreOn(freeSlots.value[0].at.x)
 })
 
-watch([shelf, lifted, out, extras, () => props.notes, () => props.weather.scene, () => props.weather.night], () => paint())
+watch([shelf, lifted, out, extras, () => props.notes, () => props.theme,() => props.weather.scene, () => props.weather.night], () => paint())
+
+watch(() => props.lamps, () => paint(), { deep: true })
 
 let resize = null
 onMounted(async () => {
@@ -759,7 +813,7 @@ onMounted(async () => {
   resize = new ResizeObserver(measure)
   resize.observe(root.value)
   const loaded = canDraw() && (await loadSprites())
-  // the still picture stays, and the bar of places opens things instead
+  // the still picture stays, and the Places menu opens things instead
   if (!root.value || !loaded) return
   ready.value = true
   await nextTick()
@@ -794,7 +848,7 @@ defineExpose({ dropAt, putBack })
   height: 100%;
   overflow: hidden;
   /* the wall's colour, behind the room's top edge on any screen */
-  background: #f9dec1;
+  background: var(--room-wall, #f9dec1);
   user-select: none;
 }
 
@@ -1051,12 +1105,13 @@ defineExpose({ dropAt, putBack })
   }
 }
 
-/* the weather chip: the town's chips (TownHud) */
+/* the weather chip: the town's chips (TownHud), its bottom middle on the point above the rod */
 .strip__weather {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 4;
+  z-index: 2;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  pointer-events: none;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1164,48 +1219,12 @@ defineExpose({ dropAt, putBack })
   color: var(--rl-primary);
 }
 
-/* the bar of places, along the bottom left, clear of the room menu button */
-/* only its buttons take taps: the room between and under them stays reachable */
-.strip__places {
+/* the Places menu, in the top left corner (the coins are in the top right) */
+.strip__menu {
   position: absolute;
-  bottom: 18px;
-  left: 10px;
-  right: 76px;
-  z-index: 3;
-  pointer-events: none;
-  display: flex;
-  gap: 6px;
-  margin-bottom: -14px;
-  padding: 2px 0 14px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-/* in someone else's room: clear of the wider Leave a note button */
-.strip.is-visit .strip__places {
-  right: 170px;
-}
-
-/* the town's chips (TownHud): white, a fine line and a soft shadow */
-.strip__place {
-  flex: none;
-  pointer-events: auto;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rl-text);
-}
-
-.strip__place:hover,
-.strip__place:focus-visible {
-  border-color: var(--house-accent, var(--rl-primary));
-  background: var(--house-accent, var(--rl-primary));
-  color: var(--rl-surface);
+  top: 10px;
+  left: 12px;
+  z-index: 7;
 }
 
 @media (prefers-reduced-motion: reduce) {

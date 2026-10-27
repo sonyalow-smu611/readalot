@@ -19,3 +19,12 @@ export const test = base.extend({
 });
 
 export { expect };
+
+// In the room: open the Places menu (unless it's open already), pick a place, and let the room
+// finish sliding there.
+export async function goToPlace(page, place) {
+  const list = page.getByRole("navigation", { name: "Places in the room" });
+  if (!(await list.isVisible())) await page.getByRole("button", { name: "Places", exact: true }).click();
+  await list.getByRole("button", { name: place, exact: true }).click();
+  await page.waitForTimeout(900);
+}

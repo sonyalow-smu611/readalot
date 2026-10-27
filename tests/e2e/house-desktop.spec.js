@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, test } from "./fixtures.js";
 
 // Your house on a laptop: My Room and My Shelf fill the window, the same size as the town map,
 // instead of sitting in the phone column the other pages use.
@@ -100,7 +100,7 @@ test.describe("on a very wide, short window", () => {
 test("resizing the window keeps the part of the room being looked at in the middle", async ({ page }) => {
   await page.goto("/house");
   await roomShown(page);
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+  await goToPlace(page, "Bookshelf");
   await page.waitForTimeout(900);
   // how far along the room the middle of the window is, from 0 (left wall) to 1 (right wall)
   const middle = (width) =>

@@ -10,7 +10,10 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `VisitView.vue` | Someone else's room (`/people/:id/room`), opened from their profile in the Cafe |
 | `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf. At `/people/:id/room/shelf`, the visited reader's shelf |
 | `furniture.js` | **The furniture library:** the pieces in the room's pixel style that the Shop sells (the Shop sells nothing else) |
-| `visitors.js` | Other readers' rooms: the Cafe's sample readers, their books in the shelf's shape, and the furniture in each room |
+| `visitors.js` | Other readers' rooms: the Cafe's sample readers, their books in the shelf's shape, the furniture in each room and its theme |
+| `themes.js` | **Each house's look:** wall and floor colours, and its own curtains, bedding, lamps and rug |
+| `lamps.js` | The lamps, on or off, for the visit (My Room and each room visited keep their own) |
+| `components/PlacesMenu.vue` | The Places button in the room's top left corner and its list of places |
 | `notes.js` | Notes left on readers' notice boards, kept per reader in this browser |
 | `components/RoomStrip.vue` | The room itself: scrolling, the tappable spots, the shelf's name plates, books, furniture, cats. Takes the furniture and whether it can be edited from the page |
 | `components/VisitorBookDialog.vue` | A book off someone else's shelf: what it is and which shelf, with nothing to change |
@@ -41,7 +44,7 @@ Everything is in **art pixels**, the pixels of the sprites:
   floor at `ROOM.floor` (400). Furniture stands with its feet at 404, a little into the floor.
 
 On screen, one art pixel is a whole number of device pixels, the largest at which the room's
-height fits. Any height to spare becomes more floor at the bottom (clear of the bar of places),
+height fits. Any height to spare becomes more floor at the bottom (clear of the round room menu),
 then more wall at the top.
 
 ## Moving a piece
@@ -75,7 +78,7 @@ furniture as its `y`.
 
 ### Optional fields
 
-- **`lit`:** the sprite to show at night, for a lamp. To light the room round it, give the sprite
+- **`lit`:** the sprite to show while a lamp is on (lamps are switched by tapping them; see `lamps.js`). To light the room round it, give the sprite
   a `glow` point in its `meta` and add it to `LIGHTS`, as the floor lamp is.
 - **`action`:** what tapping the piece does: `window`, `chair` (the Currently Reading card),
   `bookshelf`, `clock` or `corkboard`. The button covers the whole sprite, grown to finger size
@@ -84,7 +87,7 @@ furniture as its `y`.
 
 ## Other things in the layout
 
-- **`PARTS`:** the bar of places, left to right. `at` is the x the view centres on.
+- **`PARTS`:** the Places menu, left to right. `at` is the x the view centres on.
 - **`SLOTS`:** where shop decorations can stand. Keep their `zone` and `x` as they are, or
   decorations readers have already placed will move. You can change `at`, where a slot is drawn.
 - **`WALK`:** the line along the floor that pets walk on. It's also where visitors could walk later.
@@ -121,6 +124,34 @@ To add a piece:
    and `sleep`, drawn with `catSheet` in the art script. Cats walk along `WALK`, sit, and
    sometimes nap. They're drawn on their own canvas over the room, tinted for the weather.
    With reduced motion they sit still.
+
+## Themes
+
+Every house has its own look, set in `themes.js`. A theme gives the colours the room paints
+itself (`wall`, `wallShade`, `wallDeep`, `ceiling`, `skirting`, `skirtingShade`, `floor`,
+`floorShade`, `floorLine`, `floorLight`) and, in `sprites`, the room's pieces it swaps for its
+own: `{ 'curtain-left': 'curtain-left-navy', bed: 'bed-stars', … }`. My Room is `peach`; each
+reader in `visitors.js` names theirs (Emma `rose-garden`, Ayaan `night-sky`, Sofia `tea-room`,
+Noah `reading-den`).
+
+The variants are drawn by the art script from the same drawing as the room's own: `FABRICS`
+(curtains), `BEDDING` and `QUILTS` (the bed), `LAMPS` (floor and table lamp, unlit and lit) and
+the rug. A variant must be the same size as the piece it replaces. To add a theme, add its
+colours and sprites to `THEMES`, drawing any new variant first.
+
+## Curtains and bedding
+
+The Shop's Curtains and Bedding groups (in `furniture.js`) take the place of the room's own. Each
+has `swaps`, the room pieces it replaces and the sprites drawn instead, and a small `sprite` for
+its picture in the Shop (`curtains-<fabric>`, `bedding-<design>`). They go on one spot each (at the
+window, on the bed). Like a reading chair, a new set sends the last back to the inventory, and
+taking it away brings back the theme's own.
+
+## Lamps
+
+Tapping the floor lamp or the table lamp switches it on or off (`lamps.js`; both start on). A
+lamp that's on shows its `lit` sprite day and night, and after dark lights its corner. Switched
+off, it lights nothing.
 
 ## Visiting a room
 

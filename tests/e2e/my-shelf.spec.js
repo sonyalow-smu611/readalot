@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, test } from "./fixtures.js";
 
 // a phone-sized window, where the room is wider than the screen (the laptop view has its own
 // journey, house-desktop.spec.js)
@@ -31,7 +31,7 @@ const row = (page, label) => page.getByRole("region", { name: new RegExp(`^${lab
 
 test("the bookshelf in the room has its rows labelled, top to bottom", async ({ page }) => {
   await page.goto("/house");
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+  await goToPlace(page, "Bookshelf");
   await page.waitForTimeout(900);
 
   let above = -Infinity;
@@ -104,7 +104,7 @@ test("a book moved to Reading from its card moves to Currently reading", async (
 test("Back to room goes back to the room, where it was", async ({ page }) => {
   await page.goto("/house");
   await expect(page.getByText("Opening your shelf")).toBeHidden();
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+  await goToPlace(page, "Bookshelf");
   await page.waitForTimeout(900);
   const room = page.getByRole("region", { name: /^Your room/ });
   const left = await room.evaluate((el) => el.scrollLeft);

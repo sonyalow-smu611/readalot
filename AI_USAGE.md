@@ -196,6 +196,20 @@ Written by Claude Code at Sonz's request, test first, from the spec in
 | Notes | `notes.js`, `components/NoteComposer.vue`, `components/NoticeBoard.vue`, `strip/paint.js` | Leave a note (140 characters, kept per reader in this browser), the notice board with the Quote of the Day and the notes, Take down, and up to three notes drawn on the corkboard |
 | Tests | `tests/e2e/visit-room.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/room.spec.js`, `tests/e2e/town.spec.js` | The visiting journey. The Shop's pixel-only check. The room's decoration journey uses the Succulent trio. The friend's house now lands on the renamed profile |
 
+### Room themes, curtains and bedding, lamp switches, a barer start and a Places menu (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the spec in
+`docs/specs/room-themes-lamps-places-menu.md`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Places menu and weather chip | `client/src/buildings/house/components/PlacesMenu.vue`, `components/RoomStrip.vue` | The bar of places becomes a labelled Places button in the top left with a list of places. The weather chip floats above the window and moves with the room |
+| Barer start | `client/src/buildings/house/strip/layout.js`, `assets/room-still.png` | Most small decorations removed from the starting room; the loading picture redrawn from the room |
+| Themes | `client/src/buildings/house/themes.js`, `visitors.js`, `RoomView.vue`, `strip/paint.js`, `client/scripts/room-art/room.js` | Each house's wall and floor colours and its own curtains, bedding, lamps and rug. The art script draws the colour and pattern variants |
+| Curtains and bedding | `client/src/buildings/house/furniture.js`, `strip/layout.js`, `components/RoomStrip.vue`, `client/src/composables/useDecor.js` | Six curtain colours and five bedding designs in the Shop. They take the place of the room's own, one set at a time (the reading nook's rule, extended to the window and the bed) |
+| Lamps | `client/src/buildings/house/lamps.js`, `components/RoomStrip.vue`, `strip/paint.js`, `strip/layout.js` | The floor and table lamps switch on and off when tapped; a lamp that's off lights nothing at night |
+| Tests | `tests/e2e/room-themes.spec.js`, `tests/e2e/fixtures.js` (the `goToPlace` helper), `room.spec.js`, `furniture.spec.js`, `visit-room.spec.js`, `bookshelf.spec.js`, `my-shelf.spec.js`, `house-desktop.spec.js` | The theme, Shop and lamp journeys. The Places menu, weather chip and bare-room checks. Every spec goes to places through the menu |
+
 ### Readalot Town: the map home page and the building skeleton (AI-generated)
 
 Written by Claude Code at the team's request (stack chosen by the team: Phaser 3, one map

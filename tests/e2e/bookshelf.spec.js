@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, test } from "./fixtures.js";
 
 // What happens to a book taken off the bookshelf, shelf by shelf. Saves are answered here, so
 // the shared demo shelf stays as it was for the other tests; `saves` records what was sent.
@@ -23,7 +23,7 @@ async function turnToBookshelf(page) {
   // the room has loaded once the bookshelf has its button; before that, Bookshelf in the bar of
   // places lists the books instead of sliding to them
   await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+  await goToPlace(page, "Bookshelf");
   // let the slide finish
   await page.waitForTimeout(900);
 }
@@ -389,7 +389,7 @@ test.describe("without the room's pictures", () => {
   });
 
   test("Bookshelf opens My Shelf, with each shelf's books, and each opens its details", async ({ page }) => {
-    await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+    await goToPlace(page, "Bookshelf");
 
     await expect(page).toHaveURL(/\/house\/shelf$/);
     for (const shelf of ["To be read", "Currently reading", "Finished reading"]) {
@@ -411,7 +411,7 @@ test.describe("without the room's pictures", () => {
   test("an empty shelf says how to add the first book", async ({ page }) => {
     await page.route("**/api/user-books", (route) => route.fulfill({ json: { books: [] } }));
     await page.reload();
-    await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+    await goToPlace(page, "Bookshelf");
 
     await expect(page.getByText("Add your first book")).toBeVisible();
     await expect(page.getByRole("link", { name: "Scan a cover" })).toHaveAttribute("href", "/scan");

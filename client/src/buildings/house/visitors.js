@@ -38,6 +38,14 @@ const FURNISHINGS = {
   ],
 }
 
+// each reader's house's look, from themes.js
+const THEME_OF = {
+  'reader-emma': 'rose-garden',
+  'reader-ayaan': 'night-sky',
+  'reader-sofia': 'tea-room',
+  'reader-noah': 'reading-den',
+}
+
 // the Cafe's reading statuses, as the room's shelves name them
 const STATUS = { Finished: 'read', Reading: 'reading', 'To Read': 'want_to_read' }
 
@@ -52,7 +60,7 @@ function shelfBook(book) {
   }
 }
 
-// A reader's room: { id, name, firstName, books, currentBook, furniture }, or null when there's
+// A reader's room: { id, name, firstName, books, currentBook, furniture, theme }, or null when there's
 // no such reader.
 export function readerRoom(id) {
   const reader = getDemoReader(id)
@@ -65,5 +73,6 @@ export function readerRoom(id) {
     books,
     currentBook: books.find((book) => book.status === 'reading') ?? null,
     furniture: (FURNISHINGS[reader.id] ?? []).map((item, k) => ({ ...item, uid: `${reader.id}-${k}` })),
+    theme: THEME_OF[reader.id] ?? null,
   }
 }

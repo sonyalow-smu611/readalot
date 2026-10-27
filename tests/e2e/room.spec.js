@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, test } from "./fixtures.js";
 
 // a phone-sized window, where the room is wider than the screen (the laptop view has its own
 // journey, house-desktop.spec.js)
@@ -23,7 +23,7 @@ test.beforeEach(async ({ page }) => {
 
 // The room is wider than the screen: the bar of places slides along to something before it is tapped.
 async function turnTo(page, place) {
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: place }).click();
+  await goToPlace(page, place);
   // let the turn finish
   await page.waitForTimeout(900);
 }
@@ -38,6 +38,43 @@ test("room shows the window weather, the wall clock and the shelf", async ({ pag
   await expect(page.getByRole("img", { name: "Singapore time 12:00" })).toBeVisible();
   await turnTo(page, "Bookshelf");
   await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
+});
+
+test("the weather chip floats just above the window and moves with the room", async ({ page }) => {
+  await turnTo(page, "Window");
+  const chip = page.getByRole("img", { name: "Window view: Rain, 27 degrees" });
+  const glass = await page.getByTestId("window-view").boundingBox();
+  const box = await chip.boundingBox();
+  // above the glass, not far above it, and within the window's width
+  expect(box.y + box.height).toBeLessThanOrEqual(glass.y);
+  expect(glass.y - (box.y + box.height)).toBeLessThan(90);
+  expect(box.x).toBeGreaterThanOrEqual(glass.x);
+  expect(box.x + box.width).toBeLessThanOrEqual(glass.x + glass.width);
+
+  await turnTo(page, "Bed");
+  const moved = await chip.boundingBox();
+  expect(box.x - moved.x).toBeGreaterThan(200);
+});
+
+// The room starts bare: the wall above the reading chair, where a gallery of frames used to hang
+// (art x 300–400, y 175–235), is plain wall, the same colour as the bare wall by the window.
+// The clock (its top at art y 166) finds the rows.
+test("the room starts bare, with plain wall where the gallery of frames was", async ({ page }) => {
+  await roomShown(page);
+  await turnTo(page, "Chair");
+  const odd = await page.getByRole("img", { name: /^Singapore time/ }).evaluate((clock) => {
+    const canvas = document.querySelector(".strip canvas");
+    const c = canvas.getBoundingClientRect();
+    const unit = c.width / canvas.width;
+    const row = (artY) => Math.round((clock.getBoundingClientRect().top - c.top) / unit + (artY - 166));
+    const ctx = canvas.getContext("2d");
+    const at = (x, y) => [...ctx.getImageData(x, row(y), 1, 1).data].join(",");
+    const wall = at(280, 205);
+    let differ = 0;
+    for (let x = 300; x <= 400; x += 4) for (let y = 175; y <= 235; y += 4) if (at(x, y) !== wall) differ += 1;
+    return differ;
+  });
+  expect(odd).toBe(0);
 });
 
 // The view through the bay window follows the weather: rain here (the weather is answered with
@@ -165,11 +202,40 @@ test("the room moves sideways with the wheel, a drag and the arrow keys, and sto
   await expect.poll(async () => (await scrolled(page)).left).toBe(0);
 });
 
-test("the bar of places goes along the room in order, from the bay window to the bed", async ({ page }) => {
+test("the Places menu sits top left, opens the list of places and closes once one is picked", async ({ page }) => {
   await roomShown(page);
-  const places = page.getByRole("navigation", { name: "Places in the room" }).getByRole("button");
-  await expect(places).toHaveText(["Window", "Chair", "Bookshelf", "Clock", "Corkboard", "Bed"]);
+  const menu = page.getByRole("button", { name: "Places", exact: true });
+  const list = page.getByRole("navigation", { name: "Places in the room" });
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(list).toBeHidden();
+  // the top left corner of the room
+  const box = await menu.boundingBox();
+  const area = await room(page).boundingBox();
+  expect(box.x - area.x).toBeLessThan(30);
+  expect(box.y - area.y).toBeLessThan(30);
 
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  await expect(list.getByRole("button")).toHaveText(["Window", "Chair", "Bookshelf", "Clock", "Corkboard", "Bed"]);
+  await list.getByRole("button", { name: "Bed" }).click();
+  await expect(list).toBeHidden();
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect.poll(async () => (await scrolled(page)).left).toBeGreaterThan(0);
+
+  // Esc closes it, back on the button
+  await menu.click();
+  await page.keyboard.press("Escape");
+  await expect(list).toBeHidden();
+  await expect(menu).toBeFocused();
+
+  // so does a tap anywhere else
+  await menu.click();
+  await page.mouse.click(area.x + area.width / 2, area.y + 60);
+  await expect(list).toBeHidden();
+});
+
+test("the places go along the room in order, from the bay window to the bed", async ({ page }) => {
+  await roomShown(page);
   let last = -1;
   for (const place of ["Window", "Chair", "Bookshelf", "Clock", "Corkboard", "Bed"]) {
     await turnTo(page, place);

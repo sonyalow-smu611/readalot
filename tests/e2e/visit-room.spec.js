@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, test } from "./fixtures.js";
 
 // Visiting another reader's room: from their profile in the Cafe into a room drawn from the same
 // template as My Room, with their books and furniture. Visitors look around; they can't change it.
@@ -64,7 +64,7 @@ test("each reader's room has their own furniture, which a visitor can't take dow
   for (const name of ["Wingback chair", "Moon poster", "Botanical print", "Monstera", "Ginger tabby"]) {
     await expect(piece(page, name)).toHaveCount(1);
   }
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Chair" }).click();
+  await goToPlace(page, "Chair");
   await page.waitForTimeout(900);
   await piece(page, "Moon poster").click();
   await expect(page.getByText("Remove", { exact: true })).toHaveCount(0);
@@ -88,6 +88,9 @@ test("furniture placed in My Room stays in my room, and theirs in theirs", async
 
   // over to Emma's, through the town, so My Room keeps its furniture for the visit
   await page.getByRole("link", { name: "Back to town" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText("Loading the town…")).toBeHidden();
+  await page.getByRole("navigation", { name: "Places in the room" }).waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Places" }).click();
   await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Emma's house/ }).click();
   await page.getByRole("dialog", { name: "Emma's house" }).getByRole("button", { name: "Visit Emma" }).click();
@@ -160,7 +163,7 @@ test("their bookshelf opens their shelf page: every book, and nothing to add or 
 // --- Leaving a note -------------------------------------------------------------------------
 
 async function openBoard(page) {
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Corkboard" }).click();
+  await goToPlace(page, "Corkboard");
   await page.waitForTimeout(900);
   await page.getByRole("button", { name: "Notice board" }).click();
   return page.getByRole("dialog", { name: "Notice board" });

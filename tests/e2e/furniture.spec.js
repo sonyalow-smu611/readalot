@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, test } from "./fixtures.js";
 
 // Furnishing My Room: furniture drawn in the room's own pixel style, bought in the Shop and put
 // on glowing spots in the room, the same way as the other decorations.
@@ -44,22 +44,22 @@ test("the Shop sells wall art drawn in the room's pixel style", async ({ page })
   expect(await art.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
 });
 
-test("the Shop sells only pixel-art pieces: wall art, reading chairs, plants and cats", async ({ page }) => {
+test("the Shop sells only pixel-art pieces: wall art, chairs, plants, cats, curtains and bedding", async ({ page }) => {
   const shop = await openShop(page);
   const groups = () => shop.getByRole("group").evaluateAll((all) => all.map((g) => g.getAttribute("aria-label")));
-  await expect.poll(groups).toEqual(["Wall art", "Reading chairs", "Plants", "Cats"]);
+  await expect.poll(groups).toEqual(["Wall art", "Reading chairs", "Plants", "Cats", "Curtains", "Bedding"]);
   // the old drawings are gone
   for (const name of ["Clay vase", "Bust", "Low sofa", "Round bag", "Daybed", "Food dish", "Husky", "Cockatiel"]) {
     await expect(shop.getByRole("button", { name: new RegExp(name) })).toHaveCount(0);
   }
   // every card's picture is a room sprite
-  await expect(shop.getByRole("button", { name: /\$\d+/ })).toHaveCount(14);
-  await expect(shop.locator("img[src*='/room/strip/']")).toHaveCount(14);
+  await expect(shop.getByRole("button", { name: /\$\d+/ })).toHaveCount(25);
+  await expect(shop.locator("img[src*='/room/strip/']")).toHaveCount(25);
 });
 
-// The room is wider than the screen: the bar of places slides along to something first.
+// The room is wider than the screen: the Places menu slides along to something first.
 async function turnTo(page, place) {
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: place }).click();
+  await goToPlace(page, place);
   await page.waitForTimeout(900);
 }
 
