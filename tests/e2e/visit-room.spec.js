@@ -27,7 +27,8 @@ async function visit(page, id, name) {
 
 test("a reader's profile in the Cafe has a button into their room", async ({ page }) => {
   await page.goto("/cafe");
-  await page.getByRole("article").filter({ hasText: "Emma Tan" }).getByRole("button", { name: "Visit Room →" }).click();
+  await page.getByRole("button", { name: /^Walk to Emma Tan/ }).click();
+  await page.getByRole("dialog", { name: "Meet Emma Tan" }).getByRole("button", { name: "Visit Room →" }).click();
 
   await expect(page).toHaveURL(/\/people\/reader-emma$/);
   await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
