@@ -120,6 +120,14 @@ export class Sky {
     }
   }
 
+  // Lights a building's windows after dark, or leaves them dark (nobody has been home for weeks).
+  setWindowsLit(id, lit) {
+    for (const { pane, glow } of this.windowsOf[id] ?? []) {
+      pane.setVisible(lit)
+      glow.setVisible(lit)
+    }
+  }
+
   // Keeps a building's lit windows on it while it grows by `scale` from the point (ox, oy).
   scaleWindows(id, scale, ox, oy) {
     for (const { pane, glow, x, y, w, h } of this.windowsOf[id] ?? []) {

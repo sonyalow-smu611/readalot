@@ -6,6 +6,7 @@
 // live weather, as in My Room. After dark the lamps light the hall instead, ring by ring.
 //
 // `weather` is { scene: 'sunny' | 'cloudy' | 'rain', night }; the windows show that sky.
+// `off` is the ids of the lamps the reader has turned off: they go dark and give no light.
 // `offset` is how many rows of extra wall stand above the hall as designed, so a piece at art y
 // is drawn at canvas y `offset + y`. The canvas is as tall as the screen needs; any rows below
 // the hall are more floor.
@@ -16,16 +17,24 @@ import { getSprite } from './sprites.js'
 
 const SHADOW = 'rgba(59, 42, 26, 0.16)'
 
-export function paintHall(ctx, { offset, weather = { scene: 'sunny', night: false } }) {
+export function paintHall(ctx, { offset, weather = { scene: 'sunny', night: false }, off = [] }) {
   const { width, height: rows } = ctx.canvas
   ctx.imageSmoothingEnabled = false
   paintWall(ctx, width, offset)
   paintFloor(ctx, width, rows, offset)
   for (const layer of LAYERS) {
-    for (const piece of PIECES) if (piece.layer === layer) paintPiece(ctx, piece, offset, skyOf(weather))
+    for (const piece of PIECES) if (piece.layer === layer) paintPiece(ctx, spriteFor(piece, weather, off), piece, offset)
   }
-  if (!weather.night) paintLights(ctx, offset)
-  paintWeather(ctx, offset, weather)
+  const lit = LIGHTS.filter((light) => !off.includes(light.lamp))
+  if (!weather.night) paintLights(ctx, offset, lit)
+  paintWeather(ctx, offset, weather, lit)
+}
+
+// the sprite a piece is drawn with: windows show the sky, a lamp turned off is dark
+function spriteFor(piece, weather, off) {
+  if (isWindow(piece)) return `${piece.sprite}@${skyOf(weather)}`
+  if (piece.lamp && off.includes(piece.lamp)) return `${piece.sprite}@off`
+  return piece.sprite
 }
 
 // The look of the sky through the windows, as a sprite's `@look`: e.g. `rain`, `sunny-night`.
@@ -71,8 +80,8 @@ function paintFloor(ctx, width, rows, offset) {
   for (let x = 36; x < width - 36; x += 8) R(ctx, x, rug + 3, 2, 1, C.rugGold)
 }
 
-function paintPiece(ctx, piece, offset, look) {
-  const image = getSprite(isWindow(piece) ? `${piece.sprite}@${look}` : piece.sprite)
+function paintPiece(ctx, name, piece, offset) {
+  const image = getSprite(name)
   if (!image) return
   // the sprite carries a 1 px outline on every side
   const left = piece.x - 1
@@ -91,10 +100,10 @@ function paintPiece(ctx, piece, offset, look) {
 }
 
 // Stepped circles of warm light, the way the town and My Room light their lamps.
-function paintLights(ctx, offset) {
+function paintLights(ctx, offset, lights) {
   ctx.save()
   ctx.globalAlpha = 0.07
-  for (const light of LIGHTS) {
+  for (const light of lights) {
     for (const step of [1, 0.7, 0.4]) {
       const r = Math.round(light.r * step)
       E(ctx, light.x, offset + light.y, r, r, C.glow)
@@ -113,13 +122,14 @@ function tintFor({ scene, night }) {
   return C.tints.clear
 }
 
+
 // rings of light round a lamp, from the edge of its pool to its middle
 const RINGS = 4
 
 // The tint multiplied over the hall. After dark each window lets in a little cool light and each
 // lamp lights its part of the hall: round it the tint steps from night blue to lamplight, ring
 // by ring, then a soft bloom on the lamp itself.
-function paintWeather(ctx, offset, weather) {
+function paintWeather(ctx, offset, weather, lit) {
   const tint = tintFor(weather)
   if (tint === C.tints.clear) return
   const { width, height } = ctx.canvas
@@ -132,7 +142,7 @@ function paintWeather(ctx, offset, weather) {
         const image = getSprite(`${piece.sprite}@${skyOf(weather)}`)
         return { x: piece.x + image.width / 2, y: piece.y - image.height / 2, r: image.width, colour: C.windowSpill }
       }),
-      ...LIGHTS.map((light) => ({ ...light, colour: C.lampGlow })),
+      ...lit.map((light) => ({ ...light, colour: C.lampGlow })),
     ]
     for (const pool of pools) {
       for (let step = 1; step <= RINGS; step++) {
@@ -149,7 +159,7 @@ function paintWeather(ctx, offset, weather) {
     ctx.save()
     ctx.globalAlpha = 0.3
     ctx.globalCompositeOperation = 'screen'
-    for (const light of LIGHTS) E(ctx, light.x, offset + light.y, 10, 10, C.glow)
+    for (const light of lit) E(ctx, light.x, offset + light.y, 10, 10, C.glow)
     ctx.restore()
   }
 }

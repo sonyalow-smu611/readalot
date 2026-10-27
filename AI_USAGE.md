@@ -271,6 +271,34 @@ rain, moon and stars), and `hall/paint.js` tints the hall like My Room, lighting
 after dark. `LibraryHall.vue` has the weather chip, and `hall/palette.js` the colours. The
 tint colours and the chip's icons are copied from My Room. Tested in `tests/e2e/library.spec.js`.
 
+#### Library changes after the team's review (AI-generated)
+
+The team asked for four changes to the library, and Aasim asked the assistant to make them:
+- **Live rain:** drops fall in each window only while it rains, harder for heavy rain or storms
+  (from Open-Meteo's weather code). This is in `LibraryHall.vue`, `LibraryView.vue` and
+  `hall/layout.js` (`windowGlass`).
+- **Help desk:** the search bar widens, glows and shows a librarian prompt with a Search button
+  (`LibraryView.vue`).
+- **Light switch:** turns the lamps on and off, and is remembered on the device. This is in
+  `LibraryHall.vue` and `LibraryView.vue`, with unlit lamp sprites in `hall/sprites.js` and the
+  light in `hall/paint.js`.
+- **Full screen on a computer:** `wide: true` on the `/library` route in
+  `client/src/router/index.js`, as My Room has.
+
+Tested in `tests/e2e/library.spec.js`.
+
+After a second review, Aasim asked for three more changes:
+- **Lamps:** each lamp turns off and on by tapping it, in place of one light switch. Lamp ids
+  and buttons are in `hall/layout.js` (`LAMPS`), `LibraryHall.vue` and `LibraryView.vue`; the
+  light is in `hall/paint.js`.
+- **Search bar:** it now opens up the same way whether tapped directly or from the help desk.
+- **Bookcase sheet:** covers are the size of My Shelf's, as many to a row as fit
+  (`components/ShelfSheet.vue`).
+- **"See all" page:** a genre's page (`/discover/:genre`) fills a laptop window
+  (`wide: true` in `client/src/router/index.js`). On a wide screen each shelf holds as many
+  My Shelf-sized covers as fit (`views/GenreShelfView.vue`, `components/ShelfTier.vue`); phones
+  are unchanged. Tested in `tests/e2e/library-wide.spec.js`.
+
 ### Real accounts on Supabase, saved profiles and a town-only first tour (AI-generated)
 
 Written by Claude Code at Aalric's request, from the spec in
