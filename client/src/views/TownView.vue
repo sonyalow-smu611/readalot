@@ -58,7 +58,7 @@ onBeforeUnmount(() => clearInterval(weatherTimer))
 watch(
   () => (ready.value ? guide.value?.focus : null),
   (id) => {
-    if (id) go(id)
+    if (id) go(id, { tour: true })
   },
   { immediate: true },
 )
@@ -76,8 +76,8 @@ function togglePlaces() {
   hint.value = false
 }
 
-function go(id) {
-  focus.value = { id, key: Date.now() }
+function go(id, { tour = false } = {}) {
+  focus.value = { id, key: Date.now(), tour }
 }
 
 function enter(place) {

@@ -84,8 +84,10 @@ watch(() => route.path, () => {
   if (guide.value) follow()
 })
 
-// A new reader's tour begins wherever they land after signing up (the town).
-watch(() => route.name, () => user.openGuideIfNew(), { immediate: true })
+// A new reader's tour begins when they reach the town after Welcome.
+watch(() => route.name, (name) => {
+  if (name === 'town') user.openGuideIfNew()
+}, { immediate: true })
 
 onMounted(() => {
   window.addEventListener('resize', measure)
