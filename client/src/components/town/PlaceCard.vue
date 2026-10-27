@@ -6,6 +6,8 @@ import { onMounted, ref } from 'vue'
 defineProps({
   // one entry of PLACES in town/places.js
   place: { type: Object, required: true },
+  // for a friend's house: { online, lastSeen } (see town/friends.js)
+  presence: { type: Object, default: null },
 })
 const emit = defineEmits(['enter', 'close'])
 
@@ -31,6 +33,10 @@ onMounted(() => card.value?.focus())
       </button>
     </div>
     <h2 class="place-card__title">{{ place.name }}</h2>
+    <p v-if="presence" class="place-card__presence">
+      <span class="place-card__dot" :class="{ 'is-online': presence.online }" aria-hidden="true"></span>
+      {{ presence.online ? 'Online now' : `Last seen ${presence.lastSeen}` }}
+    </p>
     <p class="place-card__blurb">{{ place.blurb }}</p>
     <button type="button" class="place-card__enter" :style="{ background: place.accent }" @click="emit('enter', place)">
       {{ place.enter }}
@@ -106,6 +112,27 @@ onMounted(() => card.value?.focus())
   font-size: 22px;
   font-weight: 700;
   color: var(--rl-text);
+}
+
+.place-card__presence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rl-muted);
+}
+
+.place-card__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rl-line);
+}
+
+.place-card__dot.is-online {
+  background: #3fae5a;
 }
 
 .place-card__blurb {

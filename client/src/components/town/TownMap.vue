@@ -1,8 +1,8 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The Phaser canvas with the town on it, plus its follow-me and zoom buttons and loading / error
-// states. It says which building was tapped (select) and when your character has walked inside
-// one (inside); the parent says which one to glide to (focus), which one to walk into (enter),
+// states. It says which building was tapped (select), which friend out walking was tapped
+// (select-friend) and when your character has walked inside one (inside); the parent says which one to glide to (focus), which one to walk into (enter),
 // what you look like (character) and what the weather is (sky).
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Phaser from 'phaser'
@@ -15,12 +15,18 @@ const props = defineProps({
   enter: { type: Object, default: null },
   // the reader's saved character (see lib/avatar/catalogue.js)
   character: { type: Object, default: null },
+  // friends' presence, [{ id: reader id, online, upkeep, character }] (see town/friends.js)
+  friends: { type: Array, default: () => [] },
+  // { id, key }: glide to that friend out walking. A new key repeats the same friend.
+  focusFriend: { type: Object, default: null },
+  // the friend whose card is open; null lets them walk on
+  friendId: { type: String, default: null },
   // the building whose card is open; null clears its outline
   selectedId: { type: String, default: null },
   // how the town looks: { night, rain }
   sky: { type: Object, default: () => ({ night: false, rain: false }) },
 })
-const emit = defineEmits(['select', 'ready', 'inside'])
+const emit = defineEmits(['select', 'select-friend', 'ready', 'inside'])
 
 const host = ref(null)
 const state = ref('loading') // loading | ready | error
@@ -56,6 +62,25 @@ watch(
 )
 
 watch(
+  () => props.focusFriend,
+  (request) => {
+    if (request && state.value === 'ready') scene.focusFriend(request.id)
+  },
+)
+
+watch(
+  () => props.friendId,
+  (id) => {
+    if (!id && state.value === 'ready') scene.releaseFriend()
+  },
+)
+
+watch(
+  () => props.friends,
+  (friends) => scene?.setFriends(friends),
+)
+
+watch(
   () => props.character,
   (character) => scene?.setCharacter(character),
 )
@@ -81,6 +106,7 @@ onMounted(() => {
       following.value = on
     },
     onInside: (place) => emit('inside', place),
+    onSelectFriend: (id) => emit('select-friend', id),
     onReady: () => {
       state.value = 'ready'
       emit('ready')
@@ -90,6 +116,7 @@ onMounted(() => {
     },
   })
   scene.setSky(props.sky)
+  scene.setFriends(props.friends)
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: host.value,
