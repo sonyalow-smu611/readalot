@@ -110,7 +110,7 @@ onBeforeUnmount(() => clearInterval(weatherTimer))
 watch(
   () => (ready.value ? guide.value?.focus : null),
   (id) => {
-    if (id) go(id)
+    if (id) go(id, { tour: true })
   },
   { immediate: true },
 )
@@ -138,9 +138,9 @@ function toggleFriends() {
   hint.value = false
 }
 
-function go(id) {
+function go(id, { tour = false } = {}) {
   if (entering.value) return
-  focus.value = { id, key: Date.now() }
+  focus.value = { id, key: Date.now(), tour }
 }
 
 // A friend tapped on the map (or found from the friends list): their card opens.

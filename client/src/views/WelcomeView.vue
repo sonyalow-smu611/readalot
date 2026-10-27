@@ -134,15 +134,26 @@ async function finish() {
     fail(result.error.message)
     return
   }
-  if (result.data?.user) user.applySession({ user: result.data.user })
-  if (!user.profile.name) user.mergeProfile(details)
+  user.profileSaved(details)
   await stage.value?.enterTown()
   router.push({ name: 'town' })
+}
+
+// The saved profile didn't load, so this reader may already have one: try again before asking.
+async function retryLoad() {
+  busy.value = true
+  await user.reloadProfile()
+  busy.value = false
+  if (user.profileComplete) router.replace({ name: 'town' })
 }
 </script>
 
 <template>
   <AuthStage ref="stage" :gaze="gaze" :spines="genres">
+    <div v-if="user.profileError" class="mb-3" role="alert">
+      <p class="stage-error mb-2">{{ user.profileError }}</p>
+      <button type="button" class="btn btn-outline-primary" :disabled="busy" @click="retryLoad">Try again</button>
+    </div>
     <p class="text-muted mb-1">{{ step + 1 }} of {{ titles.length }}</p>
     <h1 class="h3 mb-1">{{ titles[step] }}</h1>
     <p class="text-muted mb-3">{{ notes[step] }}</p>

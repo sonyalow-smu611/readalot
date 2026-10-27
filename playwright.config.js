@@ -7,8 +7,9 @@ export default defineConfig({
   },
   webServer: [
     {
-      // no Google Books key: the tests rely on the built-in demo shelf, not a random one
-      command: "PORT=3100 GOOGLE_BOOKS_API_KEY= npm --workspace server run dev",
+      // no Google Books key and no Supabase: the tests rely on the built-in demo shelf, held in
+      // memory. Sign-in still uses the real Supabase project, from the browser.
+      command: "PORT=3100 GOOGLE_BOOKS_API_KEY= SUPABASE_URL= SUPABASE_SERVICE_ROLE_KEY= npm --workspace server run dev",
       url: "http://127.0.0.1:3100/api/health",
       reuseExistingServer: false
     },

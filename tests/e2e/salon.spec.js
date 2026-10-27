@@ -1,20 +1,10 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
 
 // The Hair Salon: the reader in the barber chair, the style studio, and the profile.
-// The signed-in reader is set up only once (not on every load), so a reload shows what was saved.
+// The fixture signs in a reader whose favourite genre is Fantasy; what the salon saves goes to
+// Supabase, so a reload shows it.
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    if (sessionStorage.getItem("readalot-preview-user")) return;
-    sessionStorage.setItem(
-      "readalot-preview-user",
-      JSON.stringify({
-        id: "e2e-reader",
-        email: "reader@readalot.test",
-        user_metadata: { name: "Reader", favouriteGenres: ["Fantasy"] },
-      }),
-    );
-  });
   await page.goto("/salon");
 });
 

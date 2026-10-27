@@ -20,6 +20,9 @@ import { Friend } from './friend.js'
 
 const MAX_ZOOM = 1.5
 const START_ZOOM = 0.6
+// How close the first tour comes to each building, and how long each half of the trip takes.
+const TOUR_ZOOM = 1.1
+const TOUR_LEG = 650
 // A press that moves less than this is a tap; more is a drag.
 const TAP_SLOP = 10
 // How much a building grows when you point at it.
@@ -382,15 +385,27 @@ export default class TownScene extends Phaser.Scene {
     return key
   }
 
-  // Glide to a place (from the Places list) and select it.
-  focusPlace(id) {
+  // Glide to a place (from the Places list) and select it. On the first tour ({ tour: true })
+  // the camera pulls back to show the town, then zooms in on the building as it arrives.
+  focusPlace(id, { tour = false } = {}) {
     const place = ALL_PLACES.find((p) => p.id === id)
     if (!place || this.busy) return
     this.stopFollowing()
     const cam = this.cameras.main
     const cx = place.x + place.w / 2
     const cy = place.y + place.h / 2
-    if (this.reducedMotion) cam.centerOn(cx, cy)
+    this.tourZoomIn?.remove()
+    if (tour) {
+      const close = Phaser.Math.Clamp(TOUR_ZOOM, this.minZoom, MAX_ZOOM)
+      if (this.reducedMotion) {
+        cam.setZoom(close)
+        cam.centerOn(cx, cy)
+      } else {
+        cam.zoomTo(this.minZoom, TOUR_LEG, 'Sine.easeInOut', true)
+        cam.pan(cx, cy, TOUR_LEG * 2, 'Sine.easeInOut', true)
+        this.tourZoomIn = this.time.delayedCall(TOUR_LEG, () => cam.zoomTo(close, TOUR_LEG, 'Sine.easeInOut', true))
+      }
+    } else if (this.reducedMotion) cam.centerOn(cx, cy)
     else cam.pan(cx, cy, 700, 'Sine.easeInOut', true)
     this.select(place)
   }

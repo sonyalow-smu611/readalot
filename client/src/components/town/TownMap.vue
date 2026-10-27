@@ -50,7 +50,7 @@ function toggleFollow() {
 watch(
   () => props.focus,
   (request) => {
-    if (request && state.value === 'ready') scene.focusPlace(request.id)
+    if (request && state.value === 'ready') scene.focusPlace(request.id, { tour: request.tour })
   },
 )
 

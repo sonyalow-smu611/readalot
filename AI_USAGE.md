@@ -298,3 +298,18 @@ After a second review, Aasim asked for three more changes:
   (`wide: true` in `client/src/router/index.js`). On a wide screen each shelf holds as many
   My Shelf-sized covers as fit (`views/GenreShelfView.vue`, `components/ShelfTier.vue`); phones
   are unchanged. Tested in `tests/e2e/library-wide.spec.js`.
+
+### Real accounts on Supabase, saved profiles and a town-only first tour (AI-generated)
+
+Written by Claude Code at Aalric's request, from the spec in
+`docs/specs/supabase-profiles-and-tour.md` (decisions made with Aalric in a Q&A session). Aalric
+waived the limit on AI-written logic for the sign-in work; Dylan reviews the `TownScene.js` change.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/profiles_and_tour.sql` | `avatar`, `character` and `tour_seen_at` on `profiles`; a `profile_private` table for gender, age and religion; row-level security so readers edit only their own rows and see only discoverable profiles |
+| Sign-in and profile | `client/src/services/auth.js`, `client/src/services/supabase.js`, `client/src/services/api.js` | The keyless preview mode is removed. The profile is read from and saved to the two tables instead of the login's metadata; saving the tour as seen |
+| Store and screens | `client/src/stores/user.js`, `client/src/views/VerifyView.vue`, `client/src/views/WelcomeView.vue`, `client/src/buildings/salon/SalonView.vue`, `client/src/components/GuideTour.vue` | "Profile complete" means a saved profile exists; the tour plays once, in the town, until Done or Skip; it is cut to the six town steps; Welcome offers Try again when the profile didn't load |
+| Camera | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue` | On the tour, each Next zooms out to the whole town and back in on the next building |
+| Server | `server/src/middleware/auth.js` | With no Supabase on the server, every request is the demo user, even with a token |
+| Tests | `tests/e2e/supabaseUser.js`, `tests/e2e/fixtures.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/auth.spec.js`, `tests/e2e/salon.spec.js`, `playwright.config.js`, `.env.example` | Test readers made with the service-role key and signed in directly (one per Playwright worker, profile reset before each test, to stay under Supabase's sign-in rate limit); new-reader, skip and returning-reader journeys; specs skip without keys |

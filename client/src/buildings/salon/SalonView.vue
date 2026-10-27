@@ -52,8 +52,7 @@ const panel = ref('studio')
 async function save(details) {
   const result = await saveProfile(details)
   if (result.error) return result.error.message
-  if (result.data?.user) user.applySession({ user: result.data.user })
-  else user.mergeProfile(details)
+  user.mergeProfile(details)
   return ''
 }
 
@@ -103,16 +102,6 @@ function answerLeave(leave) {
   leaveAnswer?.(leave)
   leaveAnswer = null
 }
-
-// The tour points at things on both panels, so open the one it needs.
-watch(
-  () => user.guide?.id,
-  (id) => {
-    if (id === 'salon-studio') panel.value = 'studio'
-    else if (id?.startsWith('profile-')) panel.value = 'profile'
-  },
-  { immediate: true },
-)
 
 // ---- the profile
 const editing = ref(false)
