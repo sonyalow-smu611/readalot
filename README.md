@@ -221,16 +221,21 @@ The app is built around four main areas: **My Room, Discover Books, Discover Peo
 
 ### My Room
 
-This is the user’s main profile and home page.
+The reader's home page: a 3D bedroom built in Blender (`client/blender/`) and drawn with
+Three.js. The reader stands in the middle and drags, pinches or scrolls to look around, or uses
+the bar of places along the bottom (Bookshelf, Chair, Window, Corkboard, Clock). Everything that
+can be tapped is a labelled button over the 3D scene.
 
-* Shows the user’s personalised reading room.
-* Displays the live Singapore weather in the room window and Singapore time on the wall clock.
-* The book on the chair opens the **Currently Reading** card, which leads to **Book Details**.
-* The bookcase shows books from their **Read** and **To Be Read** collections; tapping it opens the full bookshelf (Reading, To read, Finished) as spines or covers. The page scrolls when the shelves do not all fit. Dragging a book to another shelf saves its reading status.
-* Tapping a book on the full bookshelf lifts it out with the actions for its shelf: a **Reading** book has a progress slider and **Finished**; a **To read** book has **Started reading**; a **Finished** book has **Review** and **Rate** until both are done, then **View review and rating**. The review and rating buttons open the book's **Book Details** page.
-* The sticky note on the wall opens the **Quote of the Day** popup.
-* The menu button opens the **Shop** and **Inventory**: decorations and pets are bought with credits and dragged onto a shelf or the floor. Credits and placed pieces last until the page is reloaded.
-* Opens the **Mood Check-in** when needed.
+* **Bookshelf:** each of the reader's shelves has a row of the bookcase to itself, top to bottom **To be read**, **Reading** (at eye level), **Finished**, named on a brass plate on the row's board with how many books it holds. The books stand with their titles on the spines and keep their own size from visit to visit; a book pointed at (or focused) lifts a little up and out of its row. Books that do not fit in a row show as "+N more" on its board.
+* **Opening a book:** tapping a spine plays the animation designed in `bookshelf.blend`: the book slides out, flies to the reader with its cover facing them, the cover opens and the pages flip. A tap skips to the end, and reduced motion skips it altogether. Then the book's details show on a wood-framed card: the cover (or a cloth-bound stand-in with the title), title, author, stars and genres, the shelf buttons **Want to read / Reading / Finished reading**, then Synopsis, Rating and Reviews. Choosing **Reading** brings up a progress slider; a **Finished** book offers **Review** and **Rate** (they open Book Details) until both are done. **Remove from shelf** asks first, then offers Undo. Closing puts the book back on the shelf.
+* **Window:** the bay window shows the live Singapore weather: the sun with birds flying past, drifting clouds, rain, or the moon at night, with the temperature. The room's light follows it, and the table lamp comes on at night. `/?scene=sunny|cloudy|rain` previews a scene.
+* **Clock:** the wall clock shows Singapore time.
+* **Armchair:** the open book on the chair opens the **Currently Reading** card, which leads to Book Details.
+* **Corkboard:** opens the **Quote of the Day**.
+* **Room menu:** the **Shop** and **Inventory**: decorations and pets are bought with credits and placed on the window seat, nightstand, side table or floor; pets wander the floor. They last until the page is reloaded.
+* **Mood Check-in:** opens when needed (see below).
+* On a device that cannot draw 3D, the room is a still picture and **Bookshelf** lists the books instead.
+* Without Supabase the shelf is a demo shelf: 20 novels picked at random from Google Books when that key is set, otherwise 16 built-in books.
 
 ### Quote of the Day
 
