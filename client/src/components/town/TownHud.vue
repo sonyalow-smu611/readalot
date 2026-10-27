@@ -1,6 +1,6 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The bar across the top of the town: who you are (opens the salon), Scan a book, and Places.
+// The bar across the top of the town: who you are (opens the salon) and Places.
 defineProps({
   name: { type: String, default: 'You' },
   avatar: { type: String, default: '' },
@@ -16,10 +16,6 @@ const emit = defineEmits(['toggle-places'])
       <span class="town-hud__name">{{ name }}</span>
     </RouterLink>
     <span class="town-hud__spacer"></span>
-    <RouterLink :to="{ name: 'scan-book' }" class="town-hud__chip town-hud__chip--button" aria-label="Scan a book">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16" /></svg>
-      Scan
-    </RouterLink>
     <button
       type="button"
       class="town-hud__chip town-hud__chip--button"
