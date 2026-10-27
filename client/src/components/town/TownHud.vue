@@ -1,12 +1,17 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The bar across the top of the town: who you are (opens the salon) and Places.
+// The bar across the top of the town: who you are (opens the salon), Places, and Friends with
+// how many of them are online.
+import FriendsButton from './FriendsButton.vue'
+
 defineProps({
   name: { type: String, default: 'You' },
   avatar: { type: String, default: '' },
   placesOpen: { type: Boolean, default: false },
+  friendsOnline: { type: Number, default: 0 },
+  friendsOpen: { type: Boolean, default: false },
 })
-const emit = defineEmits(['toggle-places'])
+const emit = defineEmits(['toggle-places', 'toggle-friends'])
 </script>
 
 <template>
@@ -26,6 +31,7 @@ const emit = defineEmits(['toggle-places'])
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14" /></svg>
       Places
     </button>
+    <FriendsButton :online="friendsOnline" :open="friendsOpen" @toggle="emit('toggle-friends')" />
   </header>
 </template>
 

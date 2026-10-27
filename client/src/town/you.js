@@ -1,137 +1,56 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The reader's own character in town: drawn from their saved parts (the same drawing as the
-// salon's) with a soft white glow round it and a pool of light at its feet, like the street
-// lamps throw, so it stands out from the townsfolk. It is drawn above the night sky's shade, so
-// after dark it stays lit in its own colours.
-// It wanders the pavements until the reader picks a building, then walks to the door, which
-// swings open (door.js), and steps inside.
-import Phaser from 'phaser'
-import { drawAvatar, makeRnd, mk } from '@/lib/avatar/draw.js'
-import { characterSeed, normaliseCharacter, toDrawParams } from '@/lib/avatar/catalogue.js'
+// The reader's own character in town: a TownReader (reader.js) with a white glow and a green
+// diamond floating over its head, so you can always tell which one is you, starting outside
+// your front door. It wanders the pavements until the reader picks a building, then
+// walks to the door, which swings open (door.js), and steps inside.
 import { SPAWN } from './places.js'
-import { somewhereToWalk, walkingRoute } from './roads.js'
-import { SKY_DEPTH } from './sky.js'
+import { walkingRoute } from './roads.js'
 import { DOOR_OPENS, doorstep, openDoor } from './door.js'
+import { TownReader } from './reader.js'
+import { SKY_DEPTH } from './sky.js'
 
-// The town draws characters at twice their pixel size (60 x 116, like public/town/avatars/).
-const SCALE = 2
-// How far the glow reaches, in map pixels; the picture has this much room on every side.
-const GLOW = 16
-const WANDER_SPEED = 70 // map px a second
 // On the way to a building: at least this fast, and never longer than MAX_TRIP seconds.
 const TRIP_SPEED = 380
 const MAX_TRIP = 3.2
+// how far above your feet the diamond floats: the character is 116 px tall
+const DIAMOND_ABOVE = 158
 
-// The character at town size, and its glow on its own (with a hole where the character is), so
-// the glow can sit above the night sky without hiding the character under it.
-function drawLook(character) {
-  const valid = normaliseCharacter(character)
-  const sprite = drawAvatar(toDrawParams(valid), makeRnd(characterSeed(valid)))
-  const w = sprite.width * SCALE
-  const h = sprite.height * SCALE
-  const [shape, s] = mk(w, h)
-  s.drawImage(sprite, 0, 0, w, h)
-  s.globalCompositeOperation = 'source-in'
-  s.fillStyle = '#ffffff'
-  s.fillRect(0, 0, w, h)
-
-  const [body, b] = mk(w + GLOW * 2, h + GLOW * 2)
-  b.drawImage(sprite, GLOW, GLOW, w, h)
-
-  const [glow, g] = mk(w + GLOW * 2, h + GLOW * 2)
-  g.shadowColor = '#ffffff'
-  // a wide soft haze, then a tighter bright one close in; each pass makes it brighter
-  g.shadowBlur = GLOW
-  for (let i = 0; i < 4; i++) g.drawImage(shape, GLOW, GLOW)
-  g.shadowBlur = GLOW / 3
-  for (let i = 0; i < 3; i++) g.drawImage(shape, GLOW, GLOW)
-  g.shadowBlur = 0
-  g.globalCompositeOperation = 'destination-out'
-  g.drawImage(shape, GLOW, GLOW)
-  return { body, glow }
+// A green gem with a white rim, lighter on top, like light catching it.
+function drawDiamond(scene) {
+  const gem = (r) => [
+    { x: 0, y: -r * 1.3 },
+    { x: r, y: 0 },
+    { x: 0, y: r * 1.3 },
+    { x: -r, y: 0 },
+  ]
+  const g = scene.add.graphics()
+  g.fillStyle(0xffffff, 1).fillPoints(gem(21), true)
+  g.fillStyle(0x2f9a4c, 1).fillPoints(gem(16), true)
+  g.fillStyle(0x6fd68a, 1).fillPoints([{ x: 0, y: -20.8 }, { x: 16, y: 0 }, { x: -16, y: 0 }], true)
+  g.fillStyle(0xd8f7df, 1).fillPoints([{ x: -3, y: -14 }, { x: 3, y: -8 }, { x: -6, y: -2 }], true)
+  // over the walkers and the night, with the friends' name tags
+  return g.setDepth(SKY_DEPTH + 29)
 }
 
-export class You {
+export class You extends TownReader {
   constructor(scene, { character, reducedMotion }) {
-    this.scene = scene
-    this.reducedMotion = reducedMotion
-    this.looks = 0
-    this.shine = { level: 1 }
-    // light on the ground round your feet ('pool' is the lamps' light, see sky.js)
-    this.pool = scene.add
-      .image(SPAWN.x, SPAWN.y, 'pool')
-      .setScale(1.5, 0.55)
-      .setTint(0xfff0c4)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(SKY_DEPTH + 1.5)
-    // above the night shade and the lamps' light, below the rain
-    this.body = scene.add.image(SPAWN.x, SPAWN.y, '__DEFAULT').setDepth(SKY_DEPTH + 2)
-    this.glow = scene.add.image(SPAWN.x, SPAWN.y, '__DEFAULT').setDepth(SKY_DEPTH + 3)
-    this.setLook(character)
+    super(scene, { character, reducedMotion, at: [SPAWN.x, SPAWN.y] })
+    this.float = { y: 0 }
+    this.diamond = drawDiamond(scene)
     this.sync()
-    if (reducedMotion) return
-    scene.tweens.add({ targets: this.shine, level: 0.8, duration: 1100, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
-    // a little bounce in every step
-    this.step = scene.tweens.add({ targets: this.body, scaleY: 0.94, duration: 170, yoyo: true, repeat: -1, paused: true })
+    if (!reducedMotion) {
+      // it bobs, and turns slowly (squashing it side to side looks like it spinning)
+      scene.tweens.add({ targets: this.float, y: -8, duration: 900, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
+      scene.tweens.add({ targets: this.diamond, scaleX: 0.55, duration: 1300, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
+    }
     this.rest()
   }
 
-  // Redraws the character, e.g. once the profile has loaded.
-  setLook(character) {
-    const old = [this.body.texture.key, this.glow.texture.key]
-    const n = ++this.looks
-    const { body, glow } = drawLook(character)
-    this.scene.textures.addCanvas(`you-${n}`, body)
-    this.scene.textures.addCanvas(`you-glow-${n}`, glow)
-    // the feet sit GLOW px above the bottom of the picture
-    const feet = 1 - GLOW / body.height
-    this.body.setTexture(`you-${n}`).setOrigin(0.5, feet)
-    this.glow.setTexture(`you-glow-${n}`).setOrigin(0.5, feet)
-    for (const key of old) if (key.startsWith('you-')) this.scene.textures.remove(key)
-  }
-
-  // Keeps the glow and the light with you; runs every frame.
   sync() {
-    const { body } = this
-    this.pool.setPosition(body.x, body.y + 4).setAlpha(0.65 * body.alpha * this.shine.level)
-    this.glow
-      .setPosition(body.x, body.y)
-      .setScale(body.scaleX, body.scaleY)
-      .setFlipX(body.flipX)
-      .setAlpha(body.alpha * this.shine.level)
-  }
-
-  // --- Wandering -----------------------------------------------------------------------------
-  rest() {
-    this.step.pause()
-    this.body.setScale(1)
-    this.timer = this.scene.time.delayedCall(Phaser.Math.Between(1200, 3600), () => {
-      this.walk(walkingRoute([this.body.x, this.body.y], somewhereToWalk()), WANDER_SPEED, () => this.rest())
-    })
-  }
-
-  // Walks through `points` one by one, then calls done().
-  walk(points, speed, done) {
-    const [point, ...rest] = points
-    if (!point) {
-      done()
-      return
-    }
-    const [x, y] = point
-    if (Math.abs(x - this.body.x) > 1) this.body.setFlipX(x < this.body.x)
-    this.step.resume()
-    this.leg = this.scene.tweens.add({
-      targets: this.body,
-      x,
-      y,
-      duration: (Math.hypot(x - this.body.x, y - this.body.y) / speed) * 1000,
-      onComplete: () => this.walk(rest, speed, done),
-    })
-  }
-
-  stop() {
-    this.timer?.remove()
-    this.leg?.stop()
+    super.sync()
+    this.diamond
+      ?.setPosition(this.body.x, this.body.y - DIAMOND_ABOVE * this.body.scaleY + this.float.y)
+      .setAlpha(this.body.alpha)
   }
 
   // From here on you show only inside the doorway (and on the step below it), so you vanish
