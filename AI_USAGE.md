@@ -208,3 +208,40 @@ interactivity (see the AI use rules in `PROJECT.md`).
 | Scene | `client/src/town/TownScene.js`, `client/src/components/town/PlacesMenu.vue` | Buildings and friends' houses pop when pointed at or tapped; floating name tags over friends' houses; the Places list scrolls |
 | Laptop view | `client/src/components/PhoneFrame.vue`, `client/src/router/index.js`, `client/src/components/town/PlaceCard.vue` | A `wide` route setting that lets a page fill a laptop window instead of the phone column; the town uses it, and its place card stays card-sized |
 | Tests | `tests/e2e/town.spec.js` | A friend's house opens their room; every friend is in Places; the weather chip steps through each look without errors |
+
+### Library: the pixel-art hall (AI-generated)
+
+Written by Claude Code at Aasim's request for the library (Aasim's part), in the style of My
+Room, and checked with Playwright. The library's interactivity (opening a bookcase, loading its
+books, the help desk) is critical frontend interactivity under the AI use rules in `PROJECT.md`,
+so the team needs to agree to it, and Aasim needs to review and own it.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Categories | `client/src/buildings/library/categories.js` | Eight bookcases (Popular, Fantasy, Romance, Mystery, Sci-fi, History, Classics, Awards) with their searches and spine colours |
+| Hall art | `client/src/buildings/library/hall/palette.js`, `pixel.js`, `sprites.js`, `layout.js`, `paint.js` | The hall drawn in the browser in the town's pixel style: bookcases filled with seeded spines, help desk, arched windows, lamps and their light, ladder, globe, reading nook |
+| Hall | `client/src/buildings/library/components/LibraryHall.vue`, `hall/scroll.js` | Whole-pixel sizing, sideways scrolling, a labelled button over each bookcase and the desk, the bar of places |
+| Open bookcase | `client/src/buildings/library/components/ShelfSheet.vue` | A sheet with the category's books, loading and error states, and "See all" |
+| Page | `client/src/buildings/library/LibraryView.vue`, `client/src/buildings/library/README.md` | The search bar, each bookcase's books loaded when first opened, the book preview, focus going back to the bookcase |
+| Tests | `tests/e2e/library.spec.js`, `tests/e2e/smoke.spec.js` | Every bookcase is there; a bookcase opens its books and a book its preview; the help desk leads to search. The smoke test checks the hall instead of the old filter chips |
+
+#### Book scanner in the library (AI-assisted)
+
+At Aasim's request, Khaleil's Scan Book was moved into the library as a scanning machine.
+Khaleil's camera, upload and scan code was moved, not rewritten: `views/ScanBookView.vue` became
+`client/src/buildings/library/components/ScanMachine.vue`, opened as a dialog. The assistant
+added the machine's sprite and place in the hall (`hall/sprites.js`, `hall/layout.js`), its button
+(`LibraryHall.vue`), and opening it from `LibraryView.vue`. A found book now opens the library's
+own preview (`useBookPreview`) instead of the view's own shelving code. `/scan` redirects to
+`/library?scan=1` (`client/src/router/index.js`), and `tests/e2e/scan-book.spec.js` (until now
+a skipped placeholder) tests snapping, uploading, a cover that can't be matched, and the redirect.
+The server's `/api/scan-book` and `services/vision.js` are unchanged.
+
+#### Live weather in the library (AI-generated)
+
+At Aasim's request, the library shows the live weather the way My Room does, through the shared
+`services/weather.js` (no new API or server change). `LibraryView.vue` loads it every 10 minutes
+(`?scene=` previews a sky). `hall/sprites.js` draws each window's sky for the weather (sun, clouds,
+rain, moon and stars), and `hall/paint.js` tints the hall like My Room, lighting it by its lamps
+after dark. `LibraryHall.vue` has the weather chip, and `hall/palette.js` the colours. The
+tint colours and the chip's icons are copied from My Room. Tested in `tests/e2e/library.spec.js`.

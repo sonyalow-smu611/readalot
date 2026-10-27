@@ -8,7 +8,6 @@ import MoodView from '@/views/MoodView.vue'
 import PlaygroundView from '@/views/PlaygroundView.vue'
 import ReaderRoomView from '@/views/ReaderRoomView.vue'
 import ReaderShelfView from '@/views/ReaderShelfView.vue'
-import ScanBookView from '@/views/ScanBookView.vue'
 import SearchView from '@/views/SearchView.vue'
 import LoginView from '@/views/LoginView.vue'
 import VerifyView from '@/views/VerifyView.vue'
@@ -36,7 +35,8 @@ const routes = [
   { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 3 } },
-  { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 2 } },
+  // the book scanner lives in the library now
+  { path: '/scan', name: 'scan-book', redirect: { name: 'library', query: { scan: '1' } } },
   { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },
   { path: '/register', name: 'register', component: LoginView, meta: { title: 'Register', bare: true, guest: true, order: 0 } },
