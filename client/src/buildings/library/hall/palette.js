@@ -72,6 +72,7 @@ export const PAL = {
   windowSpill: '#a3b3e6',
 
   lampLit: '#fff4c2',
+  lampOff: '#cfc6b0',
   glow: '#ffe08a',
 
   outline: '#1e1a24',

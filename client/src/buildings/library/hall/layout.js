@@ -28,6 +28,7 @@ export const WAINSCOT = 168
 
 // Sizes of the pieces that more than one thing needs to know (the hall's buttons sit on them).
 export const BOOKCASE = { w: 100, h: 156 }
+export const WINDOWS = { window: { w: 34, h: 86 }, 'window-tall': { w: 44, h: 112 } }
 export const DESK = { w: 120, h: 46 }
 export const SCANNER = { w: 50, h: 80 }
 const TABLE = { w: 130, h: 30 }
@@ -41,14 +42,14 @@ export const LAYERS = ['wall', 'hang', 'furniture', 'front']
 
 // One entry per piece: `sprite` (a name in sprites.js), `x` its left edge, `y` its bottom edge,
 // `layer`. Optional: `category` (a bookcase's category key), `action` (what tapping it does:
-// desk or scanner).
+// desk or scanner), `lamp` (a lamp's id and `name`: tapping it turns it off and on).
 export const PIECES = [
   // --- the help desk, by the door ----------------------------------------------------------
   { sprite: 'window-tall', x: 20, y: 150, layer: 'wall' },
   { sprite: 'globe', x: 22, y: FEET, layer: 'furniture' },
-  { sprite: 'pendant', x: 112, y: 54, layer: 'hang' },
+  { sprite: 'pendant', x: 112, y: 54, layer: 'hang', lamp: 'desk-ceiling', name: 'Help desk ceiling lamp' },
   { sprite: 'desk', x: 64, y: FEET, layer: 'furniture', action: 'desk' },
-  { sprite: 'banker-lamp', x: 72, y: FEET - DESK.h, layer: 'front' },
+  { sprite: 'banker-lamp', x: 72, y: FEET - DESK.h, layer: 'front', lamp: 'desk', name: 'Help desk lamp' },
   { sprite: 'book-pile', x: 128, y: FEET - DESK.h, layer: 'front' },
   { sprite: 'bell', x: 160, y: FEET - DESK.h, layer: 'front' },
 
@@ -69,7 +70,14 @@ export const PIECES = [
       )
     } else {
       pieces.push(
-        { sprite: 'sconce', x: gap + 20, y: 104, layer: 'wall' },
+        {
+          sprite: 'sconce',
+          x: gap + 20,
+          y: 104,
+          layer: 'wall',
+          lamp: `wall-${category.key}`,
+          name: `Wall lamp beside ${category.label}`,
+        },
         { sprite: 'book-pile', x: gap + 15, y: FEET + 4, layer: 'front' },
       )
     }
@@ -81,25 +89,49 @@ export const PIECES = [
   // --- the reading nook, at the far end -----------------------------------------------------
   { sprite: 'window-tall', x: NOOK + 40, y: 150, layer: 'wall' },
   { sprite: 'window-tall', x: NOOK + 100, y: 150, layer: 'wall' },
-  { sprite: 'pendant', x: NOOK + 68, y: 60, layer: 'hang' },
+  { sprite: 'pendant', x: NOOK + 68, y: 60, layer: 'hang', lamp: 'nook-ceiling', name: 'Reading nook ceiling lamp' },
   { sprite: 'chair-right', x: NOOK, y: FEET, layer: 'furniture' },
   { sprite: 'table', x: NOOK + 24, y: FEET, layer: 'furniture' },
   { sprite: 'chair-left', x: NOOK + 156, y: FEET, layer: 'furniture' },
-  { sprite: 'banker-lamp', x: NOOK + 32, y: FEET - TABLE.h, layer: 'front' },
+  { sprite: 'banker-lamp', x: NOOK + 32, y: FEET - TABLE.h, layer: 'front', lamp: 'nook', name: 'Reading nook lamp' },
   { sprite: 'open-book', x: NOOK + 80, y: FEET - TABLE.h, layer: 'front' },
   { sprite: 'book-pile', x: NOOK + 124, y: FEET - TABLE.h, layer: 'front' },
 ]
 
-// Warm pools of light round the lamps: x, y (the lamp's bulb) and how far the light reaches.
+// Each kind of lamp: its sprite's size, where its bulb is from the piece's x and y, and how far
+// its light reaches. Each has an unlit `<sprite>@off` too.
+const BULBS = {
+  'banker-lamp': { w: 18, h: 20, dx: 9, dy: -14, r: 46 },
+  pendant: { w: 18, h: 12, dx: 9, dy: 0, r: 64 },
+  sconce: { w: 10, h: 16, dx: 5, dy: -10, r: 40 },
+}
+
+// The lamps, each turned off and on by tapping it: id, name, its light (x, y, r) and its box
+// (with a little room round it, so even a small lamp is easy to tap).
+export const LAMPS = PIECES.filter((piece) => piece.lamp).map((piece) => {
+  const bulb = BULBS[piece.sprite]
+  return {
+    id: piece.lamp,
+    name: piece.name,
+    light: { x: piece.x + bulb.dx, y: piece.y + bulb.dy, r: bulb.r },
+    box: { x: piece.x - 4, y: piece.y - bulb.h - 4, w: bulb.w + 8, h: bulb.h + 8 },
+  }
+})
+
+// Warm pools of light: x, y (the bulb) and how far the light reaches. A lamp's light carries its
+// id, and goes out with it; the scanner's screen is always on.
 export const LIGHTS = [
-  { x: 81, y: FEET - DESK.h - 14, r: 46 },
-  { x: 121, y: 54, r: 60 },
-  { x: NOOK + 41, y: FEET - TABLE.h - 14, r: 46 },
-  { x: NOOK + 77, y: 60, r: 70 },
-  // the scanner's screen
-  { x: 231, y: FEET - SCANNER.h + 30, r: 30 },
-  ...PIECES.filter((piece) => piece.sprite === 'sconce').map((piece) => ({ x: piece.x + 5, y: piece.y - 10, r: 40 })),
+  ...LAMPS.map((lamp) => ({ ...lamp.light, lamp: lamp.id })),
+  { x: 231, y: FEET - SCANNER.h + 30, r: 30, lamp: null },
 ]
+
+// Each window's glass in art pixels, where the rain falls: its box, and the radius of its arch.
+export function windowGlass() {
+  return PIECES.filter((piece) => WINDOWS[piece.sprite]).map((piece) => {
+    const { w, h } = WINDOWS[piece.sprite]
+    return { x: piece.x + 3, y: piece.y - h + 3, w: w - 6, h: h - 11, arch: Math.floor(w / 2) - 3 }
+  })
+}
 
 // Each bookcase's box in art pixels (its button covers it), with its category.
 export function bookcases() {

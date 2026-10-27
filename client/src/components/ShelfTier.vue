@@ -58,6 +58,18 @@ defineEmits(['select'])
   scroll-snap-align: start;
 }
 
+/* wide screens (the page fills the window): covers the size of My Shelf's, and the tier holds as
+   many as fit, so nothing needs scrolling */
+@media (min-width: 576px) {
+  .shelf-tier__row {
+    gap: 16px;
+  }
+
+  .shelf-tier__item {
+    flex-basis: 108px;
+  }
+}
+
 .shelf-tier__plank {
   height: 8px;
   background: linear-gradient(to bottom, var(--wood), var(--wood-deep));

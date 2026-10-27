@@ -29,7 +29,17 @@ const { previewBook, openPreview, closePreview, saveStatus } = useBookPreview()
 // /library?scene=sunny|cloudy|rain previews a sky without waiting for that weather.
 const SCENES = ['sunny', 'cloudy', 'rain']
 const WEATHER_REFRESH_MS = 10 * 60 * 1000
-const live = ref({ scene: 'cloudy', temperature: null, isDay: true })
+const live = ref({ scene: 'cloudy', temperature: null, isDay: true, weatherCode: null })
+
+// How hard it rains, from Open-Meteo's weather code: drizzle and light showers, rain, or a
+// downpour (heavy rain, violent showers, thunderstorms).
+const LIGHT_RAIN = new Set([51, 53, 55, 56, 57, 61, 80])
+const HEAVY_RAIN = new Set([65, 67, 82, 95, 96, 99])
+function rainFor(code) {
+  if (LIGHT_RAIN.has(code)) return 'light'
+  if (HEAVY_RAIN.has(code)) return 'heavy'
+  return 'steady'
+}
 let weatherTimer = 0
 
 const weather = computed(() => {
@@ -38,11 +48,36 @@ const weather = computed(() => {
     scene: preview ?? (SCENES.includes(live.value.scene) ? live.value.scene : 'cloudy'),
     night: preview ? false : live.value.isDay === false,
     temperature: typeof live.value.temperature === 'number' ? live.value.temperature : null,
+    rain: preview ? 'steady' : rainFor(live.value.weatherCode),
   }
 })
 
 async function loadWeather() {
   live.value = await fetchWeather()
+}
+
+// --- Lamps ------------------------------------------------------------------------------------
+// Each lamp in the hall turns off and on by tapping it. The ones turned off are remembered on
+// this device for the next visit.
+const LAMPS_KEY = 'readalot.libraryLampsOff'
+const lampsOff = ref(readLampsOff())
+
+function readLampsOff() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAMPS_KEY) || '[]')
+    return Array.isArray(saved) ? saved : []
+  } catch {
+    return []
+  }
+}
+
+function toggleLamp(id) {
+  lampsOff.value = lampsOff.value.includes(id) ? lampsOff.value.filter((lamp) => lamp !== id) : [...lampsOff.value, id]
+  try {
+    localStorage.setItem(LAMPS_KEY, JSON.stringify(lampsOff.value))
+  } catch {
+    // storage blocked (private browsing): the lamps still work for this visit
+  }
 }
 
 // --- Search ------------------------------------------------------------------------------------
@@ -56,9 +91,16 @@ function onSearch() {
   router.push({ name: 'search', query: { q: text } })
 }
 
-// the help desk: "ask the librarian" by typing in the search bar
+// The search bar grows, glows and asks what you're looking for whenever it's in use: tapped
+// directly, or from the help desk ("ask the librarian"). It settles back once you click away.
+const asking = ref(false)
+
 function askDesk() {
   searchInput.value?.focus()
+}
+
+function settle(event) {
+  if (!event.currentTarget.contains(event.relatedTarget)) asking.value = false
 }
 
 // --- Bookcases ---------------------------------------------------------------------------------
@@ -144,23 +186,39 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
         :active="openKey"
         :scanning="scannerOpen"
         :weather="weather"
+        :lamps-off="lampsOff"
         @open-shelf="openShelf"
         @desk="askDesk"
         @scan="openScanner"
+        @toggle-lamp="toggleLamp"
       />
 
-      <form class="library__search" role="search" @submit.prevent="onSearch">
-        <span aria-hidden="true">🔍</span>
-        <input
-          ref="searchInput"
-          v-model="query"
-          class="library__input"
-          type="search"
-          enterkeyhint="search"
-          placeholder="Search books or authors"
-          data-tour="discover-search"
-          aria-label="Search books or authors"
-        />
+      <form
+        class="library__search"
+        :class="{ 'is-asking': asking }"
+        role="search"
+        @submit.prevent="onSearch"
+        @focusin="asking = true"
+        @focusout="settle"
+      >
+        <div class="library__bar">
+          <span aria-hidden="true">{{ asking ? '🛎️' : '🔍' }}</span>
+          <input
+            ref="searchInput"
+            v-model="query"
+            class="library__input"
+            type="search"
+            enterkeyhint="search"
+            :placeholder="asking ? 'What are you looking for?' : 'Search books or authors'"
+            data-tour="discover-search"
+            aria-label="Search books or authors"
+          />
+          <!-- mousedown.prevent keeps the typing in the box, so the button stays to be clicked -->
+          <button v-if="asking" type="submit" class="btn btn-sm library__go" @mousedown.prevent>Search</button>
+        </div>
+        <p v-if="asking" class="library__ask" role="status">
+          The librarian is listening: type a title or an author, then press Enter.
+        </p>
       </form>
 
       <ShelfSheet
@@ -190,26 +248,42 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
   overflow: hidden;
 }
 
-/* the search bar floats at the top of the hall, above the bookcases' name plates */
+/* the search bar floats at the top of the hall, above the bookcases' name plates; on a wide
+   screen it keeps to a comfortable width */
 .library__search {
   position: absolute;
   top: 10px;
   left: 12px;
-  right: 12px;
   z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
+  width: min(460px, calc(100% - 24px));
   border: 1px solid var(--rl-line);
-  border-radius: 999px;
+  border-radius: 24px;
   background: var(--rl-surface);
   box-shadow: 0 4px 14px rgba(63, 46, 36, 0.12);
+  transition: width 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .library__search:focus-within {
   border-color: var(--library-accent);
   box-shadow: 0 0 0 3px rgba(63, 107, 120, 0.25), 0 4px 14px rgba(63, 46, 36, 0.12);
+}
+
+/* asked at the help desk: wider, a thicker teal ring that pulses, and a prompt underneath */
+.library__search.is-asking {
+  width: min(640px, calc(100% - 24px));
+  border: 2px solid var(--library-accent);
+  animation: library-ask 1.4s ease-out 2;
+}
+
+.library__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+}
+
+.library__search.is-asking .library__bar {
+  padding: 12px 10px 12px 16px;
 }
 
 .library__input {
@@ -220,5 +294,43 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
   background: none;
   font-size: 14px;
   color: var(--rl-text);
+}
+
+.library__search.is-asking .library__input {
+  font-size: 16px;
+}
+
+.library__go {
+  flex: none;
+  border-radius: 999px;
+  background: var(--library-accent);
+  font-weight: 700;
+  color: #fff;
+}
+
+.library__ask {
+  margin: 0;
+  padding: 0 16px 12px;
+  font-size: 13px;
+  color: var(--rl-muted);
+}
+
+@keyframes library-ask {
+  0% {
+    box-shadow: 0 0 0 0 rgba(63, 107, 120, 0.55), 0 4px 14px rgba(63, 46, 36, 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(63, 107, 120, 0), 0 4px 14px rgba(63, 46, 36, 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library__search {
+    transition: none;
+  }
+
+  .library__search.is-asking {
+    animation: none;
+  }
 }
 </style>
