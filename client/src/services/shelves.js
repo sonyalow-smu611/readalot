@@ -6,6 +6,18 @@ export const STATUSES = [
   { value: "read", label: "Read", short: "Read" }
 ];
 
+// The reader's three shelves in the order they're shown, top to bottom: the rows of the bookshelf
+// in My Room, the rows of My Shelf, and the shelf tab on a book's card.
+export const SHELVES = [
+  { status: "want_to_read", label: "To be read", emoji: "📚" },
+  { status: "reading", label: "Currently reading", emoji: "📖" },
+  { status: "read", label: "Finished reading", emoji: "✅" }
+];
+
+export function shelfName(status) {
+  return SHELVES.find((shelf) => shelf.status === status)?.label ?? "";
+}
+
 // [spine colour, text colour]: muted, bookish tones that sit with the room palette
 const SPINE_COLOURS = [
   ["#8C4A3C", "#FFF4E6"],

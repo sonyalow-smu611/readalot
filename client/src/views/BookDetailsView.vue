@@ -6,7 +6,6 @@
 -->
 <template>
   <section class="book-page">
-    <img class="book-page__room" :src="roomArt" alt="" draggable="false" />
     <BookCard class="book-page__card" close-label="Back" @close="goBack">
       <BookDetailsContent v-if="book" :book="book" title-tag="h1" :links-to-page="false" />
       <div v-else-if="loading || (!data && !error)" class="book-page__state" role="status">
@@ -25,7 +24,6 @@
 <script setup>
 import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import roomArt from "@/assets/room/room.webp";
 import BookCard from "@/components/book/BookCard.vue";
 import BookDetailsContent from "@/components/book/BookDetailsContent.vue";
 import { useAsync } from "@/composables/useAsync.js";
@@ -64,23 +62,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* the town's page: the parchment canvas, the card on it (see BookCard) */
 .book-page {
   position: relative;
   height: 100%;
   overflow: hidden;
-  background: #3a2a1e;
-}
-
-/* the room, out of focus and dimmed, as it is behind the card when a book is opened there */
-.book-page__room {
-  position: absolute;
-  inset: -16px;
-  width: calc(100% + 32px);
-  height: calc(100% + 32px);
-  object-fit: cover;
-  filter: blur(6px) brightness(0.72);
-  pointer-events: none;
-  user-select: none;
+  background: var(--rl-canvas);
 }
 
 .book-page__card {
@@ -96,26 +83,31 @@ onMounted(() => {
   gap: 10px;
   min-height: 60vh;
   padding: 0 8px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 15px;
+  font-family: var(--rl-font-body);
+  font-size: 14px;
   text-align: center;
-  color: #414833;
+  color: var(--rl-text);
+}
+
+.book-page__state strong {
+  font-family: var(--rl-font-title);
 }
 
 .book-page__state .spinner-border {
-  color: #7f5539;
+  color: var(--rl-accent);
 }
 
 .book-page__retry {
-  --bs-btn-font-family: Georgia, "Times New Roman", serif;
   --bs-btn-font-size: 14px;
-  --bs-btn-color: #fffdf9;
-  --bs-btn-bg: #7f5539;
-  --bs-btn-border-color: #7f5539;
-  --bs-btn-hover-color: #fffdf9;
-  --bs-btn-hover-bg: #414833;
-  --bs-btn-hover-border-color: #414833;
+  --bs-btn-font-weight: 700;
+  --bs-btn-color: var(--rl-surface);
+  --bs-btn-bg: var(--rl-primary);
+  --bs-btn-border-color: var(--rl-primary);
+  --bs-btn-hover-color: var(--rl-surface);
+  --bs-btn-hover-bg: var(--rl-primary);
+  --bs-btn-hover-border-color: var(--rl-primary);
   --bs-btn-border-radius: 12px;
+  min-height: 44px;
   margin-top: 4px;
 }
 </style>

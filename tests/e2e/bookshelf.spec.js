@@ -20,11 +20,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function turnToBookshelf(page) {
-  // the room has loaded in 3D once the bookcase has its button; before that, Bookshelf in the
-  // bar of places lists the books instead of turning to them
+  // the room has loaded once the bookshelf has its button; before that, Bookshelf in the bar of
+  // places lists the books instead of sliding to them
   await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
   await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
-  // let the turn finish
+  // let the slide finish
   await page.waitForTimeout(900);
 }
 
@@ -96,14 +96,14 @@ async function mostMagentaWhileOpening(page) {
   return most;
 }
 
-// Books opened straight off the bookcase in the 3D room. Every book is a labelled button over
+// Books opened straight off the bookshelf in the room. Every book is a labelled button over
 // its spine, so the room's books can be reached like any other button.
 test.describe("from the room", () => {
   test.beforeEach(async ({ page }) => {
     await turnToBookshelf(page);
   });
 
-  test("each shelf has a labelled row of its own: To be read, then Reading, then Finished", async ({ page }) => {
+  test("each shelf has a labelled row of its own: To be read, then Currently reading, then Finished reading", async ({ page }) => {
     const { books } = await (await page.request.get("/api/user-books")).json();
     const shelves = ["want_to_read", "reading", "read"];
     const bottoms = await Promise.all(
@@ -126,7 +126,7 @@ test.describe("from the room", () => {
 
       // and the shelf is named, with how many books are on it
       const count = bottoms[row].length;
-      const name = ["To be read", "Reading", "Finished"][row];
+      const name = ["To be read", "Currently reading", "Finished reading"][row];
       await expect(page.getByText(`${name} shelf, ${count} ${count === 1 ? "book" : "books"}`)).toHaveCount(1);
     }
   });
@@ -217,7 +217,7 @@ test.describe("from the room", () => {
     await expect
       .poll(async () => Math.abs((await bottom("The Hobbit by J.R.R. Tolkien")) - reading), { timeout: 8000 })
       .toBeLessThan(12);
-    await expect(page.getByText("Reading shelf, 2 books")).toHaveCount(1);
+    await expect(page.getByText("Currently reading shelf, 2 books")).toHaveCount(1);
   });
 
   test("a book's own cover is on its front as it comes off the shelf", async ({ page }) => {
@@ -380,36 +380,32 @@ test.describe("from the room", () => {
   });
 });
 
-// On a device that cannot draw 3D the room is a still picture, so the books are listed instead.
-test.describe("without 3D", () => {
+// When the room's pictures cannot load the room is a still picture, so the Bookshelf place opens
+// My Shelf instead, where every book can still be opened.
+test.describe("without the room's pictures", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      const getContext = HTMLCanvasElement.prototype.getContext;
-      HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
-        return /webgl/.test(kind) ? null : getContext.call(this, kind, ...rest);
-      };
-    });
+    await page.route("**/room/strip/**", (route) => route.abort());
     await page.reload();
   });
 
-  test("Bookshelf lists the books by shelf, and each opens its details", async ({ page }) => {
+  test("Bookshelf opens My Shelf, with each shelf's books, and each opens its details", async ({ page }) => {
     await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
 
-    const list = page.getByRole("dialog", { name: "Your books" });
-    for (const shelf of ["Reading", "To read", "Finished"]) {
-      await expect(list.getByRole("heading", { name: shelf })).toBeVisible();
+    await expect(page).toHaveURL(/\/house\/shelf$/);
+    for (const shelf of ["To be read", "Currently reading", "Finished reading"]) {
+      await expect(page.getByRole("region", { name: new RegExp(`^${shelf}, \\d+ books?$`) })).toBeVisible();
     }
-    const book = list.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" });
+    const book = page.getByRole("region", { name: /^To be read/ }).getByRole("button", { name: /^The Hobbit/ });
     await book.click();
 
     const details = page.getByRole("dialog", { name: "Book details" });
     await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
-    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Reading", exact: true }).click();
+    await details.getByRole("button", { name: "Reading", exact: true }).click();
     await expect.poll(() => saves).toEqual([{ id: "demo-shelf-2", status: "reading" }]);
 
     await page.getByRole("button", { name: "Close book" }).click();
     await expect(details).toBeHidden();
-    await expect(book).toBeFocused();
+    await expect(page.getByRole("region", { name: /^Currently reading/ }).getByRole("button", { name: /^The Hobbit/ })).toBeFocused();
   });
 
   test("an empty shelf says how to add the first book", async ({ page }) => {
@@ -417,8 +413,7 @@ test.describe("without 3D", () => {
     await page.reload();
     await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
 
-    const list = page.getByRole("dialog", { name: "Your books" });
-    await expect(list.getByText("Add your first book")).toBeVisible();
-    await expect(list.getByRole("link", { name: "Scan a cover" })).toHaveAttribute("href", "/scan");
+    await expect(page.getByText("Add your first book")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Scan a cover" })).toHaveAttribute("href", "/scan");
   });
 });

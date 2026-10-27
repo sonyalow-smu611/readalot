@@ -1,9 +1,9 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Your house → My Room. Owner: Sonz. Everything inside this folder is yours to change.
-// For now it shows the existing room page; move RoomView and its parts in here when ready.
+// The room page, its 3D room and their parts all live in this folder.
 import BuildingShell from '@/components/shared/BuildingShell.vue'
-import RoomView from '@/views/RoomView.vue'
+import RoomView from './RoomView.vue'
 import { PLACES } from '@/town/places.js'
 
 const place = PLACES.find((p) => p.id === 'house')
@@ -11,6 +11,7 @@ const place = PLACES.find((p) => p.id === 'house')
 
 <template>
   <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
-    <RoomView />
+    <!-- the house's colour from the town, for the room's buttons and cards -->
+    <RoomView :style="{ '--house-accent': place.accent }" />
   </BuildingShell>
 </template>

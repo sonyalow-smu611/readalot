@@ -16,6 +16,8 @@ defineProps({
   loading: { type: Boolean, default: false },
   // Route for "See all", e.g. { name: 'genre-shelf', params: { genre: 'fantasy' } }; hidden when empty
   seeAll: { type: [String, Object], default: null },
+  // what an empty shelf says
+  empty: { type: String, default: 'No books on this shelf yet.' },
 })
 
 defineEmits(['select'])
@@ -40,7 +42,7 @@ const SKELETON_CARDS = 4
       </div>
     </div>
 
-    <p v-else-if="!books.length" class="discover-shelf__empty">No books on this shelf yet.</p>
+    <p v-else-if="!books.length" class="discover-shelf__empty">{{ empty }}</p>
 
     <!-- slides-per-view "auto" + fixed card width leaves the next card partly visible -->
     <Swiper

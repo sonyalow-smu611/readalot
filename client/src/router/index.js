@@ -22,6 +22,7 @@ const routes = [
   // Phaser loads only with the town.
   { path: '/', name: 'town', component: () => import('@/views/TownView.vue'), meta: { title: 'Town', fullBleed: true, wide: true, order: 0 } },
   { path: '/house', name: 'house', component: () => import('@/buildings/house/HouseView.vue'), meta: { title: 'My Room', fullBleed: true, order: 1 } },
+  { path: '/house/shelf', name: 'my-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'My Shelf', fullBleed: true, order: 2 } },
   { path: '/library', name: 'library', component: () => import('@/buildings/library/LibraryView.vue'), meta: { title: 'Library', fullBleed: true, order: 1 } },
   { path: '/cafe', name: 'cafe', component: () => import('@/buildings/cafe/CafeView.vue'), meta: { title: 'Cafe', fullBleed: true, order: 1 } },
   { path: '/salon', name: 'salon', component: () => import('@/buildings/salon/SalonView.vue'), meta: { title: 'Hair Salon', fullBleed: true, order: 1 } },

@@ -6,7 +6,7 @@ through a pull request a teammate reviews.
 
 | Building | Folder | Route | Owner | Shows today |
 |---|---|---|---|---|
-| Your house | `house/` | `/house` | Sonz | `views/RoomView.vue` (My Room) |
+| Your house | `house/` | `/house` | Sonz | `house/RoomView.vue` (My Room) |
 | Library | `library/` | `/library` | Aasim | `views/DiscoverBooksView.vue` (Discover) |
 | Cafe | `cafe/` | `/cafe` | Emiley | `views/PeopleView.vue` (Social) |
 | Hair Salon | `salon/` | `/salon` | Aalric | `views/ProfileView.vue` (Profile) |

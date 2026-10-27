@@ -1,7 +1,8 @@
 # The room, in Blender
 
-The home page is a 3D bedroom modelled here and drawn in the browser with Three.js
-(`src/components/room/Room3D.vue`). The reader stands in the middle and looks around.
+The 3D bedroom modelled here was the room's first version. The app no longer uses it: My Room is
+now a side-on pixel-art picture (see `src/buildings/house/README.md`). The files are kept for
+reference.
 
 | File | What it is |
 |------|------------|
@@ -28,7 +29,7 @@ The app finds things in the room by object name, so keep these names when you re
 | Name | What the app does with it |
 |------|---------------------------|
 | `hit.<name>` | A hidden box over something you can tap: `bookshelf`, `chair`, `corkboard`, `window`, `clock`. Its button covers this box on screen. `hotspot.<name>` works too (`bookcase` for the bookshelf, `note` for the corkboard) |
-| `shelf.<row>` | A hidden box per row of the bookcase, row 0 at the top. The top three rows hold the reader's To be read, Reading and Finished books, facing out of the case whichever wall it stands on, with a brass name plate on the board under each (drawn by the app, `src/lib/room3d/books.js`) |
+| `shelf.<row>` | A hidden box per row of the bookcase, row 0 at the top. The top three rows hold the reader's To be read, Reading and Finished books, facing out of the case whichever wall it stands on, with a brass name plate on the board under each (drawn by the app, `src/buildings/house/room3d/books.js`) |
 | `herobook` | The hero book from `bookshelf.blend`: `herobook.cover.front`, `.cover.back`, `.spine`, `.pages`, `.page.<n>`, with the actions that open the cover and flip the pages. A copy of it takes the place of the book the reader taps. Parked outside the room and left out of the still |
 | `slot.<zone>.<n>` | An empty where a shop decoration can stand. Custom properties `zone` (`seat`, `nightstand`, `side-table`, `room`) and `x` |
 | `walk.<n>` | Empties on the floor that pets wander between |

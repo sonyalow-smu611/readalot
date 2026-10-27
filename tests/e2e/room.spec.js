@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/house");
 });
 
-// The room is 3D: the bar of places turns the reader to face something before it is tapped.
+// The room is wider than the screen: the bar of places slides along to something before it is tapped.
 async function turnTo(page, place) {
   await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: place }).click();
   // let the turn finish
@@ -60,13 +60,17 @@ test("birds fly past the bay window on a clear day", async ({ page }) => {
   await expect(view.getByTestId("bird").first()).toBeVisible();
 });
 
-test("the bookcase turns you to your books, in the room", async ({ page }) => {
-  await page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).click();
+test("tapping the bookshelf opens My Shelf, and a book on it still opens that book", async ({ page }) => {
+  // a book first: it comes off the shelf and opens, as it always has
+  await page.getByRole("button", { name: "Norwegian Wood by Haruki Murakami" }).click();
+  await expect(page.getByRole("dialog", { name: "Book details" })).toBeVisible({ timeout: 8000 });
+  await page.getByRole("button", { name: "Close book" }).click();
+  await expect(page.getByRole("dialog", { name: "Book details" })).toBeHidden();
 
-  await expect(page.getByRole("button", { name: "Norwegian Wood by Haruki Murakami" })).toBeInViewport();
-  await page.waitForTimeout(700);
-  await expect(page.getByRole("button", { name: "Back" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Spines" })).toHaveCount(0);
+  // the bookshelf itself, away from its books (its top left corner)
+  await page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).click({ position: { x: 8, y: 8 } });
+  await expect(page).toHaveURL(/\/house\/shelf$/);
+  await expect(page.getByRole("link", { name: "Back to room" })).toBeVisible();
 });
 
 test("buying a decoration spends credits and it can be placed in the room", async ({ page }) => {
@@ -114,3 +118,112 @@ test("the corkboard opens the Quote of the Day", async ({ page }) => {
   await quote.getByRole("button", { name: "Close" }).click();
   await expect(quote).toBeHidden();
 });
+
+// --- The room as one wide picture you move along --------------------------------------------
+
+const room = (page) => page.getByRole("region", { name: /^Your room/ });
+// the room has loaded, and the app's opening screen has gone from over it
+async function roomShown(page) {
+  await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
+  await expect(page.getByText("Opening your shelf")).toBeHidden();
+}
+const scrolled = (page) => room(page).evaluate((el) => ({ left: el.scrollLeft, most: el.scrollWidth - el.clientWidth }));
+
+test("the room moves sideways with the wheel, a drag and the arrow keys, and stops at both ends", async ({ page }) => {
+  await roomShown(page);
+  const box = await room(page).boundingBox();
+  // high on the wall, clear of anything that can be tapped
+  const x = box.x + box.width / 2;
+  const y = box.y + 40;
+  expect((await scrolled(page)).left).toBe(0);
+
+  await page.mouse.move(x, y);
+  await page.mouse.wheel(0, 300);
+  await expect.poll(async () => (await scrolled(page)).left).toBeGreaterThan(0);
+
+  const afterWheel = (await scrolled(page)).left;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 150, y, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => (await scrolled(page)).left).toBeGreaterThan(afterWheel + 100);
+
+  const afterDrag = (await scrolled(page)).left;
+  await room(page).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(async () => (await scrolled(page)).left).toBeGreaterThan(afterDrag + 20);
+
+  // as far right as it goes, then as far left
+  await page.mouse.move(x, y);
+  await page.mouse.wheel(0, 50000);
+  await expect.poll(async () => { const { left, most } = await scrolled(page); return Math.abs(left - most); }).toBeLessThan(1);
+  await page.mouse.wheel(0, -50000);
+  await expect.poll(async () => (await scrolled(page)).left).toBe(0);
+});
+
+test("the bar of places goes along the room in order, from the bay window to the bed", async ({ page }) => {
+  await roomShown(page);
+  const places = page.getByRole("navigation", { name: "Places in the room" }).getByRole("button");
+  await expect(places).toHaveText(["Window", "Chair", "Bookshelf", "Clock", "Corkboard", "Bed"]);
+
+  let last = -1;
+  for (const place of ["Window", "Chair", "Bookshelf", "Clock", "Corkboard", "Bed"]) {
+    await turnTo(page, place);
+    const { left } = await scrolled(page);
+    if (place === "Window") expect(left).toBe(0);
+    else expect(left).toBeGreaterThan(last);
+    last = left;
+  }
+});
+
+test("a first visit says how to look around, until the room is moved, and not again", async ({ page }) => {
+  // the room opened in beforeEach was the first visit
+  const hint = page.getByText(/^(Swipe|Drag or scroll) to look around$/);
+  await expect(hint).toBeVisible();
+  await turnTo(page, "Bookshelf");
+  await expect(hint).toBeHidden();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(hint).toBeHidden();
+});
+
+test("at night the window looks out on the town with its windows lit", async ({ page }) => {
+  await page.route("**/api/weather*", (route) =>
+    route.fulfill({ json: { scene: "sunny", temperature: 26, weatherCode: 0, isDay: false } })
+  );
+  await page.reload();
+  await turnTo(page, "Window");
+
+  await expect(page.getByRole("img", { name: "Window view: Clear night, 26 degrees" })).toBeVisible();
+  const view = page.getByTestId("window-view");
+  await expect(view.getByTestId("town-lights")).toBeVisible();
+  await expect(view.getByTestId("bird")).toHaveCount(0);
+});
+
+// The picture is stretched a whole number of times in device pixels, so it is never blurred.
+for (const [device, viewport, deviceScaleFactor] of [
+  ["a phone", { width: 390, height: 844 }, 3],
+  ["a laptop", { width: 1280, height: 800 }, 2],
+]) {
+  test.describe(`on ${device}`, () => {
+    test.use({ viewport, deviceScaleFactor });
+
+    test("the room is drawn at a whole number of device pixels per pixel of art", async ({ page }) => {
+      await roomShown(page);
+      const { across, down, crisp } = await page.locator(".strip canvas").evaluate((canvas) => {
+        const { width, height } = canvas.getBoundingClientRect();
+        return {
+          across: (width * devicePixelRatio) / canvas.width,
+          down: (height * devicePixelRatio) / canvas.height,
+          crisp: getComputedStyle(canvas).imageRendering,
+        };
+      });
+      expect(across).toBeGreaterThanOrEqual(1);
+      expect(Math.abs(across - Math.round(across))).toBeLessThan(0.001);
+      expect(Math.abs(down - across)).toBeLessThan(0.001);
+      expect(crisp).toBe("pixelated");
+    });
+  });
+}
