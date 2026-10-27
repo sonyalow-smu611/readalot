@@ -1,8 +1,8 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Phaser 3 (phaser.io, MIT) — draws the town map, lets the reader drag and pinch around it, and
 // reports taps on buildings and friends' houses. On top of the picture: moving water
-// (water.js), the campfire (fire.js), cars and walkers (traffic.js) and the weather (sky.js).
-// Everything you press
+// (water.js), the campfire (fire.js), cars and walkers (traffic.js), the weather (sky.js) and
+// your own character (you.js), whom the camera can follow. Everything you press
 // besides the map itself is HTML (components/town).
 import Phaser from 'phaser'
 import mapData from './map-data.json'
@@ -11,6 +11,8 @@ import { SKY_DEPTH, Sky } from './sky.js'
 import { Traffic } from './traffic.js'
 import { Water } from './water.js'
 import { Campfire } from './fire.js'
+import { You } from './you.js'
+import { doorstep } from './door.js'
 
 const MAX_ZOOM = 1.5
 const START_ZOOM = 0.6
@@ -18,16 +20,29 @@ const START_ZOOM = 0.6
 const TAP_SLOP = 10
 // How much a building grows when you point at it.
 const POP_SCALE = 1.06
+// How far the glow round a chosen building reaches, in map pixels.
+const HALO = 28
+// How close the camera comes while following you, and how far it leans in at a door.
+const FOLLOW_ZOOM = 0.8
+const DOOR_ZOOM = 1.4
 
 export default class TownScene extends Phaser.Scene {
   // onSelect(place) runs when a building is tapped, onReady() once the map is on screen and
-  // onError() if the map picture cannot be loaded.
-  constructor({ onSelect, onReady, onError, reducedMotion }) {
+  // onError() if the map picture cannot be loaded. onFollow(false) says a drag stopped the
+  // camera following you; onInside(place) says you have walked in through its door.
+  // `character` is the reader's saved character (see lib/avatar/catalogue.js).
+  constructor({ character, onSelect, onReady, onError, onFollow, onInside, reducedMotion }) {
     super('town')
+    this.character = character
     this.onSelect = onSelect
     this.onReady = onReady
     this.onError = onError
+    this.onFollow = onFollow
+    this.onInside = onInside
     this.reducedMotion = reducedMotion
+    this.following = false
+    // on the way into a building: taps and the Places list wait
+    this.busy = false
     this.dragged = false
     this.pinch = null
     this.skyState = { night: false, rain: false }
@@ -48,7 +63,9 @@ export default class TownScene extends Phaser.Scene {
   create() {
     if (!this.textures.exists('map')) return
     this.add.image(0, 0, 'map').setOrigin(0)
-    this.highlight = this.add.graphics().setDepth(SKY_DEPTH + 20)
+    // the glow round the chosen building: above the night sky, below the name tags
+    this.halo = this.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 1).setDepth(SKY_DEPTH + 20).setVisible(false)
+    this.haloFor = null
 
     const cam = this.cameras.main
     cam.setBounds(0, 0, MAP_W, MAP_H)
@@ -64,7 +81,7 @@ export default class TownScene extends Phaser.Scene {
     this.campfire = new Campfire(this, { ...motion, glow: (x, y, options) => this.sky.glow(x, y, options) })
     this.traffic = new Traffic(this, { ...motion, lights: this.sky.lights })
     this.addPlaces()
-    this.addYou()
+    this.you = new You(this, { ...motion, character: this.character })
     this.addCameraControls()
     this.scale.on('resize', () => this.fitZoom())
     this.onReady?.()
@@ -73,6 +90,13 @@ export default class TownScene extends Phaser.Scene {
   update(time, delta) {
     this.sky?.update(delta)
     this.water?.update(delta)
+    this.you?.sync()
+  }
+
+  // May come before the map has loaded; it is used as soon as it has.
+  setCharacter(character) {
+    this.character = character
+    this.you?.setLook(character)
   }
 
   // { night, rain }: may come before the map has loaded; it is used as soon as it has.
@@ -130,8 +154,11 @@ export default class TownScene extends Phaser.Scene {
     const popping = this.pops[id]
     if (!popping || this.reducedMotion) return
     const { image, art } = popping
-    // its lit windows (at night) grow with it
-    const onUpdate = () => this.sky.scaleWindows(art, image.scale, image.x, image.y)
+    // its lit windows (at night) and its glow grow with it
+    const onUpdate = () => {
+      this.sky.scaleWindows(art, image.scale, image.x, image.y)
+      if (this.haloFor === id) this.halo.setScale(image.scale)
+    }
     this.tweens.killTweensOf(image)
     if (up) {
       image.setVisible(true)
@@ -167,12 +194,13 @@ export default class TownScene extends Phaser.Scene {
     const pill = this.add.graphics()
     pill.fillStyle(0xfffdf9, 0.96).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2)
     pill.lineStyle(4, accent, 1).strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2)
-    // above the selection outline, which would otherwise cut through the name
+    // above the chosen building's glow, which would otherwise wash over the name
     const tag = this.add.container(place.x + place.w / 2, place.y + 4, [pill, text]).setDepth(SKY_DEPTH + 30)
     if (!this.reducedMotion) this.tweens.add({ targets: tag, y: tag.y - 8, duration: 1400, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
   }
 
   select(place) {
+    if (this.busy) return
     this.outline(place)
     // on a touch screen there is no pointing first, so a tap gives the pop on its own
     if (this.hovered !== place.id) {
@@ -184,17 +212,68 @@ export default class TownScene extends Phaser.Scene {
     this.onSelect?.(place)
   }
 
+  // Lights a soft glow round the building's own shape, or puts it out when place is null.
   outline(place) {
-    this.highlight?.clear()
-    if (!place) return
-    this.highlight.lineStyle(8, 0xfffdf9, 0.95)
-    this.highlight.strokeRoundedRect(place.x - 6, place.y - 6, place.w + 12, place.h + 12, 14)
+    const art = place && (place.art ?? place.id)
+    const box = art && mapData.buildings[art]
+    this.tweens.killTweensOf(this.halo)
+    if (!box) {
+      this.haloFor = null
+      this.halo.setVisible(false)
+      return
+    }
+    this.haloFor = place.id
+    this.halo
+      .setTexture(this.haloTexture(art))
+      .setPosition(box.x + box.w / 2, box.y + box.h + HALO)
+      .setScale(1)
+      .setAlpha(0)
+      .setVisible(true)
+    this.tweens.add({ targets: this.halo, alpha: 1, duration: this.reducedMotion ? 0 : 200 })
+    if (!this.reducedMotion) {
+      this.tweens.add({ targets: this.halo, alpha: 0.65, delay: 200, duration: 1000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
+    }
+  }
+
+  // The glow for one building, drawn once from its picture: a soft white haze round its outline,
+  // with a hole where the building is so the glow never covers it.
+  haloTexture(art) {
+    const key = `halo-${art}`
+    if (this.textures.exists(key)) return key
+    const picture = this.textures.get(`building-${art}`).getSourceImage()
+    const w = picture.width
+    const h = picture.height
+    const shape = document.createElement('canvas')
+    shape.width = w
+    shape.height = h
+    const s = shape.getContext('2d')
+    s.drawImage(picture, 0, 0)
+    s.globalCompositeOperation = 'source-in'
+    s.fillStyle = '#ffffff'
+    s.fillRect(0, 0, w, h)
+
+    const glow = document.createElement('canvas')
+    glow.width = w + HALO * 2
+    glow.height = h + HALO * 2
+    const g = glow.getContext('2d')
+    g.shadowColor = '#fffbe6'
+    // a wide haze, then a brighter edge close in
+    g.shadowBlur = HALO
+    for (let i = 0; i < 3; i++) g.drawImage(shape, HALO, HALO)
+    g.shadowBlur = HALO / 4
+    for (let i = 0; i < 2; i++) g.drawImage(shape, HALO, HALO)
+    g.shadowBlur = 0
+    g.globalCompositeOperation = 'destination-out'
+    g.drawImage(shape, HALO, HALO)
+    this.textures.addCanvas(key, glow)
+    return key
   }
 
   // Glide to a place (from the Places list) and select it.
   focusPlace(id) {
     const place = ALL_PLACES.find((p) => p.id === id)
-    if (!place) return
+    if (!place || this.busy) return
+    this.stopFollowing()
     const cam = this.cameras.main
     const cx = place.x + place.w / 2
     const cy = place.y + place.h / 2
@@ -208,10 +287,50 @@ export default class TownScene extends Phaser.Scene {
   }
 
   // --- You -------------------------------------------------------------------------------
-  addYou() {
-    const ring = this.add.circle(SPAWN.x, SPAWN.y, 22, 0x2f5fb3, 0.25).setDepth(SPAWN.y)
-    this.add.circle(SPAWN.x, SPAWN.y, 13, 0xfffdf9).setStrokeStyle(7, 0x2f5fb3).setDepth(SPAWN.y + 1)
-    if (!this.reducedMotion) this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: 1600, repeat: -1 })
+  // Keeps you in the middle of the screen as you walk, or lets the camera go.
+  follow(on) {
+    const cam = this.cameras.main
+    this.following = on
+    if (!on) {
+      cam.stopFollow()
+      return
+    }
+    if (this.reducedMotion) cam.startFollow(this.you.body)
+    else {
+      cam.startFollow(this.you.body, true, 0.12, 0.12)
+      if (cam.zoom < FOLLOW_ZOOM) cam.zoomTo(Math.max(FOLLOW_ZOOM, this.minZoom), 500, 'Sine.easeInOut')
+    }
+  }
+
+  stopFollowing() {
+    if (!this.following) return
+    this.follow(false)
+    this.onFollow?.(false)
+  }
+
+  // Walks you to the building; as its door opens the camera leans in, and once you are through
+  // it says you are inside.
+  goInto(id) {
+    const place = ALL_PLACES.find((p) => p.id === id)
+    if (!place || this.busy) return
+    this.busy = true
+    this.outline(null)
+    // a building still grown from being pointed at would cover its door
+    this.pop(place.id, false)
+    if (!this.following) {
+      this.follow(true)
+      this.onFollow?.(true)
+    }
+    this.you.goIn(place, {
+      atDoor: () => {
+        const cam = this.cameras.main
+        const [x, y] = doorstep(place).front
+        this.follow(false)
+        cam.pan(x, y - 60, 1100, 'Sine.easeInOut')
+        cam.zoomTo(DOOR_ZOOM, 1100, 'Sine.easeInOut')
+      },
+      inside: () => this.onInside?.(place),
+    })
   }
 
   // --- Camera: drag to pan, pinch or wheel to zoom --------------------------------------
@@ -232,7 +351,8 @@ export default class TownScene extends Phaser.Scene {
       }
       if (!pointer.isDown) return
       if (pointer.getDistance() > TAP_SLOP) this.dragged = true
-      if (!this.dragged) return
+      if (!this.dragged || this.busy) return
+      this.stopFollowing()
       cam.scrollX -= (pointer.x - pointer.prevPosition.x) / cam.zoom
       cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom
     })

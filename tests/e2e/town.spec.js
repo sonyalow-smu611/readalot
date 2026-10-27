@@ -16,9 +16,12 @@ async function openPlace(page, name) {
 test("the town draws the map, with no bottom tab bar", async ({ page }) => {
   await expect(page.locator(".town canvas")).toBeVisible();
   await expect(page.getByRole("link", { name: "Your profile" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Scan a book" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Scan a book" })).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
 });
+
+// Your character walks to the door before the page opens, so going in takes a few seconds.
+const WALK_IN = { timeout: 10_000 };
 
 // Every building opens its owner's page inside the shared shell, and Back to town returns.
 for (const [place, button, url, owner] of [
@@ -30,7 +33,7 @@ for (const [place, button, url, owner] of [
   test(`${place} opens its page and leads back to town`, async ({ page }) => {
     const card = await openPlace(page, place);
     await card.getByRole("button", { name: button }).click();
-    await expect(page).toHaveURL(url);
+    await expect(page).toHaveURL(url, WALK_IN);
     await expect(page.getByRole("heading", { level: 1, name: place })).toBeVisible();
     await expect(page.getByText(owner, { exact: false }).first()).toBeVisible();
 
@@ -64,9 +67,33 @@ test("a friend's house opens their profile", async ({ page }) => {
   const card = await openPlace(page, "Emma's house");
   await expect(card.getByText("Emma Tan", { exact: false })).toBeVisible();
   await card.getByRole("button", { name: "Visit Emma" }).click();
-  await expect(page).toHaveURL(/\/people\/reader-emma$/);
+  await expect(page).toHaveURL(/\/people\/reader-emma$/, WALK_IN);
   await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Visit Emma's room" })).toBeVisible();
+});
+
+// The camera can follow your character; dragging the map lets it go again.
+test("the follow button keeps the camera on your character", async ({ page }) => {
+  const follow = page.getByRole("button", { name: "Follow my character" });
+  await expect(follow).toHaveAttribute("aria-pressed", "false");
+  await follow.click();
+  await expect(follow).toHaveAttribute("aria-pressed", "true");
+
+  const box = await page.locator(".town canvas").boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2 + 60, { steps: 6 });
+  await page.mouse.up();
+  await expect(follow).toHaveAttribute("aria-pressed", "false");
+});
+
+// Going in, your character walks over to the door first.
+test("your character walks to a building before going in", async ({ page }) => {
+  const card = await openPlace(page, "Library");
+  await card.getByRole("button", { name: "Enter the library" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Walking to Library…" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Follow my character" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(/\/library$/, WALK_IN);
 });
 
 test("every friend's house is in the Places list", async ({ page }) => {

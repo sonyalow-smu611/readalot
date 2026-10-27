@@ -78,12 +78,11 @@
   E(m, lake.x, lake.y, lake.rx - 12, lake.ry - 10, '#4f9fc9')
   stamp(river, 38, '#4f9fc9')
   E(m, lake.x + 20, lake.y + 6, lake.rx - 70, lake.ry - 46, '#3f8fbf')
-  for (let k = 0; k < 260; k++) {
-    const i = ri(0, river.length - 2)
-    const [rx0, ry0] = river[i]
-    R(m, rx0 + ri(-28, 20), ry0 + ri(-30, 30), ri(4, 9), 1, '#9fd4ee')
-  }
-  for (let k = 0; k < 80; k++) R(m, lake.x + ri(-lake.rx + 40, lake.rx - 40), lake.y + ri(-lake.ry + 30, lake.ry - 30), ri(4, 10), 1, '#9fd4ee')
+  // The river and lake once had short light dashes here; the app now draws flowing currents
+  // over the water instead (src/town/water.js). The dashes' random numbers are still used up,
+  // so everything drawn after them stays where it was.
+  for (let k = 0; k < 260; k++) [ri(0, river.length - 2), ri(-28, 20), ri(-30, 30), ri(4, 9)]
+  for (let k = 0; k < 80; k++) [ri(-lake.rx + 40, lake.rx - 40), ri(-lake.ry + 30, lake.ry - 30), ri(4, 10)]
 
   // a waterfall where the river drops over a rocky ledge near the top edge
   {
@@ -440,7 +439,10 @@
       for (let k = 0; k < 5; k++) P(x, X + 2 + k * (w / 5), Y + h + 1, ['#f2a0b8', '#f6e27a', '#fdf7ec'][k % 3])
     } else R(x, X - 2, Y + h, w + 4, 3, shade(frame, 0.85))
   }
+  // each building's front door, so the app can open it (see building())
+  let doorLog = null
   const door2 = (x, X, Y, w, h, col, o = {}) => {
+    if (doorLog) doorLog.door = [X, Y, w, h, col, Boolean(o.double)]
     R(x, X - 3, Y - 3, w + 6, h + 3, o.frame ?? '#f4efe2')
     R(x, X, Y, w, h, col)
     if (o.double) R(x, X + w / 2 - 1, Y, 2, h, shade(col, 0.6))
@@ -486,6 +488,7 @@
     const W = o.w + ov * 2 + pad * 2
     const H = o.wallH + roofH + (o.above ?? 30) + (o.porch ? 18 : 6)
     windowLog = []
+    doorLog = {}
     const s = sprite(W, H, (x) => {
       const L = ov + pad
       const eave = (o.above ?? 30) + roofH
@@ -539,13 +542,22 @@
       }
     })
     const lit = windowLog
+    const door = doorLog.door
     windowLog = null
+    doorLog = null
     const X = o.x - (o.overhang ?? 10) - pad
     groundShadow(o.x + o.w + 4, o.base_y - o.wallH * 0.6, 14, o.wallH * 0.6)
     const art = place(s, X, o.base_y + (o.porch ? 12 : 0))
     // sprite() adds a 1 px outline, so the drawing sits 1 px in from the sprite's corner
     for (const [wx, wy, ww, wh] of lit) windows.push([art.X + 1 + wx, art.Y + 1 + wy, ww, wh])
-    return { left: o.x - ov, right: o.x + o.w + ov, top: o.base_y - o.wallH - o.roofH - (o.above ?? 30), bottom: o.base_y + (o.porch ? 12 : 0), art }
+    return {
+      left: o.x - ov,
+      right: o.x + o.w + ov,
+      top: o.base_y - o.wallH - o.roofH - (o.above ?? 30),
+      bottom: o.base_y + (o.porch ? 12 : 0),
+      art,
+      door: door && { at: [art.X + 1 + door[0], art.Y + 1 + door[1], door[2], door[3]], colour: door[4], double: door[5] },
+    }
   }
 
   // ---------------------------------------------------------------- the four places
@@ -842,6 +854,11 @@
       cars: Object.keys(CARS),
       lamps: lamps.map(([a, b]) => [x2(a), x2(b)]),
       windows: windows.map(box),
+      doors: Object.fromEntries(
+        Object.entries(zones)
+          .filter(([, b]) => b.door)
+          .map(([id, b]) => [id, { ...box(b.door.at), colour: b.door.colour, double: b.door.double }]),
+      ),
       bridges: bridges.map(box),
       river: river.filter((p, i) => i % 2 === 0 || i === river.length - 1).map(([a, b]) => [x2(a), x2(b)]),
       lake: { x: x2(lake.x), y: x2(lake.y), rx: x2(lake.rx), ry: x2(lake.ry) },

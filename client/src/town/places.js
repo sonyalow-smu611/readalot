@@ -12,6 +12,7 @@ export const PLACES = [
   {
     id: 'house',
     name: 'Your house',
+    label: 'Your house',
     tab: 'My Room',
     owner: 'Sonz',
     accent: '#4a7fb0',
@@ -23,6 +24,7 @@ export const PLACES = [
   {
     id: 'library',
     name: 'Library',
+    label: 'Library',
     tab: 'Discover',
     owner: 'Aasim',
     accent: '#3f6b78',
@@ -34,6 +36,7 @@ export const PLACES = [
   {
     id: 'cafe',
     name: 'Cafe',
+    label: 'Cafe',
     tab: 'Social',
     owner: 'Emiley',
     accent: '#a8483a',
@@ -45,6 +48,7 @@ export const PLACES = [
   {
     id: 'salon',
     name: 'Hair Salon',
+    label: 'Hair Salon',
     tab: 'Profile',
     owner: 'Aalric',
     accent: '#9a3f62',
