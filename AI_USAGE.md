@@ -233,3 +233,15 @@ interactivity (see the AI use rules in `PROJECT.md`).
 | Scene | `client/src/town/TownScene.js`, `client/src/components/town/PlacesMenu.vue` | Buildings and friends' houses pop when pointed at or tapped; floating name tags over friends' houses; the Places list scrolls |
 | Laptop view | `client/src/components/PhoneFrame.vue`, `client/src/router/index.js`, `client/src/components/town/PlaceCard.vue` | A `wide` route setting that lets a page fill a laptop window instead of the phone column; the town uses it, and its place card stays card-sized |
 | Tests | `tests/e2e/town.spec.js` | A friend's house opens their room; every friend is in Places; the weather chip steps through each look without errors |
+
+### Landing page for first-time visitors (AI-generated)
+
+Written by Claude Code at Khaleil's request and checked with Playwright. It changes the shared
+router guard, so the team reviews it through a pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Landing page | `client/src/views/StartView.vue`, `client/src/components/start/StartTownScene.vue`, `client/src/components/start/FeatureCard.vue` | `/start`: the town map panning behind a card with the tagline, Sign up and Log in, and one card per building plus Scan a book, using the town's building sprites and the theme's colours |
+| Seen once | `client/src/lib/landing.js` | Remembers in localStorage (`readalot-landing`) that the page was left through Sign up or Log in; reads and writes are guarded |
+| Routing | `client/src/router/index.js` | The `/start` guest route; a signed-out visitor who hasn't seen it goes to `/start` instead of `/login` |
+| Tests | `tests/e2e/start.spec.js` | First visit lands on `/start` and lists every stop; Sign up or Log in counts as seen and later visits go to Log in; leaving without choosing shows it again; no sideways scroll on a phone; a signed-in reader never sees it |
