@@ -1,5 +1,9 @@
 import { expect, test } from "./fixtures.js";
 
+// a phone-sized window, where the room is wider than the screen (the laptop view has its own
+// journey, house-desktop.spec.js)
+test.use({ viewport: { width: 480, height: 720 } });
+
 // The room reads live weather and time; fixed answers keep these checks the same every run.
 test.beforeEach(async ({ page }) => {
   // today's mood check-in already answered, so it does not open over the room
@@ -78,18 +82,18 @@ test("buying a decoration spends credits and it can be placed in the room", asyn
 
   await page.getByRole("button", { name: "Room menu" }).click();
   await page.getByRole("button", { name: "Shop" }).click();
-  await page.getByRole("button", { name: /Clay vase/ }).click();
+  await page.getByRole("button", { name: /Succulent trio/ }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByText("440").first()).toBeVisible();
+  await expect(page.getByText("450").first()).toBeVisible();
 
-  // pick the vase, then tap one of the glowing spots it can stand on
-  await page.getByRole("region", { name: "Inventory" }).getByRole("button", { name: /Clay vase/ }).click();
-  await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Clay vase");
+  // pick the succulents, then tap one of the glowing spots they can stand on
+  await page.getByRole("region", { name: "Inventory" }).getByRole("button", { name: /Succulent trio/ }).click();
+  await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Succulent trio");
   await turnTo(page, "Window");
-  await page.getByRole("button", { name: /^Put Clay vase on the window seat/ }).locator("visible=true").first().click();
+  await page.getByRole("button", { name: /^Put Succulent trio on the window seat/ }).locator("visible=true").first().click();
 
-  await expect(page.getByRole("status")).toHaveText(/^Clay vase is on the window seat/);
-  await expect(page.getByRole("button", { name: "Clay vase", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("status")).toHaveText(/^Succulent trio is on the window seat/);
+  await expect(page.getByRole("button", { name: "Succulent trio", exact: true })).toHaveCount(1);
 });
 
 test("the book on the chair opens the Currently Reading card", async ({ page }) => {
@@ -212,7 +216,7 @@ for (const [device, viewport, deviceScaleFactor] of [
 
     test("the room is drawn at a whole number of device pixels per pixel of art", async ({ page }) => {
       await roomShown(page);
-      const { across, down, crisp } = await page.locator(".strip canvas").evaluate((canvas) => {
+      const { across, down, crisp } = await page.locator(".strip canvas").first().evaluate((canvas) => {
         const { width, height } = canvas.getBoundingClientRect();
         return {
           across: (width * devicePixelRatio) / canvas.width,

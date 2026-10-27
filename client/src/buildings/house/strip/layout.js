@@ -27,7 +27,8 @@ export const LAYERS = ['wall', 'hang', 'floor', 'furniture', 'front']
 // One entry per piece: `sprite` (a file in public/room/strip/), `x` its left edge, `y` its
 // bottom edge, `layer`. Optional: `id` (when a sprite is used twice, or something needs to find
 // it), `lit` (the sprite shown at night, for lamps), `action` (what tapping it does: window,
-// chair, bookshelf, clock, corkboard) with a `hit` box for it when that is not the whole sprite.
+// chair, bookshelf, clock, corkboard) with a `hit` box for it when that is not the whole sprite,
+// `with` (the id of a piece this one is shown only alongside).
 export const PIECES = [
   // --- bunting along the top of the wall, the whole way along ------------------------------
   ...[8, 128, 248, 368, 488, 608, 728, 848, 968, 1088].map((x) => ({ sprite: 'bunting', x, y: 44, layer: 'wall' })),
@@ -65,7 +66,8 @@ export const PIECES = [
   { sprite: 'outlet-cable', x: 458, y: 402, layer: 'wall' },
   { id: 'floor-lamp', sprite: 'floor-lamp', lit: 'floor-lamp-lit', x: 262, y: FEET, layer: 'furniture' },
   { id: 'armchair', sprite: 'armchair', x: 296, y: FEET, layer: 'furniture' },
-  { sprite: 'throw', x: 380, y: 386, layer: 'furniture' },
+  // the throw belongs to the armchair: it goes when another chair takes the armchair's place
+  { sprite: 'throw', x: 380, y: 386, layer: 'furniture', with: 'armchair' },
   { id: 'side-table', sprite: 'side-table', x: 410, y: FEET, layer: 'furniture' },
   { sprite: 'plant-pot-small', x: 412, y: 356, layer: 'furniture' },
   { sprite: 'rug', x: 280, y: FEET + 10, layer: 'floor' },
@@ -136,13 +138,29 @@ export const PARTS = [
   { id: 'bed', label: 'Bed', at: 1020 },
 ]
 
+// Where wall art can hang: open stretches of wall, clear of the window, the clock, the corkboard,
+// the bookshelf and the room's own pictures. `at` is the point a piece hangs centred on; `name`
+// says where that is. Keep the order: a spot's id is its place in this list.
+const WALL = [
+  { at: { x: 277, y: 192 }, name: 'by the window' },
+  { at: { x: 441, y: 188 }, name: 'by the reading chair' },
+  { at: { x: 745, y: 106 }, name: 'above the corkboard' },
+  { at: { x: 858, y: 240 }, name: 'over the nightstand' },
+  { at: { x: 1125, y: 182 }, name: 'by the mirror' },
+]
+
 // Where a shop decoration can stand: the same zones and x (0 to 1 along the zone) as the 3D room
-// had, so pieces placed there before stay put. `at` is the point it stands on.
+// had, so pieces placed there before stay put. `at` is the point it stands on (or, on the wall,
+// hangs from); `name`, when there is one, says where that is.
 export const SLOTS = [
   ...[0.25, 0.5, 0.75].map((x, k) => ({ id: `seat.${k}`, zone: 'seat', x, at: { x: Math.round(34 + 226 * x), y: 350 } })),
   { id: 'side-table.0', zone: 'side-table', x: 0.5, at: { x: 440, y: 357 } },
   { id: 'nightstand.0', zone: 'nightstand', x: 0.5, at: { x: 898, y: 359 } },
   ...[0.15, 0.33, 0.51, 0.69].map((x, k) => ({ id: `room.${k}`, zone: 'room', x, at: { x: Math.round(ROOM.width * x), y: 416 } })),
+  // the reading nook: a chair from the Shop stands (`base`) where the armchair stands, in its
+  // place; its spot glows on the seat
+  { id: 'chair.0', zone: 'chair', x: 0.28, at: { x: 350, y: 350 }, base: FEET, name: 'in the reading nook' },
+  ...WALL.map(({ at, name }, k) => ({ id: `wall.${k}`, zone: 'wall', x: Math.round((at.x / ROOM.width) * 100) / 100, at, name: `on the wall ${name}` })),
 ]
 
 // Pets (and, one day, visitors) walk along this line on the floor.

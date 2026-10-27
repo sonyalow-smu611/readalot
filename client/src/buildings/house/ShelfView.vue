@@ -2,29 +2,52 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // My Shelf: every book on the reader's shelf, opened from the bookshelf in My Room. Laid out like
 // the Library: a search box, genre chips, then one row of covers per shelf (To be read, Currently
-// reading, Finished reading). A chip shows one genre in every row; the search narrows by title or
+// reading, Finished reading), each scrolling sideways. A chip shows one genre in every row; the search narrows by title or
 // author. A cover opens the book's card, the same as in the room.
+// Opened from someone else's room (/people/:id/room/shelf), it's their shelf instead: their books,
+// to look through, with no search and nothing to add, and their books' cards read-only.
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
-import DiscoverShelf from '@/components/DiscoverShelf.vue'
 import StateView from '@/components/StateView.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
+import VisitorBookDialog from '@/buildings/house/components/VisitorBookDialog.vue'
+import ShelfRow from '@/buildings/house/components/ShelfRow.vue'
+import { readerRoom } from '@/buildings/house/visitors.js'
 import { SHELVES } from '@/services/shelves.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { PLACES } from '@/town/places.js'
 
 const ALL = 'All'
 
+const route = useRoute()
 const place = PLACES.find((p) => p.id === 'house')
 const bookshelf = useBookshelfStore()
+
+// someone else's shelf being visited; null on My Shelf
+const visitingId = route.params.id ?? null
+const visiting = visitingId ? readerRoom(visitingId) : null
+const books = computed(() => visiting?.books ?? bookshelf.books)
+const loading = computed(() => !visiting && bookshelf.loading)
+const error = computed(() => (visiting ? '' : bookshelf.error))
+
+const shell = visiting
+  ? {
+      title: `${visiting.firstName}'s Shelf`,
+      subtitle: 'Visiting',
+      owner: visiting.name,
+      back: { name: 'reader-house', params: { id: visiting.id } },
+      backLabel: `Back to ${visiting.firstName}'s room`,
+    }
+  : { title: place.name, subtitle: 'My Shelf', owner: place.owner, back: { name: 'house' }, backLabel: 'Back to room' }
 
 const query = ref('')
 const genre = ref(ALL)
 
-// the genres of the reader's own books, the most common first (ties alphabetical)
+// the genres of the shelf's books, the most common first (ties alphabetical)
 const genres = computed(() => {
   const counts = new Map()
-  for (const book of bookshelf.books) {
+  for (const book of books.value) {
     for (const name of new Set(book.genres ?? [])) counts.set(name, (counts.get(name) ?? 0) + 1)
   }
   const sorted = [...counts].sort(([a, x], [b, y]) => y - x || a.localeCompare(b)).map(([name]) => name)
@@ -42,9 +65,8 @@ const filtering = computed(() => genre.value !== ALL || Boolean(query.value.trim
 
 const rows = computed(() =>
   SHELVES.map((shelf) => {
-    const all = bookshelf.booksByStatus[shelf.status] ?? []
-    const books = all.filter(matches)
-    return { ...shelf, books, count: books.length }
+    const shown = books.value.filter((book) => book.status === shelf.status && matches(book))
+    return { ...shelf, books: shown, count: shown.length }
   }),
 )
 
@@ -70,21 +92,24 @@ async function closeBook() {
   ;(cover ?? (trigger?.isConnected ? trigger : null))?.focus()
 }
 
-onMounted(() => bookshelf.load())
+onMounted(() => {
+  if (!visitingId) bookshelf.load()
+})
 </script>
 
 <template>
   <div ref="page" class="shelf-page" :style="{ '--house-accent': place.accent }">
     <BuildingShell
-      :title="place.name"
-      subtitle="My Shelf"
-      :owner="place.owner"
+      v-if="!visitingId || visiting"
+      :title="shell.title"
+      :subtitle="shell.subtitle"
+      :owner="shell.owner"
       :accent="place.accent"
-      :back="{ name: 'house' }"
-      back-label="Back to room"
+      :back="shell.back"
+      :back-label="shell.backLabel"
     >
-      <section class="my-shelf" aria-label="My Shelf">
-        <form class="my-shelf__search" role="search" @submit.prevent>
+      <section class="my-shelf" :aria-label="visiting ? shell.title : 'My Shelf'">
+        <form v-if="!visiting" class="my-shelf__search" role="search" @submit.prevent>
           <span aria-hidden="true">🔍</span>
           <input
             v-model="query"
@@ -110,9 +135,14 @@ onMounted(() => bookshelf.load())
           </button>
         </div>
 
-        <StateView v-if="bookshelf.error" :error="bookshelf.error" @retry="bookshelf.load" />
+        <StateView v-if="error" :error="error" @retry="bookshelf.load" />
 
-        <div v-else-if="!bookshelf.loading && !bookshelf.books.length" class="my-shelf__empty">
+        <div v-else-if="visiting && !books.length" class="my-shelf__empty">
+          <strong>No books yet</strong>
+          <p>{{ visiting.firstName }} hasn't put any books on their shelf yet.</p>
+        </div>
+
+        <div v-else-if="!loading && !books.length" class="my-shelf__empty">
           <strong>Add your first book</strong>
           <p>Books you save show up here, on To be read, Currently reading or Finished reading.</p>
           <div class="my-shelf__empty-links">
@@ -128,11 +158,12 @@ onMounted(() => bookshelf.load())
             class="my-shelf__row"
             :data-shelf="row.status"
             :aria-label="`${row.label}, ${row.count} ${row.count === 1 ? 'book' : 'books'}`">
-            <DiscoverShelf
+            <ShelfRow
               :title="`${row.label} · ${row.count}`"
+              :shelf="row.label"
               :emoji="row.emoji"
               :books="row.books"
-              :loading="bookshelf.loading && !bookshelf.books.length"
+              :loading="loading && !books.length"
               :empty="filtering ? 'Nothing matches.' : 'No books here yet.'"
               @select="openBook"
             />
@@ -141,7 +172,17 @@ onMounted(() => bookshelf.load())
       </section>
     </BuildingShell>
 
-    <BookDialog v-if="openedBook" :book="openedBook" :accent="place.accent" @close="closeBook" @leave="openedBook = null" />
+    <BuildingShell v-else title="Shelf not found" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+      <div class="my-shelf__empty">
+        <p>We couldn't find that reader.</p>
+        <div class="my-shelf__empty-links"><RouterLink :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink></div>
+      </div>
+    </BuildingShell>
+
+    <template v-if="openedBook">
+      <VisitorBookDialog v-if="visiting" :book="openedBook" :owner="visiting.firstName" :accent="place.accent" @close="closeBook" />
+      <BookDialog v-else :book="openedBook" :accent="place.accent" @close="closeBook" @leave="openedBook = null" />
+    </template>
   </div>
 </template>
 
@@ -206,15 +247,6 @@ onMounted(() => bookshelf.load())
   border-color: var(--house-accent);
   background: var(--house-accent);
   color: var(--rl-surface);
-}
-
-.my-shelf__row :deep(.discover-shelf__title) {
-  font-family: var(--rl-font-title);
-  color: var(--rl-text);
-}
-
-.my-shelf__row :deep(.discover-shelf__empty) {
-  color: var(--rl-muted);
 }
 
 .my-shelf__empty {

@@ -9,19 +9,20 @@
     bookshelf  opens My Shelf, every book       a book    takes it off the shelf and opens it
     the book on the coffee table  the Currently Reading card
     corkboard  the Quote of the Day             window, clock   live weather and time (read-only)
-  Shop decorations and pets are the shop's own drawings, standing on spots in the room.
+  Furniture from the Shop is painted into the room too; its cats walk about on a canvas of their own.
 
   Until the room's pictures have loaded, and when they cannot (or the device cannot draw on a
   canvas), a still picture of the room stands in, with the bar of places opening things directly.
 -->
 <template>
-  <div ref="root" class="strip" :class="{ 'is-ready': ready, 'is-locked': bookPhase !== 'closed' }">
+  <div ref="root" class="strip" :class="{ 'is-ready': ready, 'is-locked': bookPhase !== 'closed', 'is-visit': !editable }">
     <div
       ref="scroller"
       class="strip__scroller"
       role="region"
       tabindex="0"
-      aria-label="Your room. Swipe, drag or use the arrow keys to look around."
+      :aria-label="`${roomName}. Swipe, drag or use the arrow keys to look around.`"
+      :data-cut="Math.max(0, -size.above)"
       @scroll.passive="onScroll"
     >
       <div class="strip__stage" :style="stageStyle">
@@ -32,6 +33,8 @@
           <!-- the view outside, behind the canvas: it shows through the window's glass -->
           <WindowView class="strip__outside" :style="boxStyle(glass)" :scene="weather.scene" :night="weather.night" />
           <canvas v-show="ready" ref="canvas" class="strip__canvas" />
+          <!-- the cats from the furniture library, drawn over the room as they walk about -->
+          <canvas v-show="ready" ref="catCanvas" class="strip__canvas strip__pets" aria-hidden="true" />
 
           <div v-if="ready" class="strip__layer">
             <div class="strip__pin strip__window" data-tour="window" :style="boxStyle(spots.window)" />
@@ -79,6 +82,7 @@
                 {{ error }}
                 <button class="btn btn-sm btn-outline-primary" type="button" @click="$emit('retry')">Retry</button>
               </template>
+              <strong v-else-if="!editable">No books on these shelves yet</strong>
               <template v-else>
                 <strong>Add your first book</strong>
                 <RouterLink to="/discover">Discover books</RouterLink>
@@ -103,28 +107,38 @@
               data-tour="quote"
               type="button"
               aria-haspopup="dialog"
-              aria-label="Quote of the day"
+              :aria-label="boardLabel"
               :style="boxStyle(spots.corkboard)"
               @click="tap('corkboard')"
             >
-              <span class="strip__tip">Quote of the day</span>
+              <span class="strip__tip">{{ boardLabel }}</span>
             </button>
 
-            <!-- decorations and pets, standing on their spots -->
-            <button
-              v-for="item in placed"
-              :key="item.uid"
-              type="button"
-              class="strip__pin placed"
-              :class="{ 'is-pet': isPet(item) }"
-              :data-pet="isPet(item) ? item.uid : null"
-              :aria-label="decorName(item)"
-              :style="placedStyle(item)"
-              @click="pickItem(item.uid)"
-            >
-              <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
-              <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-            </button>
+            <!-- the furniture placed in the room: drawn in the room itself, each with an invisible
+                 button over it (a cat's follows it as it walks) -->
+            <template v-for="item in placed" :key="item.uid">
+              <button
+                v-if="artOf(item)"
+                type="button"
+                class="strip__pin strip__hit placed-art"
+                :aria-label="decorName(item)"
+                :style="boxStyle(artOf(item).box)"
+                @click="pickItem(item.uid)"
+              >
+                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+              </button>
+              <button
+                v-else-if="isPet(item)"
+                type="button"
+                class="strip__pin placed-cat"
+                :data-pet="item.uid"
+                :aria-label="decorName(item)"
+                :style="catStyle(item)"
+                @click="pickItem(item.uid)"
+              >
+                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+              </button>
+            </template>
 
             <!-- while placing or dragging a piece: the free spots it can go on -->
             <button
@@ -132,7 +146,8 @@
               :key="slot.id"
               type="button"
               class="strip__pin strip__slot"
-              :aria-label="`Put ${movingMeta.name} ${ZONE_NAMES[slot.zone]}`"
+              :class="{ 'is-wall': slot.zone === 'wall' }"
+              :aria-label="`Put ${movingMeta.name} ${slotName(slot)}`"
               :style="pointStyle(slot.at)"
               @click="placeAt(slot)"
             />
@@ -163,7 +178,7 @@
       @wheel.stop.prevent
     />
 
-    <p v-if="placing" class="strip__placing" role="status">
+    <p v-if="editable && placing" class="strip__placing" role="status">
       Tap a glowing spot for the {{ placingMeta?.name }}.
       <button type="button" class="strip__cancel" @click="cancelPlace">Cancel</button>
     </p>
@@ -183,17 +198,17 @@ let lastLeft = 0
 </script>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, toRef, watch } from 'vue'
 import stillArt from '@/buildings/house/assets/room-still.png'
-import DecorPiece from '@/components/DecorPiece.vue'
 import WindowView from '@/buildings/house/components/WindowView.vue'
-import { decorMeta, useDecor } from '@/composables/useDecor'
+import { decorMeta, fitsZone, useDecor } from '@/composables/useDecor'
+import { furnitureSprite } from '@/buildings/house/furniture.js'
 import { primaryAuthor } from '@/lib/book'
 import { prefersReducedMotion } from '@/lib/motion'
 import { fetchSingaporeTime } from '@/services/time.js'
-import { PARTS, ROOM, SLOTS, WALK, glassOf, hotspots, shelfRows as rowBoxes } from '@/buildings/house/strip/layout.js'
+import { PARTS, ROOM, SLOTS, SPRITES, WALK, glassOf, hotspots, shelfRows as rowBoxes } from '@/buildings/house/strip/layout.js'
 import { layoutBooks, spineBox } from '@/buildings/house/strip/books.js'
-import { paintRoom, spriteIds } from '@/buildings/house/strip/paint.js'
+import { paintCats, paintRoom, spriteIds } from '@/buildings/house/strip/paint.js'
 import { createScroll } from '@/buildings/house/strip/scroll.js'
 import { createFlight } from '@/buildings/house/strip/flight.js'
 
@@ -204,9 +219,17 @@ const ZONE_NAMES = {
   room: 'on the floor',
 }
 const SCENE_LABELS = { sunny: 'Clear', cloudy: 'Cloudy', rain: 'Rain' }
-// how tall a decoration stands, in art pixels
-const TALL = { shelf: 22, floor: 40, pet: 28 }
+// the most plain wall that may be cut off the top of the room to fill a wide window, in art
+// pixels: the bunting hangs below it
+const CUT = 24
 const PET_SPEED = 26 // art pixels a second
+// a cat's steps: how long each frame of its walk shows, in seconds; how often it falls asleep
+// when it stops, and for how long it rests (seconds)
+const CAT_STEP = 0.2
+const CAT_NAPS = 0.25
+const CAT_REST = { sit: [1, 4], sleep: [6, 10] }
+// the box a cat's button covers, in art pixels
+const CAT_BOX = { w: 28, h: 18 }
 const HINT_KEY = 'readalot.roomHint'
 // px kept clear along the bottom for the bar of places: spare height goes to floor there first
 const BAR = 64
@@ -221,16 +244,28 @@ const props = defineProps({
   error: { type: String, default: '' },
   // the Currently Reading card opened from the coffee table is showing
   readingOpen: Boolean,
+  // the furniture standing in the room: [{ uid, id, zone, x }]
+  furniture: { type: Array, default: () => [] },
+  // the reader's own room: pieces can be put on spots, picked and taken down
+  editable: { type: Boolean, default: false },
+  // whose room it is, for screen readers ("Your room", "Emma's room")
+  roomName: { type: String, default: 'Your room' },
+  // what the corkboard opens: the Quote of the Day, or a visited reader's notice board
+  boardLabel: { type: String, default: 'Quote of the day' },
+  // how many visitors' notes are on the corkboard (up to three are drawn on it)
+  notes: { type: Number, default: 0 },
 })
 // open-book: the Currently Reading card; pick-book: a book tapped on the shelf; open-shelf: the
 // bookshelf itself tapped (or asked for before the room has loaded), for My Shelf
 const emit = defineEmits(['open-book', 'pick-book', 'open-shelf', 'quote', 'retry'])
 
-const { placed, placing, placingMeta, drag, selected, pick, unplace, placeOn, cancelPlace, flash } = useDecor()
+const { placing, placingMeta, drag, selected, pick, unplace, placeOn, cancelPlace, flash } = useDecor()
+const placed = toRef(props, 'furniture')
 
 const root = ref(null)
 const scroller = ref(null)
 const canvas = ref(null)
+const catCanvas = ref(null)
 const ready = ref(false)
 const time = ref('--:--')
 // a book taken off the shelf: 'closed' | 'opening' | 'open' | 'closing'
@@ -312,21 +347,26 @@ const noteStyle = computed(() => {
 
 // Works out the whole number of device pixels per art pixel at which the room's height fits.
 // Height to spare becomes more floor below the room (clear of the bar of places), then more wall.
+// On a wide window where the room would come out narrower than the window, it's drawn one size
+// up instead if that only cuts plain wall (above the bunting) off the top; otherwise it's centred.
 function measure() {
   const el = root.value
   if (!el) return
   const ratio = window.devicePixelRatio || 1
   const tall = Math.round(el.clientHeight * ratio)
-  const scale = Math.max(1, Math.floor(tall / ROOM.height))
+  const wide = Math.round(el.clientWidth * ratio)
+  let scale = Math.max(1, Math.floor(tall / ROOM.height))
+  if (scale * ROOM.width < wide && (scale + 1) * (ROOM.height - CUT) <= tall) scale += 1
   const unit = scale / ratio
-  const rows = Math.max(ROOM.height, Math.floor(tall / scale))
+  const rows = Math.floor(tall / scale)
   const spare = rows - ROOM.height
-  const below = Math.min(spare, Math.ceil(BAR / unit))
-  const next = { scale, unit, rows, above: spare - below }
+  const below = spare < 0 ? 0 : Math.min(spare, Math.ceil(BAR / unit))
+  const next = { scale, unit, rows: Math.max(rows, 0), above: spare - below }
   const before = size.value
   if (next.scale === before.scale && next.rows === before.rows && next.unit === before.unit && next.above === before.above) return
-  // keep the same part of the room in the middle of the view
-  const middle = (scroller.value.scrollLeft + scroller.value.clientWidth / 2) / before.unit
+  // keep the same part of the room in the middle of the view (as it was before the window
+  // changed size: by now the view may already be narrower or wider)
+  const middle = viewMiddle ?? (scroller.value.scrollLeft + scroller.value.clientWidth / 2) / before.unit
   size.value = next
   nextTick(() => {
     scroll?.glideTo(middle * next.unit - scroller.value.clientWidth / 2, { instant: true })
@@ -355,6 +395,8 @@ function paint() {
       lifted: lifted.value,
       out: out.value,
       time: readClock(),
+      extras: extras.value,
+      notes: props.notes,
     })
   })
 }
@@ -392,11 +434,12 @@ function canDraw() {
   }
 }
 
-// --- Decorations and pets ---------------------------------------------------------------------
+// --- Furniture and cats -----------------------------------------------------------------------
 function decorName(item) {
   return decorMeta(item.id)?.name || 'Decoration'
 }
 
+// a cat: it walks about, drawn from its own sheet of frames
 function isPet(item) {
   return Boolean(decorMeta(item.id)?.pet)
 }
@@ -404,15 +447,22 @@ function isPet(item) {
 // the piece on its way into the room: picked to place, or being dragged out of the inventory
 const movingMeta = computed(() => placingMeta.value ?? (drag.value?.moved ? decorMeta(drag.value.id) : null))
 
-// spots that piece can go on, that nothing stands on yet
+// spots that piece can go on, that nothing stands on yet (none in someone else's room)
 const freeSlots = computed(() => {
   const meta = movingMeta.value
-  if (!meta) return []
-  return SLOTS.filter((slot) => (meta.surface === 'floor') === (slot.zone === 'room') && !takenSlot(slot))
+  if (!meta || !props.editable) return []
+  return SLOTS.filter((slot) => fitsZone(meta, slot.zone) && !takenSlot(slot))
 })
 
-// pets wander off, so only the pieces that stay put take a spot
+// where a spot is, said the way the room says it ("on the side table", "on the wall by the window")
+function slotName(slot) {
+  return slot.name ?? ZONE_NAMES[slot.zone]
+}
+
+// pets wander off, so only the pieces that stay put take a spot. The reading nook is never taken:
+// a new chair swaps with the one there.
 function takenSlot(slot) {
+  if (slot.zone === 'chair') return false
   return placed.value.some((item) => !isPet(item) && item.zone === slot.zone && Math.abs(item.x - slot.x) < 0.04)
 }
 
@@ -422,38 +472,73 @@ function slotOf(item) {
   return slots.reduce((best, slot) => (!best || Math.abs(slot.x - item.x) < Math.abs(best.x - item.x) ? slot : best), null)
 }
 
-const pets = new Map()
-
-function placedStyle(item) {
-  const meta = decorMeta(item.id)
-  const tall = (meta?.pet ? TALL.pet : meta?.surface === 'floor' ? TALL.floor : TALL.shelf) * size.value.unit
-  if (isPet(item)) {
-    const pet = pets.get(item.uid)
-    return { ...pointStyle({ x: pet?.x ?? WALK.from, y: WALK.y }), '--tall': `${tall}px` }
-  }
-  const slot = slotOf(item)
-  return slot ? { ...pointStyle(slot.at), '--tall': `${tall}px` } : { display: 'none' }
+// A placed piece: its sprite, the box it fills in the room (hung centred on a wall spot, or
+// standing on its spot) and the layer it's drawn in. null for cats, which walk about.
+function artOf(item) {
+  const sprite = !isPet(item) && furnitureSprite(item.id)
+  const slot = sprite && slotOf(item)
+  if (!slot) return null
+  const { w, h } = SPRITES[sprite]
+  const wall = item.zone === 'wall'
+  const x = Math.round(slot.at.x - w / 2)
+  const y = wall ? Math.round(slot.at.y - h / 2) : (slot.base ?? slot.at.y) - h
+  // the floor's spots are in front of the furniture; the small surfaces are on top of it; a
+  // reading chair stands in for the armchair
+  const layer = wall ? 'wall' : item.zone === 'room' ? 'front' : 'furniture'
+  return { sprite, box: { x, y, w, h }, layer, replaces: item.zone === 'chair' ? 'armchair' : null }
 }
 
-// Each pet walks to a spot along the floor, waits a moment, and picks the next.
+// what the room paints for them, after its own pieces in each layer
+const extras = computed(() =>
+  placed.value
+    .map(artOf)
+    .filter(Boolean)
+    .map(({ sprite, box, layer, replaces }) => ({ sprite, x: box.x, y: box.y + box.h, layer, replaces })),
+)
+
+const pets = new Map()
+
+function between([low, high]) {
+  return low + Math.random() * (high - low)
+}
+
+// where a pet is and what it's doing: it starts somewhere along the floor, sitting
+function petState(uid) {
+  if (!pets.has(uid)) {
+    const x = WALK.from + Math.random() * (WALK.to - WALK.from)
+    pets.set(uid, { x, target: x, wait: Math.random() * 2, face: 'right', mode: 'sit', clock: 0 })
+  }
+  return pets.get(uid)
+}
+
+function catStyle(item) {
+  const { unit } = size.value
+  return {
+    ...pointStyle({ x: petState(item.uid).x, y: WALK.y }),
+    width: `${CAT_BOX.w * unit}px`,
+    height: `${CAT_BOX.h * unit}px`,
+  }
+}
+
+// Each pet walks to a spot along the floor, then stops a while: sitting, or now and then
+// curled up asleep for longer. Then it picks the next spot.
 function walkPets(seconds) {
   const live = new Set(placed.value.filter(isPet).map((item) => item.uid))
   for (const uid of pets.keys()) if (!live.has(uid)) pets.delete(uid)
   const span = WALK.to - WALK.from
   for (const uid of live) {
-    if (!pets.has(uid)) {
-      const x = WALK.from + Math.random() * span
-      pets.set(uid, { x, target: x, wait: Math.random() * 2, face: 'right' })
-    }
-    const pet = pets.get(uid)
+    const pet = petState(uid)
+    pet.clock += seconds
     if (pet.wait > 0) pet.wait -= seconds
     else if (Math.abs(pet.target - pet.x) < 1) {
       pet.target = WALK.from + Math.random() * span
-      pet.wait = 1 + Math.random() * 3
+      pet.mode = Math.random() < CAT_NAPS ? 'sleep' : 'sit'
+      pet.wait = between(CAT_REST[pet.mode])
     } else {
       const step = Math.sign(pet.target - pet.x) * Math.min(Math.abs(pet.target - pet.x), PET_SPEED * seconds)
       pet.x += step
       pet.face = step > 0 ? 'right' : 'left'
+      pet.mode = 'walk'
     }
     const el = root.value?.querySelector(`[data-pet="${uid}"]`)
     if (el) {
@@ -463,23 +548,48 @@ function walkPets(seconds) {
   }
 }
 
+// The cats' canvas, the same size as the room's: each cat's frame for what it's doing (a walk
+// steps between two frames).
+let catsShown = false
+function drawCats() {
+  const el = catCanvas.value
+  if (!el || !ready.value) return
+  const cats = placed.value.filter(isPet)
+  if (!cats.length && !catsShown) return
+  if (el.width !== ROOM.width) el.width = ROOM.width
+  if (el.height !== size.value.rows) el.height = size.value.rows
+  paintCats(el.getContext('2d'), {
+    images: images.value,
+    offset: offset.value,
+    weather: props.weather,
+    cats: cats.map((item) => {
+      const pet = petState(item.uid)
+      const frame = pet.mode === 'walk' ? (Math.floor(pet.clock / CAT_STEP) % 2 ? 'step' : 'walk') : pet.mode
+      return { sprite: furnitureSprite(item.id), frame, x: pet.x, face: pet.face }
+    }),
+  })
+  catsShown = cats.length > 0
+}
+
 let frame = 0
 let lastTime = 0
 function loop(now) {
   frame = requestAnimationFrame(loop)
   const seconds = Math.min(0.1, (now - lastTime) / 1000)
   lastTime = now
-  if (document.hidden || prefersReducedMotion()) return
-  walkPets(seconds)
+  if (document.hidden) return
+  // with reduced motion the pets stay where they are (sitting), but are still drawn
+  if (!prefersReducedMotion()) walkPets(seconds)
+  drawCats()
 }
 
 function placeAt(slot) {
   const name = placingMeta.value?.name
-  if (placeOn(slot.zone, slot.x)) flash(`${name} is ${ZONE_NAMES[slot.zone]}.`, 'ok')
+  if (placeOn(slot.zone, slot.x)) flash(`${name} is ${slotName(slot)}.`, 'ok')
 }
 
 function pickItem(uid) {
-  if (scroll?.wasDrag()) return
+  if (!props.editable || scroll?.wasDrag()) return
   pick(uid)
 }
 
@@ -487,17 +597,17 @@ function pickItem(uid) {
 // there, if one is close. Returns the spot, or null.
 function dropAt(entry, x, y) {
   const meta = decorMeta(entry.id)
-  if (!meta || !ready.value) return null
+  if (!props.editable || !meta || !ready.value) return null
   const stage = scroller.value.firstElementChild.getBoundingClientRect()
   const { unit } = size.value
   let best = null
   for (const slot of SLOTS) {
-    if ((meta.surface === 'floor') !== (slot.zone === 'room') || takenSlot(slot)) continue
+    if (!fitsZone(meta, slot.zone) || takenSlot(slot)) continue
     const gap = Math.hypot(stage.left + slot.at.x * unit - x, stage.top + (offset.value + slot.at.y) * unit - y)
     if (gap < 70 && (!best || gap < best.gap)) best = { slot, gap }
   }
   if (!best || !placeOn(best.slot.zone, best.slot.x, entry)) return null
-  return { ...best.slot, name: ZONE_NAMES[best.slot.zone] }
+  return { ...best.slot, name: slotName(best.slot) }
 }
 
 // --- Moving along the room --------------------------------------------------------------------
@@ -526,8 +636,13 @@ function goTo(id) {
   scroller.value.focus({ preventScroll: true })
 }
 
+// the art x in the middle of the view, kept as the room scrolls
+let viewMiddle = null
+
 function onScroll() {
   if (hinting.value) hideHint()
+  const el = scroller.value
+  viewMiddle = (el.scrollLeft + el.clientWidth / 2) / size.value.unit
 }
 
 // --- Taps -------------------------------------------------------------------------------------
@@ -632,7 +747,7 @@ watch(placing, async (entry) => {
   if (!freeSlots.value.some((slot) => inView(slot.at.x)) && freeSlots.value[0]) centreOn(freeSlots.value[0].at.x)
 })
 
-watch([shelf, lifted, out, () => props.weather.scene, () => props.weather.night], () => paint())
+watch([shelf, lifted, out, extras, () => props.notes, () => props.weather.scene, () => props.weather.night], () => paint())
 
 let resize = null
 onMounted(async () => {
@@ -712,9 +827,11 @@ defineExpose({ dropAt, putBack })
   overflow-x: hidden;
 }
 
+/* a room narrower than the window (a very wide, short one) sits in the middle of it */
 .strip__stage {
   position: relative;
   height: 100%;
+  margin-inline: auto;
 }
 
 .strip__room {
@@ -745,6 +862,10 @@ defineExpose({ dropAt, putBack })
 
 .strip__canvas {
   z-index: 1;
+}
+
+.strip__pets {
+  pointer-events: none;
 }
 
 .strip__layer {
@@ -871,29 +992,6 @@ defineExpose({ dropAt, putBack })
   font-weight: 700;
 }
 
-/* a decoration or pet: the shop drawing, standing on its spot at the room's scale */
-.placed {
-  padding: 0;
-  border: 0;
-  background: none;
-  transform: translate(-50%, -100%);
-  cursor: pointer;
-}
-
-.placed__pop {
-  display: block;
-}
-
-.placed__pop :deep(.art) {
-  display: block;
-  height: var(--tall);
-  width: auto;
-}
-
-.placed.is-pet[data-face='left'] .placed__pop {
-  transform: scaleX(-1);
-}
-
 .placed__remove {
   position: absolute;
   bottom: 100%;
@@ -908,6 +1006,26 @@ defineExpose({ dropAt, putBack })
   color: #fff;
 }
 
+/* a piece of furniture from the library: drawn in the room, its button an invisible box under
+   the room's own tappable parts (a chair's box takes in the book on the coffee table) */
+.placed-art {
+  z-index: 0;
+  overflow: visible;
+}
+
+.strip__hit:not(.placed-art) {
+  z-index: 1;
+}
+
+/* a cat's button: an invisible box over the cat, following it as it walks */
+.placed-cat {
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+}
+
 /* a free spot for the piece being placed */
 .strip__slot {
   width: 44px;
@@ -920,6 +1038,11 @@ defineExpose({ dropAt, putBack })
   box-shadow: 0 0 16px 4px rgba(243, 212, 138, 0.7);
   cursor: pointer;
   animation: slot-glow 1.4s ease-in-out infinite;
+}
+
+/* a spot on the wall: the piece hangs centred on it */
+.strip__slot.is-wall {
+  transform: translate(-50%, -50%);
 }
 
 @keyframes slot-glow {
@@ -1042,12 +1165,14 @@ defineExpose({ dropAt, putBack })
 }
 
 /* the bar of places, along the bottom left, clear of the room menu button */
+/* only its buttons take taps: the room between and under them stays reachable */
 .strip__places {
   position: absolute;
   bottom: 18px;
   left: 10px;
   right: 76px;
   z-index: 3;
+  pointer-events: none;
   display: flex;
   gap: 6px;
   margin-bottom: -14px;
@@ -1056,9 +1181,15 @@ defineExpose({ dropAt, putBack })
   scrollbar-width: none;
 }
 
+/* in someone else's room: clear of the wider Leave a note button */
+.strip.is-visit .strip__places {
+  right: 170px;
+}
+
 /* the town's chips (TownHud): white, a fine line and a soft shadow */
 .strip__place {
   flex: none;
+  pointer-events: auto;
   min-height: 40px;
   padding: 0 14px;
   border: 1px solid var(--rl-line);

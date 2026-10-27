@@ -1,5 +1,24 @@
 <template>
-  <RouterLink v-if="book" class="reading-card" :to="`/books/${book.id}`">
+  <!-- in someone else's room: what they're reading, with no book page to open -->
+  <div v-if="book && owner" class="reading-card">
+    <BookCover class="reading-card__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
+    <div class="reading-card__body">
+      <p class="reading-card__tab">Currently reading</p>
+      <h2 class="reading-card__title">{{ book.title }}</h2>
+      <p class="reading-card__author">{{ book.authors?.join(", ") || "Unknown author" }}</p>
+      <p class="reading-card__hint">{{ owner }} is reading this</p>
+    </div>
+  </div>
+
+  <div v-else-if="owner" class="reading-card reading-card--empty">
+    <div class="reading-card__body">
+      <p class="reading-card__tab">Currently reading</p>
+      <h2 class="reading-card__title">Nothing on the go</h2>
+      <p class="reading-card__author">{{ owner }} isn't reading anything right now.</p>
+    </div>
+  </div>
+
+  <RouterLink v-else-if="book" class="reading-card" :to="`/books/${book.id}`">
     <BookCover class="reading-card__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
     <div class="reading-card__body">
       <p class="reading-card__tab">Currently reading</p>
@@ -37,7 +56,9 @@ import { computed } from "vue";
 import BookCover from "@/components/BookCover.vue";
 
 const props = defineProps({
-  book: { type: Object, default: null }
+  book: { type: Object, default: null },
+  // the first name of the reader whose room it is, when visiting; empty in the reader's own room
+  owner: { type: String, default: "" }
 });
 
 const progress = computed(() => Math.min(100, Math.max(0, Math.round(props.book?.progress || 0))));

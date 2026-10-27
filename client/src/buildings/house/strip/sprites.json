@@ -373,5 +373,91 @@
  "slippers": {
   "w": 24,
   "h": 8
+ },
+ "poster-mountain": {
+  "w": 36,
+  "h": 48
+ },
+ "poster-moon": {
+  "w": 36,
+  "h": 48
+ },
+ "poster-book-club": {
+  "w": 34,
+  "h": 46
+ },
+ "frame-botanical": {
+  "w": 30,
+  "h": 38
+ },
+ "frame-gold": {
+  "w": 32,
+  "h": 28
+ },
+ "plant-monstera": {
+  "w": 48,
+  "h": 74
+ },
+ "plant-fig": {
+  "w": 36,
+  "h": 92
+ },
+ "plant-succulents": {
+  "w": 34,
+  "h": 22
+ },
+ "chair-wingback": {
+  "w": 102,
+  "h": 118
+ },
+ "chair-rocking": {
+  "w": 98,
+  "h": 114
+ },
+ "chair-papasan": {
+  "w": 110,
+  "h": 100
+ },
+ "cat-ginger": {
+  "w": 130,
+  "h": 20,
+  "cell": {
+   "w": 32,
+   "h": 20
+  },
+  "frames": [
+   "walk",
+   "step",
+   "sit",
+   "sleep"
+  ]
+ },
+ "cat-black": {
+  "w": 130,
+  "h": 20,
+  "cell": {
+   "w": 32,
+   "h": 20
+  },
+  "frames": [
+   "walk",
+   "step",
+   "sit",
+   "sleep"
+  ]
+ },
+ "cat-calico": {
+  "w": 130,
+  "h": 20,
+  "cell": {
+   "w": 32,
+   "h": 20
+  },
+  "frames": [
+   "walk",
+   "step",
+   "sit",
+   "sleep"
+  ]
  }
 }

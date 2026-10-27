@@ -1,34 +1,10 @@
-import { computed, nextTick, ref } from 'vue'
-import { gsap, prefersReducedMotion } from '@/lib/motion'
+import { computed, ref } from 'vue'
+import { FURNITURE } from '@/buildings/house/furniture.js'
 
-export const DECOR_CATALOG = [
-  { id: 'vase-clay', name: 'Clay vase', group: 'Vases', price: 40, surface: 'shelf', blurb: 'On a bookshelf' },
-  { id: 'vase-tall', name: 'Tall vase', group: 'Vases', price: 55, surface: 'shelf', blurb: 'On a bookshelf' },
-  { id: 'vase-bud', name: 'Bud vase', group: 'Vases', price: 30, surface: 'shelf', blurb: 'On a bookshelf' },
-  { id: 'statue-bust', name: 'Bust', group: 'Statues', price: 90, surface: 'shelf', blurb: 'On a bookshelf' },
-  { id: 'statue-owl', name: 'Owl', group: 'Statues', price: 70, surface: 'shelf', blurb: 'On a bookshelf' },
-  { id: 'statue-horse', name: 'Horse', group: 'Statues', price: 110, surface: 'shelf', blurb: 'On a bookshelf' },
-  { id: 'sofa-low', name: 'Low sofa', group: 'Sofas', price: 180, surface: 'floor', blurb: 'On the room floor' },
-  { id: 'sofa-love', name: 'Loveseat', group: 'Sofas', price: 140, surface: 'floor', blurb: 'On the room floor' },
-  { id: 'bean-round', name: 'Round bag', group: 'Beanbags', price: 60, surface: 'floor', blurb: 'On the room floor' },
-  { id: 'bean-slouch', name: 'Slouch bag', group: 'Beanbags', price: 50, surface: 'floor', blurb: 'On the room floor' },
-  { id: 'mattress-floor', name: 'Floor bed', group: 'Mattresses', price: 120, surface: 'floor', blurb: 'On the room floor' },
-  { id: 'mattress-day', name: 'Daybed', group: 'Mattresses', price: 160, surface: 'floor', blurb: 'On the room floor' },
-  { id: 'food-bowl', name: 'Food dish', group: 'Dispensers', price: 40, surface: 'floor', blurb: 'On the floor. Pets can eat.' },
-  { id: 'drink-fountain', name: 'Water dish', group: 'Dispensers', price: 40, surface: 'floor', blurb: 'On the floor. Pets can drink.' },
-  { id: 'cat-siamese', name: 'Siamese', group: 'Cats', price: 80, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'cat-maine', name: 'Maine Coon', group: 'Cats', price: 90, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'cat-persian', name: 'Persian', group: 'Cats', price: 85, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'cat-bengal', name: 'Bengal', group: 'Cats', price: 95, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'cat-british', name: 'British Shorthair', group: 'Cats', price: 80, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'dog-husky', name: 'Husky', group: 'Dogs', price: 90, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'dog-corgi', name: 'Corgi', group: 'Dogs', price: 85, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'dog-pug', name: 'Pug', group: 'Dogs', price: 70, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'dog-golden', name: 'Golden retriever', group: 'Dogs', price: 95, surface: 'floor', pet: true, blurb: 'Roams the floor' },
-  { id: 'pet-bird', name: 'Cockatiel', group: 'Birds', price: 45, surface: 'floor', pet: true, blurb: 'Hops along the floor' },
-]
+// everything the Shop sells: the house's furniture library, drawn in the room's own pixel style
+export const DECOR_CATALOG = [...FURNITURE]
 
-// small surfaces in the 3D room
+// the room's small surfaces
 const SHELF_ZONES = new Set(['seat', 'nightstand', 'side-table'])
 
 const credits = ref(480)
@@ -49,14 +25,6 @@ let sparkleTimer = 0
 
 export function decorMeta(id) {
   return DECOR_CATALOG.find((item) => item.id === id)
-}
-
-function settle(uid) {
-  nextTick(() => {
-    const el = document.querySelector(`[data-decor-uid="${uid}"]`)
-    if (!el || prefersReducedMotion()) return
-    gsap.from(el, { scale: 0.2, y: -24, duration: 0.5, ease: 'back.out(2.2)' })
-  })
 }
 
 function askBuy(item) {
@@ -128,22 +96,36 @@ function cancelPlace() {
   placing.value = null
 }
 
+// whether a piece can go in a zone: floor pieces on the room's floor, shelf pieces on the small
+// surfaces, wall art on the wall, a reading chair in the reading nook
+export function fitsZone(meta, zone) {
+  // the wall and the reading nook take only their own kind of piece
+  if (['wall', 'chair'].includes(meta.surface) || ['wall', 'chair'].includes(zone)) return meta.surface === zone
+  if (meta.surface === 'floor') return zone === 'room'
+  if (meta.surface === 'shelf') return SHELF_ZONES.has(zone)
+  return true
+}
+
 function placeOn(zone, x, entry = placing.value) {
   if (!entry) return false
   const meta = decorMeta(entry.id)
-  if (!meta) return false
-  const onShelf = SHELF_ZONES.has(zone)
-  if (meta.surface === 'floor' && zone !== 'room') return false
-  if (meta.surface === 'shelf' && !onShelf) return false
+  if (!meta || !fitsZone(meta, zone)) return false
   const min = 0.12
   const max = zone === 'room' ? 0.72 : 0.88
-  let next = Math.min(max, Math.max(min, Number(x) || 0.5))
-  const crowded = placed.value.some((item) => item.zone === zone && Math.abs(item.x - next) < 0.08)
+  // a spot on the wall, or the reading nook, is exact: what goes there goes on that spot
+  const exact = zone === 'wall' || zone === 'chair'
+  let next = exact ? Number(x) : Math.min(max, Math.max(min, Number(x) || 0.5))
+  const crowded = !exact && placed.value.some((item) => item.zone === zone && Math.abs(item.x - next) < 0.08)
   if (crowded) next = Math.min(max, next + 0.1)
+  // one reading chair at a time: the one already there goes back to the inventory
+  const swapped = zone === 'chair' ? placed.value.filter((item) => item.zone === 'chair') : []
+  if (swapped.length) {
+    placed.value = placed.value.filter((item) => item.zone !== 'chair')
+    inventory.value = [...inventory.value, ...swapped.map(({ uid, id }) => ({ uid, id }))]
+  }
   placed.value = [...placed.value, { uid: entry.uid, id: entry.id, zone, x: next }]
   inventory.value = inventory.value.filter((item) => item.uid !== entry.uid)
   placing.value = null
-  if (!meta.pet) settle(entry.uid)
   return true
 }
 
@@ -164,15 +146,6 @@ function unplace(uid) {
 export function useDecor() {
   const canAfford = computed(() => (pending.value ? credits.value >= pending.value.price : false))
 
-  const ownedIds = computed(() => {
-    const ids = new Set(inventory.value.map((item) => item.id))
-    placed.value.forEach((item) => ids.add(item.id))
-    return ids
-  })
-
-  const hasFood = computed(() => ownedIds.value.has('food-bowl'))
-  const hasDrink = computed(() => ownedIds.value.has('drink-fountain'))
-
   const placingMeta = computed(() => (placing.value ? decorMeta(placing.value.id) : null))
 
   return {
@@ -190,8 +163,6 @@ export function useDecor() {
     notice,
     sparkle,
     canAfford,
-    hasFood,
-    hasDrink,
     askBuy,
     confirmBuy,
     cancelBuy,

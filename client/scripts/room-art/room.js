@@ -707,4 +707,333 @@
     R(x, 13, 1, 4, 2, C.pinkLight)
   })
 
+  // ================================================================ the furniture library
+  // Pieces the reader buys in the Shop and puts in the room (src/buildings/house/furniture.js
+  // lists them). Same helpers, palette and outline as the room itself.
+
+  // ---------------------------------------------------------------- wall art
+  // a poster held up by two strips of tape at its top corners
+  const taped = (x, W, col) => { for (const tx of [1, W - 6]) R(x, tx, 0, 5, 3, col) }
+
+  add('poster-mountain', 34, 46, (x, W, H) => {
+    panel(x, 0, 0, W, H, C.paper, 1, 0.9)
+    // a sunset sky in bands, the sun sinking behind the peaks
+    const sky = [C.pinkLight, C.pink, C.mustard]
+    for (let k = 0; k < 3; k++) R(x, 3, 3 + k * 7, W - 6, 7, sky[k])
+    E(x, 22, 16, 5, 5, C.gold)
+    // the far range, then the near one with snow on its peaks
+    fillPoly(x, [[3, 30], [9, 19], [14, 25], [21, 15], [27, 23], [W - 3, 19], [W - 3, 30]], C.blueShade)
+    fillPoly(x, [[3, 33], [11, 21], [18, 30], [24, 22], [W - 3, 33]], C.slate)
+    fillPoly(x, [[11, 21], [13, 24], [9, 24]], C.paper)
+    fillPoly(x, [[24, 22], [26, 25], [22, 25]], C.paper)
+    R(x, 3, 30, W - 6, 4, C.sageShade)
+    // its title, in two lines of print
+    R(x, 7, H - 9, W - 14, 2, C.slate)
+    R(x, 11, H - 5, W - 22, 1, C.greyShade)
+    taped(x, W, C.sageLight)
+  })
+
+  add('poster-moon', 34, 46, (x, W, H) => {
+    panel(x, 0, 0, W, H, C.paper, 1, 0.9)
+    R(x, 3, 3, W - 6, H - 14, C.slate)
+    for (const [sx, sy] of [[6, 6], [27, 7], [9, 16], [29, 20], [5, 26], [18, 5]]) P(x, sx, sy, C.paper)
+    P(x, 24, 27, C.gold)
+    // a big full moon, its seas in shade
+    E(x, 17, 16, 8, 8, C.cream)
+    E(x, 14, 13, 2, 2, C.creamShade)
+    E(x, 20, 19, 3, 2, C.creamShade)
+    P(x, 19, 12, C.creamShade)
+    // the town's rooftops along the bottom, one window lit
+    fillPoly(x, [[3, H - 11], [3, 31], [8, 27], [13, 31], [13, 29], [19, 25], [25, 29], [25, 31], [W - 3, 28], [W - 3, H - 11]], C.brownDeep)
+    R(x, 20, 30, 2, 2, C.windowGlow)
+    R(x, 7, H - 9, W - 14, 2, C.slate)
+    R(x, 11, H - 5, W - 22, 1, C.greyShade)
+    taped(x, W, C.pinkLight)
+  })
+  add('poster-book-club', 32, 44, (x, W, H) => {
+    panel(x, 0, 0, W, H, C.mustard, 1.08, 0.86)
+    R(x, 3, 3, W - 6, H - 6, C.gold)
+    // the club's name in a red band
+    R(x, 3, 5, W - 6, 6, C.red)
+    for (let i = 6; i < W - 6; i += 3) R(x, i, 7, 2, 2, C.paper)
+    // an open book, its pages fanned
+    fillPoly(x, [[5, 30], [15, 27], [15, 16], [5, 19]], C.paper)
+    fillPoly(x, [[W - 5, 30], [W - 15, 27], [W - 15, 16], [W - 5, 19]], C.paper)
+    R(x, 15, 16, 2, 12, C.paperShade)
+    for (let k = 0; k < 3; k++) { L(x, 7, 21 + k * 3, 13, 19 + k * 3, C.greyShade); L(x, W - 7, 21 + k * 3, W - 13, 19 + k * 3, C.greyShade) }
+    R(x, 5, 30, W - 10, 2, C.rose)
+    // a heart over it, and when they meet
+    E(x, 14, 13, 1, 1, C.pink)
+    E(x, 17, 13, 1, 1, C.pink)
+    fillPoly(x, [[12, 13], [19, 13], [15, 17]], C.pink)
+    R(x, 7, H - 9, W - 14, 2, C.brown)
+    R(x, 10, H - 6, W - 20, 1, C.mustardShade)
+    taped(x, W, C.sageLight)
+  })
+  add('frame-botanical', 28, 36, (x, W, H) => framed(x, W, H, C.woodLight, (x2, X, Y, w, h) => {
+    R(x2, X, Y, w, h, C.paper)
+    // a pressed stem: leaves up both sides and a flower at the top
+    const mid = X + (w >> 1)
+    R(x2, mid, Y + 6, 1, h - 7, C.leafDark)
+    for (let k = 0; k < 3; k++) {
+      leaf(x2, mid - 4, Y + 10 + k * 5, 3, 2, k % 2 ? C.leaf : C.leafLight)
+      leaf(x2, mid + 4, Y + 12 + k * 5, 3, 2, k % 2 ? C.leafLight : C.leaf)
+    }
+    for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) E(x2, mid + dx, Y + 4 + dy, 1, 1, C.pink)
+    P(x2, mid, Y + 4, C.gold)
+    R(x2, X + 3, Y + h - 2, w - 6, 1, C.greyShade)
+  }))
+  add('frame-gold', 30, 26, (x, W, H) => {
+    // an ornate gold frame, beads at its corners, round a portrait of a ginger cat
+    panel(x, 0, 0, W, H, C.mustard, 1.15, 0.8)
+    R(x, 2, 2, W - 4, H - 4, C.gold)
+    for (const [bx, by] of [[1, 1], [W - 3, 1], [1, H - 3], [W - 3, H - 3]]) R(x, bx, by, 2, 2, C.lampLit)
+    R(x, 4, 4, W - 8, H - 8, C.sageLight)
+    R(x, 4, H - 8, W - 8, 4, C.sage)
+    const cx = W >> 1
+    E(x, cx, H - 7, 6, 4, C.pink)
+    E(x, cx, 11, 5, 4, C.pink)
+    fillPoly(x, [[cx - 5, 9], [cx - 4, 4], [cx - 1, 8]], C.pink)
+    fillPoly(x, [[cx + 5, 9], [cx + 4, 4], [cx + 1, 8]], C.pink)
+    P(x, cx - 2, 11, C.brownDeep)
+    P(x, cx + 2, 11, C.brownDeep)
+    P(x, cx, 13, C.pinkShade)
+    R(x, cx - 4, 9, 2, 1, C.pinkShade)
+    R(x, cx + 3, 9, 2, 1, C.pinkShade)
+  })
+
+  // ---------------------------------------------------------------- plants
+  // a monstera leaf: a big round leaf with slits cut in from its edge (the outline goes round them)
+  const splitLeaf = (x, cx, cy, r, col, side) => {
+    E(x, cx, cy, r, r - 1, col)
+    R(x, cx - r + 2, cy, 2 * r - 3, 1, shade(col, 0.8))
+    for (const dy of [-r + 3, r - 3]) x.clearRect(side > 0 ? cx + r - 4 : cx - r, cy + dy - 1, 5, 3)
+  }
+
+  add('plant-monstera', 46, 72, (x, W, H) => {
+    for (const [ex, ey] of [[9, 20], [36, 14], [23, 8], [7, 40], [40, 34]]) L(x, 23, 50, ex, ey, C.leafDark)
+    splitLeaf(x, 9, 20, 8, C.leaf, -1)
+    splitLeaf(x, 36, 14, 8, C.leafLight, 1)
+    splitLeaf(x, 23, 9, 8, C.leaf, 1)
+    splitLeaf(x, 8, 39, 6, C.leafDark, -1)
+    splitLeaf(x, 39, 34, 6, C.leaf, 1)
+    // a woven basket, cream with rose bands
+    panel(x, 9, 50, 28, H - 50, C.cream, 1.05, 0.82)
+    for (let y = 53; y < H - 2; y += 3) for (let i = 11 + (y % 2) * 2; i < 35; i += 4) R(x, i, y, 2, 1, C.creamShade)
+    R(x, 9, 56, 28, 2, C.rose)
+    R(x, 9, H - 6, 28, 2, C.rose)
+    R(x, 7, 50, 32, 3, C.creamShade)
+  })
+  add('plant-fig', 34, 90, (x, W, H) => {
+    // a thin trunk up to a crown of big, round fiddle leaves
+    R(x, 16, 30, 2, 44, C.woodShade)
+    L(x, 17, 50, 9, 40, C.woodShade)
+    L(x, 17, 40, 26, 32, C.woodShade)
+    for (const [cx, cy, col] of [[17, 6, C.leaf], [9, 14, C.leafLight], [25, 12, C.leaf], [6, 26, C.leafDark], [28, 24, C.leafLight], [17, 20, C.leafDark], [11, 38, C.leaf], [26, 33, C.leafDark], [17, 30, C.leafLight]]) {
+      E(x, cx, cy, 5, 6, col)
+      R(x, cx, cy - 4, 1, 8, shade(col, 0.78))
+    }
+    // a terracotta pot with a rim
+    fillPoly(x, [[7, 74], [27, 74], [25, H - 1], [9, H - 1]], C.pinkShade)
+    R(x, 5, 72, 24, 4, C.pink)
+    R(x, 5, 72, 24, 1, C.pinkLight)
+    R(x, 10, 80, 2, 8, C.pink)
+  })
+  add('plant-succulents', 32, 20, (x, W, H) => {
+    // three little pots: a rosette, a cactus and a trailing one
+    panel(x, 0, 11, 9, 9, C.cream, 1.05, 0.85)
+    for (const [dx, dy, col] of [[-3, 0, C.sage], [3, 0, C.sage], [0, -2, C.sageLight], [-1, 1, C.sageShade], [1, 1, C.sageShade]]) E(x, 4 + dx, 9 + dy, 2, 2, col)
+    P(x, 4, 7, C.pinkLight)
+    panel(x, 11, 12, 9, 8, C.sage, 1.08, 0.85)
+    RR(x, 13, 1, 5, 12, 2, C.leaf)
+    R(x, 15, 2, 1, 10, C.leafDark)
+    RR(x, 10, 5, 3, 5, 1, C.leaf)
+    P(x, 15, 0, C.pink)
+    panel(x, 22, 11, 9, 9, C.pinkLight, 1.05, 0.85)
+    for (let k = 0; k < 4; k++) { E(x, 24 + k * 2, 9 - (k % 2), 1, 1, C.leafLight); P(x, 30, 13 + k * 2, C.leaf) }
+  })
+
+  // ---------------------------------------------------------------- reading chairs
+  // Each one stands where the armchair stands (about its size), so the reading nook stays put.
+  add('chair-wingback', 100, 116, (x, W, H) => {
+    const body = C.rose
+    const back = [[16, 12], [24, 2], [76, 2], [84, 12], [84, 74], [16, 74]]
+    fillPoly(x, back, body)
+    // channel tufting: soft upright seams down the back
+    for (let i = 26; i < 76; i += 10) R(x, i, 6, 1, 62, shade(body, 0.86))
+    R(x, 24, 3, 52, 1, shade(body, 1.12))
+    // tall wings, flaring out
+    fillPoly(x, [[4, 22], [12, 10], [22, 12], [22, 70], [4, 70]], shade(body, 0.9))
+    fillPoly(x, [[96, 22], [88, 10], [78, 12], [78, 70], [96, 70]], shade(body, 0.9))
+    R(x, 6, 22, 1, 46, shade(body, 1.08))
+    // a cushion at the small of the back
+    RR(x, 34, 50, 32, 14, 4, C.mustard)
+    R(x, 36, 51, 28, 1, C.gold)
+    R(x, 49, 52, 2, 10, C.mustardShade)
+    // seat and its front
+    RR(x, 18, 66, 64, 12, 3, C.pinkShade)
+    R(x, 20, 67, 60, 1, shade(C.pinkShade, 1.1))
+    R(x, 16, 76, 68, 18, shade(body, 0.88))
+    // square arms
+    for (const ax of [2, 78]) {
+      panel(x, ax, 58, 20, 38, body, 1.1, 0.82)
+      R(x, ax + 2, 60, 16, 1, shade(body, 1.15))
+    }
+    // a skirt of piping, then tapered wooden legs
+    R(x, 4, 94, 92, 6, shade(body, 0.8))
+    for (const lx of [10, 84]) fillPoly(x, [[lx, 100], [lx + 6, 100], [lx + 5, H - 1], [lx + 2, H - 1]], C.woodDark)
+  })
+
+  add('chair-rocking', 96, 112, (x, W, H) => {
+    // a spindle back between two turned posts, a cushion, and curved rockers
+    const rocker = (i) => { const t = (i - W / 2) / (W / 2); return Math.round(H - 12 + 8 * (1 - t * t)) }
+    for (const px of [14, 76]) {
+      panel(x, px, 4, 6, rocker(px + 3) - 4, C.wood, 1.12, 0.82)
+      E(x, px + 2, 4, 4, 3, C.woodLight)
+    }
+    panel(x, 14, 6, 68, 8, C.wood, 1.12, 0.82)
+    R(x, 18, 6, 60, 1, C.woodLight)
+    for (let i = 26; i < 74; i += 8) panel(x, i, 14, 3, 50, C.woodLight, 1.1, 0.85)
+    panel(x, 18, 46, 60, 4, C.wood, 1.1, 0.82)
+    // a cushion tied to the back, and the seat's own
+    RR(x, 24, 26, 48, 22, 5, C.blueLight)
+    for (const [bx, by] of [[36, 36], [48, 36], [60, 36]]) P(x, bx, by, C.blueShade)
+    R(x, 26, 27, 44, 1, shade(C.blueLight, 1.1))
+    panel(x, 10, 64, 76, 8, C.wood, 1.1, 0.8)
+    RR(x, 14, 58, 68, 8, 3, C.blue)
+    R(x, 16, 59, 64, 1, C.blueLight)
+    // the arms, from the back posts to the front legs
+    // the rockers: a long shallow curve under everything, lowest in the middle
+    for (const ax of [6, 80]) {
+      panel(x, ax, 44, 10, 5, C.woodShade, 1.1, 0.8)
+      panel(x, ax + 2, 49, 5, rocker(ax + 4) - 49, C.wood, 1.12, 0.82)
+    }
+    R(x, 16, 72, 4, rocker(18) - 72, C.woodShade)
+    R(x, 76, 72, 4, rocker(78) - 72, C.woodShade)
+    for (let i = 0; i < W; i++) {
+      const y = rocker(i)
+      R(x, i, y, 1, 4, C.woodDark)
+      P(x, i, y, C.wood)
+    }
+  })
+
+  add('chair-papasan', 108, 98, (x, W, H) => {
+    // a deep round rattan bowl tipped back, a fat round cushion in it, on a woven ring stand
+    fillPoly(x, [[28, 72], [80, 72], [72, H - 1], [36, H - 1]], C.mustardShade)
+    for (let y = 75; y < H - 2; y += 3) for (let i = 32 + (y % 2) * 2; i < 76; i += 4) R(x, i, y, 2, 1, C.mustard)
+    R(x, 26, 70, 56, 3, C.woodShade)
+    E(x, 54, 42, 53, 36, C.mustard)
+    // the weave: rings round the bowl, crossed by its ribs
+    for (const r of [52, 46, 40]) for (let a = 0; a < 360; a += 4) {
+      const t = (a * Math.PI) / 180
+      P(x, Math.round(54 + Math.cos(t) * r), Math.round(42 + Math.sin(t) * r * 0.68), C.mustardShade)
+    }
+    for (let a = 0; a < 360; a += 20) {
+      const t = (a * Math.PI) / 180
+      L(x, 54 + Math.cos(t) * 30, 42 + Math.sin(t) * 20, 54 + Math.cos(t) * 52, 42 + Math.sin(t) * 35, C.mustardShade)
+    }
+    E(x, 54, 46, 40, 26, C.teal)
+    E(x, 54, 44, 36, 21, shade(C.teal, 1.08))
+    // buttons round the cushion, and one in the middle
+    for (let a = 0; a < 360; a += 45) {
+      const t = (a * Math.PI) / 180
+      R(x, Math.round(54 + Math.cos(t) * 22), Math.round(45 + Math.sin(t) * 13), 2, 2, C.tealShade)
+    }
+    R(x, 53, 44, 2, 2, C.tealShade)
+    E(x, 28, 36, 8, 5, shade(C.teal, 1.14))
+  })
+
+  // ---------------------------------------------------------------- cats
+  // Each cat is one sheet of four frames side by side, facing right (the room flips them to walk
+  // left): two steps of a walk, sitting, and curled up asleep. Every frame sits in its own
+  // CAT.w-wide cell with room round it, so the outlines never touch.
+  const CAT = { w: 32, h: 18, frames: ['walk', 'step', 'sit', 'sleep'] }
+  // f: fur, s: its shade, b: belly and chest, e: eyes, marks(x, ox, frame): stripes or patches
+  const drawCat = (x, ox, frame, f) => {
+    const ears = (hx, hy) => {
+      fillPoly(x, [[hx - 3, hy - 1], [hx - 2, hy - 5], [hx, hy - 2]], f.f)
+      fillPoly(x, [[hx + 1, hy - 2], [hx + 3, hy - 5], [hx + 4, hy - 1]], f.f)
+      P(x, hx - 2, hy - 3, C.pinkShade)
+      P(x, hx + 3, hy - 3, C.pinkShade)
+    }
+    if (frame === 'walk' || frame === 'step') {
+      // the tail up behind, the body, four legs mid-stride (or passing), the head forward
+      L(x, ox + 7, 8, ox + 4, 4, f.f)
+      L(x, ox + 6, 8, ox + 3, 4, f.f)
+      L(x, ox + 4, 4, ox + 5, 1, f.f)
+      const legs = frame === 'walk' ? [[ox + 7, -1], [ox + 11, 1], [ox + 18, -1], [ox + 22, 1]] : [[ox + 9, 0], [ox + 10, 0], [ox + 20, 0], [ox + 21, 0]]
+      for (const [lx, lean] of legs) {
+        R(x, lx, 12, 2, 4, f.s)
+        R(x, lx + lean, 16, 2, 2, f.s)
+      }
+      RR(x, ox + 6, 6, 18, 8, 3, f.f)
+      R(x, ox + 9, 12, 12, 2, f.b)
+      E(x, ox + 25, 7, 4, 4, f.f)
+      ears(ox + 25, 4)
+      R(x, ox + 26, 9, 3, 2, f.b)
+      P(x, ox + 27, 6, f.e)
+      P(x, ox + 29, 8, C.pinkShade)
+    } else if (frame === 'sit') {
+      // sitting up side on, the tail curled round its feet
+      R(x, ox + 6, 16, 12, 2, f.f)
+      P(x, ox + 6, 15, f.f)
+      E(x, ox + 13, 12, 6, 6, f.f)
+      RR(x, ox + 15, 6, 7, 10, 3, f.f)
+      R(x, ox + 18, 9, 4, 6, f.b)
+      R(x, ox + 18, 12, 2, 6, f.s)
+      R(x, ox + 21, 12, 2, 6, f.s)
+      E(x, ox + 21, 5, 4, 4, f.f)
+      ears(ox + 21, 2)
+      R(x, ox + 22, 7, 3, 2, f.b)
+      P(x, ox + 23, 4, f.e)
+      P(x, ox + 25, 6, C.pinkShade)
+    } else {
+      // asleep: a round loaf, head tucked in, tail wrapped round, eyes shut
+      E(x, ox + 15, 13, 10, 5, f.f)
+      R(x, ox + 7, 16, 18, 2, f.s)
+      E(x, ox + 24, 13, 4, 4, f.f)
+      ears(ox + 24, 10)
+      R(x, ox + 25, 13, 2, 1, f.e === C.gold ? C.slate : C.brownDeep)
+      R(x, ox + 24, 15, 3, 2, f.b)
+    }
+    f.marks?.(x, ox, frame)
+  }
+  const catSheet = (id, f) =>
+    add(id, CAT.w * CAT.frames.length, CAT.h, (x) => CAT.frames.forEach((frame, k) => drawCat(x, k * CAT.w, frame, f)), {
+      cell: { w: CAT.w, h: CAT.h + 2 },
+      frames: CAT.frames,
+    })
+
+  catSheet('cat-ginger', {
+    f: C.mustard, s: C.mustardShade, b: C.cream, e: C.leafDark,
+    // tabby stripes across its back and on its head
+    marks: (x, ox, frame) => {
+      if (frame === 'walk' || frame === 'step') {
+        for (const i of [9, 13, 17, 21]) R(x, ox + i, 6, 1, 4, C.mustardShade)
+        P(x, ox + 25, 3, C.mustardShade)
+      } else if (frame === 'sit') {
+        for (const i of [9, 12, 15]) R(x, ox + i, 8, 1, 3, C.mustardShade)
+      } else for (const i of [10, 14, 18]) R(x, ox + i, 9, 1, 3, C.mustardShade)
+    },
+  })
+  catSheet('cat-black', { f: C.brownDeep, s: C.outline, b: C.brown, e: C.gold })
+  catSheet('cat-calico', {
+    f: C.cream, s: C.creamShade, b: C.paper, e: C.leafDark,
+    // patches of orange and brown
+    marks: (x, ox, frame) => {
+      if (frame === 'walk' || frame === 'step') {
+        E(x, ox + 11, 8, 3, 2, C.mustard)
+        E(x, ox + 18, 7, 2, 2, C.brown)
+        P(x, ox + 24, 4, C.brown)
+        P(x, ox + 25, 5, C.mustard)
+      } else if (frame === 'sit') {
+        E(x, ox + 12, 10, 3, 3, C.mustard)
+        E(x, ox + 21, 3, 2, 1, C.brown)
+      } else {
+        E(x, ox + 12, 11, 3, 2, C.mustard)
+        E(x, ox + 18, 12, 2, 2, C.brown)
+      }
+    },
+  })
+
   return { sprites: out.map(({ id, spr, meta }) => ({ id, w: spr.width, h: spr.height, meta, png: spr.toDataURL('image/png') })) }

@@ -113,11 +113,13 @@ onMounted(async () => {
   background: rgba(44, 36, 30, 0.22);
 }
 
-/* the open book's card: 80% of the screen, centred */
+/* the open book's card: 80% of the screen, centred, and no wider than reads well on a laptop */
 .book-dialog {
   position: absolute;
   inset: 10%;
   z-index: 45;
+  max-width: 720px;
+  margin-inline: auto;
 }
 
 .book-dialog:focus {

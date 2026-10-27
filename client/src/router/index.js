@@ -20,8 +20,8 @@ const routes = [
   // The town is home; each building opens one teammate's page (src/buildings/).
   // Phaser loads only with the town.
   { path: '/', name: 'town', component: () => import('@/views/TownView.vue'), meta: { title: 'Town', fullBleed: true, wide: true, order: 0 } },
-  { path: '/house', name: 'house', component: () => import('@/buildings/house/HouseView.vue'), meta: { title: 'My Room', fullBleed: true, order: 1 } },
-  { path: '/house/shelf', name: 'my-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'My Shelf', fullBleed: true, order: 2 } },
+  { path: '/house', name: 'house', component: () => import('@/buildings/house/HouseView.vue'), meta: { title: 'My Room', fullBleed: true, wide: true, order: 1 } },
+  { path: '/house/shelf', name: 'my-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'My Shelf', fullBleed: true, wide: true, order: 2 } },
   { path: '/library', name: 'library', component: () => import('@/buildings/library/LibraryView.vue'), meta: { title: 'Library', fullBleed: true, order: 1 } },
   { path: '/cafe', name: 'cafe', component: () => import('@/buildings/cafe/CafeView.vue'), meta: { title: 'Cafe', fullBleed: true, order: 1 } },
   { path: '/salon', name: 'salon', component: () => import('@/buildings/salon/SalonView.vue'), meta: { title: 'Hair Salon', fullBleed: true, order: 1 } },
@@ -34,6 +34,9 @@ const routes = [
   { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, order: 2 } },
   { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
+  // another reader's room, visited from their profile: the house's room in visiting mode
+  { path: '/people/:id/room', name: 'reader-house', component: () => import('@/buildings/house/VisitView.vue'), meta: { title: 'Visiting', fullBleed: true, wide: true, order: 3 } },
+  { path: '/people/:id/room/shelf', name: 'reader-house-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'Visiting', fullBleed: true, wide: true, order: 4 } },
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 3 } },
   // the book scanner lives in the library now
   { path: '/scan', name: 'scan-book', redirect: { name: 'library', query: { scan: '1' } } },

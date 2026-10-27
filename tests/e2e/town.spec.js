@@ -58,13 +58,15 @@ test("a place card closes with its close button", async ({ page }) => {
   await expect(card).toBeHidden();
 });
 
-// Friends' houses sit in the town too; each one opens that reader's room.
-test("a friend's house opens their room", async ({ page }) => {
+// Friends' houses sit in the town too; each one opens that reader's profile, with the way into
+// their room.
+test("a friend's house opens their profile", async ({ page }) => {
   const card = await openPlace(page, "Emma's house");
   await expect(card.getByText("Emma Tan", { exact: false })).toBeVisible();
   await card.getByRole("button", { name: "Visit Emma" }).click();
   await expect(page).toHaveURL(/\/people\/reader-emma$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Emma Tan's Room" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Visit Emma's room" })).toBeVisible();
 });
 
 test("every friend's house is in the Places list", async ({ page }) => {

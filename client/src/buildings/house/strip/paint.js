@@ -5,8 +5,9 @@
 // then the light: the town's tint for the weather and time of day, and stepped glows round the
 // lamps after dark.
 import PALETTE from './palette.json'
-import { LAYERS, LIGHTS, PIECES, ROOM, SPRITES, clockOf, glassOf } from './layout.js'
+import { LAYERS, LIGHTS, PIECES, ROOM, SPRITES, WALK, clockOf, glassOf } from './layout.js'
 import { LIFT, drawSpine } from './books.js'
+import { FURNITURE } from '../furniture.js'
 
 // how far a piece's shadow falls on the wall, by layer
 const SHADOW = { wall: [2, 2], hang: [2, 2], furniture: [3, 1] }
@@ -97,9 +98,17 @@ export function tintFor({ scene, night }) {
 }
 
 // state: { images (sprite id -> loaded Image), offset (rows of extra wall above the room),
-//          weather, spines, lifted (book id), out (book id taken off the shelf), time }
+//          weather, spines, lifted (book id), out (book id taken off the shelf), time,
+//          extras (furniture the reader has put in the room, as pieces: { sprite, x, y, layer },
+//          and `replaces`: the id of a piece of the room's it stands in for, drawn in its place),
+//          notes (how many visitors' notes to pin on the corkboard, three at most) }
 export function paintRoom(ctx, state) {
-  const { images, offset, weather, spines, lifted, out, time } = state
+  const { images, offset, weather, spines, lifted, out, time, extras = [], notes = 0 } = state
+  const instead = new Map(extras.filter((piece) => piece.replaces).map((piece) => [piece.replaces, piece]))
+  const pieces = [
+    ...PIECES.filter((piece) => !instead.has(piece.with)).map((piece) => instead.get(piece.id) ?? piece),
+    ...extras.filter((piece) => !piece.replaces),
+  ]
   const { width, height } = ctx.canvas
   const night = Boolean(weather.night)
   const floorY = offset + ROOM.floor
@@ -139,7 +148,7 @@ export function paintRoom(ctx, state) {
   ctx.clearRect(glass.x, offset + glass.y, glass.w, glass.h)
 
   for (const layer of LAYERS) {
-    for (const piece of PIECES) {
+    for (const piece of pieces) {
       if (piece.layer !== layer) continue
       const id = night && piece.lit ? piece.lit : piece.sprite
       const image = images[id]
@@ -164,6 +173,7 @@ export function paintRoom(ctx, state) {
       ctx.drawImage(image, x, y)
       if (piece.id === 'bookshelf') paintBooks(ctx, spines, offset, lifted, out)
       if (piece.id === 'clock') paintHands(ctx, offset, time)
+      if (piece.id === 'corkboard') paintNotes(ctx, x, y, notes)
     }
   }
 
@@ -199,6 +209,40 @@ export function paintRoom(ctx, state) {
   }
 }
 
+// The cats, on their own canvas over the room (they move every frame; the room doesn't): each
+// one's frame from its sheet, standing on the walk line, flipped to face left when it walks
+// left, then the weather's tint over them, so they're lit like the room.
+// state: { images, offset, weather, cats: [{ sprite, frame (its name), x (art x of its middle), face }] }
+export function paintCats(ctx, { images, offset, weather, cats }) {
+  const { width, height } = ctx.canvas
+  ctx.globalCompositeOperation = 'source-over'
+  ctx.imageSmoothingEnabled = false
+  ctx.clearRect(0, 0, width, height)
+  for (const cat of cats) {
+    const image = images[cat.sprite]
+    const meta = SPRITES[cat.sprite]
+    if (!image || !meta?.cell) continue
+    const { w, h } = meta.cell
+    const sx = Math.max(0, meta.frames.indexOf(cat.frame)) * w
+    const x = Math.round(cat.x - w / 2)
+    const y = offset + WALK.y - h + 1
+    ctx.save()
+    if (cat.face === 'left') {
+      ctx.translate(x + w, y)
+      ctx.scale(-1, 1)
+    } else ctx.translate(x, y)
+    ctx.drawImage(image, sx, 0, w, h, 0, 0, w, h)
+    ctx.restore()
+  }
+  const tint = tintFor(weather)
+  if (cats.length && tint !== PALETTE.tints.clear) {
+    overRoom(ctx, 'multiply', (layer) => {
+      layer.fillStyle = tint
+      layer.fillRect(0, 0, width, height)
+    })
+  }
+}
+
 // rings of light round a lamp, from the edge of its pool to its middle
 const RINGS = 4
 
@@ -217,6 +261,37 @@ function paintBooks(ctx, spines, offset, lifted, out) {
   }
 }
 
+// Visitors' notes, pinned on the corkboard over what's already there: a small paper note each,
+// with its shadow on the cork, two lines of writing and a pin. `x`, `y` are the corkboard's top
+// left; the newest note goes up first.
+const NOTE_SPOTS = [
+  { x: 26, y: 27, paper: '#fbe7a1', edge: '#e2c46f', pin: '#c8553d' },
+  { x: 56, y: 52, paper: '#f6d3cb', edge: '#dfaea3', pin: '#3f7fa8' },
+  { x: 86, y: 30, paper: '#fdf7ec', edge: '#e2d7c3', pin: '#3d9a8b' },
+]
+const NOTE = { w: 16, h: 14 }
+
+function paintNotes(ctx, x, y, count) {
+  for (const spot of NOTE_SPOTS.slice(0, Math.min(count, NOTE_SPOTS.length))) {
+    const nx = x + spot.x
+    const ny = y + spot.y
+    ctx.fillStyle = '#a9824f'
+    ctx.fillRect(nx + 1, ny + 1, NOTE.w, NOTE.h)
+    ctx.fillStyle = spot.paper
+    ctx.fillRect(nx, ny, NOTE.w, NOTE.h)
+    ctx.fillStyle = spot.edge
+    ctx.fillRect(nx, ny + NOTE.h - 1, NOTE.w, 1)
+    ctx.fillRect(nx + NOTE.w - 1, ny, 1, NOTE.h)
+    ctx.fillStyle = '#9a958c'
+    ctx.fillRect(nx + 3, ny + 5, NOTE.w - 6, 1)
+    ctx.fillRect(nx + 3, ny + 8, NOTE.w - 9, 1)
+    ctx.fillStyle = spot.pin
+    ctx.fillRect(nx + 7, ny - 1, 2, 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(nx + 7, ny - 1, 1, 1)
+  }
+}
+
 // the clock's hands, from its middle, for the time { hours, minutes }
 function paintHands(ctx, offset, time) {
   if (!time) return
@@ -232,8 +307,10 @@ function paintHands(ctx, offset, time) {
 }
 
 // every sprite the layout uses, for loading before the room shows
+// every sprite the room can show: its own pieces and the furniture library's
 export function spriteIds() {
-  return [...new Set(PIECES.flatMap((piece) => [piece.sprite, piece.lit].filter(Boolean)))]
+  const own = PIECES.flatMap((piece) => [piece.sprite, piece.lit].filter(Boolean))
+  return [...new Set([...own, ...FURNITURE.map((item) => item.sprite)])]
 }
 
 export { ROOM, SPRITES }
