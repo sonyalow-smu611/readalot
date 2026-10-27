@@ -1,8 +1,10 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Full genre shelf (/discover/:genre): about 24 books from one Google Books search, stacked as
-// shelf tiers of 6. The sort chips re-order the books in the browser; nothing is fetched again.
-import { computed, ref, watch } from 'vue'
+// shelf tiers. On a phone each tier holds 6 and scrolls sideways; on a wide screen (where the
+// page fills the window) each tier holds as many as fit across. The sort chips re-order the
+// books in the browser; nothing is fetched again.
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ShelfTier from '@/components/ShelfTier.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -14,6 +16,11 @@ import { searchBooks } from '@/services/api.js'
 
 const BOOK_COUNT = 24
 const PER_TIER = 6
+// wide screens: a book's width and the gap between books in a tier (ShelfTier.vue), and the
+// screen width from which the page fills the window (PhoneFrame.vue)
+const WIDE_BOOK = 108
+const WIDE_GAP = 16
+const WIDE_FROM = 576
 
 // Highest first for each. Popular = how many people rated it, Length = page count.
 const SORTS = [
@@ -60,17 +67,35 @@ const sortedBooks = computed(() => {
   return [...books.value].sort((a, b) => (b[field] || 0) - (a[field] || 0))
 })
 
+// how many books stand on each tier, from the page's width
+const page = ref(null)
+const pageWidth = ref(0)
+const perTier = computed(() => {
+  if (window.innerWidth < WIDE_FROM || !pageWidth.value) return PER_TIER
+  // the row keeps 4 px clear at each end
+  return Math.max(PER_TIER, Math.floor((pageWidth.value - 8 + WIDE_GAP) / (WIDE_BOOK + WIDE_GAP)))
+})
+
+let resize = null
+onMounted(() => {
+  resize = new ResizeObserver(([entry]) => {
+    pageWidth.value = entry.contentRect.width
+  })
+  resize.observe(page.value)
+})
+onBeforeUnmount(() => resize?.disconnect())
+
 const tiers = computed(() => {
   const rows = []
-  for (let start = 0; start < sortedBooks.value.length; start += PER_TIER) {
-    rows.push(sortedBooks.value.slice(start, start + PER_TIER))
+  for (let start = 0; start < sortedBooks.value.length; start += perTier.value) {
+    rows.push(sortedBooks.value.slice(start, start + perTier.value))
   }
   return rows
 })
 </script>
 
 <template>
-  <section class="view genre">
+  <section ref="page" class="view genre">
     <h2 class="genre__title">
       <span aria-hidden="true">{{ genre.emoji }}</span> {{ genre.title }}
     </h2>
@@ -164,5 +189,13 @@ const tiers = computed(() => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 22px;
+}
+
+/* wide screens: placeholder covers the size of the books */
+@media (min-width: 576px) {
+  .genre__skeleton {
+    grid-template-columns: repeat(auto-fill, 108px);
+    gap: 16px;
+  }
 }
 </style>
