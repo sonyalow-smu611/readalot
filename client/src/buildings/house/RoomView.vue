@@ -4,6 +4,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookshelfStore } from '@/stores/bookshelf'
+import { useUserStore } from '@/stores/user'
+import { addNote, notesFor, removeNote } from '@/buildings/house/notes.js'
+import NoteComposer from '@/buildings/house/components/NoteComposer.vue'
+import NoticeBoard from '@/buildings/house/components/NoticeBoard.vue'
 import { fetchWeather } from '@/services/weather.js'
 import { decorMeta, useDecor } from '@/composables/useDecor'
 import RoomStrip from '@/buildings/house/components/RoomStrip.vue'
@@ -13,10 +17,17 @@ import MoodResultModal from '@/components/modals/MoodResultModal.vue'
 import QuoteOfDayModal from '@/components/modals/QuoteOfDayModal.vue'
 import StateView from '@/components/StateView.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
+import VisitorBookDialog from '@/buildings/house/components/VisitorBookDialog.vue'
 import { PLACES } from '@/town/places.js'
-import DecorPiece from '@/components/DecorPiece.vue'
+import DecorArt from '@/buildings/house/components/DecorArt.vue'
 import CreditChip from '@/components/CreditChip.vue'
 import RoomDock from '@/buildings/house/components/RoomDock.vue'
+
+const props = defineProps({
+  // someone else's room being visited (from visitors.js): their books and furniture, to look at
+  // but not change. null for the reader's own room.
+  visiting: { type: Object, default: null },
+})
 
 const WINDOW_SCENES = ['sunny', 'cloudy', 'rain']
 const WEATHER_REFRESH_MS = 10 * 60 * 1000
@@ -24,6 +35,14 @@ const WEATHER_REFRESH_MS = 10 * 60 * 1000
 const route = useRoute()
 const router = useRouter()
 const bookshelf = useBookshelfStore()
+const user = useUserStore()
+
+// whose books are on the bookshelf: the reader's own, or the visited reader's
+const books = computed(() => props.visiting?.books ?? bookshelf.books)
+const currentBook = computed(() => (props.visiting ? props.visiting.currentBook : bookshelf.currentlyReading))
+const loading = computed(() => !props.visiting && bookshelf.loading)
+const error = computed(() => (props.visiting ? '' : bookshelf.error))
+const roomName = computed(() => (props.visiting ? `${props.visiting.firstName}'s room` : 'Your room'))
 // the house's colour from the town, for the book card
 const accent = PLACES.find((place) => place.id === 'house').accent
 
@@ -49,7 +68,9 @@ const room = ref(null)
 const strip = ref(null)
 let listening = false
 
-const { shopOpen, inventoryOpen, drag, notice, sparkle, moveDrag, endDrag, flash, burst } = useDecor()
+const { placed, shopOpen, inventoryOpen, drag, notice, sparkle, moveDrag, endDrag, flash, burst } = useDecor()
+// the furniture in the room: the reader's own placed pieces, or the visited reader's
+const furniture = computed(() => props.visiting?.furniture ?? placed.value)
 
 function onMove(event) {
   moveDrag(event.clientX, event.clientY)
@@ -100,9 +121,10 @@ function openBook(book) {
   openedBook.value = book
 }
 
-// the bookshelf itself: every book, on My Shelf
+// the bookshelf itself: every book, on My Shelf (or the visited reader's shelf)
 function openShelf() {
-  router.push({ name: 'my-shelf' })
+  if (props.visiting) router.push({ name: 'reader-house-shelf', params: { id: props.visiting.id } })
+  else router.push({ name: 'my-shelf' })
 }
 
 // The details go at once; the book itself goes back on the shelf (or fades, when removed).
@@ -159,6 +181,53 @@ watch([shopOpen, inventoryOpen, drag], ([shop, bag, dragging]) => {
   if (shop || bag || dragging) closeReading()
 })
 
+// --- Notes on a visited reader's notice board --------------------------------------------
+const notes = ref(props.visiting ? notesFor(props.visiting.id) : [])
+const writing = ref(false)
+const noteError = ref('')
+const boardOpen = ref(false)
+let noteTrigger = null
+
+function startNote() {
+  noteTrigger = document.activeElement
+  noteError.value = ''
+  closeReading()
+  writing.value = true
+}
+
+function stopNote() {
+  writing.value = false
+  noteTrigger?.focus?.()
+}
+
+function postNote(text) {
+  try {
+    addNote(props.visiting.id, user.profile.name, text)
+  } catch (err) {
+    noteError.value = err.message
+    return
+  }
+  notes.value = notesFor(props.visiting.id)
+  stopNote()
+  flash(`Your note is on ${props.visiting.firstName}'s board`, 'ok')
+}
+
+function takeDown(id) {
+  try {
+    removeNote(props.visiting.id, id)
+  } catch (err) {
+    flash(err.message, 'bad')
+    return
+  }
+  notes.value = notesFor(props.visiting.id)
+}
+
+// the corkboard: the visited reader's notice board, or the reader's own Quote of the Day
+function openBoard() {
+  if (props.visiting) boardOpen.value = true
+  else quoteOpen.value = true
+}
+
 // --- Mood check-in -----------------------------------------------------------------------
 // Opens by itself on the first visit of the day; the room menu can bring it back any time.
 const MOOD_KEY = 'readalot.moodCheckIn'
@@ -213,8 +282,11 @@ watch(
 )
 
 onMounted(() => {
-  if (!moodDoneToday()) moodStep.value = 'checkin'
-  bookshelf.load()
+  // the check-in and the reader's own shelf belong to their own room
+  if (!props.visiting) {
+    if (!moodDoneToday()) moodStep.value = 'checkin'
+    bookshelf.load()
+  }
   loadWeather()
   weatherTimer = window.setInterval(loadWeather, WEATHER_REFRESH_MS)
 })
@@ -232,20 +304,25 @@ onBeforeUnmount(() => {
     <div class="home__far">
       <RoomStrip
         ref="strip"
-        :books="bookshelf.books"
-        :current-book="bookshelf.currentlyReading"
+        :books="books"
+        :current-book="currentBook"
         :weather="sky"
-        :loading="bookshelf.loading"
-        :error="bookshelf.error"
+        :loading="loading"
+        :error="error"
         :reading-open="readingOpen"
+        :furniture="furniture"
+        :editable="!visiting"
+        :room-name="roomName"
+        :board-label="visiting ? 'Notice board' : 'Quote of the day'"
+        :notes="notes.length"
         @open-book="toggleReading"
         @pick-book="openBook"
         @open-shelf="openShelf"
-        @quote="quoteOpen = true"
+        @quote="openBoard"
         @retry="bookshelf.load"
       />
 
-      <CreditChip data-tour="credits" class="home__credits" />
+      <CreditChip v-if="!visiting" data-tour="credits" class="home__credits" />
     </div>
 
     <!-- Opened from the book on the chair -->
@@ -259,10 +336,10 @@ onBeforeUnmount(() => {
         tabindex="-1"
         @keydown.esc="closeReading({ refocus: true })"
       >
-        <div v-if="bookshelf.loading || bookshelf.error" class="home__reading-state">
-          <StateView :loading="bookshelf.loading" :error="bookshelf.error" @retry="bookshelf.load" />
+        <div v-if="loading || error" class="home__reading-state">
+          <StateView :loading="loading" :error="error" @retry="bookshelf.load" />
         </div>
-        <CurrentlyReadingCard v-else :book="bookshelf.currentlyReading" />
+        <CurrentlyReadingCard v-else :book="currentBook" :owner="visiting?.firstName ?? ''" />
         <button
           type="button"
           class="home__reading-close"
@@ -277,10 +354,13 @@ onBeforeUnmount(() => {
 
     <!-- covers the room while a book is out: nothing in the room under it (another book, the
          chair, a drag to look around) can be reached -->
-    <BookDialog v-if="openedBook" :book="openedBook" :accent="accent" @close="closeBook" @leave="openedBook = null" />
+    <template v-if="openedBook">
+      <VisitorBookDialog v-if="visiting" :book="openedBook" :owner="visiting.firstName" :accent="accent" @close="closeBook" />
+      <BookDialog v-else :book="openedBook" :accent="accent" @close="closeBook" @leave="openedBook = null" />
+    </template>
 
     <div v-if="drag?.moved" class="drag-ghost" :style="{ left: `${drag.x}px`, top: `${drag.y}px` }">
-      <DecorPiece :kind="drag.id" />
+      <DecorArt :kind="drag.id" />
     </div>
     <div v-if="sparkle" :key="sparkle.key" class="spark" :style="{ left: `${sparkle.x}px`, top: `${sparkle.y}px` }" aria-hidden="true">
       <i v-for="n in 7" :key="n" />
@@ -289,7 +369,17 @@ onBeforeUnmount(() => {
       {{ notice.text }}
     </p>
 
-    <RoomDock @mood="openMood" />
+    <RoomDock v-if="!visiting" @mood="openMood" />
+    <!-- in someone else's room, the one thing to do: leave them a note -->
+    <button v-else type="button" class="home__note" @click="startNote">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M5 4h14v12l-4 4H5z M15 20v-4h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        <path d="M8 9h8M8 12.5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+      Leave a note
+    </button>
+    <NoteComposer v-if="writing" :owner="visiting.firstName" :error="noteError" @post="postNote" @cancel="stopNote" />
+    <NoticeBoard v-if="boardOpen" :owner="visiting.firstName" :notes="notes" @remove="takeDown" @close="boardOpen = false" />
 
     <QuoteOfDayModal v-if="quoteOpen" @close="quoteOpen = false" />
     <MoodCheckInModal v-if="moodStep === 'checkin'" @submit="submitMood" @skip="skipMood" />
@@ -372,6 +462,32 @@ onBeforeUnmount(() => {
 .reading-pop-leave-to {
   transform: translateY(14px) scale(0.92);
   opacity: 0;
+}
+
+/* where the room menu sits in the reader's own room: bottom right, the town's round-cornered
+   button in the house's colour */
+.home__note {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--house-accent, var(--rl-primary));
+  box-shadow: 0 6px 18px rgba(63, 46, 36, 0.28);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rl-surface);
+}
+
+.home__note:focus-visible {
+  outline: 3px solid var(--rl-surface);
+  outline-offset: 2px;
 }
 
 .drag-ghost {

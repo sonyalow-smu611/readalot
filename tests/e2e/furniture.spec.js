@@ -44,6 +44,19 @@ test("the Shop sells wall art drawn in the room's pixel style", async ({ page })
   expect(await art.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
 });
 
+test("the Shop sells only pixel-art pieces: wall art, reading chairs, plants and cats", async ({ page }) => {
+  const shop = await openShop(page);
+  const groups = () => shop.getByRole("group").evaluateAll((all) => all.map((g) => g.getAttribute("aria-label")));
+  await expect.poll(groups).toEqual(["Wall art", "Reading chairs", "Plants", "Cats"]);
+  // the old drawings are gone
+  for (const name of ["Clay vase", "Bust", "Low sofa", "Round bag", "Daybed", "Food dish", "Husky", "Cockatiel"]) {
+    await expect(shop.getByRole("button", { name: new RegExp(name) })).toHaveCount(0);
+  }
+  // every card's picture is a room sprite
+  await expect(shop.getByRole("button", { name: /\$\d+/ })).toHaveCount(14);
+  await expect(shop.locator("img[src*='/room/strip/']")).toHaveCount(14);
+});
+
 // The room is wider than the screen: the bar of places slides along to something first.
 async function turnTo(page, place) {
   await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: place }).click();
@@ -319,15 +332,15 @@ function whereIs(page, name) {
   });
 }
 
-test("the Shop's cats are three pixel cats; the dogs and the bird are still there", async ({ page }) => {
+test("the Shop's pets are the three pixel cats", async ({ page }) => {
   const shop = await openShop(page);
   expect(await cards(shop, "Cats")).toEqual(["Ginger tabby $80", "Black cat $85", "Calico $90"]);
   await expect.poll(() => spritesLoaded(shop, "Cats")).toEqual([true, true, true]);
   for (const gone of ["Siamese", "Maine Coon", "Persian", "Bengal", "British Shorthair"]) {
     await expect(shop.getByRole("button", { name: new RegExp(gone) })).toHaveCount(0);
   }
-  await expect(group(shop, "Dogs").getByRole("button")).toHaveCount(4);
-  await expect(group(shop, "Birds").getByRole("button")).toHaveCount(1);
+  await expect(group(shop, "Dogs")).toHaveCount(0);
+  await expect(group(shop, "Birds")).toHaveCount(0);
 });
 
 test("cats wander about the room on their own, staying inside it", async ({ page }) => {

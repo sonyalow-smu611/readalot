@@ -100,9 +100,10 @@ export function tintFor({ scene, night }) {
 // state: { images (sprite id -> loaded Image), offset (rows of extra wall above the room),
 //          weather, spines, lifted (book id), out (book id taken off the shelf), time,
 //          extras (furniture the reader has put in the room, as pieces: { sprite, x, y, layer },
-//          and `replaces`: the id of a piece of the room's it stands in for, drawn in its place) }
+//          and `replaces`: the id of a piece of the room's it stands in for, drawn in its place),
+//          notes (how many visitors' notes to pin on the corkboard, three at most) }
 export function paintRoom(ctx, state) {
-  const { images, offset, weather, spines, lifted, out, time, extras = [] } = state
+  const { images, offset, weather, spines, lifted, out, time, extras = [], notes = 0 } = state
   const instead = new Map(extras.filter((piece) => piece.replaces).map((piece) => [piece.replaces, piece]))
   const pieces = [
     ...PIECES.filter((piece) => !instead.has(piece.with)).map((piece) => instead.get(piece.id) ?? piece),
@@ -172,6 +173,7 @@ export function paintRoom(ctx, state) {
       ctx.drawImage(image, x, y)
       if (piece.id === 'bookshelf') paintBooks(ctx, spines, offset, lifted, out)
       if (piece.id === 'clock') paintHands(ctx, offset, time)
+      if (piece.id === 'corkboard') paintNotes(ctx, x, y, notes)
     }
   }
 
@@ -256,6 +258,37 @@ function paintBooks(ctx, spines, offset, lifted, out) {
   for (const spine of spines) {
     if (spine.book.id === out) continue
     drawSpine(ctx, { ...spine, y: offset + spine.y }, spine.book.id === lifted ? -LIFT : 0)
+  }
+}
+
+// Visitors' notes, pinned on the corkboard over what's already there: a small paper note each,
+// with its shadow on the cork, two lines of writing and a pin. `x`, `y` are the corkboard's top
+// left; the newest note goes up first.
+const NOTE_SPOTS = [
+  { x: 26, y: 27, paper: '#fbe7a1', edge: '#e2c46f', pin: '#c8553d' },
+  { x: 56, y: 52, paper: '#f6d3cb', edge: '#dfaea3', pin: '#3f7fa8' },
+  { x: 86, y: 30, paper: '#fdf7ec', edge: '#e2d7c3', pin: '#3d9a8b' },
+]
+const NOTE = { w: 16, h: 14 }
+
+function paintNotes(ctx, x, y, count) {
+  for (const spot of NOTE_SPOTS.slice(0, Math.min(count, NOTE_SPOTS.length))) {
+    const nx = x + spot.x
+    const ny = y + spot.y
+    ctx.fillStyle = '#a9824f'
+    ctx.fillRect(nx + 1, ny + 1, NOTE.w, NOTE.h)
+    ctx.fillStyle = spot.paper
+    ctx.fillRect(nx, ny, NOTE.w, NOTE.h)
+    ctx.fillStyle = spot.edge
+    ctx.fillRect(nx, ny + NOTE.h - 1, NOTE.w, 1)
+    ctx.fillRect(nx + NOTE.w - 1, ny, 1, NOTE.h)
+    ctx.fillStyle = '#9a958c'
+    ctx.fillRect(nx + 3, ny + 5, NOTE.w - 6, 1)
+    ctx.fillRect(nx + 3, ny + 8, NOTE.w - 9, 1)
+    ctx.fillStyle = spot.pin
+    ctx.fillRect(nx + 7, ny - 1, 2, 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(nx + 7, ny - 1, 1, 1)
   }
 }
 

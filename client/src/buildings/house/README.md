@@ -6,10 +6,16 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | File | What it does |
 |---|---|
 | `HouseView.vue` | The building's entry view, inside the shared `BuildingShell` |
-| `RoomView.vue` | The room page: the room, the Currently Reading card, book details, modals, the menu |
-| `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf |
-| `furniture.js` | **The furniture library:** pieces in the room's pixel style that the reader buys in the Shop |
-| `components/RoomStrip.vue` | The room itself: scrolling, the tappable spots, the shelf's name plates, books, decorations, pets |
+| `RoomView.vue` | The room page: the room, the Currently Reading card, book details, modals, the menu. With `visiting`, someone else's room |
+| `VisitView.vue` | Someone else's room (`/people/:id/room`), opened from their profile in the Cafe |
+| `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf. At `/people/:id/room/shelf`, the visited reader's shelf |
+| `furniture.js` | **The furniture library:** the pieces in the room's pixel style that the Shop sells (the Shop sells nothing else) |
+| `visitors.js` | Other readers' rooms: the Cafe's sample readers, their books in the shelf's shape, and the furniture in each room |
+| `notes.js` | Notes left on readers' notice boards, kept per reader in this browser |
+| `components/RoomStrip.vue` | The room itself: scrolling, the tappable spots, the shelf's name plates, books, furniture, cats. Takes the furniture and whether it can be edited from the page |
+| `components/VisitorBookDialog.vue` | A book off someone else's shelf: what it is and which shelf, with nothing to change |
+| `components/NoteComposer.vue` | The Leave a note card |
+| `components/NoticeBoard.vue` | A visited reader's notice board: the Quote of the Day, then the notes left there |
 | `components/ShelfRow.vue` | One shelf on My Shelf: a sideways row of covers that scrolls by swipe, wheel, drag, buttons or arrow keys |
 | `components/DecorArt.vue` | A decoration's picture in the Shop and inventory: a furniture piece's own sprite, kept crisp |
 | `components/BookDialog.vue` | A book's card over the page, used by the room and My Shelf (remove with Undo included) |
@@ -115,6 +121,24 @@ To add a piece:
    and `sleep`, drawn with `catSheet` in the art script. Cats walk along `WALK`, sit, and
    sometimes nap. They're drawn on their own canvas over the room, tinted for the weather.
    With reduced motion they sit still.
+
+## Visiting a room
+
+Every reader in the Cafe has a room. Their profile (`/people/reader-<name>`) has a **Visit
+<name>'s room** button, which opens `/people/reader-<name>/room`. It's the same room, from the
+same files, as My Room: `VisitView` passes the reader from `visitors.js` to `RoomView` as
+`visiting`, and the room shows their books and furniture. Visitors can look around, open their
+books (read-only) and browse their shelf, but nothing in the room can be placed, moved or taken
+down: `RoomStrip` gets `editable` off.
+
+Where My Room has its menu, a visitor gets **Leave a note**. A note (up to 140 characters,
+signed with the visitor's name) goes on that reader's notice board, and up to three are drawn on
+the corkboard as small paper notes (`paintNotes` in `strip/paint.js`). Tapping the corkboard
+opens the notice board. Notes stay in this browser only (`notes.js`), like the Cafe's follows
+and chat, because the sample readers aren't real accounts.
+
+To furnish a reader's room differently, change their list in `FURNISHINGS` in `visitors.js`.
+Each piece is `{ id, zone, x }`, the same as a piece placed in My Room.
 
 ## On a laptop
 

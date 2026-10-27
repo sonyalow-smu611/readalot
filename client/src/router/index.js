@@ -35,6 +35,9 @@ const routes = [
   { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, order: 2 } },
   { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
+  // another reader's room, visited from their profile: the house's room in visiting mode
+  { path: '/people/:id/room', name: 'reader-house', component: () => import('@/buildings/house/VisitView.vue'), meta: { title: 'Visiting', fullBleed: true, wide: true, order: 3 } },
+  { path: '/people/:id/room/shelf', name: 'reader-house-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'Visiting', fullBleed: true, wide: true, order: 4 } },
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 3 } },
   { path: '/scan', name: 'scan-book', component: ScanBookView, meta: { order: 2 } },
   { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },

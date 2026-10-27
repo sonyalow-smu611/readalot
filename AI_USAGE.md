@@ -183,6 +183,19 @@ Written by Claude Code at Sonz's request, test first, from the spec in
 | Furniture library | `client/src/buildings/house/furniture.js`, `client/scripts/room-art/room.js`, `strip/layout.js`, `strip/paint.js`, `components/DecorArt.vue`, `components/RoomDock.vue`, `client/src/composables/useDecor.js` | 5 pieces of wall art, 3 plants, 3 reading chairs and 3 cats, drawn with the town's helpers. Wall spots and the reading-nook spot. Placed pieces are painted into the room's canvas. A chair swaps with the armchair. Cats walk, sit and nap on their own canvas, tinted for the weather. The Shop is grouped, with pixel thumbnails; the old vector cats are removed |
 | Tests | `tests/e2e/house-desktop.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/my-shelf.spec.js`, `tests/e2e/room.spec.js` | The laptop journey, the furniture journey and the scrolling rows. The room and My Shelf tests now run in a phone-sized window |
 
+### Visiting other readers' rooms, notes on the notice board and a pixel-only Shop (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the spec in
+`docs/specs/visit-reader-rooms.md`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Pixel-only Shop | `client/src/composables/useDecor.js`, `client/src/buildings/house/components/RoomStrip.vue`, `DecorArt.vue`, `RoomDock.vue`, `RoomView.vue` | The Shop sells only the furniture library. The old vector vases, statues, sofas, beanbags, mattresses, dishes, dogs and bird are removed, with the code that drew them; `client/src/components/DecorPiece.vue` is deleted |
+| One room, two modes | `RoomStrip.vue`, `RoomView.vue` | The room takes its furniture and whether it can be edited from the page. My Room passes its own; a visited room passes the reader's, with editing off. No menu, credits or mood check-in in someone else's room |
+| Visiting | `client/src/buildings/house/VisitView.vue`, `visitors.js`, `ShelfView.vue`, `components/VisitorBookDialog.vue`, `components/CurrentlyReadingCard.vue`, `client/src/router/index.js`, `client/src/views/ReaderRoomView.vue` | Routes `/people/:id/room` and `/people/:id/room/shelf`. Each sample reader's books and furniture. A read-only book card. The reader's shelf page. On the Cafe's reader page, the heading is the reader's name and there's a Visit room button |
+| Notes | `notes.js`, `components/NoteComposer.vue`, `components/NoticeBoard.vue`, `strip/paint.js` | Leave a note (140 characters, kept per reader in this browser), the notice board with the Quote of the Day and the notes, Take down, and up to three notes drawn on the corkboard |
+| Tests | `tests/e2e/visit-room.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/room.spec.js`, `tests/e2e/town.spec.js` | The visiting journey. The Shop's pixel-only check. The room's decoration journey uses the Succulent trio. The friend's house now lands on the renamed profile |
+
 ### Readalot Town: the map home page and the building skeleton (AI-generated)
 
 Written by Claude Code at the team's request (stack chosen by the team: Phaser 3, one map

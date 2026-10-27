@@ -9,19 +9,19 @@
     bookshelf  opens My Shelf, every book       a book    takes it off the shelf and opens it
     the book on the coffee table  the Currently Reading card
     corkboard  the Quote of the Day             window, clock   live weather and time (read-only)
-  Shop decorations and pets are the shop's own drawings, standing on spots in the room.
+  Furniture from the Shop is painted into the room too; its cats walk about on a canvas of their own.
 
   Until the room's pictures have loaded, and when they cannot (or the device cannot draw on a
   canvas), a still picture of the room stands in, with the bar of places opening things directly.
 -->
 <template>
-  <div ref="root" class="strip" :class="{ 'is-ready': ready, 'is-locked': bookPhase !== 'closed' }">
+  <div ref="root" class="strip" :class="{ 'is-ready': ready, 'is-locked': bookPhase !== 'closed', 'is-visit': !editable }">
     <div
       ref="scroller"
       class="strip__scroller"
       role="region"
       tabindex="0"
-      aria-label="Your room. Swipe, drag or use the arrow keys to look around."
+      :aria-label="`${roomName}. Swipe, drag or use the arrow keys to look around.`"
       :data-cut="Math.max(0, -size.above)"
       @scroll.passive="onScroll"
     >
@@ -82,6 +82,7 @@
                 {{ error }}
                 <button class="btn btn-sm btn-outline-primary" type="button" @click="$emit('retry')">Retry</button>
               </template>
+              <strong v-else-if="!editable">No books on these shelves yet</strong>
               <template v-else>
                 <strong>Add your first book</strong>
                 <RouterLink to="/discover">Discover books</RouterLink>
@@ -106,15 +107,15 @@
               data-tour="quote"
               type="button"
               aria-haspopup="dialog"
-              aria-label="Quote of the day"
+              :aria-label="boardLabel"
               :style="boxStyle(spots.corkboard)"
               @click="tap('corkboard')"
             >
-              <span class="strip__tip">Quote of the day</span>
+              <span class="strip__tip">{{ boardLabel }}</span>
             </button>
 
-            <!-- decorations and pets, standing on their spots. Furniture from the library is drawn
-                 in the room itself; its button is an invisible box over it -->
+            <!-- the furniture placed in the room: drawn in the room itself, each with an invisible
+                 button over it (a cat's follows it as it walks) -->
             <template v-for="item in placed" :key="item.uid">
               <button
                 v-if="artOf(item)"
@@ -127,7 +128,7 @@
                 <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
               </button>
               <button
-                v-else-if="isCat(item)"
+                v-else-if="isPet(item)"
                 type="button"
                 class="strip__pin placed-cat"
                 :data-pet="item.uid"
@@ -135,19 +136,6 @@
                 :style="catStyle(item)"
                 @click="pickItem(item.uid)"
               >
-                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
-              </button>
-              <button
-                v-else
-                type="button"
-                class="strip__pin placed"
-                :class="{ 'is-pet': isPet(item) }"
-                :data-pet="isPet(item) ? item.uid : null"
-                :aria-label="decorName(item)"
-                :style="placedStyle(item)"
-                @click="pickItem(item.uid)"
-              >
-                <span class="placed__pop" :data-decor-uid="item.uid"><DecorPiece :kind="item.id" /></span>
                 <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
               </button>
             </template>
@@ -190,7 +178,7 @@
       @wheel.stop.prevent
     />
 
-    <p v-if="placing" class="strip__placing" role="status">
+    <p v-if="editable && placing" class="strip__placing" role="status">
       Tap a glowing spot for the {{ placingMeta?.name }}.
       <button type="button" class="strip__cancel" @click="cancelPlace">Cancel</button>
     </p>
@@ -210,9 +198,8 @@ let lastLeft = 0
 </script>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, toRef, watch } from 'vue'
 import stillArt from '@/buildings/house/assets/room-still.png'
-import DecorPiece from '@/components/DecorPiece.vue'
 import WindowView from '@/buildings/house/components/WindowView.vue'
 import { decorMeta, fitsZone, useDecor } from '@/composables/useDecor'
 import { furnitureSprite } from '@/buildings/house/furniture.js'
@@ -235,8 +222,6 @@ const SCENE_LABELS = { sunny: 'Clear', cloudy: 'Cloudy', rain: 'Rain' }
 // the most plain wall that may be cut off the top of the room to fill a wide window, in art
 // pixels: the bunting hangs below it
 const CUT = 24
-// how tall a decoration stands, in art pixels
-const TALL = { shelf: 22, floor: 40, pet: 28 }
 const PET_SPEED = 26 // art pixels a second
 // a cat's steps: how long each frame of its walk shows, in seconds; how often it falls asleep
 // when it stops, and for how long it rests (seconds)
@@ -259,12 +244,23 @@ const props = defineProps({
   error: { type: String, default: '' },
   // the Currently Reading card opened from the coffee table is showing
   readingOpen: Boolean,
+  // the furniture standing in the room: [{ uid, id, zone, x }]
+  furniture: { type: Array, default: () => [] },
+  // the reader's own room: pieces can be put on spots, picked and taken down
+  editable: { type: Boolean, default: false },
+  // whose room it is, for screen readers ("Your room", "Emma's room")
+  roomName: { type: String, default: 'Your room' },
+  // what the corkboard opens: the Quote of the Day, or a visited reader's notice board
+  boardLabel: { type: String, default: 'Quote of the day' },
+  // how many visitors' notes are on the corkboard (up to three are drawn on it)
+  notes: { type: Number, default: 0 },
 })
 // open-book: the Currently Reading card; pick-book: a book tapped on the shelf; open-shelf: the
 // bookshelf itself tapped (or asked for before the room has loaded), for My Shelf
 const emit = defineEmits(['open-book', 'pick-book', 'open-shelf', 'quote', 'retry'])
 
-const { placed, placing, placingMeta, drag, selected, pick, unplace, placeOn, cancelPlace, flash } = useDecor()
+const { placing, placingMeta, drag, selected, pick, unplace, placeOn, cancelPlace, flash } = useDecor()
+const placed = toRef(props, 'furniture')
 
 const root = ref(null)
 const scroller = ref(null)
@@ -400,6 +396,7 @@ function paint() {
       out: out.value,
       time: readClock(),
       extras: extras.value,
+      notes: props.notes,
     })
   })
 }
@@ -437,11 +434,12 @@ function canDraw() {
   }
 }
 
-// --- Decorations and pets ---------------------------------------------------------------------
+// --- Furniture and cats -----------------------------------------------------------------------
 function decorName(item) {
   return decorMeta(item.id)?.name || 'Decoration'
 }
 
+// a cat: it walks about, drawn from its own sheet of frames
 function isPet(item) {
   return Boolean(decorMeta(item.id)?.pet)
 }
@@ -449,10 +447,10 @@ function isPet(item) {
 // the piece on its way into the room: picked to place, or being dragged out of the inventory
 const movingMeta = computed(() => placingMeta.value ?? (drag.value?.moved ? decorMeta(drag.value.id) : null))
 
-// spots that piece can go on, that nothing stands on yet
+// spots that piece can go on, that nothing stands on yet (none in someone else's room)
 const freeSlots = computed(() => {
   const meta = movingMeta.value
-  if (!meta) return []
+  if (!meta || !props.editable) return []
   return SLOTS.filter((slot) => fitsZone(meta, slot.zone) && !takenSlot(slot))
 })
 
@@ -474,9 +472,8 @@ function slotOf(item) {
   return slots.reduce((best, slot) => (!best || Math.abs(slot.x - item.x) < Math.abs(best.x - item.x) ? slot : best), null)
 }
 
-// A placed piece from the furniture library: its sprite, the box it fills in the room (hung
-// centred on a wall spot, or standing on its spot) and the layer it's drawn in. null for others
-// (and for cats, which walk about).
+// A placed piece: its sprite, the box it fills in the room (hung centred on a wall spot, or
+// standing on its spot) and the layer it's drawn in. null for cats, which walk about.
 function artOf(item) {
   const sprite = !isPet(item) && furnitureSprite(item.id)
   const slot = sprite && slotOf(item)
@@ -500,22 +497,6 @@ const extras = computed(() =>
 )
 
 const pets = new Map()
-
-function placedStyle(item) {
-  const meta = decorMeta(item.id)
-  const tall = (meta?.pet ? TALL.pet : meta?.surface === 'floor' ? TALL.floor : TALL.shelf) * size.value.unit
-  if (isPet(item)) {
-    const pet = pets.get(item.uid)
-    return { ...pointStyle({ x: pet?.x ?? WALK.from, y: WALK.y }), '--tall': `${tall}px` }
-  }
-  const slot = slotOf(item)
-  return slot ? { ...pointStyle(slot.at), '--tall': `${tall}px` } : { display: 'none' }
-}
-
-// a cat from the furniture library: a pet drawn from its own sheet of frames
-function isCat(item) {
-  return isPet(item) && Boolean(furnitureSprite(item.id))
-}
 
 function between([low, high]) {
   return low + Math.random() * (high - low)
@@ -573,7 +554,7 @@ let catsShown = false
 function drawCats() {
   const el = catCanvas.value
   if (!el || !ready.value) return
-  const cats = placed.value.filter(isCat)
+  const cats = placed.value.filter(isPet)
   if (!cats.length && !catsShown) return
   if (el.width !== ROOM.width) el.width = ROOM.width
   if (el.height !== size.value.rows) el.height = size.value.rows
@@ -608,7 +589,7 @@ function placeAt(slot) {
 }
 
 function pickItem(uid) {
-  if (scroll?.wasDrag()) return
+  if (!props.editable || scroll?.wasDrag()) return
   pick(uid)
 }
 
@@ -616,7 +597,7 @@ function pickItem(uid) {
 // there, if one is close. Returns the spot, or null.
 function dropAt(entry, x, y) {
   const meta = decorMeta(entry.id)
-  if (!meta || !ready.value) return null
+  if (!props.editable || !meta || !ready.value) return null
   const stage = scroller.value.firstElementChild.getBoundingClientRect()
   const { unit } = size.value
   let best = null
@@ -766,7 +747,7 @@ watch(placing, async (entry) => {
   if (!freeSlots.value.some((slot) => inView(slot.at.x)) && freeSlots.value[0]) centreOn(freeSlots.value[0].at.x)
 })
 
-watch([shelf, lifted, out, extras, () => props.weather.scene, () => props.weather.night], () => paint())
+watch([shelf, lifted, out, extras, () => props.notes, () => props.weather.scene, () => props.weather.night], () => paint())
 
 let resize = null
 onMounted(async () => {
@@ -1011,29 +992,6 @@ defineExpose({ dropAt, putBack })
   font-weight: 700;
 }
 
-/* a decoration or pet: the shop drawing, standing on its spot at the room's scale */
-.placed {
-  padding: 0;
-  border: 0;
-  background: none;
-  transform: translate(-50%, -100%);
-  cursor: pointer;
-}
-
-.placed__pop {
-  display: block;
-}
-
-.placed__pop :deep(.art) {
-  display: block;
-  height: var(--tall);
-  width: auto;
-}
-
-.placed.is-pet[data-face='left'] .placed__pop {
-  transform: scaleX(-1);
-}
-
 .placed__remove {
   position: absolute;
   bottom: 100%;
@@ -1221,6 +1179,11 @@ defineExpose({ dropAt, putBack })
   padding: 2px 0 14px;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+/* in someone else's room: clear of the wider Leave a note button */
+.strip.is-visit .strip__places {
+  right: 170px;
 }
 
 /* the town's chips (TownHud): white, a fine line and a soft shadow */
