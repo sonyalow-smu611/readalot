@@ -42,11 +42,11 @@ function openRoom(reader) { router.push(`/people/${encodeURIComponent(reader.id)
     </header>
 
     <label class="search-label" for="people-search">Find your reading people</label>
-    <input id="people-search" v-model="search" class="search" type="search" placeholder="Search names or favourite genres…" />
+    <input id="people-search" v-model="search" data-tour="people-search" class="search" type="search" placeholder="Search names or favourite genres…" />
 
     <section aria-label="Map of sample readers">
       <div class="heading-row"><h2>Readers on the map</h2><span>{{ readers.length }} nearby</span></div>
-      <div class="map-box">
+      <div class="map-box" data-tour="people-map">
         <iframe class="map-frame" :src="mapUrl" title="OpenStreetMap of Singapore with demo reader pins" loading="lazy" tabindex="-1" />
         <button
           v-for="reader in pins" :key="reader.id" type="button" class="map-pin"
@@ -79,7 +79,7 @@ function openRoom(reader) { router.push(`/people/${encodeURIComponent(reader.id)
         <p class="details">🤝 {{ getSharedBooks(reader).length }} shared book(s) · {{ getSharedGenres(reader).length }} shared genre(s)</p>
         <div class="card-actions">
           <button class="secondary" type="button" @click="activeId = reader.id">Show on map</button>
-          <button class="secondary" type="button" @click="follow(reader)">{{ followed[reader.id] ? '✓ Following' : '+ Follow' }}</button>
+          <button class="secondary" type="button" :data-tour="reader.id === readers[0]?.id ? 'people-follow' : null" @click="follow(reader)">{{ followed[reader.id] ? '✓ Following' : '+ Follow' }}</button>
           <button class="primary" type="button" @click="openRoom(reader)">Visit Room →</button>
         </div>
       </article>

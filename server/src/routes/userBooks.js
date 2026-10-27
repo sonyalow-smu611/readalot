@@ -1,18 +1,20 @@
 import { Router } from "express";
 import { requireUser } from "../middleware/auth.js";
 import { getGoogleBook } from "../services/books.js";
-import { demoShelf, findDemoBook } from "../services/demoShelf.js";
+import { getDemoShelf } from "../services/demoShelf.js";
 import { env } from "../services/env.js";
 import { supabase } from "../services/supabase.js";
 
 const router = Router();
 const statuses = new Set(["want_to_read", "reading", "read"]);
+// stands in for a saved book that Google Books could not return just now
+const UNKNOWN_BOOK = { title: "Unavailable book", authors: [], coverUrl: "", description: "", genres: [] };
 
 // The current user's shelf: Book shape plus status, progress and updatedAt.
 router.get("/", requireUser, async (req, res, next) => {
   try {
     if (!env.HAS_SUPABASE) {
-      return res.json({ books: demoShelf });
+      return res.json({ books: await getDemoShelf() });
     }
 
     const { data: rows, error } = await supabase
@@ -42,7 +44,7 @@ router.get("/", requireUser, async (req, res, next) => {
     const books = await Promise.all(
       rows.map(async (row) => ({
         // user_books has no foreign key to books, so a saved book may only exist on Google Books
-        ...(byId.get(row.book_id) || (await getGoogleBook(row.book_id))),
+        ...(byId.get(row.book_id) || (await getGoogleBook(row.book_id).catch(() => UNKNOWN_BOOK))),
         id: row.book_id,
         status: row.status,
         progress: row.progress || 0,
@@ -66,11 +68,12 @@ router.post("/", requireUser, async (req, res, next) => {
     }
 
     if (!env.HAS_SUPABASE) {
-      let book = findDemoBook(req.body.bookId);
+      const shelf = await getDemoShelf();
+      let book = shelf.find((item) => item.id === req.body.bookId);
 
       if (!book) {
         book = { ...(await getGoogleBook(req.body.bookId)), id: req.body.bookId };
-        demoShelf.unshift(book);
+        shelf.unshift(book);
       }
 
       Object.assign(book, {
@@ -108,7 +111,7 @@ router.patch("/:bookId", requireUser, async (req, res, next) => {
     }
 
     if (!env.HAS_SUPABASE) {
-      const book = findDemoBook(req.params.bookId);
+      const book = (await getDemoShelf()).find((item) => item.id === req.params.bookId);
 
       if (!book) {
         return res.status(404).json({ error: "Book is not on your shelf" });
@@ -143,8 +146,9 @@ router.patch("/:bookId", requireUser, async (req, res, next) => {
 router.delete("/:bookId", requireUser, async (req, res, next) => {
   try {
     if (!env.HAS_SUPABASE) {
-      const index = demoShelf.findIndex((book) => book.id === req.params.bookId);
-      if (index >= 0) demoShelf.splice(index, 1);
+      const shelf = await getDemoShelf();
+      const index = shelf.findIndex((book) => book.id === req.params.bookId);
+      if (index >= 0) shelf.splice(index, 1);
       return res.status(204).end();
     }
 

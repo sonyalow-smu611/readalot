@@ -4,7 +4,6 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import PhoneFrame from '@/components/PhoneFrame.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import BottomNav from '@/components/BottomNav.vue'
 import BookOpenOverlay from '@/components/BookOpenOverlay.vue'
 import GuideTour from '@/components/GuideTour.vue'
 import LoadingScreen from '@/components/LoadingScreen.vue'
@@ -21,7 +20,7 @@ function resetScroll() {
 </script>
 
 <template>
-  <PhoneFrame>
+  <PhoneFrame :full="booting">
     <LoadingScreen v-if="booting" @done="booting = false" />
     <!-- full-bleed pages (the room) draw to the edges and bring their own chrome -->
     <AppHeader v-if="showChrome && !route.meta.fullBleed && !route.meta.hideHeader" />
@@ -36,7 +35,6 @@ function resetScroll() {
         </Transition>
       </RouterView>
     </main>
-    <BottomNav v-if="showChrome" />
     <GuideTour />
     <BookOpenOverlay />
     <Toast />

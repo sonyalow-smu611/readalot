@@ -1,38 +1,113 @@
+<!--
+  A book's own page. It is the room's Book details card, at the same size and in the same
+  place, over a soft picture of the room; ✕ goes back to wherever the reader came from.
+  A book on the reader's shelf shows at once from the shelf's copy while the full details load.
+  Written with AI assistance: see AI_USAGE.md.
+-->
 <template>
-  <section v-if="book" class="app-shell">
-    <div class="d-flex gap-3 mb-4">
-      <BookCover :cover-url="book.coverUrl" :title="book.title" />
-      <div>
-        <h1 class="h3">{{ book.title }}</h1>
-        <p class="text-muted mb-2">{{ book.authors?.join(", ") }}</p>
-        <ReadingStatusButtons v-model="status" />
+  <section class="book-page">
+    <BookCard class="book-page__card" close-label="Back" @close="goBack">
+      <BookDetailsContent v-if="book" :book="book" title-tag="h1" :links-to-page="false" />
+      <div v-else-if="loading || (!data && !error)" class="book-page__state" role="status">
+        <span class="spinner-border" aria-hidden="true"></span>
+        Opening the book…
       </div>
-    </div>
-
-    <p>{{ book.description }}</p>
-    <RatingStars :rating="Math.round(book.averageRating || 0)" />
+      <div v-else class="book-page__state" role="alert">
+        <strong>Couldn't open this book.</strong>
+        {{ error || "It may have been taken off the shelves." }}
+        <button type="button" class="btn book-page__retry" @click="load">Retry</button>
+      </div>
+    </BookCard>
   </section>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
-import BookCover from "../components/BookCover.vue";
-import RatingStars from "../components/RatingStars.vue";
-import ReadingStatusButtons from "../components/ReadingStatusButtons.vue";
-import { getBook, saveUserBook } from "../services/api.js";
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import BookCard from "@/components/book/BookCard.vue";
+import BookDetailsContent from "@/components/book/BookDetailsContent.vue";
+import { useAsync } from "@/composables/useAsync.js";
+import { getBook } from "@/services/api.js";
+import { useBookshelfStore } from "@/stores/bookshelf";
 
 const route = useRoute();
-const book = ref(null);
-const status = ref("");
+const router = useRouter();
+const bookshelf = useBookshelfStore();
+const { data, error, loading, run } = useAsync(() => getBook(route.params.id));
 
-watch(status, async (nextStatus) => {
-  if (nextStatus && book.value) {
-    await saveUserBook({ bookId: book.value.id, status: nextStatus });
-  }
+// the full details over the shelf's copy; a detail the server does not have keeps the shelf's
+const book = computed(() => {
+  const shelved = bookshelf.findBook(route.params.id);
+  const full = data.value?.book;
+  if (!full) return shelved;
+  const known = Object.fromEntries(Object.entries(full).filter(([, value]) => value != null && value !== ""));
+  return { ...shelved, ...known };
 });
 
-onMounted(async () => {
-  book.value = (await getBook(route.params.id)).book;
+function load() {
+  return run().catch(() => {});
+}
+
+function goBack() {
+  // straight here from a link: there is nowhere to go back to, so home to the room
+  if (window.history.state?.back) router.back();
+  else router.push({ name: "room" });
+}
+
+onMounted(() => {
+  load();
+  // which shelf the book is on comes from the reader's shelf
+  if (!bookshelf.books.length && !bookshelf.loading) bookshelf.load();
 });
 </script>
+
+<style scoped>
+/* the town's page: the parchment canvas, the card on it (see BookCard) */
+.book-page {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: var(--rl-canvas);
+}
+
+.book-page__card {
+  position: absolute;
+  inset: 10%;
+}
+
+.book-page__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 60vh;
+  padding: 0 8px;
+  font-family: var(--rl-font-body);
+  font-size: 14px;
+  text-align: center;
+  color: var(--rl-text);
+}
+
+.book-page__state strong {
+  font-family: var(--rl-font-title);
+}
+
+.book-page__state .spinner-border {
+  color: var(--rl-accent);
+}
+
+.book-page__retry {
+  --bs-btn-font-size: 14px;
+  --bs-btn-font-weight: 700;
+  --bs-btn-color: var(--rl-surface);
+  --bs-btn-bg: var(--rl-primary);
+  --bs-btn-border-color: var(--rl-primary);
+  --bs-btn-hover-color: var(--rl-surface);
+  --bs-btn-hover-bg: var(--rl-primary);
+  --bs-btn-hover-border-color: var(--rl-primary);
+  --bs-btn-border-radius: 12px;
+  min-height: 44px;
+  margin-top: 4px;
+}
+</style>

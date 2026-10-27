@@ -23,11 +23,17 @@ async function request(path, options = {}) {
     throw new Error(error.error || "Request failed");
   }
 
+  // 204 No Content (e.g. a delete) has no body to parse
+  if (response.status === 204) return null;
+
   return response.json();
 }
 
-export function searchBooks(query) {
-  return request(`/books/search?q=${encodeURIComponent(query)}`);
+// `limit` is how many results to ask for (the server's default is 12, its max 40)
+export function searchBooks(query, limit) {
+  const params = new URLSearchParams({ q: query });
+  if (limit) params.set("limit", String(limit));
+  return request(`/books/search?${params}`);
 }
 
 export function getBook(id) {

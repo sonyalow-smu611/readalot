@@ -1,10 +1,11 @@
 import { prefersReducedMotion } from '@/lib/motion'
 
+// covers in the town's colours: house blue, cafe red, mustard, grass green
 const TONES = [
-  { cover: '#3f2e24', band: '#c49264', page: '#e7d3bc' },
-  { cover: '#6b4a34', band: '#fffdf9', page: '#efe4d4' },
-  { cover: '#9a7a55', band: '#3f2e24', page: '#fffdf9' },
-  { cover: '#2c241e', band: '#d9b256', page: '#f4efe6' },
+  { cover: '#2f5fb3', band: '#fffdf9', page: '#c9d9e6' },
+  { cover: '#c0392f', band: '#f6e27a', page: '#f4efe6' },
+  { cover: '#e3b04b', band: '#3f2e24', page: '#fffdf9' },
+  { cover: '#5aa045', band: '#fffdf9', page: '#e7d3bc' },
 ]
 
 // Spots are percentages. Each one is a book, spaced through the open background.

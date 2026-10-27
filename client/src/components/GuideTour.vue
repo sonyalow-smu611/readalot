@@ -59,6 +59,9 @@ function follow() {
   window.clearTimeout(hunt)
   let tries = 0
   const step = () => {
+    const selector = guide.value?.target
+    const target = selector ? document.querySelector(selector) : null
+    if (tries === 0 && target) target.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     if (measure() || tries >= 24) return
     tries += 1
     hunt = window.setTimeout(step, 150)
@@ -81,6 +84,9 @@ watch(() => route.path, () => {
   if (guide.value) follow()
 })
 
+// A new reader's tour begins wherever they land after signing up (the town).
+watch(() => route.name, () => user.openGuideIfNew(), { immediate: true })
+
 onMounted(() => {
   window.addEventListener('resize', measure)
   if (guide.value) follow()
@@ -93,7 +99,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div v-if="guide" ref="root" class="guide" :class="{ 'guide--top': cardOnTop }">
-    <div v-if="!ringStyle" class="guide__dim" />
+    <!-- a fly-to step keeps the map in view -->
+    <div v-if="!ringStyle && !guide.focus" class="guide__dim" />
     <div v-else class="guide__ring" :style="ringStyle" />
     <article ref="card" class="guide__card">
       <p class="text-muted mb-1">{{ guideStep + 1 }} of {{ guideCount }}</p>

@@ -2,12 +2,18 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+const props = defineProps({
+  // fill the window whatever the page (the loading screen, before the first page is known)
+  full: { type: Boolean, default: false },
+})
+
 const route = useRoute()
-const auth = computed(() => Boolean(route.meta.bare))
+// sign-in pages (bare) and pages that opt in with meta.wide fill a laptop window
+const full = computed(() => Boolean(props.full || route.meta.bare || route.meta.wide))
 </script>
 
 <template>
-  <div class="phone-stage" :class="{ 'phone-stage--auth': auth }">
+  <div class="phone-stage" :class="{ 'phone-stage--full': full }">
     <div class="phone-frame grain">
       <slot />
     </div>
@@ -53,13 +59,13 @@ const auth = computed(() => Boolean(route.meta.bare))
     box-shadow: 0 18px 48px rgba(63, 46, 36, 0.12);
   }
 
-  /* Sign-in fills the window. The room stays in the phone column. */
-  .phone-stage--auth {
+  /* Sign-in and wide pages (the town) fill the window. The rest stay in the phone column. */
+  .phone-stage--full {
     padding: 0;
     background: var(--rl-canvas);
   }
 
-  .phone-stage--auth .phone-frame {
+  .phone-stage--full .phone-frame {
     max-width: none;
     width: 100%;
     height: 100vh;

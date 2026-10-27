@@ -1,5 +1,9 @@
 <script setup>
-// Cats and books clustered like a crowd. Eyes follow the pointer.
+// Scaffolded with AI assistance — see AI_USAGE.md
+// Cats and books clustered like a crowd, drawn in the same smooth style as the readers'
+// characters (dark outlines, soft shading, big shiny eyes). Their eyes follow the pointer, or
+// the field being typed in. They cover their eyes when the password shows, duck on an error and
+// hop when a code is accepted.
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { bookSpots } from '@/lib/floatBooks'
@@ -12,7 +16,9 @@ const props = defineProps({
   hop: { type: Number, default: 0 },
 })
 
-const SPINE_COLORS = ['#6b4a34', '#9a7a55', '#3f2e24', '#c49264', '#2c241e']
+const INK = '#3b2a35'
+// genre covers along the bottom, in town colours
+const SPINE_COLORS = ['#c0392f', '#2f5fb3', '#e3b04b', '#5aa045', '#a84874', '#6b4a34']
 const leftBooks = bookSpots([
   [10, 7], [38, 11], [66, 6], [88, 14],
   [18, 22], [50, 20], [78, 28],
@@ -25,240 +31,213 @@ function spineColor(index) {
   return SPINE_COLORS[index % SPINE_COLORS.length]
 }
 
-function moveEyes(event) {
-  if (prefersReducedMotion() || !root.value) return
-  const spot = root.value.querySelector('.spot')
-  if (spot) {
-    const panel = root.value.getBoundingClientRect()
-    const inside = event.clientX >= panel.left && event.clientX <= panel.right
-      && event.clientY >= panel.top && event.clientY <= panel.bottom
-    gsap.to(spot, {
-      x: Math.min(Math.max(event.clientX - panel.left, 0), panel.width),
-      y: Math.min(Math.max(event.clientY - panel.top, 0), panel.height),
-      opacity: inside ? 1 : 0,
-      duration: 0.35,
-      overwrite: 'auto',
-      force3D: false,
-    })
-  }
+// Eyes slide a little towards a point on the screen.
+function lookAt(clientX, clientY) {
+  if (!root.value) return
   root.value.querySelectorAll('.eye').forEach((eye) => {
     const pupil = eye.querySelector('.pupil')
-    if (!pupil) return
     const box = eye.getBoundingClientRect()
-    const dx = event.clientX - (box.left + box.width / 2)
-    const dy = event.clientY - (box.top + box.height / 2)
+    const dx = clientX - (box.left + box.width / 2)
+    const dy = clientY - (box.top + box.height / 2)
     const angle = Math.atan2(dy, dx)
-    const dist = Math.min(3.4, Math.hypot(dx, dy) / 14)
-    gsap.to(pupil, {
-      x: Math.cos(angle) * dist,
-      y: Math.sin(angle) * dist,
-      duration: 0.2,
-      overwrite: 'auto',
-      force3D: false,
-    })
+    const dist = Math.min(4, Math.hypot(dx, dy) / 30)
+    const to = { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist * 0.8 }
+    if (prefersReducedMotion()) gsap.set(pupil, to)
+    else gsap.to(pupil, { ...to, duration: 0.2, overwrite: 'auto' })
   })
 }
 
+function onPointer(event) {
+  lookAt(event.clientX, event.clientY)
+}
+
+// While a field is being filled in, everyone watches it.
+function lookAtField() {
+  if (props.gaze !== 'field') return
+  const field = document.activeElement
+  if (!field || field === document.body) return
+  const box = field.getBoundingClientRect()
+  lookAt(box.left + box.width / 2, box.top + box.height / 2)
+}
+
 onMounted(() => {
-  window.addEventListener('pointermove', moveEyes)
+  window.addEventListener('pointermove', onPointer)
+  document.addEventListener('focusin', lookAtField)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('pointermove', moveEyes)
+  window.removeEventListener('pointermove', onPointer)
+  document.removeEventListener('focusin', lookAtField)
 })
+
+watch(() => props.gaze, lookAtField)
 
 watch(() => props.pageNudge, (nudge) => {
   const pages = root.value?.querySelector('.pages')
   if (!pages) return
   gsap.to(pages, {
-    x: Math.min(7, Math.max(0, nudge)),
+    x: Math.min(8, Math.max(0, nudge)),
     duration: prefersReducedMotion() ? 0 : 0.2,
     overwrite: 'auto',
-    force3D: false,
   })
 })
 
 watch(() => props.hop, (tick) => {
   if (!tick || prefersReducedMotion() || !root.value) return
-  const actors = root.value.querySelectorAll('.actor')
+  const all = root.value.querySelectorAll('.actor')
   gsap.fromTo(
-    actors,
+    all,
     { y: 0 },
-    {
-      y: -12,
-      duration: 0.18,
-      yoyo: true,
-      repeat: 1,
-      force3D: false,
-      onComplete: () => gsap.set(actors, { clearProps: 'transform' }),
-    },
+    { y: -14, duration: 0.18, yoyo: true, repeat: 1, onComplete: () => gsap.set(all, { clearProps: 'transform' }) },
   )
 })
 </script>
 
 <template>
   <div ref="root" class="mascots" :data-gaze="gaze" aria-hidden="true">
-    <div class="sky">
-      <span class="glow" />
-      <span class="spot" />
-      <FloatingBooks class="bits" :books="leftBooks" />
-    </div>
-    <svg viewBox="0 0 240 450" preserveAspectRatio="xMidYMid meet">
-      <!-- Cream cat, sitting behind on the left -->
-      <g class="actor actor--bob">
-        <path d="M16 250 C 2 210, 8 160, 30 150" fill="none" stroke="#f4efe6" stroke-width="12" stroke-linecap="round" />
-        <ellipse cx="58" cy="268" rx="50" ry="118" fill="#f4efe6" />
-        <ellipse cx="58" cy="128" rx="46" ry="42" fill="#f4efe6" />
-        <path d="M20 112 L 32 36 L 58 100 Z" fill="#f4efe6" />
-        <path d="M28 104 L 36 52 L 50 96 Z" fill="#f3c3b4" />
-        <path d="M96 112 L 84 36 L 58 100 Z" fill="#f4efe6" />
-        <path d="M88 104 L 80 52 L 66 96 Z" fill="#f3c3b4" />
-        <ellipse cx="58" cy="300" rx="22" ry="42" fill="#fffdf9" />
-        <ellipse cx="58" cy="148" rx="18" ry="13" fill="#fffdf9" />
-        <ellipse cx="40" cy="378" rx="14" ry="22" fill="#fffdf9" />
-        <ellipse cx="78" cy="378" rx="14" ry="22" fill="#fffdf9" />
-        <g class="eye" transform="translate(40 118)">
-          <ellipse rx="10" ry="9" fill="#fffdf9" />
-          <ellipse class="pupil" rx="2.2" ry="5.6" fill="#2c241e" />
+    <FloatingBooks class="bits" :books="leftBooks" />
+    <svg viewBox="0 0 300 420" preserveAspectRatio="xMidYMax meet">
+      <defs>
+        <!-- the shiny eye every character has -->
+        <g id="mascot-eye">
+          <ellipse rx="8" ry="11" fill="#2b2230" />
+          <circle cx="2.8" cy="-4.5" r="3.2" fill="#ffffff" />
+          <circle cx="-2.6" cy="4.5" r="1.5" fill="#ffffff" />
         </g>
-        <g class="eye" transform="translate(76 118)">
-          <ellipse rx="10" ry="9" fill="#fffdf9" />
-          <ellipse class="pupil" rx="2.2" ry="5.6" fill="#2c241e" />
-        </g>
-        <path d="M54 140 L 58 147 L 62 140 Z" fill="#e7a090" />
-        <path d="M58 147 V154 M58 154 Q 50 160 42 152 M58 154 Q 66 160 74 152" fill="none" stroke="#3f2e24" stroke-width="1.5" stroke-linecap="round" />
-        <path d="M36 142 H 10 M38 152 H 8 M80 142 H 106 M78 152 H 108" fill="none" stroke="#3f2e24" stroke-width="1.3" stroke-linecap="round" />
-        <g class="paw">
-          <ellipse cx="58" cy="118" rx="40" ry="16" fill="#fffdf9" />
-          <circle cx="32" cy="108" r="4.5" fill="#f3c3b4" />
-          <circle cx="45" cy="104" r="4.5" fill="#f3c3b4" />
-          <circle cx="58" cy="103" r="4.5" fill="#f3c3b4" />
-          <circle cx="71" cy="104" r="4.5" fill="#f3c3b4" />
-          <circle cx="84" cy="108" r="4.5" fill="#f3c3b4" />
-        </g>
-      </g>
+      </defs>
+      <ellipse cx="150" cy="410" rx="140" ry="10" fill="rgba(30,26,36,0.22)" />
 
-      <!-- Grey cat, sitting in the middle -->
-      <g class="actor actor--bob actor--slow">
-        <path d="M150 300 C 168 270, 166 220, 142 208" fill="none" stroke="#6a5e56" stroke-width="11" stroke-linecap="round" />
-        <ellipse cx="96" cy="300" rx="40" ry="100" fill="#7e7065" />
-        <ellipse cx="96" cy="188" rx="36" ry="32" fill="#7e7065" />
-        <path d="M66 172 L 76 118 L 96 164 Z" fill="#6a5e56" />
-        <path d="M72 164 L 78 130 L 90 160 Z" fill="#f3c3b4" />
-        <path d="M126 172 L 116 118 L 96 164 Z" fill="#6a5e56" />
-        <path d="M120 164 L 114 130 L 102 160 Z" fill="#f3c3b4" />
-        <ellipse cx="96" cy="208" rx="14" ry="10" fill="#efe8e2" />
-        <ellipse cx="80" cy="390" rx="12" ry="18" fill="#6a5e56" />
-        <ellipse cx="112" cy="390" rx="12" ry="18" fill="#6a5e56" />
-        <g class="eye" transform="translate(82 180)">
-          <ellipse rx="8" ry="7.5" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.8" ry="4.8" fill="#2c241e" />
+      <g :stroke="INK" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+        <!-- Cream cat, sitting behind on the left -->
+        <g class="actor actor--bob">
+          <path d="M34,330 C4,300 10,250 40,236" fill="none" stroke-width="16" />
+          <path d="M34,330 C4,300 10,250 40,236" fill="none" stroke="#f6efe4" stroke-width="9" />
+          <ellipse cx="88" cy="290" rx="58" ry="92" fill="#f6efe4" />
+          <ellipse cx="96" cy="300" rx="30" ry="62" fill="#fffdf9" stroke="none" />
+          <path d="M40,126 L46,72 L80,108 Z M136,126 L130,72 L96,108 Z" fill="#f6efe4" />
+          <path d="M48,116 L51,86 L70,106 Z M128,116 L125,86 L106,106 Z" fill="#f3c3b4" stroke="none" />
+          <ellipse cx="88" cy="150" rx="60" ry="52" fill="#f6efe4" />
+          <ellipse cx="108" cy="168" rx="40" ry="30" fill="#e9dfd1" opacity="0.6" stroke="none" />
+          <ellipse cx="66" cy="182" rx="10" ry="6" fill="#f2a0b8" opacity="0.7" stroke="none" />
+          <ellipse cx="110" cy="182" rx="10" ry="6" fill="#f2a0b8" opacity="0.7" stroke="none" />
+          <g class="eye" transform="translate(68 158)"><g class="pupil"><use href="#mascot-eye" stroke="none" /></g></g>
+          <g class="eye" transform="translate(108 158)"><g class="pupil"><use href="#mascot-eye" stroke="none" /></g></g>
+          <path d="M84,174 Q88,179 92,174 Z" fill="#e7a090" stroke-width="2.5" />
+          <path d="M80,184 Q84,190 88,184 Q92,190 96,184" fill="none" stroke-width="3" />
+          <path d="M40,176 L16,170 M42,186 L16,190 M136,176 L160,170 M134,186 L160,190" stroke-width="2.5" />
+          <ellipse cx="66" cy="378" rx="18" ry="12" fill="#fffdf9" />
+          <ellipse cx="110" cy="378" rx="18" ry="12" fill="#fffdf9" />
+          <g class="paw">
+            <ellipse cx="66" cy="160" rx="24" ry="20" fill="#fffdf9" />
+            <ellipse cx="110" cy="160" rx="24" ry="20" fill="#fffdf9" />
+            <g fill="#f3c3b4" stroke="none">
+              <circle cx="56" cy="150" r="4.5" /><circle cx="66" cy="146" r="4.5" /><circle cx="76" cy="150" r="4.5" />
+              <circle cx="100" cy="150" r="4.5" /><circle cx="110" cy="146" r="4.5" /><circle cx="120" cy="150" r="4.5" />
+            </g>
+          </g>
         </g>
-        <g class="eye" transform="translate(110 180)">
-          <ellipse rx="8" ry="7.5" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.8" ry="4.8" fill="#2c241e" />
-        </g>
-        <path d="M92 198 L 96 204 L 100 198 Z" fill="#e7a090" />
-        <path d="M96 204 V209 M96 209 Q 90 215 84 208 M96 209 Q 102 215 108 208" fill="none" stroke="#2c241e" stroke-width="1.3" stroke-linecap="round" />
-        <path d="M78 200 H 58 M80 208 H 56 M114 200 H 134 M112 208 H 136" fill="none" stroke="#fffdf9" stroke-width="1.2" stroke-linecap="round" />
-        <g class="paw">
-          <ellipse cx="96" cy="180" rx="32" ry="14" fill="#8a7d72" />
-          <circle cx="74" cy="170" r="4" fill="#f3c3b4" />
-          <circle cx="85" cy="166" r="4" fill="#f3c3b4" />
-          <circle cx="96" cy="165" r="4" fill="#f3c3b4" />
-          <circle cx="107" cy="166" r="4" fill="#f3c3b4" />
-          <circle cx="118" cy="170" r="4" fill="#f3c3b4" />
-        </g>
-      </g>
 
-      <!-- Dark book, front cover -->
-      <g class="actor actor--bob actor--late">
-        <rect x="112" y="148" width="116" height="262" rx="7" fill="#3f2e24" />
-        <rect x="120" y="158" width="100" height="242" rx="4" fill="#4a382c" />
-        <rect x="132" y="170" width="76" height="18" rx="2" fill="#c49264" />
-        <rect x="144" y="196" width="52" height="3" rx="1" fill="#efe4d4" />
-        <rect x="154" y="204" width="32" height="3" rx="1" fill="#efe4d4" />
-        <rect x="132" y="208" width="76" height="28" rx="3" fill="#6b4a34" />
-        <circle cx="170" cy="222" r="8" fill="#e7d3bc" />
-        <g class="eye" transform="translate(152 248)">
-          <ellipse rx="8" ry="7" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.8" ry="4.4" fill="#2c241e" />
+        <!-- Grey cat, sitting in the middle -->
+        <g class="actor actor--bob actor--slow">
+          <path d="M196,360 C226,340 226,290 200,276" fill="none" stroke-width="14" />
+          <path d="M196,360 C226,340 226,290 200,276" fill="none" stroke="#8a7d72" stroke-width="7" />
+          <ellipse cx="150" cy="326" rx="48" ry="76" fill="#9a8f88" />
+          <ellipse cx="156" cy="336" rx="24" ry="50" fill="#b8aea6" stroke="none" />
+          <path d="M108,190 L112,146 L140,174 Z M192,190 L188,146 L160,174 Z" fill="#8a7d72" />
+          <path d="M115,182 L117,158 L132,174 Z M185,182 L183,158 L168,174 Z" fill="#f3c3b4" stroke="none" />
+          <ellipse cx="150" cy="214" rx="50" ry="44" fill="#9a8f88" />
+          <path d="M140,176 L142,190 M150,174 L150,190 M160,176 L158,190" stroke="#7a6e66" stroke-width="3.5" />
+          <ellipse cx="164" cy="230" rx="32" ry="24" fill="#8a7d72" opacity="0.45" stroke="none" />
+          <ellipse cx="130" cy="240" rx="8" ry="5" fill="#f2a0b8" opacity="0.7" stroke="none" />
+          <ellipse cx="170" cy="240" rx="8" ry="5" fill="#f2a0b8" opacity="0.7" stroke="none" />
+          <g class="eye" transform="translate(133 220)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.85)" /></g></g>
+          <g class="eye" transform="translate(167 220)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.85)" /></g></g>
+          <path d="M146,234 Q150,239 154,234 Z" fill="#e7a090" stroke-width="2.5" />
+          <path d="M143,243 Q147,248 150,243 Q153,248 157,243" fill="none" stroke-width="2.5" />
+          <ellipse cx="132" cy="398" rx="14" ry="9" fill="#8a7d72" />
+          <ellipse cx="168" cy="398" rx="14" ry="9" fill="#8a7d72" />
+          <g class="paw">
+            <ellipse cx="133" cy="222" rx="19" ry="16" fill="#b8aea6" />
+            <ellipse cx="167" cy="222" rx="19" ry="16" fill="#b8aea6" />
+            <g fill="#f3c3b4" stroke="none">
+              <circle cx="125" cy="214" r="3.5" /><circle cx="133" cy="211" r="3.5" /><circle cx="141" cy="214" r="3.5" />
+              <circle cx="159" cy="214" r="3.5" /><circle cx="167" cy="211" r="3.5" /><circle cx="175" cy="214" r="3.5" />
+            </g>
+          </g>
         </g>
-        <g class="eye" transform="translate(188 248)">
-          <ellipse rx="8" ry="7" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.8" ry="4.4" fill="#2c241e" />
-        </g>
-        <path d="M162 266 H 178" stroke="#f3efe6" stroke-width="2" stroke-linecap="round" />
-        <g class="lid">
-          <rect x="126" y="230" width="88" height="34" rx="6" fill="#3f2e24" />
-        </g>
-      </g>
 
-      <!-- Orange and white cat, sitting in front -->
-      <g class="actor actor--orange actor--bob actor--fast">
-        <path d="M12 340 C -2 310, 2 270, 22 262" fill="none" stroke="#e38b3a" stroke-width="11" stroke-linecap="round" />
-        <ellipse cx="52" cy="340" rx="44" ry="72" fill="#e38b3a" />
-        <ellipse cx="52" cy="268" rx="36" ry="32" fill="#e38b3a" />
-        <path d="M22 252 L 32 198 L 50 244 Z" fill="#e07a2f" />
-        <path d="M28 244 L 36 212 L 44 240 Z" fill="#f6c7b8" />
-        <path d="M82 252 L 72 198 L 54 244 Z" fill="#e07a2f" />
-        <path d="M76 244 L 68 212 L 60 240 Z" fill="#f6c7b8" />
-        <path d="M40 246 H 64" stroke="#c45a1a" stroke-width="3" stroke-linecap="round" />
-        <ellipse cx="52" cy="355" rx="20" ry="32" fill="#fffdf9" />
-        <ellipse cx="52" cy="286" rx="16" ry="12" fill="#fffdf9" />
-        <ellipse cx="36" cy="400" rx="13" ry="16" fill="#fffdf9" />
-        <ellipse cx="70" cy="400" rx="13" ry="16" fill="#fffdf9" />
-        <g class="eye" transform="translate(38 260)">
-          <ellipse rx="8" ry="7.5" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.8" ry="4.6" fill="#1f4d28" />
+        <!-- Blue book, standing behind -->
+        <g class="actor actor--bob actor--late">
+          <rect x="196" y="120" width="92" height="270" rx="14" fill="#2f5fb3" />
+          <rect x="196" y="120" width="16" height="270" rx="8" fill="#244a8c" stroke="none" />
+          <rect x="222" y="140" width="52" height="18" rx="6" fill="#f6e27a" />
+          <path d="M228,172 L268,172 M234,182 L262,182" stroke="#cfe3ec" stroke-width="3" />
+          <ellipse cx="236" cy="248" rx="7" ry="4.5" fill="#f2a0b8" opacity="0.7" stroke="none" />
+          <ellipse cx="272" cy="248" rx="7" ry="4.5" fill="#f2a0b8" opacity="0.7" stroke="none" />
+          <g class="eye" transform="translate(238 230)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.8)" /></g></g>
+          <g class="eye" transform="translate(270 230)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.8)" /></g></g>
+          <path d="M248,252 Q254,258 260,252" fill="none" stroke="#fdf7ec" stroke-width="3" />
+          <g class="lid">
+            <rect x="220" y="214" width="66" height="30" rx="10" fill="#2f5fb3" />
+            <path d="M228,228 L278,228" stroke="#f6e27a" stroke-width="3" />
+          </g>
         </g>
-        <g class="eye" transform="translate(66 260)">
-          <ellipse rx="8" ry="7.5" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.8" ry="4.6" fill="#1f4d28" />
-        </g>
-        <path d="M48 278 L 52 284 L 56 278 Z" fill="#e7a090" />
-        <path d="M52 284 V290 M52 290 Q 46 296 40 288 M52 290 Q 58 296 64 288" fill="none" stroke="#c45a1a" stroke-width="1.4" stroke-linecap="round" />
-        <path d="M34 280 H 12 M36 288 H 10 M70 280 H 92 M68 288 H 94" fill="none" stroke="#3f2e24" stroke-width="1.2" stroke-linecap="round" />
-        <g class="paw">
-          <ellipse cx="52" cy="260" rx="34" ry="14" fill="#fffdf9" />
-          <circle cx="30" cy="250" r="4" fill="#f3c3b4" />
-          <circle cx="41" cy="246" r="4" fill="#f3c3b4" />
-          <circle cx="52" cy="245" r="4" fill="#f3c3b4" />
-          <circle cx="63" cy="246" r="4" fill="#f3c3b4" />
-          <circle cx="74" cy="250" r="4" fill="#f3c3b4" />
-        </g>
-      </g>
 
-      <!-- Pale book, front cover in front -->
-      <g class="actor actor--book actor--bob">
-        <rect x="118" y="292" width="108" height="128" rx="7" fill="#f7f1e8" stroke="#cdbfaf" stroke-width="2" />
-        <rect x="128" y="302" width="88" height="108" rx="3" fill="#fffdf9" />
-        <rect x="138" y="310" width="68" height="14" rx="2" fill="#9a7a55" />
-        <rect x="148" y="330" width="48" height="3" rx="1" fill="#cdbfaf" />
-        <rect x="138" y="340" width="68" height="28" rx="3" fill="#e7d3bc" />
-        <g class="eye" transform="translate(158 382)">
-          <ellipse rx="7" ry="6.5" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.6" ry="4" fill="#2c241e" />
+        <!-- Orange cat, sitting in front -->
+        <g class="actor actor--bob actor--fast">
+          <path d="M40,380 C8,368 8,326 30,312" fill="none" stroke-width="14" />
+          <path d="M40,380 C8,368 8,326 30,312" fill="none" stroke="#f0a04b" stroke-width="7" />
+          <ellipse cx="82" cy="350" rx="52" ry="58" fill="#f0a04b" />
+          <ellipse cx="86" cy="362" rx="28" ry="42" fill="#fffdf9" stroke="none" />
+          <path d="M40,250 L44,206 L72,234 Z M124,250 L120,206 L92,234 Z" fill="#e58a32" />
+          <path d="M47,242 L49,218 L64,234 Z M117,242 L115,218 L100,234 Z" fill="#f6c7b8" stroke="none" />
+          <ellipse cx="82" cy="268" rx="50" ry="44" fill="#f0a04b" />
+          <path d="M70,228 L72,242 M82,226 L82,242 M94,228 L92,242" stroke="#c96a1e" stroke-width="3.5" />
+          <ellipse cx="82" cy="290" rx="24" ry="16" fill="#fffdf9" stroke="none" />
+          <ellipse cx="60" cy="292" rx="8" ry="5" fill="#f2a0b8" opacity="0.8" stroke="none" />
+          <ellipse cx="104" cy="292" rx="8" ry="5" fill="#f2a0b8" opacity="0.8" stroke="none" />
+          <g class="eye" transform="translate(64 272)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.85)" /></g></g>
+          <g class="eye" transform="translate(100 272)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.85)" /></g></g>
+          <path d="M78,286 Q82,291 86,286 Z" fill="#e7a090" stroke-width="2.5" />
+          <path d="M74,295 Q78,300 82,295 Q86,300 90,295" fill="none" stroke-width="2.5" />
+          <path d="M36,288 L14,284 M38,298 L14,302 M128,288 L150,284 M126,298 L150,302" stroke-width="2.5" />
+          <ellipse cx="62" cy="404" rx="16" ry="10" fill="#fffdf9" />
+          <ellipse cx="104" cy="404" rx="16" ry="10" fill="#fffdf9" />
+          <g class="paw">
+            <ellipse cx="64" cy="274" rx="20" ry="17" fill="#fffdf9" />
+            <ellipse cx="100" cy="274" rx="20" ry="17" fill="#fffdf9" />
+            <g fill="#f3c3b4" stroke="none">
+              <circle cx="56" cy="266" r="3.5" /><circle cx="64" cy="263" r="3.5" /><circle cx="72" cy="266" r="3.5" />
+              <circle cx="92" cy="266" r="3.5" /><circle cx="100" cy="263" r="3.5" /><circle cx="108" cy="266" r="3.5" />
+            </g>
+          </g>
         </g>
-        <g class="eye" transform="translate(188 382)">
-          <ellipse rx="7" ry="6.5" fill="#fffdf9" />
-          <ellipse class="pupil" rx="1.6" ry="4" fill="#2c241e" />
-        </g>
-        <path d="M166 396 H 180" stroke="#6b4a34" stroke-width="2" stroke-linecap="round" />
-        <polygon class="pages" points="200,400 218,400 218,416" fill="#efe4d4" />
-        <path d="M200 400 L 218 416" fill="none" stroke="#cdbfaf" stroke-width="1.4" />
-        <g class="lid">
-          <rect x="132" y="364" width="80" height="32" rx="6" fill="#efe4d4" />
-        </g>
-      </g>
 
-      <g>
-        <g v-for="(genre, index) in spines" :key="genre" class="mini-cover" :transform="`translate(${8 + (index % 6) * 20} ${index < 6 ? 418 : 400})`">
-          <rect width="18" height="24" rx="1.5" :fill="spineColor(index)" />
-          <rect x="2" y="2" width="14" height="5" rx="0.6" fill="#fffdf9" />
-          <rect x="3" y="9" width="12" height="7" rx="0.6" fill="#fffdf9" opacity="0.45" />
-          <circle cx="6" cy="19" r="1.1" fill="#fffdf9" />
-          <circle cx="12" cy="19" r="1.1" fill="#fffdf9" />
+        <!-- Cream book, in front. Its pages lift as the reader types an email. -->
+        <g class="actor actor--book actor--bob">
+          <rect x="176" y="270" width="104" height="138" rx="12" fill="#fdf7ec" />
+          <rect x="176" y="270" width="14" height="138" rx="7" fill="#f0e2d0" stroke="none" />
+          <rect x="198" y="286" width="66" height="16" rx="6" fill="#e98aa8" />
+          <path d="M206,312 L256,312" stroke="#e3cfe0" stroke-width="3" />
+          <ellipse cx="208" cy="372" rx="7" ry="4.5" fill="#f2a0b8" opacity="0.8" stroke="none" />
+          <ellipse cx="256" cy="372" rx="7" ry="4.5" fill="#f2a0b8" opacity="0.8" stroke="none" />
+          <g class="eye" transform="translate(214 354)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.8)" /></g></g>
+          <g class="eye" transform="translate(250 354)"><g class="pupil"><use href="#mascot-eye" stroke="none" transform="scale(0.8)" /></g></g>
+          <path d="M226,376 Q232,382 238,376" fill="none" stroke-width="3" />
+          <g class="pages"><path d="M252,408 L280,380 L280,408 Z" fill="#fffdf9" /></g>
+          <g class="lid">
+            <rect x="196" y="338" width="74" height="30" rx="10" fill="#fdf7ec" />
+            <path d="M204,352 L262,352" stroke="#e98aa8" stroke-width="3" />
+          </g>
+        </g>
+
+        <!-- genre covers at their feet -->
+        <g v-for="(genre, index) in spines" :key="genre" :transform="`translate(${8 + (index % 6) * 24} ${index < 6 ? 384 : 360})`">
+          <g class="mini-cover">
+            <rect width="20" height="26" rx="3" :fill="spineColor(index)" stroke-width="2.5" />
+            <rect x="4" y="4" width="12" height="5" rx="1.5" fill="#fffdf9" stroke="none" />
+            <rect x="4" y="12" width="12" height="7" rx="1.5" fill="#fffdf9" opacity="0.45" stroke="none" />
+          </g>
         </g>
       </g>
     </svg>
@@ -270,86 +249,36 @@ watch(() => props.hop, (tick) => {
   position: relative;
   z-index: 2;
   flex: 0 0 50%;
-  max-width: none;
   min-width: 0;
+  min-height: 0;
   margin: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   overflow: hidden;
-  background: linear-gradient(180deg, #e7dccb 0%, #d5c4ae 100%);
-}
-
-.sky {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
 }
 
 .bits {
   z-index: 0;
 }
 
-.glow {
-  position: absolute;
-  left: 8%;
-  top: 12%;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 253, 249, 0.75), transparent 68%);
-  animation: pulse 6s ease-in-out infinite;
-}
-
-.spot {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 110px;
-  height: 110px;
-  margin: -55px 0 0 -55px;
-  border-radius: 50%;
-  opacity: 0;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(255, 253, 249, 0.95), rgba(243, 195, 180, 0.28) 42%, transparent 70%);
-}
-
 .mascots svg {
   position: relative;
   z-index: 2;
   display: block;
-  width: 92%;
-  height: 76%;
+  width: min(480px, 86%);
+  height: min(680px, 84%);
+  margin-bottom: 3%;
+  overflow: visible;
   pointer-events: none;
-}
-
-@media (max-width: 767px) {
-  .mascots {
-    flex: 0 0 38%;
-    max-height: 300px;
-    align-items: flex-end;
-  }
-
-  .mascots svg {
-    width: 100%;
-    height: 100%;
-    max-width: none;
-  }
-}
-
-@media (min-width: 768px) {
-  .mascots svg {
-    width: min(520px, 86%);
-    height: min(680px, 84%);
-  }
+  filter: drop-shadow(0 10px 18px rgba(30, 26, 36, 0.25));
 }
 
 .actor {
   pointer-events: auto;
+  cursor: pointer;
   transform-box: fill-box;
   transform-origin: center bottom;
-  cursor: pointer;
 }
 
 .actor--bob { animation: bob 4.8s ease-in-out infinite; }
@@ -359,40 +288,49 @@ watch(() => props.hop, (tick) => {
 
 .actor:hover {
   animation: none;
-  transform: translateY(-12px) scale(1.05);
+  transform: translateY(-10px) scale(1.04);
+  transition: transform 0.2s ease;
 }
 
 .paw,
 .lid {
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transform: translateY(14px);
+  transform-box: fill-box;
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 
 .mascots[data-gaze='cover'] .paw,
-.mascots[data-gaze='cover'] .lid,
-.mascots[data-gaze='peek'] .paw,
-.mascots[data-gaze='peek'] .lid {
+.mascots[data-gaze='cover'] .lid {
   opacity: 1;
-}
-
-.mascots[data-gaze='peek'] .actor--orange .paw,
-.mascots[data-gaze='peek'] .actor--book .lid {
-  opacity: 0;
+  transform: translateY(0);
 }
 
 .mascots[data-gaze='duck'] .actor {
   animation: none;
-  transform: translateY(10px);
+  transform: translateY(12px) scale(1, 0.96);
 }
 
 .mini-cover {
   transform-box: fill-box;
   transform-origin: center bottom;
-  animation: spine-in 0.35s ease;
+  animation: spine-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+@media (max-width: 767px) {
+  .mascots {
+    flex: 0 0 42%;
+    max-height: 380px;
+  }
+
+  .mascots svg {
+    width: 100%;
+    height: 100%;
+    margin-bottom: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glow,
   .actor,
   .paw,
   .lid,
@@ -408,14 +346,10 @@ watch(() => props.hop, (tick) => {
 }
 
 @keyframes bob {
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes pulse {
-  50% { transform: scale(1.18); opacity: 0.72; }
+  50% { transform: translateY(-6px); }
 }
 
 @keyframes spine-in {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px) scale(0.6); }
 }
 </style>

@@ -13,11 +13,30 @@ dist/
 # the dataset's licence is unknown.
 server/data/quotes.json
 
+# Answers from slow outside APIs, saved so restarts reuse them (the demo shelf's random pick,
+# Google Books matches and Wikiquote quotes for mood recommendations). Per machine.
+server/data/*.cache.json
+
 # Test output
 coverage/
 playwright-report/
 test-results/
+blob-report/
+
+# Blender: backup saves (room.blend1, room.blend2, ...) and saves in progress. The .blend files
+# themselves are committed, and only in client/blender/
+*.blend[0-9]*
+*.blend@
+
+# AI and editor tool settings, scratch notes, plans and tickets: kept on each machine, not in
+# the repo
+.claude/
+.scratch/
+.cursor/
+.vscode/
+.idea/
 
 # OS / editor noise
 .DS_Store
 *.log
+*.swp

@@ -45,9 +45,10 @@ const registerMode = computed(() => route.name === 'register')
 
 const gaze = computed(() => {
   if (ducked.value) return 'duck'
-  if (focused.value === 'password' && !showPassword.value) return 'cover'
-  if (focused.value === 'password' && showPassword.value) return 'peek'
-  if (focused.value === 'email' || focused.value === 'confirm') return 'field'
+  // "Show password" means the text is still hidden, so every eye stays open.
+  // Revealing it covers every cat and every book.
+  if (showPassword.value) return 'cover'
+  if (focused.value) return 'field'
   return 'idle'
 })
 

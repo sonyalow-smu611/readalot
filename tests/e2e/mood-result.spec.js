@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
 
 const WALDEN = {
   mood: "calm",
@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("first visit asks for a mood, then recommends a book with a quote from it", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/house");
 
   const checkIn = page.getByRole("dialog", { name: "How are you feeling today?" });
   await expect(checkIn).toBeVisible();
@@ -57,7 +57,7 @@ test("adding the recommended book puts it on the To Be Read shelf", async ({ pag
     return route.fulfill({ status: 201, json: { userBook: {} } });
   });
 
-  await page.goto("/");
+  await page.goto("/house");
   await page.getByRole("button", { name: /^Calm/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "Add to To Be Read" }).click();
@@ -67,7 +67,7 @@ test("adding the recommended book puts it on the To Be Read shelf", async ({ pag
 });
 
 test("skipping keeps the check-in away for the day, and the room menu can reopen it", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/house");
   const checkIn = page.getByRole("dialog", { name: "How are you feeling today?" });
 
   await checkIn.getByRole("button", { name: "Skip for today" }).click();
