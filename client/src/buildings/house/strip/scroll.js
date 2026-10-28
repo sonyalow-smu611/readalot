@@ -3,7 +3,7 @@
 //   a mouse wheel turned up and down moves the room sideways
 //   a mouse can drag the room, and it glides on a little when let go
 //   the left and right arrow keys move a third of the view
-//   glideTo() eases the room to a spot (the bar of places), at once with reduced motion
+//   glideTo() eases the room to a spot (the Places menu), at once with reduced motion
 // While `locked()` (a book is out), none of these move the room.
 import { prefersReducedMotion } from '@/lib/motion'
 

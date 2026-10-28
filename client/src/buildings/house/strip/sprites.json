@@ -37,6 +37,94 @@
   "w": 26,
   "h": 178
  },
+ "curtain-left-sage": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-right-sage": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-left-navy": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-right-navy": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-left-cream": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-right-cream": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-left-mustard": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-right-mustard": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-left-rose": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-right-rose": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-left-blue": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-right-blue": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-left-lavender": {
+  "w": 26,
+  "h": 178
+ },
+ "curtain-right-lavender": {
+  "w": 26,
+  "h": 178
+ },
+ "curtains-pink": {
+  "w": 32,
+  "h": 30
+ },
+ "curtains-sage": {
+  "w": 32,
+  "h": 30
+ },
+ "curtains-navy": {
+  "w": 32,
+  "h": 30
+ },
+ "curtains-cream": {
+  "w": 32,
+  "h": 30
+ },
+ "curtains-mustard": {
+  "w": 32,
+  "h": 30
+ },
+ "curtains-rose": {
+  "w": 32,
+  "h": 30
+ },
+ "curtains-blue": {
+  "w": 32,
+  "h": 30
+ },
+ "curtains-lavender": {
+  "w": 32,
+  "h": 30
+ },
  "curtain-rod": {
   "w": 222,
   "h": 7
@@ -171,6 +259,38 @@
    "y": 25
   }
  },
+ "floor-lamp-white": {
+  "w": 38,
+  "h": 154,
+  "glow": {
+   "x": 19,
+   "y": 25
+  }
+ },
+ "floor-lamp-white-lit": {
+  "w": 38,
+  "h": 154,
+  "glow": {
+   "x": 19,
+   "y": 25
+  }
+ },
+ "floor-lamp-green": {
+  "w": 38,
+  "h": 154,
+  "glow": {
+   "x": 19,
+   "y": 25
+  }
+ },
+ "floor-lamp-green-lit": {
+  "w": 38,
+  "h": 154,
+  "glow": {
+   "x": 19,
+   "y": 25
+  }
+ },
  "armchair": {
   "w": 108,
   "h": 116
@@ -204,6 +324,18 @@
   "h": 32
  },
  "rug": {
+  "w": 202,
+  "h": 9
+ },
+ "rug-sage": {
+  "w": 202,
+  "h": 9
+ },
+ "rug-navy": {
+  "w": 202,
+  "h": 9
+ },
+ "rug-rust": {
   "w": 202,
   "h": 9
  },
@@ -338,9 +470,85 @@
    "y": 11
   }
  },
+ "table-lamp-white": {
+  "w": 26,
+  "h": 36,
+  "glow": {
+   "x": 13,
+   "y": 11
+  }
+ },
+ "table-lamp-white-lit": {
+  "w": 26,
+  "h": 36,
+  "glow": {
+   "x": 13,
+   "y": 11
+  }
+ },
+ "table-lamp-green": {
+  "w": 26,
+  "h": 36,
+  "glow": {
+   "x": 13,
+   "y": 11
+  }
+ },
+ "table-lamp-green-lit": {
+  "w": 26,
+  "h": 36,
+  "glow": {
+   "x": 13,
+   "y": 11
+  }
+ },
  "bed": {
   "w": 216,
   "h": 92
+ },
+ "bed-gingham": {
+  "w": 216,
+  "h": 92
+ },
+ "bed-stripes": {
+  "w": 216,
+  "h": 92
+ },
+ "bed-floral": {
+  "w": 216,
+  "h": 92
+ },
+ "bed-stars": {
+  "w": 216,
+  "h": 92
+ },
+ "bed-tartan": {
+  "w": 216,
+  "h": 92
+ },
+ "bedding-patchwork": {
+  "w": 34,
+  "h": 28
+ },
+ "bedding-gingham": {
+  "w": 34,
+  "h": 28
+ },
+ "bedding-stripes": {
+  "w": 34,
+  "h": 28
+ },
+ "bedding-floral": {
+  "w": 34,
+  "h": 28
+ },
+ "bedding-stars": {
+  "w": 34,
+  "h": 28
+ },
+ "bedding-tartan": {
+  "w": 34,
+  "h": 28
  },
  "poster-a": {
   "w": 38,

@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, mockWeather, roomReady, skipMoodCheckIn, test } from "./fixtures.js";
 
 // What happens to a book taken off the bookshelf, shelf by shelf. Saves are answered here, so
 // the shared demo shelf stays as it was for the other tests; `saves` records what was sent.
@@ -6,12 +6,8 @@ let saves;
 
 test.beforeEach(async ({ page }) => {
   saves = [];
-  await page.addInitScript(() => {
-    // today's mood check-in already answered, so it does not open over the room
-    const now = new Date();
-    const pad = (value) => String(value).padStart(2, "0");
-    localStorage.setItem("readalot.moodCheckIn", `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
-  });
+  await skipMoodCheckIn(page);
+  await mockWeather(page);
   await page.route("**/api/user-books/*", (route) => {
     saves.push({ id: route.request().url().split("/").pop(), ...route.request().postDataJSON() });
     return route.fulfill({ json: { userBook: {} } });
@@ -20,12 +16,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function turnToBookshelf(page) {
-  // the room has loaded once the bookshelf has its button; before that, Bookshelf in the bar of
-  // places lists the books instead of sliding to them
-  await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
-  // let the slide finish
-  await page.waitForTimeout(900);
+  // once the room has loaded: before that, Bookshelf in the Places menu opens My Shelf instead
+  await roomReady(page);
+  await goToPlace(page, "Bookshelf");
 }
 
 // A plain magenta picture, made in the page: nothing else in the room is that colour.
@@ -89,6 +82,7 @@ async function hobbitWithCover(page, { loads }) {
 // Takes screenshots while the book comes out; the most magenta any of them had.
 async function mostMagentaWhileOpening(page) {
   let most = 0;
+  // the book's flight takes about a second: a screenshot every 60 ms or so catches its cover
   for (let i = 0; i < 18; i += 1) {
     most = Math.max(most, await magentaIn(page, await page.screenshot()));
     await page.waitForTimeout(60);
@@ -139,8 +133,7 @@ test.describe("from the room", () => {
     const before = await page.screenshot({ clip });
 
     await book.hover();
-    await page.waitForTimeout(500);
-    expect((await page.screenshot({ clip })).equals(before)).toBe(false);
+    await expect.poll(async () => (await page.screenshot({ clip })).equals(before)).toBe(false);
 
     await page.mouse.move(5, 5);
     await expect.poll(async () => (await page.screenshot({ clip })).equals(before), { timeout: 3000 }).toBe(true);
@@ -282,7 +275,8 @@ test.describe("from the room", () => {
     await page.mouse.click(box.x + box.width / 2, box.y - 12);
 
     await expect(details).toBeHidden();
-    // and nothing tapped through it opens instead
+    // and nothing tapped through it opens instead: a tap that went through would open the book's
+    // page, so this waits a moment on purpose before checking it didn't
     await page.waitForTimeout(300);
     await expect(details).toBeHidden();
     await expect(page.getByRole("button", { name: "Back" })).toBeHidden();
@@ -389,7 +383,7 @@ test.describe("without the room's pictures", () => {
   });
 
   test("Bookshelf opens My Shelf, with each shelf's books, and each opens its details", async ({ page }) => {
-    await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+    await goToPlace(page, "Bookshelf");
 
     await expect(page).toHaveURL(/\/house\/shelf$/);
     for (const shelf of ["To be read", "Currently reading", "Finished reading"]) {
@@ -411,7 +405,7 @@ test.describe("without the room's pictures", () => {
   test("an empty shelf says how to add the first book", async ({ page }) => {
     await page.route("**/api/user-books", (route) => route.fulfill({ json: { books: [] } }));
     await page.reload();
-    await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
+    await goToPlace(page, "Bookshelf");
 
     await expect(page.getByText("Add your first book")).toBeVisible();
     await expect(page.getByRole("link", { name: "Scan a cover" })).toHaveAttribute("href", "/scan");

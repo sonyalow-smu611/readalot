@@ -8,6 +8,7 @@ import PALETTE from './palette.json'
 import { LAYERS, LIGHTS, PIECES, ROOM, SPRITES, WALK, clockOf, glassOf } from './layout.js'
 import { LIFT, drawSpine } from './books.js'
 import { FURNITURE } from '../furniture.js'
+import { THEMES } from '../themes.js'
 
 // how far a piece's shadow falls on the wall, by layer
 const SHADOW = { wall: [2, 2], hang: [2, 2], furniture: [3, 1] }
@@ -101,9 +102,11 @@ export function tintFor({ scene, night }) {
 //          weather, spines, lifted (book id), out (book id taken off the shelf), time,
 //          extras (furniture the reader has put in the room, as pieces: { sprite, x, y, layer },
 //          and `replaces`: the id of a piece of the room's it stands in for, drawn in its place),
-//          notes (how many visitors' notes to pin on the corkboard, three at most) }
+//          notes (how many visitors' notes to pin on the corkboard, three at most),
+//          theme (the house's look, from themes.js: its wall and floor colours),
+//          lamps (each lamp on or off: { 'floor-lamp': true, … }) }
 export function paintRoom(ctx, state) {
-  const { images, offset, weather, spines, lifted, out, time, extras = [], notes = 0 } = state
+  const { images, offset, weather, spines, lifted, out, time, extras = [], notes = 0, theme = PALETTE, lamps = {} } = state
   const instead = new Map(extras.filter((piece) => piece.replaces).map((piece) => [piece.replaces, piece]))
   const pieces = [
     ...PIECES.filter((piece) => !instead.has(piece.with)).map((piece) => instead.get(piece.id) ?? piece),
@@ -117,30 +120,30 @@ export function paintRoom(ctx, state) {
   ctx.clearRect(0, 0, width, height)
 
   // wall, with the ceiling's edge along the top and the corners in shade
-  ctx.fillStyle = PALETTE.wall
+  ctx.fillStyle = theme.wall
   ctx.fillRect(0, 0, width, floorY)
-  ctx.fillStyle = PALETTE.ceiling
+  ctx.fillStyle = theme.ceiling
   ctx.fillRect(0, 0, width, 4)
-  ctx.fillStyle = PALETTE.wallDeep
+  ctx.fillStyle = theme.wallDeep
   ctx.fillRect(0, 4, width, 1)
-  ctx.fillStyle = PALETTE.wallShade
+  ctx.fillStyle = theme.wallShade
   ctx.fillRect(0, 5, width, 1)
   ctx.fillRect(0, 0, 4, floorY)
   ctx.fillRect(width - 4, 0, 4, floorY)
   // skirting board
-  ctx.fillStyle = PALETTE.skirting
+  ctx.fillStyle = theme.skirting
   ctx.fillRect(0, floorY - SKIRTING, width, SKIRTING)
-  ctx.fillStyle = PALETTE.skirtingShade
+  ctx.fillStyle = theme.skirtingShade
   ctx.fillRect(0, floorY - SKIRTING, width, 1)
   ctx.fillRect(0, floorY - 1, width, 1)
   // floor band, with a lighter front edge and board seams
-  ctx.fillStyle = PALETTE.floor
+  ctx.fillStyle = theme.floor
   ctx.fillRect(0, floorY, width, height - floorY)
-  ctx.fillStyle = PALETTE.floorShade
+  ctx.fillStyle = theme.floorShade
   ctx.fillRect(0, floorY, width, 2)
-  ctx.fillStyle = PALETTE.floorLine
+  ctx.fillStyle = theme.floorLine
   for (let x = 30, k = 0; x < width; x += 64, k++) ctx.fillRect(x + (k % 2) * 20, floorY + 4, 1, height - floorY - 4)
-  ctx.fillStyle = PALETTE.floorLight
+  ctx.fillStyle = theme.floorLight
   ctx.fillRect(0, floorY + 9, width, 1)
 
   // the glass, see-through: the view outside is behind the canvas
@@ -150,8 +153,11 @@ export function paintRoom(ctx, state) {
   for (const layer of LAYERS) {
     for (const piece of pieces) {
       if (piece.layer !== layer) continue
-      const id = night && piece.lit ? piece.lit : piece.sprite
-      const image = images[id]
+      // the house's own version of the piece (its curtains, bedding, lamps, rug), if it has one
+      // a lamp shows its lit shade while it's on, day or night
+      const on = piece.lit && (lamps[piece.id] ?? night)
+      const own = on ? piece.lit : piece.sprite
+      const image = images[theme.sprites?.[own] ?? own]
       if (!image) continue
       const x = piece.x
       const y = offset + piece.y - image.height
@@ -163,7 +169,7 @@ export function paintRoom(ctx, state) {
         ctx.rect(0, 0, width, floorY - SKIRTING)
         ctx.rect(glass.x, offset + glass.y, glass.w, glass.h)
         ctx.clip('evenodd')
-        ctx.drawImage(silhouette(image, PALETTE.wallShade), x + shadow[0], y + shadow[1])
+        ctx.drawImage(silhouette(image, theme.wallShade), x + shadow[0], y + shadow[1])
         ctx.restore()
       }
       if (layer === 'hang') {
@@ -188,6 +194,8 @@ export function paintRoom(ctx, state) {
       if (!night) return
       // the window's cool light first, so the lamps' warm pools sit over it
       for (const light of LIGHTS) {
+        // a lamp that's switched off lights nothing
+        if (lamps[light.lamp] === false) continue
         const colour = light.kind === 'window' ? PALETTE.windowSpill : light.kind === 'bulb' ? PALETTE.bulbGlow : PALETTE.lampGlow
         const steps = light.kind === 'bulb' ? 1 : RINGS
         for (let step = 1; step <= steps; step++) {
@@ -201,7 +209,7 @@ export function paintRoom(ctx, state) {
     // a little bloom on the lamps' shades and the fairy lights themselves
     overRoom(ctx, 'screen', (layer) => {
       for (const light of LIGHTS) {
-        if (light.kind === 'window') continue
+        if (light.kind === 'window' || lamps[light.lamp] === false) continue
         layer.fillStyle = rgba(PALETTE.bulbGlow, light.kind === 'bulb' ? 0.45 : 0.3)
         disc(layer, light.x, offset + light.y, light.kind === 'bulb' ? 3 : 12)
       }
@@ -306,11 +314,13 @@ function paintHands(ctx, offset, time) {
   ctx.fillRect(x, cy, 1, 1)
 }
 
-// every sprite the layout uses, for loading before the room shows
-// every sprite the room can show: its own pieces and the furniture library's
+// every sprite the room can show, for loading before it does: its own pieces, the themes' versions
+// of them and the furniture library's
 export function spriteIds() {
   const own = PIECES.flatMap((piece) => [piece.sprite, piece.lit].filter(Boolean))
-  return [...new Set([...own, ...FURNITURE.map((item) => item.sprite)])]
+  const themed = Object.values(THEMES).flatMap((theme) => Object.values(theme.sprites))
+  const bought = FURNITURE.flatMap((item) => [item.sprite, ...Object.values(item.swaps ?? {})])
+  return [...new Set([...own, ...themed, ...bought])]
 }
 
 export { ROOM, SPRITES }

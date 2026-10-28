@@ -12,6 +12,8 @@ import NoticeBoard from '@/buildings/house/components/NoticeBoard.vue'
 import { fetchWeather } from '@/services/weather.js'
 import { decorMeta, useDecor } from '@/composables/useDecor'
 import RoomStrip from '@/buildings/house/components/RoomStrip.vue'
+import { MY_THEME, themeOf } from '@/buildings/house/themes.js'
+import { lampsFor, toggleLamp } from '@/buildings/house/lamps.js'
 import CurrentlyReadingCard from '@/buildings/house/components/CurrentlyReadingCard.vue'
 import MoodCheckInModal from '@/components/modals/MoodCheckInModal.vue'
 import MoodResultModal from '@/components/modals/MoodResultModal.vue'
@@ -45,6 +47,11 @@ const currentBook = computed(() => (props.visiting ? props.visiting.currentBook 
 const loading = computed(() => !props.visiting && bookshelf.loading)
 const error = computed(() => (props.visiting ? '' : bookshelf.error))
 const roomName = computed(() => (props.visiting ? `${props.visiting.firstName}'s room` : 'Your room'))
+// the house's look: the visited reader's theme, or My Room's
+const theme = computed(() => themeOf(props.visiting?.theme ?? MY_THEME))
+// the lamps, on or off, for this room (kept for the visit)
+const lampRoom = props.visiting?.id ?? 'mine'
+const lamps = lampsFor(lampRoom)
 // the house's colour from the town, for the book card
 const accent = PLACES.find((place) => place.id === 'house').accent
 
@@ -95,7 +102,7 @@ function release(entry, clientX, clientY) {
     return
   }
   mark(clientX, clientY)
-  flash(`${meta.name} is ${spot.name}.`, 'ok')
+  flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${spot.name}.`, 'ok')
 }
 
 function onUp(event) {
@@ -318,6 +325,9 @@ onBeforeUnmount(() => {
         :room-name="roomName"
         :board-label="visiting ? 'Notice board' : 'Quote of the day'"
         :notes="notes.length"
+        :theme="theme"
+        :lamps="lamps"
+        @toggle-lamp="toggleLamp(lampRoom, $event)"
         @open-book="toggleReading"
         @pick-book="openBook"
         @open-shelf="openShelf"
