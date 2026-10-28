@@ -3,16 +3,27 @@
 // Someone else's room, opened from their profile in the Cafe: the same room as My Room, drawn
 // from the same template, with their books and furniture in it. Visitors look around; they can't
 // change anything.
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import RoomView from './RoomView.vue'
 import { readerRoom } from './visitors.js'
 import { PLACES } from '@/town/places.js'
+import { useProgressStore } from '@/stores/progress.js'
 
 const route = useRoute()
 const place = PLACES.find((p) => p.id === 'house')
 const reader = computed(() => readerRoom(route.params.id))
+const progress = useProgressStore()
+
+// visiting a reader's room earns XP, once per reader a day
+watch(
+  () => reader.value?.id,
+  (id) => {
+    if (id) progress.earn('visit_room', id)
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

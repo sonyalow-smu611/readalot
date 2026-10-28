@@ -339,3 +339,42 @@ waived the limit on AI-written logic for the sign-in work; Dylan reviews the `To
 | Camera | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue` | On the tour, each Next zooms out to the whole town and back in on the next building |
 | Server | `server/src/middleware/auth.js` | With no Supabase on the server, every request is the demo user, even with a token |
 | Tests | `tests/e2e/supabaseUser.js`, `tests/e2e/fixtures.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/auth.spec.js`, `tests/e2e/salon.spec.js`, `playwright.config.js`, `.env.example` | Test readers made with the service-role key and signed in directly (one per Playwright worker, profile reset before each test, to stay under Supabase's sign-in rate limit); new-reader, skip and returning-reader journeys; specs skip without keys |
+
+### First tour: one arrival move and a spotlight card (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 1).
+Dylan reviews the `TownScene.js` change.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Arrival | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue`, `client/src/stores/user.js` | A new reader's town opens already framed on their house (`start`), so Welcome's zoom and the town's first frame are one move; a stop the camera is already on doesn't zoom out and in again |
+| Spotlight | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/components/GuideTour.vue` | Each stop puts the building in the top third of the screen and reports where it is; the card spotlights it and sits under it with an arrow, never over it; the drag hint hides during the tour |
+| Tests | `tests/e2e/onboarding.spec.js` | The card is below the building at every stop |
+
+### Pixel characters, the salon room and the profile tab (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 2).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Characters | `client/src/components/shared/CharacterSprite.vue`, `PixelCharacter.vue`, `CharacterPresetPicker.vue`, `client/src/views/WelcomeView.vue`, `client/src/buildings/salon/components/CharacterCustomiser.vue` | Welcome and the salon draw the reader as the map's pixel sprite: crops for the customiser's buttons, closed eyes for blinking, and a live version that breathes, blinks, hops on a change and walks on the spot. Welcome shows a big one over the presets. The smooth figure (`CharacterFigure.vue`) and the 3D model (`characterModel.js`, `CharacterModel.vue`) are removed |
+| Salon room | `client/src/buildings/salon/salonArt.js`, `components/SalonStage.vue`, `components/SalonBackdrop.vue` | The salon redrawn at the cafe's and library's pixel size: window onto the town, neon sign, posters, shelves, lamps, basin and dryers; a tall mirror with the reader's reflection in its glass, the counter and the barber chair, the reader standing beside it |
+| Leaving | `client/src/buildings/salon/SalonView.vue`, `components/ConfirmDialog.vue` | Save look and leave, Discard and leave, or Stay; logging out asks before signing out, so the look can still be saved |
+| Profile tab | `client/src/buildings/salon/pixel.css`, `tilt.js`, `components/CountUp.vue`, `PixelConfetti.vue`, `ProfileBlock.vue`, `ReaderCard.vue`, `FavouriteGenres.vue`, `StyleStudio.vue`, `SalonView.vue` | Pixel panels in the town's colours, cards that lean toward the mouse and pop when pressed, counts that count up, bouncing genre chips, pixel confetti on every save, the reader's sprite in place of the emoji; on a phone the widgets are a sheet under the reader that pulls up |
+| Docs and tests | `AGENTS.md`, `tests/e2e/salon.spec.js` | How characters are drawn now; the leave choices, Save look and leave, and the reader and their reflection |
+
+### Reader levels, saved coins and the map badge (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 3).
+Dylan reviews the badge (`PlayerBadge.vue`, `TownHud.vue`, `TownView.vue`, `WeatherButton.vue`); Sonz reviews the lines in the house (`VisitView.vue`,
+`RoomView.vue`, `useDecor.js`); Emiley reviews the line in `ReaderChat.vue`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/xp_and_coins.sql` | `xp_events` (one row per action, repeats refused by unique indexes), `coins` on `profiles`, and `earn_xp()`, `my_progress()` and `spend_coins()`; readers can't write their own XP or coins |
+| Levels | `client/src/lib/levels.js`, `client/src/services/progress.js`, `client/src/stores/progress.js`, `client/src/stores/user.js` | Level 2 at 100 XP, each level 50 more; 25 × the new level in coins at a level-up; progress loads with the profile and clears on sign-out |
+| Earning | `client/src/stores/bookshelf.js`, `client/src/services/api.js`, `client/src/buildings/house/VisitView.vue`, `client/src/buildings/house/RoomView.vue`, `client/src/components/people/ReaderChat.vue` | One line where each action already succeeds: add, start and finish a book, a review, a room visit, a note, a cafe message |
+| Coins | `client/src/composables/useDecor.js` | The Shop spends the saved balance in place of an in-memory 480 |
+| Map badge | `client/src/components/town/PlayerBadge.vue`, `TownHud.vue`, `WeatherButton.vue`, `client/src/views/TownView.vue`, `client/src/components/shared/CountUp.vue` | The reader's face in an XP ring with the level on a gold tab, name and coins, in the bottom-left corner (the weather chip moves to the top left); it bobs and blinks, floats "+XP", and pops on a level-up |
+| Salon | `client/src/buildings/salon/components/LevelCard.vue`, `SalonView.vue` | A Reader level card with XP counting up, a filling bar, the next level's coins and how to earn XP; confetti on a level-up |
+| Tests | `tests/e2e/progress.spec.js`, `tests/e2e/supabaseUser.js` | The badge, a visit's XP once a day, level-up coins, the Shop's saved coins, and the database refusing coins a reader sets |

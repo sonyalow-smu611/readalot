@@ -5,6 +5,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getMyBooks, removeUserBook, saveUserBook, updateReadingStatus } from '@/services/api.js'
 import { normalizeBook } from '@/lib/book.js'
+import { useProgressStore } from '@/stores/progress.js'
 
 export const BOOK_STATUSES = ['want_to_read', 'reading', 'read']
 
@@ -68,6 +69,7 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
   async function addBook(bookId, status = 'want_to_read') {
     await saveUserBook({ bookId, status })
     saved.value = (await getMyBooks()).books.map(normalizeBook)
+    earnFor(bookId, status)
   }
 
   // Put a removed book back with its shelf, progress and rating. Its place in the shelf
@@ -80,6 +82,14 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
       rating: book.myRating,
     })
     saved.value = [...saved.value, book]
+  }
+
+  // XP for a book on a shelf: adding it, starting it and finishing it each count once
+  function earnFor(bookId, status) {
+    const progress = useProgressStore()
+    if (status === 'want_to_read') progress.earn('add_book', bookId)
+    if (status === 'reading') progress.earn('start_book', bookId)
+    if (status === 'read') progress.earn('finish_book', bookId)
   }
 
   function findBook(id) {
@@ -111,6 +121,8 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
 
     const changes = status === 'read' ? { status, progress: 100 } : { status }
     await save(book, changes, `Couldn't move "${book.title}". Try again.`)
+    // a failed save has put the book back
+    if (book.status === status) earnFor(id, status)
   }
 
   // How far through a book the reader is, 0-100.

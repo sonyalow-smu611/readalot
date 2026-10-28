@@ -70,19 +70,30 @@ test("presets, Surprise me, and parts that cost coins are locked", async ({ page
   await expect(page.getByRole("radio", { name: "Red flower" })).toHaveAccessibleDescription("Only with curly hair");
 });
 
-test("leaving with an unsaved look asks first", async ({ page }) => {
+test("leaving with an unsaved look asks first: stay, discard, or save and leave", async ({ page }) => {
   await group(page, "Hair colour").getByRole("radio", { name: "Black" }).check();
   await page.getByRole("link", { name: "Back to town" }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Discard your changes?" });
+  const dialog = page.getByRole("dialog", { name: "Save your new look?" });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "Keep editing" }).click();
+  await dialog.getByRole("button", { name: "Stay" }).click();
   await expect(page).toHaveURL(/\/salon$/);
   await expect(group(page, "Hair colour").getByRole("radio", { name: "Black" })).toBeChecked();
 
   await page.getByRole("link", { name: "Back to town" }).click();
-  await page.getByRole("dialog", { name: "Discard your changes?" }).getByRole("button", { name: "Discard" }).click();
+  await dialog.getByRole("button", { name: "Discard and leave" }).click();
   await expect(page).toHaveURL(/\/$/);
+});
+
+test("Save look and leave keeps the new look", async ({ page }) => {
+  await group(page, "Hair colour").getByRole("radio", { name: "Black" }).check();
+  await page.getByRole("link", { name: "Back to town" }).click();
+  await page.getByRole("dialog", { name: "Save your new look?" }).getByRole("button", { name: "Save look and leave" }).click();
+  await expect(page).toHaveURL(/\/$/);
+
+  await page.goto("/salon");
+  await expect(group(page, "Hair colour").getByRole("radio", { name: "Black" })).toBeChecked();
+  await expect(you(page)).toHaveAttribute("aria-label", /Black/);
 });
 
 test("Back to town with nothing changed goes straight back", async ({ page }) => {
@@ -139,13 +150,11 @@ test("on a laptop the salon fills the window: the chair on the left, the widgets
   expect(dockBox.x + dockBox.width).toBeGreaterThan(1100);
 });
 
-test("the reader stands on the podium and can be turned round", async ({ page }) => {
-  await expect(you(page)).toBeVisible();
-  await expect(page.getByText("Drag to spin")).toBeVisible();
-  await page.getByRole("button", { name: "Turn right" }).click();
-  await page.getByRole("button", { name: "Turn left" }).click();
-  // the arrow keys turn it too, once it has focus
-  await you(page).focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(you(page)).toBeFocused();
+test("the reader stands by the chair as their town sprite, and shows in the mirror", async ({ page }) => {
+  // one sprite you can hear, plus its reflection, which screen readers skip
+  await expect(you(page)).toHaveCount(1);
+  await expect(page.locator(".stage__glass canvas")).toHaveCount(1);
+  // a change makes the reader hop
+  await group(page, "Hair colour").getByRole("radio", { name: "Black" }).check();
+  await expect(page.locator(".stage__model .pixel-character")).toHaveClass(/is-hopping/);
 });

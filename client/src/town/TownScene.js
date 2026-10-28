@@ -23,6 +23,11 @@ const START_ZOOM = 0.6
 // How close the first tour comes to each building, and how long each half of the trip takes.
 const TOUR_ZOOM = 1.1
 const TOUR_LEG = 650
+// On the tour a building sits this far down the screen (its centre), leaving the lower half for
+// the tour's card, and fills at most this much of the screen.
+const TOUR_AT = 0.3
+const TOUR_FILL_H = 0.38
+const TOUR_FILL_W = 0.8
 // A press that moves less than this is a tap; more is a drag.
 const TAP_SLOP = 10
 // How much a building grows when you point at it.
@@ -44,9 +49,14 @@ export default class TownScene extends Phaser.Scene {
   // camera following you; onInside(place) says you have walked in through its door;
   // onSelectFriend(id) says a friend out walking was tapped (or found from the friends list).
   // `character` is the reader's saved character (see lib/avatar/catalogue.js).
-  constructor({ character, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, reducedMotion }) {
+  // start: a place id to open on, framed as the tour frames it (a new reader's first look).
+  // onTourSpot({ id, x, y, w, h }) says where a tour stop's building is on screen once the
+  // camera has settled on it.
+  constructor({ character, start, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, onTourSpot, reducedMotion }) {
     super('town')
     this.character = character
+    this.start = start
+    this.onTourSpot = onTourSpot
     this.onSelect = onSelect
     this.onReady = onReady
     this.onError = onError
@@ -95,8 +105,16 @@ export default class TownScene extends Phaser.Scene {
     cam.setBounds(0, 0, MAP_W, MAP_H)
     cam.setBackgroundColor('#6fb14b')
     this.fitZoom()
-    cam.setZoom(Math.max(START_ZOOM, this.minZoom))
-    cam.centerOn(SPAWN.x, SPAWN.y - 200)
+    const first = this.start && ALL_PLACES.find((p) => p.id === this.start)
+    if (first) {
+      // already where the tour begins, so arriving from Welcome is one move, not three
+      const frame = this.tourFrame(first)
+      cam.setZoom(frame.zoom)
+      cam.centerOn(frame.x, frame.y)
+    } else {
+      cam.setZoom(Math.max(START_ZOOM, this.minZoom))
+      cam.centerOn(SPAWN.x, SPAWN.y - 200)
+    }
 
     const motion = { reducedMotion: this.reducedMotion }
     this.sky = new Sky(this, motion)
@@ -108,7 +126,10 @@ export default class TownScene extends Phaser.Scene {
     this.showFriends()
     this.you = new You(this, { ...motion, character: this.character })
     this.addCameraControls()
-    this.scale.on('resize', () => this.fitZoom())
+    this.scale.on('resize', () => {
+      this.fitZoom()
+      if (this.spotPlace) this.reportSpot(this.spotPlace)
+    })
     this.onReady?.()
   }
 
@@ -395,16 +416,28 @@ export default class TownScene extends Phaser.Scene {
     const cx = place.x + place.w / 2
     const cy = place.y + place.h / 2
     this.tourZoomIn?.remove()
+    this.tourSettle?.remove()
+    this.spotPlace = null
     if (tour) {
-      const close = Phaser.Math.Clamp(TOUR_ZOOM, this.minZoom, MAX_ZOOM)
-      if (this.reducedMotion) {
-        cam.setZoom(close)
-        cam.centerOn(cx, cy)
+      const frame = this.tourFrame(place)
+      // already framed on it (as on arrival), allowing for the map's edge stopping the camera
+      const there =
+        Math.abs(cam.zoom - frame.zoom) < 0.01 &&
+        Math.abs(cam.scrollX - cam.clampX(frame.x - cam.width / 2)) < 40 &&
+        Math.abs(cam.scrollY - cam.clampY(frame.y - cam.height / 2)) < 40
+      if (this.reducedMotion || there) {
+        cam.setZoom(frame.zoom)
+        cam.centerOn(frame.x, frame.y)
       } else {
         cam.zoomTo(this.minZoom, TOUR_LEG, 'Sine.easeInOut', true)
-        cam.pan(cx, cy, TOUR_LEG * 2, 'Sine.easeInOut', true)
-        this.tourZoomIn = this.time.delayedCall(TOUR_LEG, () => cam.zoomTo(close, TOUR_LEG, 'Sine.easeInOut', true))
+        cam.pan(frame.x, frame.y, TOUR_LEG * 2, 'Sine.easeInOut', true)
+        this.tourZoomIn = this.time.delayedCall(TOUR_LEG, () => cam.zoomTo(frame.zoom, TOUR_LEG, 'Sine.easeInOut', true))
       }
+      // the camera's view updates on the next frame
+      this.tourSettle = this.time.delayedCall(this.reducedMotion || there ? 30 : TOUR_LEG * 2 + 30, () => {
+        this.spotPlace = place
+        this.reportSpot(place)
+      })
     } else if (this.reducedMotion) cam.centerOn(cx, cy)
     else cam.pan(cx, cy, 700, 'Sine.easeInOut', true)
     this.select(place)
@@ -412,6 +445,31 @@ export default class TownScene extends Phaser.Scene {
 
   zoomBy(factor) {
     this.zoomAround(this.cameras.main.zoom * factor, this.scale.width / 2, this.scale.height / 2)
+  }
+
+  // Where the tour puts the camera for a place: close enough to see it, small enough to leave the
+  // lower half of the screen free, with the building's centre TOUR_AT down the screen.
+  tourFrame(place) {
+    const { width, height } = this.scale
+    const zoom = Phaser.Math.Clamp(
+      Math.min(TOUR_ZOOM, (height * TOUR_FILL_H) / place.h, (width * TOUR_FILL_W) / place.w),
+      this.minZoom,
+      MAX_ZOOM,
+    )
+    return { zoom, x: place.x + place.w / 2, y: place.y + place.h / 2 + (height * (0.5 - TOUR_AT)) / zoom }
+  }
+
+  // Tells the page where the place is on screen (the camera may have stopped short at the map's edge).
+  reportSpot(place) {
+    const cam = this.cameras.main
+    const view = cam.worldView
+    this.onTourSpot?.({
+      id: place.id,
+      x: (place.x - view.x) * cam.zoom,
+      y: (place.y - view.y) * cam.zoom,
+      w: place.w * cam.zoom,
+      h: place.h * cam.zoom,
+    })
   }
 
   // --- You -------------------------------------------------------------------------------

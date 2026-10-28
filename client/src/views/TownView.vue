@@ -10,12 +10,14 @@ import { storeToRefs } from 'pinia'
 import { ALL_PLACES, FRIEND_HOUSES } from '@/town/places.js'
 import { getFriends, presence } from '@/town/friends.js'
 import { useUserStore } from '@/stores/user'
+import { useProgressStore } from '@/stores/progress.js'
 import { fetchWeather } from '@/services/weather.js'
 import TownMap from '@/components/town/TownMap.vue'
 import TownHud from '@/components/town/TownHud.vue'
 import PlacesMenu from '@/components/town/PlacesMenu.vue'
 import PlaceCard from '@/components/town/PlaceCard.vue'
 import WeatherButton from '@/components/town/WeatherButton.vue'
+import PlayerBadge from '@/components/town/PlayerBadge.vue'
 import FriendsList from '@/components/town/FriendsList.vue'
 import FriendCard from '@/components/town/FriendCard.vue'
 import ChatDock from '@/components/town/ChatDock.vue'
@@ -24,9 +26,12 @@ const WEATHER_EVERY = 10 * 60 * 1000
 
 const router = useRouter()
 const user = useUserStore()
+const progress = useProgressStore()
 const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
+// a new reader straight from Welcome: the map opens on their house, where the tour begins
+const arrivingForTour = user.tourPending
 const selected = ref(null)
 const placesOpen = ref(false)
 const friendsOpen = ref(false)
@@ -219,6 +224,7 @@ function goInside(place) {
   <section class="town" aria-label="Readalot Town">
     <TownMap
       :focus="focus"
+      :start="arrivingForTour ? 'house' : ''"
       :enter="walk"
       :character="profile.character"
       :friends="friendsInTown"
@@ -232,8 +238,6 @@ function goInside(place) {
       @ready="ready = true"
     />
     <TownHud
-      :name="profile.name || 'You'"
-      :avatar="profile.avatar"
       :places-open="placesOpen"
       :friends-online="onlineCount"
       :friends-open="friendsOpen"
@@ -243,9 +247,19 @@ function goInside(place) {
     <PlacesMenu :places="ALL_PLACES" :open="placesOpen" @go="go" />
     <FriendsList :friends="friendsInTown" :open="friendsOpen" @go="findFriend" />
     <WeatherButton v-if="ready" :mode="skyMode" :weather="weather" @change="skyMode = $event" />
+    <!-- you, in the bottom-left corner: level, XP and coins; opens the salon -->
+    <PlayerBadge
+      class="town__me"
+      :name="profile.name || 'You'"
+      :character="profile.character"
+      :level="progress.level"
+      :coins="progress.coins"
+      :gain="progress.lastGain"
+      :level-ups="progress.levelUps"
+    />
 
     <Transition name="town-fade">
-      <p v-if="hint && ready && !selected && !friendId && !entering" class="town__hint">Drag to look around. Tap a building to go in.</p>
+      <p v-if="hint && ready && !selected && !friendId && !entering && !guide" class="town__hint">Drag to look around. Tap a building to go in.</p>
     </Transition>
     <Transition name="town-fade">
       <p v-if="entering" class="town__hint" role="status">{{ walkingTo }}</p>
@@ -285,6 +299,14 @@ function goInside(place) {
   overflow: hidden;
   background: #6fb14b;
   touch-action: none;
+}
+
+/* your badge, bottom left (the weather chip has the top-left corner) */
+.town .town__me {
+  position: absolute;
+  left: 14px;
+  bottom: 24px;
+  z-index: 5;
 }
 
 .town__hint {

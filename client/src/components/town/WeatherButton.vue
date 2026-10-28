@@ -1,6 +1,6 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The chip in the corner of the town that says what the sky is doing. The town follows the
+// The chip in the top-left corner of the town that says what the sky is doing. The town follows the
 // live weather; pressing the chip steps through a preview of each look (handy for a demo).
 import { computed } from 'vue'
 
@@ -56,9 +56,9 @@ function next() {
 <style scoped>
 .weather-button {
   position: absolute;
+  top: 14px;
   left: 14px;
-  bottom: 24px;
-  z-index: 5;
+  z-index: 11;
   display: inline-flex;
   align-items: center;
   gap: 8px;

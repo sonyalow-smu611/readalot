@@ -1,12 +1,10 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The bar across the top of the town: who you are (opens the salon), Places, and Friends with
-// how many of them are online.
+// The bar across the top of the town: Places, and Friends with how many of them are online.
+// (Your badge sits in the bottom-left corner: PlayerBadge, placed by TownView.)
 import FriendsButton from './FriendsButton.vue'
 
 defineProps({
-  name: { type: String, default: 'You' },
-  avatar: { type: String, default: '' },
   placesOpen: { type: Boolean, default: false },
   friendsOnline: { type: Number, default: 0 },
   friendsOpen: { type: Boolean, default: false },
@@ -16,10 +14,6 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
 
 <template>
   <header class="town-hud">
-    <RouterLink :to="{ name: 'salon' }" class="town-hud__chip" aria-label="Your profile">
-      <span class="town-hud__avatar" aria-hidden="true">{{ avatar }}</span>
-      <span class="town-hud__name">{{ name }}</span>
-    </RouterLink>
     <span class="town-hud__spacer"></span>
     <button
       type="button"
@@ -43,6 +37,7 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
   right: 14px;
   z-index: 10;
   display: flex;
+  align-items: flex-start;
   gap: 8px;
   pointer-events: none;
 }
@@ -81,21 +76,4 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
   stroke-linejoin: round;
 }
 
-.town-hud__avatar {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 3px solid #2f5fb3;
-  border-radius: 50%;
-  background: var(--rl-secondary);
-  font-size: 16px;
-}
-
-.town-hud__name {
-  max-width: 90px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 </style>

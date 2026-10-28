@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthStage from '@/components/auth/AuthStage.vue'
 import CharacterPresetPicker from '@/components/shared/CharacterPresetPicker.vue'
+import PixelCharacter from '@/components/shared/PixelCharacter.vue'
 import { presetCharacter } from '@/lib/avatar/catalogue.js'
 import { saveProfile } from '@/services/auth.js'
 import { useUserStore } from '@/stores/user'
@@ -36,6 +37,8 @@ const age = ref('')
 const religion = ref('')
 const genres = ref([])
 const character = ref('rosie')
+const heroHop = ref(0)
+watch(character, () => (heroHop.value += 1))
 
 const titles = ['Your name', 'Gender', 'Age', 'Religion', 'Genres you like', 'Pick your character']
 const notes = [
@@ -211,7 +214,13 @@ async function retryLoad() {
         </button>
       </div>
 
-      <CharacterPresetPicker v-else v-model="character" class="mb-3" legend="Characters" />
+      <template v-else>
+        <!-- the chosen one, big and alive; it hops in when the choice changes -->
+        <div class="welcome-hero" aria-hidden="true">
+          <PixelCharacter :character="presetCharacter(character)" :scale="4" :hop="heroHop" decorative />
+        </div>
+        <CharacterPresetPicker v-model="character" class="mb-3" legend="Characters" />
+      </template>
 
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
       <div class="d-flex gap-2">
@@ -225,6 +234,18 @@ async function retryLoad() {
 </template>
 
 <style scoped>
+.welcome-hero {
+  display: grid;
+  place-items: end center;
+  height: 252px;
+  margin-bottom: 12px;
+  border: 2px solid #3b2a22;
+  border-radius: 6px;
+  background:
+    linear-gradient(#f6d9e4 0 72%, #3b2a22 72% calc(72% + 2px), #e6c9a8 calc(72% + 2px));
+  box-shadow: 4px 4px 0 rgba(59, 42, 34, 0.25);
+}
+
 .choices {
   display: flex;
   flex-wrap: wrap;

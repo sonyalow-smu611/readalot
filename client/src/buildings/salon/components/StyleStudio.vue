@@ -78,11 +78,10 @@ function surprise() {
 
 .widget {
   padding: 16px;
-  border: 2px solid rgba(30, 26, 36, 0.85);
-  border-radius: 18px;
-  background: rgba(255, 253, 249, 0.92);
-  box-shadow: 5px 5px 0 rgba(30, 26, 36, 0.22);
-  backdrop-filter: blur(8px);
+  border: 3px solid var(--px-ink, #2b1d24);
+  border-radius: 4px;
+  background: var(--px-paper, #fff8ef);
+  box-shadow: inset 0 -4px 0 rgba(43, 29, 36, 0.08), var(--px-shadow, 5px 5px 0 #2b1d24);
 }
 
 .widget__head {
@@ -207,17 +206,18 @@ function surprise() {
   background: rgba(255, 253, 249, 0.12);
 }
 
+/* saving is the go-ahead: green */
 .savebar__save {
-  border-color: #f6e27a;
-  background: #f6e27a;
-  color: #1e1a24;
+  border-color: #2b7a43;
+  background: #3fae5a;
+  color: #fff;
   font-weight: 700;
 }
 
 .savebar__save:hover:not(:disabled) {
-  border-color: #fff1b8;
-  background: #fff1b8;
-  color: #1e1a24;
+  border-color: #2b7a43;
+  background: #4cc06a;
+  color: #fff;
 }
 
 .bar-enter-active,

@@ -52,6 +52,10 @@ test.describe("a new reader", () => {
       await expect(page.getByRole("heading", { name: stop })).toBeVisible();
       // the building's own card stays closed so it doesn't cover the tour
       await expect(page.getByRole("button", { name: /^Enter|^Go inside|^Visit/ })).toHaveCount(0);
+      // the tour's card sits below the building, never over it
+      const building = await page.locator("[data-tour-spot]").boundingBox();
+      const card = await page.locator(".guide__card").boundingBox();
+      expect(card.y).toBeGreaterThanOrEqual(building.y + building.height);
     }
     await expect(page.getByText(`${TOUR.length + 1} of ${TOUR.length + 1}`)).toBeVisible();
     await page.getByRole("button", { name: "Done" }).click();

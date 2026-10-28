@@ -68,6 +68,7 @@ async function signInReader({ id, email, password, profile, tourSeen }) {
 // one reader. A database write, not a sign-in, so it doesn't count towards Supabase's auth limit.
 export async function resetProfile(id, profile) {
   await admin.from("profile_private").delete().eq("id", id);
+  await admin.from("xp_events").delete().eq("reader", id);
   if (!profile) {
     await admin.from("profiles").delete().eq("id", id);
     return;
@@ -81,6 +82,7 @@ export async function resetProfile(id, profile) {
     location_name: null,
     discoverable: false,
     tour_seen_at: new Date().toISOString(),
+    coins: 480,
   });
   if (saved.error) throw saved.error;
 }
@@ -107,6 +109,32 @@ export async function emailCode(purpose) {
       await admin.auth.admin.deleteUser(id);
     },
   };
+}
+
+// Gives a reader XP as if they had earned it (a finished book per 100), for level tests.
+export async function giveXp(id, xp) {
+  const { error } = await admin.from("xp_events").insert({
+    reader: id,
+    action: "finish_book",
+    target: `seed-${randomUUID()}`,
+    day: new Date().toISOString().slice(0, 10),
+    xp,
+  });
+  if (error) throw error;
+}
+
+// The reader's XP events, newest first.
+export async function readXp(id) {
+  const { data } = await admin.from("xp_events").select("*").eq("reader", id).order("id", { ascending: false });
+  return data ?? [];
+}
+
+// A Supabase client signed in as the reader, to check what the database lets them do.
+export function readerClient(session) {
+  return createClient(url, anonKey, {
+    ...quiet,
+    global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+  });
 }
 
 // The saved profile row, for checking what the app wrote.

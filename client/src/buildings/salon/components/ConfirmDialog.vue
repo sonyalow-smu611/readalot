@@ -1,7 +1,8 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // A small "are you sure?" card over the page: log out, or leave with unsaved changes.
-// The safe choice comes first and takes focus; Escape picks it too.
+// The safe choice comes first and takes focus; Escape picks it too. With saveLabel there is a
+// third choice that keeps the changes before going (save).
 import { onMounted, ref, useId } from 'vue'
 
 defineProps({
@@ -9,11 +10,12 @@ defineProps({
   text: { type: String, required: true },
   stayLabel: { type: String, required: true },
   goLabel: { type: String, required: true },
+  saveLabel: { type: String, default: '' },
   // a little book shutting above the title (logging out)
   book: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['stay', 'go'])
+const emit = defineEmits(['stay', 'go', 'save'])
 const titleId = useId()
 const stayButton = ref(null)
 
@@ -30,6 +32,9 @@ onMounted(() => stayButton.value?.focus())
         </div>
         <h2 :id="titleId" class="h4 mb-1">{{ title }}</h2>
         <p class="text-muted mb-3">{{ text }}</p>
+        <button v-if="saveLabel" type="button" class="btn leave__save w-100 mb-2" @click="emit('save')">
+          {{ saveLabel }}
+        </button>
         <div class="d-flex gap-2">
           <button ref="stayButton" type="button" class="btn btn-outline-primary flex-grow-1" @click="emit('stay')">
             {{ stayLabel }}
@@ -42,6 +47,20 @@ onMounted(() => stayButton.value?.focus())
 </template>
 
 <style scoped>
+/* keeping the changes is the go-ahead: green, like the salon's Save look */
+.leave__save {
+  border: 2px solid #2b7a43;
+  background: #3fae5a;
+  color: #fff;
+  font-weight: 700;
+}
+
+.leave__save:hover {
+  border-color: #2b7a43;
+  background: #4cc06a;
+  color: #fff;
+}
+
 .leave {
   position: absolute;
   inset: 0;
