@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { FURNITURE } from '@/buildings/house/furniture.js'
+import { useProgressStore } from '@/stores/progress.js'
 
 // everything the Shop sells: the house's furniture library, drawn in the room's own pixel style
 export const DECOR_CATALOG = [...FURNITURE]
@@ -7,7 +8,8 @@ export const DECOR_CATALOG = [...FURNITURE]
 // the room's small surfaces
 const SHELF_ZONES = new Set(['seat', 'nightstand', 'side-table'])
 
-const credits = ref(480)
+// the reader's coins are saved with their progress (stores/progress.js); set by useDecor()
+let progress = null
 const inventory = ref([])
 const placed = ref([])
 const shopOpen = ref(false)
@@ -31,13 +33,17 @@ function askBuy(item) {
   pending.value = item
 }
 
-function confirmBuy() {
+// The coins come off (and are saved) before the piece goes in the inventory.
+async function confirmBuy() {
   const item = pending.value
-  if (!item || credits.value < item.price) return
-  credits.value -= item.price
-  inventory.value = [...inventory.value, { uid: nextUid++, id: item.id }]
+  if (!item || !progress || progress.coins < item.price) return
   pending.value = null
   shopOpen.value = false
+  if (!(await progress.spend(item.price))) {
+    flash(`Couldn't buy the ${item.name}. Try again.`, 'bad')
+    return
+  }
+  inventory.value = [...inventory.value, { uid: nextUid++, id: item.id }]
   inventoryOpen.value = true
 }
 
@@ -144,6 +150,8 @@ function unplace(uid) {
 }
 
 export function useDecor() {
+  progress = useProgressStore()
+  const credits = computed(() => progress.coins)
   const canAfford = computed(() => (pending.value ? credits.value >= pending.value.price : false))
 
   const placingMeta = computed(() => (placing.value ? decorMeta(placing.value.id) : null))

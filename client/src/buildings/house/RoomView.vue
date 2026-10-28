@@ -5,6 +5,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { useUserStore } from '@/stores/user'
+import { useProgressStore } from '@/stores/progress.js'
 import { addNote, notesFor, removeNote } from '@/buildings/house/notes.js'
 import NoteComposer from '@/buildings/house/components/NoteComposer.vue'
 import NoticeBoard from '@/buildings/house/components/NoticeBoard.vue'
@@ -36,6 +37,7 @@ const route = useRoute()
 const router = useRouter()
 const bookshelf = useBookshelfStore()
 const user = useUserStore()
+const progress = useProgressStore()
 
 // whose books are on the bookshelf: the reader's own, or the visited reader's
 const books = computed(() => props.visiting?.books ?? bookshelf.books)
@@ -208,6 +210,7 @@ function postNote(text) {
     return
   }
   notes.value = notesFor(props.visiting.id)
+  progress.earn('leave_note', props.visiting.id)
   stopNote()
   flash(`Your note is on ${props.visiting.firstName}'s board`, 'ok')
 }

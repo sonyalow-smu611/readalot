@@ -336,3 +336,19 @@ Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp
 | Leaving | `client/src/buildings/salon/SalonView.vue`, `components/ConfirmDialog.vue` | Save look and leave, Discard and leave, or Stay; logging out asks before signing out, so the look can still be saved |
 | Profile tab | `client/src/buildings/salon/pixel.css`, `tilt.js`, `components/CountUp.vue`, `PixelConfetti.vue`, `ProfileBlock.vue`, `ReaderCard.vue`, `FavouriteGenres.vue`, `StyleStudio.vue`, `SalonView.vue` | Pixel panels in the town's colours, cards that lean toward the mouse and pop when pressed, counts that count up, bouncing genre chips, pixel confetti on every save, the reader's sprite in place of the emoji; on a phone the widgets are a sheet under the reader that pulls up |
 | Docs and tests | `AGENTS.md`, `tests/e2e/salon.spec.js` | How characters are drawn now; the leave choices, Save look and leave, and the reader and their reflection |
+
+### Reader levels, saved coins and the map badge (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 3).
+Dylan reviews the badge (`PlayerBadge.vue`, `TownHud.vue`, `TownView.vue`, `WeatherButton.vue`); Sonz reviews the lines in the house (`VisitView.vue`,
+`RoomView.vue`, `useDecor.js`); Emiley reviews the line in `ReaderChat.vue`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/xp_and_coins.sql` | `xp_events` (one row per action, repeats refused by unique indexes), `coins` on `profiles`, and `earn_xp()`, `my_progress()` and `spend_coins()`; readers can't write their own XP or coins |
+| Levels | `client/src/lib/levels.js`, `client/src/services/progress.js`, `client/src/stores/progress.js`, `client/src/stores/user.js` | Level 2 at 100 XP, each level 50 more; 25 × the new level in coins at a level-up; progress loads with the profile and clears on sign-out |
+| Earning | `client/src/stores/bookshelf.js`, `client/src/services/api.js`, `client/src/buildings/house/VisitView.vue`, `client/src/buildings/house/RoomView.vue`, `client/src/components/people/ReaderChat.vue` | One line where each action already succeeds: add, start and finish a book, a review, a room visit, a note, a cafe message |
+| Coins | `client/src/composables/useDecor.js` | The Shop spends the saved balance in place of an in-memory 480 |
+| Map badge | `client/src/components/town/PlayerBadge.vue`, `TownHud.vue`, `WeatherButton.vue`, `client/src/views/TownView.vue`, `client/src/components/shared/CountUp.vue` | The reader's face in an XP ring with the level on a gold tab, name and coins, in the bottom-left corner (the weather chip moves to the top left); it bobs and blinks, floats "+XP", and pops on a level-up |
+| Salon | `client/src/buildings/salon/components/LevelCard.vue`, `SalonView.vue` | A Reader level card with XP counting up, a filling bar, the next level's coins and how to earn XP; confetti on a level-up |
+| Tests | `tests/e2e/progress.spec.js`, `tests/e2e/supabaseUser.js` | The badge, a visit's XP once a day, level-up coins, the Shop's saved coins, and the database refusing coins a reader sets |

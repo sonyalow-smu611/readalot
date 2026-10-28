@@ -14,6 +14,7 @@ import AboutYou from '@/buildings/salon/components/AboutYou.vue'
 import CoinsCard from '@/buildings/salon/components/CoinsCard.vue'
 import ConfirmDialog from '@/buildings/salon/components/ConfirmDialog.vue'
 import FavouriteGenres from '@/buildings/salon/components/FavouriteGenres.vue'
+import LevelCard from '@/buildings/salon/components/LevelCard.vue'
 import PrivacyAlert from '@/buildings/salon/components/PrivacyAlert.vue'
 import PrivacySetting from '@/buildings/salon/components/PrivacySetting.vue'
 import PixelConfetti from '@/buildings/salon/components/PixelConfetti.vue'
@@ -31,6 +32,7 @@ import { useDecor } from '@/composables/useDecor'
 import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 import { saveProfile, signOut } from '@/services/auth.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
+import { useProgressStore } from '@/stores/progress.js'
 import '@/buildings/salon/pixel.css'
 import { useUserStore } from '@/stores/user'
 import { PLACES } from '@/town/places.js'
@@ -72,6 +74,9 @@ const discarding = ref(false)
 const confetti = ref(0)
 // phones: whether the dock's sheet is pulled up over the reader
 const sheetOpen = ref(false)
+const progress = useProgressStore()
+// a level-up while in the salon is worth confetti too
+watch(() => progress.levelUps, () => (confetti.value += 1))
 let leaveAnswer = null
 let savedTimer = null
 
@@ -325,6 +330,7 @@ async function logout() {
                   @edit="startEdit"
                   @open-list="openList"
                 />
+                <LevelCard :xp="progress.xp" :level="progress.level" />
                 <FavouriteGenres :genres="user.profile.favouriteGenres" />
                 <CoinsCard :decor-count="decorCount" @shop="visitShop" />
                 <AboutYou

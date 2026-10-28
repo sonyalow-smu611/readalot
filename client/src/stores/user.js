@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import usersData from '@/data/users.json'
 import { currentSession, loadProfile, markTourSeen, watchAuth } from '@/services/auth.js'
 import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
+import { useProgressStore } from '@/stores/progress.js'
 
 // A new reader's first tour, played once in the town after Welcome: Next zooms the camera out and
 // back in on each building in turn (focus: a place id from town/places.js, which TownView glides
@@ -117,6 +118,7 @@ export const useUserStore = defineStore('user', () => {
       hasProfile.value = false
       tourSeen.value = false
       profileError.value = ''
+      useProgressStore().reset()
       return Promise.resolve()
     }
     if (user.id === loadingId && loading) return loading
@@ -141,6 +143,8 @@ export const useUserStore = defineStore('user', () => {
     mergeProfile(details)
     tourSeen.value = seen
     hasProfile.value = true
+    // XP and coins load alongside; nothing waits for them
+    useProgressStore().load()
   }
 
   function reloadProfile() {
@@ -153,6 +157,7 @@ export const useUserStore = defineStore('user', () => {
   function profileSaved(details) {
     mergeProfile(details)
     hasProfile.value = true
+    useProgressStore().load()
   }
 
   async function restore() {

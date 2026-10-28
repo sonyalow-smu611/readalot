@@ -3,7 +3,7 @@
 // The reader's name, email and character, an Edit button, and their three shelf counts, which
 // count up as the card opens. A pixel panel that leans toward the mouse and pops when pressed.
 import CharacterSprite from '@/components/shared/CharacterSprite.vue'
-import CountUp from '@/buildings/salon/components/CountUp.vue'
+import CountUp from '@/components/shared/CountUp.vue'
 import { SHELF_STATS } from '@/buildings/salon/profileOptions.js'
 import { vTilt } from '@/buildings/salon/tilt.js'
 

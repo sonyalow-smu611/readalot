@@ -48,11 +48,13 @@ import { ref, watch, nextTick } from "vue";
 import {
   DEMO_USER_ID, getMessages, sendReaderMessage, clearDemoConversation,
 } from "../../services/chatApi.js";
+import { useProgressStore } from "../../stores/progress.js";
 
 const props = defineProps({
   readerId: { type: String, required: true },
   readerName: { type: String, default: "" },
 });
+const progress = useProgressStore();
 const activeSenderId = ref(DEMO_USER_ID);
 const messages = ref([]);
 const draft = ref("");
@@ -86,6 +88,8 @@ async function send() {
   error.value = "";
   try {
     await sendReaderMessage(readerId, draft.value, activeSenderId.value);
+    // up to 10 messages a day earn XP
+    progress.earn("send_message", readerId);
     if (currentVersion !== version) return;
     draft.value = "";
     await loadMessages();
