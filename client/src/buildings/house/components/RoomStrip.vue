@@ -37,9 +37,9 @@
           <img v-if="!ready" class="strip__still" :src="stillArt" alt="" draggable="false" :style="stillStyle" />
           <!-- the view outside, behind the canvas: it shows through the window's glass -->
           <WindowView class="strip__outside" :style="boxStyle(glass)" :scene="weather.scene" :night="weather.night" />
-          <canvas v-show="ready" ref="canvas" class="strip__canvas" />
+          <canvas v-show="ready" ref="canvas" class="strip__canvas" data-testid="room-canvas" />
           <!-- the cats from the furniture library, drawn over the room as they walk about -->
-          <canvas v-show="ready" ref="catCanvas" class="strip__canvas strip__pets" aria-hidden="true" />
+          <canvas v-show="ready" ref="catCanvas" class="strip__canvas strip__pets" data-testid="room-cats" aria-hidden="true" />
           <!-- the weather outside, floating just above the window it's seen through -->
           <div class="strip__weather" role="img" :aria-label="windowLabel" :style="weatherStyle">
             <span class="strip__weather-icon" :class="`is-${weatherIcon}`" aria-hidden="true" />

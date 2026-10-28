@@ -1,21 +1,16 @@
-import { expect, goToPlace, test } from "./fixtures.js";
+import {
+  artColour, brightness, buy, expect, fromMenu, goToPlace, inventory, mockWeather, openShop, pickFromInventory,
+  roomReady, skipMoodCheckIn, test,
+} from "./fixtures.js";
 
 // Every house has its own look: wall and floor colours, curtains, bedding, lamps and rug. The
-// reader can change their own curtains and bedding from the Shop, and switch the lamps.
+// reader can change their own curtains and bedding from the Shop, and switch the lamps. What
+// changes is only in the room's picture, so these checks read its pixels at known art positions.
 test.use({ viewport: { width: 480, height: 720 } });
 
-let isDay = true;
 test.beforeEach(async ({ page }) => {
-  isDay = true;
-  // today's mood check-in already answered, so it does not open over My Room
-  await page.addInitScript(() => {
-    const now = new Date();
-    const pad = (value) => String(value).padStart(2, "0");
-    localStorage.setItem("readalot.moodCheckIn", `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
-  });
-  await page.route("**/api/weather*", (route) =>
-    route.fulfill({ json: { scene: "sunny", temperature: 27, weatherCode: 0, isDay } })
-  );
+  await skipMoodCheckIn(page);
+  await mockWeather(page);
 });
 
 const ROOMS = {
@@ -28,210 +23,152 @@ const ROOMS = {
 
 async function open(page, room) {
   await page.goto(ROOMS[room]);
-  await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books?$/ })).toBeVisible();
-  await expect(page.getByText("Opening your shelf")).toBeHidden();
-  await page.waitForTimeout(300);
+  await roomReady(page);
 }
-
-// The colour of the room's canvas at an art pixel (x, y), as "r,g,b". The clock's top (art y 166)
-// finds the rows; the room must have been slid so that x is in the canvas (it always is: the
-// canvas is the whole room).
-function colourAt(page, x, y) {
-  return page.getByRole("img", { name: /^Singapore time/ }).evaluate(
-    (clock, [ax, ay]) => {
-      const canvas = document.querySelector(".strip canvas");
-      const c = canvas.getBoundingClientRect();
-      const unit = c.width / canvas.width;
-      const row = Math.round((clock.getBoundingClientRect().top - c.top) / unit + (ay - 166));
-      return [...canvas.getContext("2d").getImageData(ax, row, 1, 1).data].slice(0, 3).join(",");
-    },
-    [x, y]
-  );
-}
-
-const brightness = (rgb) => rgb.split(",").map(Number).reduce((a, b) => a + b, 0);
-
-// bare wall above the bookshelf (no wall spot there), and the floor in front of the bookshelf
-const WALL = [600, 80];
-const FLOOR = [620, 414];
-
-test("every house has its own wall and floor colours", async ({ page }) => {
-  const walls = new Set();
-  const floors = new Set();
-  for (const room of Object.keys(ROOMS)) {
-    await open(page, room);
-    walls.add(await colourAt(page, ...WALL));
-    floors.add(await colourAt(page, ...FLOOR));
-  }
-  expect(walls.size).toBe(5);
-  expect(floors.size).toBeGreaterThanOrEqual(4);
-});
 
 // a few pixels along a row, as one string: enough to tell one fabric or pattern from another
-async function stripe(page, x, y, count = 12) {
+async function stripe(page, [x, y], count = 12) {
   const parts = [];
-  for (let k = 0; k < count; k += 1) parts.push(await colourAt(page, x + k * 2, y));
+  for (let k = 0; k < count; k += 1) parts.push(await artColour(page, x + k * 2, y));
   return parts.join("|");
 }
 
-// inside the left curtain, and across the quilt on the bed
+// Where to look, in art pixels: bare wall above the bookshelf (no wall spot there), the floor in
+// front of it, inside the left curtain, across the quilt on the bed, in each lamp's shade, and on
+// the wall beside the floor lamp (inside its pool of light at night).
+const WALL = [600, 80];
+const FLOOR = [620, 414];
 const CURTAIN = [40, 200];
 const QUILT = [966, 362];
-
-test("every house has its own curtains and bedding", async ({ page }) => {
-  const curtains = new Set();
-  const quilts = new Set();
-  for (const room of Object.keys(ROOMS)) {
-    await open(page, room);
-    curtains.add(await stripe(page, ...CURTAIN, 6));
-    quilts.add(await stripe(page, ...QUILT));
-  }
-  expect(curtains.size).toBe(5);
-  expect(quilts.size).toBe(5);
-});
-
-// --- Curtains and bedding from the Shop ---------------------------------------------------------
-
-async function fromMenu(page, item) {
-  const button = page.getByRole("button", { name: item, exact: true });
-  if (!(await button.isVisible())) await page.getByRole("button", { name: "Room menu" }).click();
-  await button.click();
-}
-
-async function buy(page, name) {
-  await fromMenu(page, "Shop");
-  await page.getByRole("region", { name: "Decoration shop" }).getByRole("button", { name: new RegExp(name) }).click();
-  await page.getByRole("button", { name: "Confirm" }).click();
-}
-
-const inventory = (page) => page.getByRole("region", { name: "Inventory" });
-
-test("the Shop sells curtains, which hang at the window and swap with the ones there", async ({ page }) => {
-  await open(page, "mine");
-  await fromMenu(page, "Shop");
-  const curtains = page.getByRole("region", { name: "Decoration shop" }).getByRole("group", { name: "Curtains" });
-  await expect.poll(() => curtains.getByRole("button").count()).toBeGreaterThanOrEqual(5);
-  await expect(curtains.locator("img").first()).toHaveAttribute("src", /\/room\/strip\/curtains-/);
-  await fromMenu(page, "Shop");
-
-  await goToPlace(page, "Window");
-  const own = await stripe(page, ...CURTAIN, 6);
-
-  await buy(page, "Rose curtains");
-  await inventory(page).getByRole("button", { name: /Rose curtains/ }).click();
-  await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Rose curtains");
-  await page.getByRole("button", { name: "Put Rose curtains at the window" }).click();
-  await expect(page.getByRole("status")).toHaveText(/^Rose curtains are at the window/);
-  await expect.poll(() => stripe(page, ...CURTAIN, 6)).not.toBe(own);
-  const rose = await stripe(page, ...CURTAIN, 6);
-
-  // a second pair takes their place, and the first goes back to the inventory
-  await buy(page, "Lavender curtains");
-  await inventory(page).getByRole("button", { name: /Lavender curtains/ }).click();
-  await page.getByRole("button", { name: "Put Lavender curtains at the window" }).click();
-  await expect.poll(() => stripe(page, ...CURTAIN, 6)).not.toBe(rose);
-  await fromMenu(page, "Inventory");
-  await expect(inventory(page).getByRole("button", { name: /Rose curtains/ })).toHaveCount(1);
-  await fromMenu(page, "Inventory");
-
-  // taking them down brings back the room's own
-  const hung = page.getByRole("button", { name: "Lavender curtains", exact: true });
-  await hung.click();
-  await hung.getByText("Remove").click();
-  await expect(page.getByRole("status")).toHaveText("Lavender curtains are back in your inventory");
-  await expect.poll(() => stripe(page, ...CURTAIN, 6)).toBe(own);
-});
-
-test("the Shop sells bedding, which goes on the bed and swaps with the bedding there", async ({ page }) => {
-  await open(page, "mine");
-  await fromMenu(page, "Shop");
-  const bedding = page.getByRole("region", { name: "Decoration shop" }).getByRole("group", { name: "Bedding" });
-  await expect.poll(() => bedding.getByRole("button").count()).toBeGreaterThanOrEqual(5);
-  await expect(bedding.locator("img").first()).toHaveAttribute("src", /\/room\/strip\/bedding-/);
-  await fromMenu(page, "Shop");
-
-  await goToPlace(page, "Bed");
-  const own = await stripe(page, ...QUILT);
-
-  await buy(page, "Gingham bedding");
-  await inventory(page).getByRole("button", { name: /Gingham bedding/ }).click();
-  await page.getByRole("button", { name: "Put Gingham bedding on the bed" }).click();
-  await expect(page.getByRole("status")).toHaveText(/^Gingham bedding is on the bed/);
-  await expect.poll(() => stripe(page, ...QUILT)).not.toBe(own);
-  const gingham = await stripe(page, ...QUILT);
-
-  await buy(page, "Tartan bedding");
-  await inventory(page).getByRole("button", { name: /Tartan bedding/ }).click();
-  await page.getByRole("button", { name: "Put Tartan bedding on the bed" }).click();
-  await expect.poll(() => stripe(page, ...QUILT)).not.toBe(gingham);
-  await fromMenu(page, "Inventory");
-  await expect(inventory(page).getByRole("button", { name: /Gingham bedding/ })).toHaveCount(1);
-  await fromMenu(page, "Inventory");
-
-  const made = page.getByRole("button", { name: "Tartan bedding", exact: true });
-  await made.click();
-  await made.getByText("Remove").click();
-  await expect(page.getByRole("status")).toHaveText("Tartan bedding is back in your inventory");
-  await expect.poll(() => stripe(page, ...QUILT)).toBe(own);
-});
-
-// --- Lamps ----------------------------------------------------------------------------------------
-
-// in the floor lamp's shade, and on the wall beside it (inside its pool of light at night)
 const FLOOR_SHADE = [281, 262];
-const BESIDE_LAMP = [315, 245];
-// in the table lamp's shade
 const TABLE_SHADE = [879, 330];
+const BESIDE_LAMP = [315, 245];
 
-test("tapping a lamp switches it off, and on again", async ({ page }) => {
-  await open(page, "mine");
-  await goToPlace(page, "Chair");
-  const lamp = page.getByRole("button", { name: "Floor lamp" });
-  await expect(lamp).toHaveAttribute("aria-pressed", "true");
-  const on = await colourAt(page, ...FLOOR_SHADE);
+test.describe("themes", () => {
+  test("every house has its own wall and floor colours", async ({ page }) => {
+    const walls = new Set();
+    const floors = new Set();
+    for (const room of Object.keys(ROOMS)) {
+      await open(page, room);
+      walls.add(await artColour(page, ...WALL));
+      floors.add(await artColour(page, ...FLOOR));
+    }
+    expect(walls.size).toBe(5);
+    expect(floors.size).toBeGreaterThanOrEqual(4);
+  });
 
-  await lamp.click();
-  await expect(lamp).toHaveAttribute("aria-pressed", "false");
-  await expect.poll(() => colourAt(page, ...FLOOR_SHADE)).not.toBe(on);
-  await lamp.click();
-  await expect(lamp).toHaveAttribute("aria-pressed", "true");
-  await expect.poll(() => colourAt(page, ...FLOOR_SHADE)).toBe(on);
+  test("every house has its own curtains and bedding", async ({ page }) => {
+    const curtains = new Set();
+    const quilts = new Set();
+    for (const room of Object.keys(ROOMS)) {
+      await open(page, room);
+      curtains.add(await stripe(page, CURTAIN, 6));
+      quilts.add(await stripe(page, QUILT));
+    }
+    expect(curtains.size).toBe(5);
+    expect(quilts.size).toBe(5);
+  });
 
-  await goToPlace(page, "Bed");
-  const table = page.getByRole("button", { name: "Table lamp" });
-  await expect(table).toHaveAttribute("aria-pressed", "true");
-  const tableOn = await colourAt(page, ...TABLE_SHADE);
-  await table.click();
-  await expect(table).toHaveAttribute("aria-pressed", "false");
-  await expect.poll(() => colourAt(page, ...TABLE_SHADE)).not.toBe(tableOn);
-  // nothing else opened
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  test("a themed wall still darkens at night", async ({ page }) => {
+    await open(page, "ayaan");
+    const day = brightness(await artColour(page, ...WALL));
+    await mockWeather(page, { isDay: false });
+    await open(page, "ayaan");
+    await expect(page.getByRole("img", { name: /night/ }).first()).toBeAttached();
+    await expect.poll(async () => brightness(await artColour(page, ...WALL))).toBeLessThan(day - 60);
+  });
 });
 
-test("at night a switched-off lamp leaves its corner dark", async ({ page }) => {
-  isDay = false;
-  await open(page, "mine");
-  await goToPlace(page, "Chair");
-  const lit = brightness(await colourAt(page, ...BESIDE_LAMP));
-  await page.getByRole("button", { name: "Floor lamp" }).click();
-  await expect.poll(async () => brightness(await colourAt(page, ...BESIDE_LAMP))).toBeLessThan(lit - 30);
+// Curtains and bedding work the same way: one set at a time on one spot, swapping with the set
+// there, and taking it away brings back the room's own. One journey, run for each.
+test.describe("curtains and bedding from the Shop", () => {
+  for (const kind of [
+    { group: "Curtains", picture: /\/room\/strip\/curtains-/, place: "Window", look: CURTAIN, size: 6,
+      first: "Rose curtains", second: "Lavender curtains", spot: "at the window", is: "are" },
+    { group: "Bedding", picture: /\/room\/strip\/bedding-/, place: "Bed", look: QUILT, size: 12,
+      first: "Gingham bedding", second: "Tartan bedding", spot: "on the bed", is: "is" },
+  ]) {
+    test(`${kind.group.toLowerCase()}: bought, put ${kind.spot}, swapped, and taken away again`, async ({ page }) => {
+      const looks = () => stripe(page, kind.look, kind.size);
+      await open(page, "mine");
+      const shop = await openShop(page);
+      const group = shop.getByRole("group", { name: kind.group });
+      await expect.poll(() => group.getByRole("button").count()).toBeGreaterThanOrEqual(5);
+      await expect(group.locator("img").first()).toHaveAttribute("src", kind.picture);
+      await fromMenu(page, "Shop");
+
+      await goToPlace(page, kind.place);
+      const own = await looks();
+
+      // the first set goes on its glowing spot and changes how it looks
+      await buy(page, kind.first);
+      await pickFromInventory(page, kind.first);
+      await expect(page.getByRole("status")).toContainText(`Tap a glowing spot for the ${kind.first}`);
+      await page.getByRole("button", { name: `Put ${kind.first} ${kind.spot}` }).click();
+      await expect(page.getByRole("status")).toHaveText(new RegExp(`^${kind.first} ${kind.is} ${kind.spot}`));
+      await expect.poll(looks).not.toBe(own);
+      const first = await looks();
+
+      // a second set takes its place, and the first goes back to the inventory
+      await buy(page, kind.second);
+      await pickFromInventory(page, kind.second);
+      await page.getByRole("button", { name: `Put ${kind.second} ${kind.spot}` }).click();
+      await expect.poll(looks).not.toBe(first);
+      await fromMenu(page, "Inventory");
+      await expect(inventory(page).getByRole("button", { name: new RegExp(kind.first) })).toHaveCount(1);
+      await fromMenu(page, "Inventory");
+
+      // taking it away brings back the room's own
+      const placed = page.getByRole("button", { name: kind.second, exact: true });
+      await placed.click();
+      await placed.getByText("Remove").click();
+      await expect(page.getByRole("status")).toHaveText(`${kind.second} ${kind.is} back in your inventory`);
+      await expect.poll(looks).toBe(own);
+    });
+  }
 });
 
-test("lamps stay as they were after a look at My Shelf", async ({ page }) => {
-  await open(page, "mine");
-  await goToPlace(page, "Chair");
-  await page.getByRole("button", { name: "Floor lamp" }).click();
-  await page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).click({ position: { x: 8, y: 8 } });
-  await page.getByRole("link", { name: "Back to room" }).click();
-  await expect(page.getByRole("button", { name: "Floor lamp" })).toHaveAttribute("aria-pressed", "false");
-});
+test.describe("lamps", () => {
+  test("tapping a lamp switches it off, and on again", async ({ page }) => {
+    await open(page, "mine");
+    await goToPlace(page, "Chair");
+    const lamp = page.getByRole("button", { name: "Floor lamp" });
+    await expect(lamp).toHaveAttribute("aria-pressed", "true");
+    const on = await artColour(page, ...FLOOR_SHADE);
 
-test("a themed wall still darkens at night", async ({ page }) => {
-  await open(page, "ayaan");
-  const day = brightness(await colourAt(page, ...WALL));
-  isDay = false;
-  await page.reload();
-  await expect(page.getByRole("img", { name: /night/ }).first()).toBeAttached();
-  await open(page, "ayaan");
-  expect(brightness(await colourAt(page, ...WALL))).toBeLessThan(day - 60);
+    await lamp.click();
+    await expect(lamp).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(() => artColour(page, ...FLOOR_SHADE)).not.toBe(on);
+    await lamp.click();
+    await expect(lamp).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => artColour(page, ...FLOOR_SHADE)).toBe(on);
+
+    await goToPlace(page, "Bed");
+    const table = page.getByRole("button", { name: "Table lamp" });
+    await expect(table).toHaveAttribute("aria-pressed", "true");
+    const tableOn = await artColour(page, ...TABLE_SHADE);
+    await table.click();
+    await expect(table).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(() => artColour(page, ...TABLE_SHADE)).not.toBe(tableOn);
+    // switching a lamp opens nothing
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("at night a switched-off lamp leaves its corner dark", async ({ page }) => {
+    await mockWeather(page, { isDay: false });
+    await open(page, "mine");
+    await goToPlace(page, "Chair");
+    const lit = brightness(await artColour(page, ...BESIDE_LAMP));
+    await page.getByRole("button", { name: "Floor lamp" }).click();
+    await expect.poll(async () => brightness(await artColour(page, ...BESIDE_LAMP))).toBeLessThan(lit - 30);
+  });
+
+  test("lamps stay as they were after a look at My Shelf", async ({ page }) => {
+    await open(page, "mine");
+    await goToPlace(page, "Chair");
+    await page.getByRole("button", { name: "Floor lamp" }).click();
+    await page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).click({ position: { x: 8, y: 8 } });
+    await page.getByRole("link", { name: "Back to room" }).click();
+    await expect(page.getByRole("button", { name: "Floor lamp" })).toHaveAttribute("aria-pressed", "false");
+  });
 });

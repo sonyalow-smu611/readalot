@@ -210,6 +210,18 @@ Written by Claude Code at Sonz's request, test first, from the spec in
 | Lamps | `client/src/buildings/house/lamps.js`, `components/RoomStrip.vue`, `strip/paint.js`, `strip/layout.js` | The floor and table lamps switch on and off when tapped; a lamp that's off lights nothing at night |
 | Tests | `tests/e2e/room-themes.spec.js`, `tests/e2e/fixtures.js` (the `goToPlace` helper), `room.spec.js`, `furniture.spec.js`, `visit-room.spec.js`, `bookshelf.spec.js`, `my-shelf.spec.js`, `house-desktop.spec.js` | The theme, Shop and lamp journeys. The Places menu, weather chip and bare-room checks. Every spec goes to places through the menu |
 
+### End-to-end tests: shared helpers, stable selectors, no fixed waits (AI-generated)
+
+Written by Claude Code at Sonz's request, reviewing the house's Playwright tests against the
+course's testing criteria.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shared helpers | `tests/e2e/fixtures.js` | One place for the fixed answers (weather, time, quote, mood check-in), waiting for the room, sliding to a place, reading a canvas pixel, and buying from the Shop |
+| Specs | `tests/e2e/room.spec.js`, `furniture.spec.js`, `room-themes.spec.js`, `visit-room.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `house-desktop.spec.js`, `mood-result.spec.js` | Grouped into `test.describe` journeys. Fixed waits replaced by waiting for the room to settle or the next paint. CSS selectors replaced by roles and a few test ids. The weather mocked everywhere. The curtains and bedding tests became one table-driven test |
+| Test ids | `client/src/buildings/house/components/RoomStrip.vue`, `RoomDock.vue` | `room-canvas`, `room-cats`, `card-name` and `card-price` for the checks that have nothing to name |
+| README | `README.md` | The Testing section: how to run, debug and report, how the tests are written, and what each file covers |
+
 ### Readalot Town: the map home page and the building skeleton (AI-generated)
 
 Written by Claude Code at the team's request (stack chosen by the team: Phaser 3, one map
