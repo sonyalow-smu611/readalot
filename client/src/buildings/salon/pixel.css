@@ -1,0 +1,38 @@
+/* Scaffolded with AI assistance — see AI_USAGE.md
+   The salon's pixel panels: the colours every salon card uses (like the cafe's and library's
+   signs: dark outlines, hard shadows, warm paper), and the pop a card does when pressed (tilt.js). */
+.salon {
+  --px-ink: #2b1d24;
+  --px-paper: #fff8ef;
+  --px-paper-dark: #f6e6d8;
+  --px-pink: #d0608e;
+  --px-pink-dark: #a84874;
+  --px-pink-light: #f9d3e2;
+  --px-gold: #f6e27a;
+  --px-shadow: 5px 5px 0 var(--px-ink);
+}
+
+.salon .is-popping {
+  animation: px-pop 0.32s steps(4, end);
+}
+
+@keyframes px-pop {
+  40% {
+    scale: 0.97;
+  }
+  75% {
+    scale: 1.015;
+  }
+}
+
+/* cards that tilt glide back when the mouse leaves */
+.salon [data-tilt] {
+  transition: transform 0.18s ease-out;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .salon .is-popping {
+    animation: none;
+  }
+}

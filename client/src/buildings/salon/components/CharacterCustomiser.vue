@@ -4,7 +4,7 @@
 // part. Each part's tile shows the character wearing it; colours are named swatches. Priced
 // parts are locked for now, and parts that clash with the rest say why. Saving is the page's job.
 import { computed, nextTick, ref, useId } from 'vue'
-import CharacterFigure from '@/components/shared/CharacterFigure.vue'
+import CharacterSprite from '@/components/shared/CharacterSprite.vue'
 import { CATALOGUE, SLOTS, applyChoice, blockedReason, isUnlocked } from '@/lib/avatar/catalogue.js'
 
 const props = defineProps({
@@ -110,7 +110,7 @@ function moveTab(event) {
             />
             <span v-if="option.swatch" class="option__swatch" :style="{ background: option.swatch }" />
             <span v-else-if="option.preview" class="option__crop">
-              <CharacterFigure :character="option.preview" :crop="CROPS[group.id]" decorative />
+              <CharacterSprite :character="option.preview" :crop="CROPS[group.id]" :scale="2" decorative />
             </span>
             <span class="option__label" :class="{ 'visually-hidden': option.swatch }">{{ option.label }}</span>
             <!-- kept out of the radio's name, read as its description instead -->
@@ -247,9 +247,11 @@ function moveTab(event) {
 }
 
 .option__crop {
-  display: block;
+  display: grid;
+  place-items: center;
   width: 64px;
   height: 56px;
+  overflow: hidden;
 }
 
 .option__label {

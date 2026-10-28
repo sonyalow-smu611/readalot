@@ -324,3 +324,15 @@ Dylan reviews the `TownScene.js` change.
 | Arrival | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue`, `client/src/stores/user.js` | A new reader's town opens already framed on their house (`start`), so Welcome's zoom and the town's first frame are one move; a stop the camera is already on doesn't zoom out and in again |
 | Spotlight | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/components/GuideTour.vue` | Each stop puts the building in the top third of the screen and reports where it is; the card spotlights it and sits under it with an arrow, never over it; the drag hint hides during the tour |
 | Tests | `tests/e2e/onboarding.spec.js` | The card is below the building at every stop |
+
+### Pixel characters, the salon room and the profile tab (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 2).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Characters | `client/src/components/shared/CharacterSprite.vue`, `PixelCharacter.vue`, `CharacterPresetPicker.vue`, `client/src/views/WelcomeView.vue`, `client/src/buildings/salon/components/CharacterCustomiser.vue` | Welcome and the salon draw the reader as the map's pixel sprite: crops for the customiser's buttons, closed eyes for blinking, and a live version that breathes, blinks, hops on a change and walks on the spot. Welcome shows a big one over the presets. The smooth figure (`CharacterFigure.vue`) and the 3D model (`characterModel.js`, `CharacterModel.vue`) are removed |
+| Salon room | `client/src/buildings/salon/salonArt.js`, `components/SalonStage.vue`, `components/SalonBackdrop.vue` | The salon redrawn at the cafe's and library's pixel size: window onto the town, neon sign, posters, shelves, lamps, basin and dryers; a tall mirror with the reader's reflection in its glass, the counter and the barber chair, the reader standing beside it |
+| Leaving | `client/src/buildings/salon/SalonView.vue`, `components/ConfirmDialog.vue` | Save look and leave, Discard and leave, or Stay; logging out asks before signing out, so the look can still be saved |
+| Profile tab | `client/src/buildings/salon/pixel.css`, `tilt.js`, `components/CountUp.vue`, `PixelConfetti.vue`, `ProfileBlock.vue`, `ReaderCard.vue`, `FavouriteGenres.vue`, `StyleStudio.vue`, `SalonView.vue` | Pixel panels in the town's colours, cards that lean toward the mouse and pop when pressed, counts that count up, bouncing genre chips, pixel confetti on every save, the reader's sprite in place of the emoji; on a phone the widgets are a sheet under the reader that pulls up |
+| Docs and tests | `AGENTS.md`, `tests/e2e/salon.spec.js` | How characters are drawn now; the leave choices, Save look and leave, and the reader and their reflection |

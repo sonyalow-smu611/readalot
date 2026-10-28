@@ -1,9 +1,10 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The five ready-made characters as a radio group. Used by Welcome and by the salon's
-// "Start from preset" row. It only reports the choice; the page that uses it saves it.
+// The five ready-made characters as a radio group, drawn as the town's pixel sprites. Used by
+// Welcome and by the salon's "Start from preset" row. It only reports the choice; the page that
+// uses it saves it.
 import { useId } from 'vue'
-import CharacterFigure from '@/components/shared/CharacterFigure.vue'
+import CharacterSprite from '@/components/shared/CharacterSprite.vue'
 import { PRESETS, presetCharacter } from '@/lib/avatar/catalogue.js'
 
 defineProps({
@@ -34,7 +35,7 @@ const presets = PRESETS.map((preset) => ({ ...preset, character: presetCharacter
         />
         <span class="preset-picker__card">
           <span class="preset-picker__figure">
-            <CharacterFigure :character="preset.character" decorative />
+            <CharacterSprite :character="preset.character" :scale="2" decorative />
           </span>
           <span class="preset-picker__name">{{ preset.label }}</span>
         </span>
@@ -95,9 +96,12 @@ const presets = PRESETS.map((preset) => ({ ...preset, character: presetCharacter
 }
 
 .preset-picker__figure {
-  display: block;
+  display: grid;
+  place-items: end center;
   width: 100%;
-  height: 92px;
+  height: 120px;
+  border-radius: 6px;
+  background: linear-gradient(#f6eadf 0 78%, #e6d2c0 78%);
 }
 
 .preset-picker__name {
@@ -114,6 +118,17 @@ input:checked + .preset-picker__card {
   border-color: var(--rl-primary);
   background: var(--rl-secondary);
   transform: translateY(-2px);
+}
+
+/* the chosen one hops up a pixel */
+input:checked + .preset-picker__card .preset-picker__figure :deep(canvas) {
+  animation: preset-hop 0.4s steps(4, end);
+}
+
+@keyframes preset-hop {
+  40% {
+    transform: translateY(-8px);
+  }
 }
 
 input:focus-visible + .preset-picker__card {
@@ -136,6 +151,10 @@ fieldset:disabled .preset-picker__input {
 
   input:checked + .preset-picker__card {
     transform: none;
+  }
+
+  input:checked + .preset-picker__card .preset-picker__figure :deep(canvas) {
+    animation: none;
   }
 }
 </style>

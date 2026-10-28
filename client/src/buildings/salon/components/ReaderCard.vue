@@ -1,7 +1,11 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The reader's name, email and avatar, an Edit button, and their three shelf counts.
+// The reader's name, email and character, an Edit button, and their three shelf counts, which
+// count up as the card opens. A pixel panel that leans toward the mouse and pops when pressed.
+import CharacterSprite from '@/components/shared/CharacterSprite.vue'
+import CountUp from '@/buildings/salon/components/CountUp.vue'
 import { SHELF_STATS } from '@/buildings/salon/profileOptions.js'
+import { vTilt } from '@/buildings/salon/tilt.js'
 
 defineProps({
   profile: { type: Object, required: true },
@@ -16,9 +20,11 @@ const emit = defineEmits(['edit', 'open-list'])
 </script>
 
 <template>
-  <div class="reader-card">
+  <div v-tilt class="reader-card" data-tilt>
     <div class="reader-card__who">
-      <span class="avatar" aria-hidden="true">{{ profile.avatar }}</span>
+      <span class="avatar" aria-hidden="true">
+        <CharacterSprite :character="profile.character" crop="head" :scale="2" decorative />
+      </span>
       <div class="reader-card__name">
         <h2 class="h3 mb-0 text-truncate">{{ profile.name }}</h2>
         <p class="text-muted mb-0 text-truncate">{{ profile.email }}</p>
@@ -42,7 +48,10 @@ const emit = defineEmits(['edit', 'open-list'])
           :disabled="!ready"
           @click="emit('open-list', stat.status, $event.currentTarget)"
         >
-          <span class="stat__count">{{ ready ? counts[stat.status] : '–' }}</span>
+          <span class="stat__count">
+            <CountUp v-if="ready" :value="counts[stat.status]" />
+            <template v-else>–</template>
+          </span>
           <span class="stat__label">{{ stat.label }}</span>
         </button>
       </li>
@@ -53,13 +62,14 @@ const emit = defineEmits(['edit', 'open-list'])
 <style scoped>
 .reader-card {
   padding: 16px;
-  border: 2px solid rgba(30, 26, 36, 0.85);
-  border-radius: 18px;
-  box-shadow: 5px 5px 0 rgba(30, 26, 36, 0.22);
-  backdrop-filter: blur(8px);
+  border: 3px solid var(--px-ink, #2b1d24);
+  border-radius: 4px;
+  box-shadow: inset 0 -4px 0 rgba(43, 29, 36, 0.08), var(--px-shadow, 5px 5px 0 #2b1d24);
+  /* a pink pixel stripe across the top, like an awning */
   background:
-    radial-gradient(circle at 92% 0%, rgba(242, 160, 184, 0.35), transparent 40%),
-    rgba(255, 253, 249, 0.96);
+    repeating-linear-gradient(90deg, var(--px-pink, #d0608e) 0 16px, var(--px-pink-light, #f9d3e2) 16px 32px) top / 100% 10px no-repeat,
+    var(--px-paper, #fff8ef);
+  padding-top: 22px;
 }
 
 .reader-card__who {
@@ -94,14 +104,13 @@ const emit = defineEmits(['edit', 'open-list'])
 .avatar {
   flex: none;
   display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border: 2px solid #1e1a24;
+  place-items: end center;
+  width: 68px;
+  height: 68px;
+  overflow: hidden;
+  border: 3px solid var(--px-ink, #2b1d24);
   border-radius: 999px;
-  background: #fbe7f0;
-  font-size: 2rem;
-  line-height: 1;
+  background: radial-gradient(circle at 50% 35%, #fff2c9, var(--px-pink-light, #f9d3e2) 70%);
 }
 
 .stats {
