@@ -7,7 +7,8 @@ import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 
 // A new reader's first tour, played once in the town after Welcome: Next zooms the camera out and
 // back in on each building in turn (focus: a place id from town/places.js, which TownView glides
-// to). A step with no target and no focus shows its card over a dimmed screen. Finishing or
+// to). Once there, the map marks where the building is (data-tour-spot) and the card spotlights
+// it and sits below it. A step with no target and no focus shows its card over a dimmed screen. Finishing or
 // skipping saves profiles.tour_seen_at, so it never plays again on any device.
 const GUIDE_STEPS = [
   {
@@ -20,7 +21,7 @@ const GUIDE_STEPS = [
   {
     id: 'town-house',
     to: '/',
-    target: null,
+    target: '[data-tour-spot="house"]',
     focus: 'house',
     title: 'Your house',
     copy: 'This blue house is yours. Inside is My Room: your bookshelf, the window with the live weather, and the chair with the book you are reading.',
@@ -28,7 +29,7 @@ const GUIDE_STEPS = [
   {
     id: 'town-library',
     to: '/',
-    target: null,
+    target: '[data-tour-spot="library"]',
     focus: 'library',
     title: 'The library',
     copy: 'Discover books here: search for a title, browse shelves by genre, and open any book to read about it.',
@@ -36,7 +37,7 @@ const GUIDE_STEPS = [
   {
     id: 'town-cafe',
     to: '/',
-    target: null,
+    target: '[data-tour-spot="cafe"]',
     focus: 'cafe',
     title: 'The cafe',
     copy: 'Meet other readers. See who reads like you, find them on the map, and follow them.',
@@ -44,7 +45,7 @@ const GUIDE_STEPS = [
   {
     id: 'town-salon',
     to: '/',
-    target: null,
+    target: '[data-tour-spot="salon"]',
     focus: 'salon',
     title: 'The hair salon',
     copy: 'Restyle your character here, and edit your profile, your lists and your privacy.',
@@ -52,7 +53,7 @@ const GUIDE_STEPS = [
   {
     id: 'town-friend',
     to: '/',
-    target: null,
+    target: '[data-tour-spot="friend-reader-emma"]',
     focus: 'friend-reader-emma',
     title: 'Friends’ houses',
     copy: 'The small houses belong to readers you know. Tap one to visit their room and see their shelves.',
@@ -99,6 +100,8 @@ export const useUserStore = defineStore('user', () => {
   const profileComplete = computed(() => hasProfile.value)
   const guide = computed(() => (guideStep.value >= 0 ? GUIDE_STEPS[guideStep.value] : null))
   const guideCount = computed(() => GUIDE_STEPS.length)
+  // a new reader on their way to the town for the first time: the tour is about to start
+  const tourPending = computed(() => hasProfile.value && !tourSeen.value)
 
   function findReader(id) {
     return readers.value.find((reader) => reader.id === id) ?? null
@@ -209,6 +212,7 @@ export const useUserStore = defineStore('user', () => {
     profileComplete,
     profileError,
     tourSeen,
+    tourPending,
     findReader,
     applySession,
     restore,

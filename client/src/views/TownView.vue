@@ -27,6 +27,8 @@ const user = useUserStore()
 const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
+// a new reader straight from Welcome: the map opens on their house, where the tour begins
+const arrivingForTour = user.tourPending
 const selected = ref(null)
 const placesOpen = ref(false)
 const friendsOpen = ref(false)
@@ -219,6 +221,7 @@ function goInside(place) {
   <section class="town" aria-label="Readalot Town">
     <TownMap
       :focus="focus"
+      :start="arrivingForTour ? 'house' : ''"
       :enter="walk"
       :character="profile.character"
       :friends="friendsInTown"
@@ -245,7 +248,7 @@ function goInside(place) {
     <WeatherButton v-if="ready" :mode="skyMode" :weather="weather" @change="skyMode = $event" />
 
     <Transition name="town-fade">
-      <p v-if="hint && ready && !selected && !friendId && !entering" class="town__hint">Drag to look around. Tap a building to go in.</p>
+      <p v-if="hint && ready && !selected && !friendId && !entering && !guide" class="town__hint">Drag to look around. Tap a building to go in.</p>
     </Transition>
     <Transition name="town-fade">
       <p v-if="entering" class="town__hint" role="status">{{ walkingTo }}</p>

@@ -4,13 +4,15 @@
 // states. It says which building was tapped (select), which friend out walking was tapped
 // (select-friend) and when your character has walked inside one (inside); the parent says which one to glide to (focus), which one to walk into (enter),
 // what you look like (character) and what the weather is (sky).
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Phaser from 'phaser'
 import TownScene from '@/town/TownScene.js'
 
 const props = defineProps({
-  // { id, key }: glide to that building. A new key repeats the same building.
+  // { id, key, tour }: glide to that building. A new key repeats the same building.
   focus: { type: Object, default: null },
+  // a place id to open on, framed as the first tour frames it (a new reader arriving)
+  start: { type: String, default: '' },
   // { id, key }: walk your character to that building and in through its door
   enter: { type: Object, default: null },
   // the reader's saved character (see lib/avatar/catalogue.js)
@@ -32,6 +34,13 @@ const host = ref(null)
 const state = ref('loading') // loading | ready | error
 // whether the camera keeps your character in the middle of the screen
 const following = ref(false)
+// where the tour's building is on screen, { id, x, y, w, h }: an empty box the tour card measures
+const spot = ref(null)
+const spotStyle = computed(() =>
+  spot.value
+    ? { left: `${spot.value.x}px`, top: `${spot.value.y}px`, width: `${spot.value.w}px`, height: `${spot.value.h}px` }
+    : null,
+)
 let game = null
 let scene = null
 
@@ -50,6 +59,7 @@ function toggleFollow() {
 watch(
   () => props.focus,
   (request) => {
+    spot.value = null
     if (request && state.value === 'ready') scene.focusPlace(request.id, { tour: request.tour })
   },
 )
@@ -101,6 +111,10 @@ onMounted(() => {
   scene = new TownScene({
     reducedMotion,
     character: props.character,
+    start: props.start,
+    onTourSpot: (box) => {
+      spot.value = box
+    },
     onSelect: (place) => emit('select', place),
     onFollow: (on) => {
       following.value = on
@@ -138,6 +152,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="town-map">
     <div ref="host" class="town-map__canvas" aria-hidden="true"></div>
+    <div v-if="spot" class="town-map__spot" :data-tour-spot="spot.id" :style="spotStyle" aria-hidden="true"></div>
     <p v-if="state === 'loading'" class="town-map__state">Loading the town…</p>
     <p v-else-if="state === 'error'" class="town-map__state" role="alert">
       The town map could not load. Check your connection and refresh, or use Places to go straight to a building.
@@ -172,6 +187,11 @@ onBeforeUnmount(() => {
 .town-map__canvas {
   position: absolute;
   inset: 0;
+}
+
+.town-map__spot {
+  position: absolute;
+  pointer-events: none;
 }
 
 .town-map__state {

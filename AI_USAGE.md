@@ -313,3 +313,14 @@ waived the limit on AI-written logic for the sign-in work; Dylan reviews the `To
 | Camera | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue` | On the tour, each Next zooms out to the whole town and back in on the next building |
 | Server | `server/src/middleware/auth.js` | With no Supabase on the server, every request is the demo user, even with a token |
 | Tests | `tests/e2e/supabaseUser.js`, `tests/e2e/fixtures.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/auth.spec.js`, `tests/e2e/salon.spec.js`, `playwright.config.js`, `.env.example` | Test readers made with the service-role key and signed in directly (one per Playwright worker, profile reset before each test, to stay under Supabase's sign-in rate limit); new-reader, skip and returning-reader journeys; specs skip without keys |
+
+### First tour: one arrival move and a spotlight card (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 1).
+Dylan reviews the `TownScene.js` change.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Arrival | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue`, `client/src/stores/user.js` | A new reader's town opens already framed on their house (`start`), so Welcome's zoom and the town's first frame are one move; a stop the camera is already on doesn't zoom out and in again |
+| Spotlight | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/components/GuideTour.vue` | Each stop puts the building in the top third of the screen and reports where it is; the card spotlights it and sits under it with an arrow, never over it; the drag hint hides during the tour |
+| Tests | `tests/e2e/onboarding.spec.js` | The card is below the building at every stop |
