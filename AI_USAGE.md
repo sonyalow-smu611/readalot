@@ -378,3 +378,16 @@ Dylan reviews the badge (`PlayerBadge.vue`, `TownHud.vue`, `TownView.vue`, `Weat
 | Map badge | `client/src/components/town/PlayerBadge.vue`, `TownHud.vue`, `WeatherButton.vue`, `client/src/views/TownView.vue`, `client/src/components/shared/CountUp.vue` | The reader's face in an XP ring with the level on a gold tab, name and coins, in the bottom-left corner (the weather chip moves to the top left); it bobs and blinks, floats "+XP", and pops on a level-up |
 | Salon | `client/src/buildings/salon/components/LevelCard.vue`, `SalonView.vue` | A Reader level card with XP counting up, a filling bar, the next level's coins and how to earn XP; confetti on a level-up |
 | Tests | `tests/e2e/progress.spec.js`, `tests/e2e/supabaseUser.js` | The badge, a visit's XP once a day, level-up coins, the Shop's saved coins, and the database refusing coins a reader sets |
+
+### Big signs over the four main buildings (AI-generated)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session: smooth
+bronze-and-gem signs like a game menu, one shared frame with the building's accent as the gem, a
+motif per building, the name with its app section underneath, Fredoka for the words. Friends'
+houses keep their name tags.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The sign art as SVG built from `places.js` (frame, cushion-cut gem, book, coffee cup, roof with chimney, comb and scissors), the live text, and the motion: bob, a shine across the gem, the ribbon swaying, steam and chimney smoke, the scissors snipping; a lantern glow after dark; brighter while chosen. All motion stops with reduced motion |
+| Scene | `client/src/town/TownScene.js` | Loads the signs and the font; signs replace the name tags on the four buildings, are tappable like their building, grow when it pops, and follow the night and the chosen building |
+| Font | `client/public/town/signs/fredoka-bold.woff2` | Fredoka Bold (Latin), from Google Fonts, SIL Open Font License |
