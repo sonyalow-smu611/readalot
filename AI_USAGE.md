@@ -339,3 +339,16 @@ waived the limit on AI-written logic for the sign-in work; Dylan reviews the `To
 | Camera | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue` | On the tour, each Next zooms out to the whole town and back in on the next building |
 | Server | `server/src/middleware/auth.js` | With no Supabase on the server, every request is the demo user, even with a token |
 | Tests | `tests/e2e/supabaseUser.js`, `tests/e2e/fixtures.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/auth.spec.js`, `tests/e2e/salon.spec.js`, `playwright.config.js`, `.env.example` | Test readers made with the service-role key and signed in directly (one per Playwright worker, profile reset before each test, to stay under Supabase's sign-in rate limit); new-reader, skip and returning-reader journeys; specs skip without keys |
+
+### Big signs over the four main buildings (AI-generated)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session: smooth
+bronze-and-gem signs like a game menu, one shared frame with the building's accent as the gem, a
+motif per building, the name with its app section underneath, Fredoka for the words. Friends'
+houses keep their name tags.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The sign art as SVG built from `places.js` (frame, cushion-cut gem, book, coffee cup, roof with chimney, comb and scissors), the live text, and the motion: bob, a shine across the gem, the ribbon swaying, steam and chimney smoke, the scissors snipping; a lantern glow after dark; brighter while chosen. All motion stops with reduced motion |
+| Scene | `client/src/town/TownScene.js` | Loads the signs and the font; signs replace the name tags on the four buildings, are tappable like their building, grow when it pops, and follow the night and the chosen building |
+| Font | `client/public/town/signs/fredoka-bold.woff2` | Fredoka Bold (Latin), from Google Fonts, SIL Open Font License |
