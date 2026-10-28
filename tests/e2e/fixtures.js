@@ -1,20 +1,12 @@
 import { test as base, expect } from "@playwright/test";
 import { createReader, hasSupabase, NEEDS_SUPABASE, resetProfile, signInPage } from "./supabaseUser.js";
 
-<<<<<<< HEAD
-// Shared set-up and helpers for the end-to-end tests. Specs import `test` and `expect` from here,
-// not from @playwright/test, so every test starts the same way.
-
-// The app sends a signed-out visitor to Log in. Every test starts already signed in, as "Reader",
-// the way the app does with no Supabase keys.
-=======
 const PROFILE = { name: "Reader", favouriteGenres: ["Fantasy"] };
 
 // The app sends a signed-out visitor to Log in. These tests cover the town, the room and the
 // shelves, so each one starts as a returning reader: signed in, profile saved, tour already seen.
 // Supabase limits how often anyone can sign in, so each worker signs in one reader once and every
 // test puts that reader's profile back the way it was.
->>>>>>> origin/main
 export const test = base.extend({
   account: [
     async ({}, use) => {
