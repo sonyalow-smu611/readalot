@@ -93,25 +93,29 @@ async function submit() {
   busy.value = true
   error.value = ''
   const result = await verifyEmailCode(email.value, code.value, pending.purpose)
-  busy.value = false
   if (result.error) {
+    busy.value = false
     error.value = result.error.message
     stage.value?.shake()
     return
   }
   if (!result.data?.session) {
+    busy.value = false
     error.value = 'That code did not sign you in. Request a new one.'
     stage.value?.shake()
     return
   }
-  user.applySession(result.data.session)
-  if (pending.purpose === 'signup') user.expectTour()
-  else user.clearTour()
+  // sealed before the profile loads: the code is used up, so it must not be sent again
   sealed.value = true
+  busy.value = false
   hop.value += 1
-  leaveTimer = window.setTimeout(() => {
-    router.push({ name: user.profileComplete ? 'profile' : 'welcome' })
-  }, prefersReducedMotion() ? 400 : 1500)
+  await user.applySession(result.data.session)
+  // the tick plays, then a returning reader drops into town (about 1.5s in all); a new reader
+  // stays on this scene for Welcome
+  leaveTimer = window.setTimeout(async () => {
+    if (user.profileComplete) await stage.value?.enterTown()
+    router.push({ name: user.profileComplete ? 'town' : 'welcome' })
+  }, prefersReducedMotion() ? 400 : 900)
 }
 
 async function resend() {

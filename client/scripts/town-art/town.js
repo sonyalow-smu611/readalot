@@ -78,12 +78,11 @@
   E(m, lake.x, lake.y, lake.rx - 12, lake.ry - 10, '#4f9fc9')
   stamp(river, 38, '#4f9fc9')
   E(m, lake.x + 20, lake.y + 6, lake.rx - 70, lake.ry - 46, '#3f8fbf')
-  for (let k = 0; k < 260; k++) {
-    const i = ri(0, river.length - 2)
-    const [rx0, ry0] = river[i]
-    R(m, rx0 + ri(-28, 20), ry0 + ri(-30, 30), ri(4, 9), 1, '#9fd4ee')
-  }
-  for (let k = 0; k < 80; k++) R(m, lake.x + ri(-lake.rx + 40, lake.rx - 40), lake.y + ri(-lake.ry + 30, lake.ry - 30), ri(4, 10), 1, '#9fd4ee')
+  // The river and lake once had short light dashes here; the app now draws flowing currents
+  // over the water instead (src/town/water.js). The dashes' random numbers are still used up,
+  // so everything drawn after them stays where it was.
+  for (let k = 0; k < 260; k++) [ri(0, river.length - 2), ri(-28, 20), ri(-30, 30), ri(4, 9)]
+  for (let k = 0; k < 80; k++) [ri(-lake.rx + 40, lake.rx - 40), ri(-lake.ry + 30, lake.ry - 30), ri(4, 10)]
 
   // a waterfall where the river drops over a rocky ledge near the top edge
   {
@@ -440,7 +439,10 @@
       for (let k = 0; k < 5; k++) P(x, X + 2 + k * (w / 5), Y + h + 1, ['#f2a0b8', '#f6e27a', '#fdf7ec'][k % 3])
     } else R(x, X - 2, Y + h, w + 4, 3, shade(frame, 0.85))
   }
+  // each building's front door, so the app can open it (see building())
+  let doorLog = null
   const door2 = (x, X, Y, w, h, col, o = {}) => {
+    if (doorLog) doorLog.door = [X, Y, w, h, col, Boolean(o.double)]
     R(x, X - 3, Y - 3, w + 6, h + 3, o.frame ?? '#f4efe2')
     R(x, X, Y, w, h, col)
     if (o.double) R(x, X + w / 2 - 1, Y, 2, h, shade(col, 0.6))
@@ -478,15 +480,173 @@
     })
   }
 
+  // ---------------------------------------------------------------- houses left alone
+  // A friend's cottage drawn again as it looks after they have been away a month ('dusty'), two
+  // months ('neglected') or three months and more ('derelict'). Each stage keeps everything the
+  // one before had and adds more. The decay goes on top of the clean drawing and uses its own
+  // random numbers, so the rest of the town comes out exactly the same.
+  const AGES = ['dusty', 'neglected', 'derelict']
+  const WEB = 'rgba(238,238,244,0.92)'
+  const seeded = (text) => {
+    let seed = [...text].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) & 0x7fffffff, 7)
+    return () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff
+      return seed / 0x7fffffff
+    }
+  }
+  // a one-pixel thread from (x0, y0) to (x1, y1)
+  const thread = (x, x0, y0, x1, y1, col) => {
+    const steps = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))))
+    for (let i = 0; i <= steps; i++) P(x, x0 + ((x1 - x0) * i) / steps, y0 + ((y1 - y0) * i) / steps, col)
+  }
+  // a web in a corner at (X, Y), reaching r px out; dx and dy say which way the corner opens
+  const cobweb = (x, X, Y, r, dx, dy) => {
+    for (let k = 0; k < 5; k++) {
+      const a = (k / 4) * (Math.PI / 2)
+      thread(x, X, Y, X + dx * Math.cos(a) * r, Y + dy * Math.sin(a) * r, WEB)
+    }
+    for (let ring = r / 3; ring <= r + 0.1; ring += r / 3) {
+      const dots = Math.round(ring * 1.7)
+      for (let k = 0; k <= dots; k++) {
+        const a = (k / dots) * (Math.PI / 2)
+        // each ring sags a little towards the corner between the threads
+        const sag = 1 - 0.12 * Math.sin(((k / dots) * 4 % 1) * Math.PI)
+        P(x, X + dx * Math.cos(a) * ring * sag, Y + dy * Math.sin(a) * ring * sag, WEB)
+      }
+    }
+  }
+  // a web hanging from (X, Y) on a long thread
+  const hangingWeb = (x, X, Y, drop, r) => {
+    thread(x, X, Y, X, Y + drop, WEB)
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2
+      thread(x, X, Y + drop, X + Math.cos(a) * r, Y + drop + Math.sin(a) * r, WEB)
+    }
+    for (let k = 0; k < 18; k++) {
+      const a = (k / 18) * Math.PI * 2
+      P(x, X + Math.cos(a) * r * 0.6, Y + drop + Math.sin(a) * r * 0.6, WEB)
+    }
+  }
+  const tufts = (x, rnd, X0, X1, ground, tall) => {
+    for (let xx = X0; xx < X1; xx += 2 + Math.floor(rnd() * (tall ? 4 : 9))) {
+      const h = tall ? 5 + Math.floor(rnd() * 11) : 2 + Math.floor(rnd() * 4)
+      const col = tall && rnd() < 0.3 ? '#a89a4a' : rnd() < 0.5 ? '#4f8f3a' : '#6aa244'
+      for (let b = -1; b <= 1; b++) thread(x, xx, ground, xx + b * (1 + Math.floor(rnd() * 2)), ground - h + Math.abs(b) * 2, col)
+    }
+  }
+  const ivy = (x, rnd, X, ground, height, lean) => {
+    let vx = X
+    for (let y = ground; y > ground - height; y--) {
+      if (rnd() < 0.35) vx += rnd() < 0.5 ? -1 : 1
+      vx += rnd() < 0.15 ? lean : 0
+      P(x, vx, y, '#3d6b2e')
+      if (y % 3 === 0) {
+        const side = rnd() < 0.5 ? -1 : 1
+        R(x, vx + side * 2 - (side < 0 ? 1 : 0), y - 1, 2, 2, rnd() < 0.5 ? '#4f8f3a' : '#6aa244')
+      }
+    }
+  }
+  // a crooked plank nailed across from (x0, y0) to (x1, y1)
+  const plank = (x, x0, y0, x1, y1) => {
+    for (let t = -1; t <= 1; t++) thread(x, x0, y0 + t, x1, y1 + t, t ? '#7a5a3a' : '#9a7650')
+    P(x, x0 + 2, y0, '#3a3a3a')
+    P(x, x1 - 2, y1, '#3a3a3a')
+  }
+  function weather(x, level, { id, L, eave, w, wallH, roofH, ov, roof, windows: panes, door }) {
+    const rnd = seeded(`${id}-${level}`)
+    const stage = AGES.indexOf(level) + 1
+    const old = stage >= 2
+    // dirt on the walls, and rain streaks under the windows
+    R(x, L, eave, w, wallH, `rgba(96,84,60,${[0, 0.1, 0.22, 0.3][stage]})`)
+    for (const [wx, wy, ww, wh] of panes) {
+      R(x, wx, wy, ww, wh, old ? 'rgba(70,62,46,0.55)' : 'rgba(84,74,54,0.35)')
+      for (let k = 0; k < 3; k++) R(x, wx + rnd() * ww, wy + wh + 3, 1 + Math.round(rnd()), 4 + rnd() * (old ? 16 : 8), 'rgba(70,60,40,0.3)')
+    }
+    // webs tucked under the eaves
+    cobweb(x, L + 4, eave + 4, old ? 16 : 9, 1, 1)
+    cobweb(x, L + w - 5, eave + 4, old ? 14 : 7, -1, 1)
+    if (!old) return
+    const rows = []
+    polyRows(roof, (y, a, b) => rows.push([y, a, b]))
+    // three months gone: the paint peels, a patch of roof has fallen in, every window is boarded
+    if (stage >= 3) {
+      for (let k = 0; k < 14; k++) {
+        const px = L + 6 + rnd() * (w - 16)
+        const py = eave + 8 + rnd() * (wallH - 24)
+        R(x, px, py, 3 + rnd() * 6, 2 + rnd() * 3, 'rgba(236,228,206,0.55)')
+        P(x, px, py + 3, 'rgba(60,50,36,0.5)')
+      }
+      const [hy, ha, hb] = rows[Math.floor(rows.length * 0.45)]
+      const hx = ha + (hb - ha) * 0.3
+      E(x, hx + 9, hy, 11, 6, '#1e1612')
+      for (let k = 0; k < 4; k++) R(x, hx + 1 + k * 5, hy - 5, 2, 11, '#6b4a2e')
+    }
+
+    // two months away: moss and gaps in the roof
+    for (let k = 0; k < (stage >= 3 ? 26 : 16); k++) {
+      const [y, a, b] = rows[4 + Math.floor(rnd() * (rows.length - 8))]
+      const xx = a + 6 + rnd() * Math.max(1, b - a - 12)
+      if (k % 3 === 0) R(x, xx, y, 6, 3, '#2e2622')
+      else {
+        E(x, xx, y, 4, 2, '#5f7f3e')
+        P(x, xx - 1, y - 1, '#86a85a')
+      }
+    }
+    // one window boarded up, the others cracked (all of them boarded after three months)
+    panes.forEach(([wx, wy, ww, wh], i) => {
+      if (i === 0 || stage >= 3) {
+        plank(x, wx - 3, wy - 2, wx + ww + 2, wy + wh + 1)
+        plank(x, wx - 3, wy + wh + 1, wx + ww + 2, wy - 2)
+        if (stage >= 3) plank(x, wx - 4, wy + wh / 2, wx + ww + 3, wy + wh / 2 - 2)
+      } else {
+        const cx0 = wx + ww * 0.35
+        const cy0 = wy + wh * 0.4
+        for (const [ex, ey] of [[wx, wy + 2], [wx + ww - 1, wy + wh * 0.2], [wx + ww * 0.6, wy + wh - 1], [wx + 1, wy + wh * 0.8]]) thread(x, cx0, cy0, ex, ey, '#2a3440')
+      }
+    })
+    // more webs, one hanging over the door, ivy up a corner and tall weeds
+    cobweb(x, L + 4, eave + 4, 22, 1, 1)
+    if (door) {
+      const [dX, dY, dw] = door
+      cobweb(x, dX + dw - 1, dY, 9, -1, 1)
+      hangingWeb(x, dX - 8, eave + 5, Math.max(8, dY - eave - 10), 5)
+      if (stage >= 3) {
+        cobweb(x, dX, dY, 12, 1, 1)
+        hangingWeb(x, L + w * 0.55, eave + 5, 18, 6)
+      }
+    }
+    if (stage >= 3) cobweb(x, L + w - 5, eave + 4, 22, -1, 1)
+  }
+  // Weeds and ivy, drawn after the building's dark outline so they don't get one themselves.
+  function overgrowth(x, level, { id, L, eave, w, wallH }) {
+    const rnd = seeded(`${id}-${level}-green`)
+    const stage = AGES.indexOf(level) + 1
+    const ground = eave + wallH + 4
+    if (stage >= 2) {
+      ivy(x, rnd, L + 3, ground - 2, wallH * 0.75, 0)
+      ivy(x, rnd, L + 9, ground - 2, wallH * 0.45, 1)
+      ivy(x, rnd, L + w - 4, ground - 2, wallH * 0.55, -1)
+    }
+    if (stage >= 3) {
+      // ivy right up to the eaves, and across the front
+      ivy(x, rnd, L + 15, ground - 2, wallH * 0.95, 1)
+      ivy(x, rnd, L + w - 12, ground - 2, wallH * 0.9, -1)
+      ivy(x, rnd, L + w * 0.45, ground - 2, wallH * 0.5, 0)
+      tufts(x, rnd, L - 14, L + w + 14, ground, true)
+    }
+    tufts(x, rnd, L - 10, L + w + 10, ground, stage >= 2)
+  }
+
   // one building: a front wall with a roof above it. Returns the door's spot for labels.
+  // o.ages: also draw the 'dusty' and 'neglected' versions (see weather()); o.id names them.
   function building(o) {
     const ov = o.overhang ?? 10
     const roofH = o.roofH
     const pad = 20
     const W = o.w + ov * 2 + pad * 2
     const H = o.wallH + roofH + (o.above ?? 30) + (o.porch ? 18 : 6)
-    windowLog = []
-    const s = sprite(W, H, (x) => {
+    let roofShape = null
+    const paint = (x) => {
       const L = ov + pad
       const eave = (o.above ?? 30) + roofH
       const cx = L + o.w / 2
@@ -511,6 +671,7 @@
       else if (o.roof === 'gambrel')
         roof = [[L - ov, eave + 4], [L - ov + 10, eave - roofH * 0.55], [L + o.w * 0.28, eave - roofH], [L + o.w * 0.72, eave - roofH], [L + o.w + ov - 10, eave - roofH * 0.55], [L + o.w + ov, eave + 4]]
       else roof = [[L - ov, eave + 4], [L + o.w + ov, eave + 4], [L + o.w + ov - roofH * 0.45, eave - roofH], [L - ov + roofH * 0.45, eave - roofH]]
+      roofShape = roof
       shingles(x, roof, o.roofC)
       R(x, L - ov, eave + 2, o.w + ov * 2, 4, shade(o.roofC, 0.55))
       if (o.roof === 'gable') {
@@ -537,15 +698,42 @@
         R(x, L - 8, py - 46, 5, 44, '#f4efe2')
         R(x, L + o.w + 3, py - 46, 5, 44, '#f4efe2')
       }
-    })
+    }
+    windowLog = []
+    doorLog = {}
+    const s = sprite(W, H, paint)
     const lit = windowLog
+    const door = doorLog.door
     windowLog = null
+    doorLog = null
+    const looks = {}
+    if (o.ages) {
+      const shape = { id: o.id, L: ov + pad, eave: (o.above ?? 30) + roofH, w: o.w, wallH: o.wallH, roofH, ov, roof: roofShape, windows: lit, door }
+      for (const level of AGES) {
+        looks[level] = sprite(W, H, (x) => {
+          paint(x)
+          weather(x, level, shape)
+        })
+        // the outline moved the drawing 1 px in
+        const x = looks[level].getContext('2d')
+        x.translate(1, 1)
+        overgrowth(x, level, shape)
+      }
+    }
     const X = o.x - (o.overhang ?? 10) - pad
     groundShadow(o.x + o.w + 4, o.base_y - o.wallH * 0.6, 14, o.wallH * 0.6)
     const art = place(s, X, o.base_y + (o.porch ? 12 : 0))
     // sprite() adds a 1 px outline, so the drawing sits 1 px in from the sprite's corner
     for (const [wx, wy, ww, wh] of lit) windows.push([art.X + 1 + wx, art.Y + 1 + wy, ww, wh])
-    return { left: o.x - ov, right: o.x + o.w + ov, top: o.base_y - o.wallH - o.roofH - (o.above ?? 30), bottom: o.base_y + (o.porch ? 12 : 0), art }
+    return {
+      left: o.x - ov,
+      right: o.x + o.w + ov,
+      top: o.base_y - o.wallH - o.roofH - (o.above ?? 30),
+      bottom: o.base_y + (o.porch ? 12 : 0),
+      art,
+      looks,
+      door: door && { at: [art.X + 1 + door[0], art.Y + 1 + door[1], door[2], door[3]], colour: door[4], double: door[5] },
+    }
   }
 
   // ---------------------------------------------------------------- the four places
@@ -669,18 +857,24 @@
   }), 50.4 * T, ROW3 + 2)
 
   // ---------------------------------------------------------------- filler buildings
-  // the five small houses are friends' homes; their ids are the art names places.js uses
+  // the small houses are friends' homes; their ids are the art names places.js uses
   const filler = (o) => building({ above: 26, ...o })
-  zones['cottage-grey'] = filler({ x: 1 * T, base_y: ROW1, w: 4.2 * T, wallH: 70, roofH: 56, roof: 'gable', roofC: '#4a7fb0', wall: '#8a8f99', texture: 'plank', roundWindow: true,
+  zones['cottage-grey'] = filler({ id: 'cottage-grey', ages: true, x: 1 * T, base_y: ROW1, w: 4.2 * T, wallH: 70, roofH: 56, roof: 'gable', roofC: '#4a7fb0', wall: '#8a8f99', texture: 'plank', roundWindow: true,
     decor: (x, L, eave, cx) => { window2(x, L + 12, eave + 18, 26, 26, { frame: '#e6f0e6', shutters: '#5fb59b' }); door2(x, L + 4.2 * T - 46, eave + 70 - 8 - 44, 26, 44, '#5a8ab0') } })
-  zones['cottage-green'] = filler({ x: 49 * T, base_y: ROW1, w: 4 * T, wallH: 66, roofH: 50, roof: 'hip', roofC: '#5a8a4a', wall: '#f0e2c4', texture: 'siding', chimney: 0.7,
+  zones['cottage-green'] = filler({ id: 'cottage-green', ages: true, x: 49 * T, base_y: ROW1, w: 4 * T, wallH: 66, roofH: 50, roof: 'hip', roofC: '#5a8a4a', wall: '#f0e2c4', texture: 'siding', chimney: 0.7,
     decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 18, 26, 26, { shutters: '#5a8a4a' }); door2(x, L + 4 * T - 42, eave + 66 - 8 - 44, 26, 44, '#a8683f') } })
-  zones['cottage-lilac'] = filler({ x: 0.6 * T, base_y: ROW2, w: 3.6 * T, wallH: 64, roofH: 50, roof: 'hip', roofC: '#8a5432', wall: '#b9a8d8', texture: 'siding',
+  zones['cottage-lilac'] = filler({ id: 'cottage-lilac', ages: true, x: 0.6 * T, base_y: ROW2, w: 3.6 * T, wallH: 64, roofH: 50, roof: 'hip', roofC: '#8a5432', wall: '#b9a8d8', texture: 'siding',
     decor: (x, L, eave, cx) => { window2(x, L + 8, eave + 16, 24, 24, { box: '#6b4226' }); door2(x, L + 3.6 * T - 36, eave + 64 - 8 - 42, 24, 42, '#5a4a8a') } })
-  zones['cottage-white'] = filler({ x: 17.4 * T, base_y: ROW2, w: 4.4 * T, wallH: 72, roofH: 58, roof: 'gable', roofC: '#4a7fb0', wall: '#f4f2ec', texture: 'siding', roundWindow: true, chimney: 0.8,
+  zones['cottage-white'] = filler({ id: 'cottage-white', ages: true, x: 17.4 * T, base_y: ROW2, w: 4.4 * T, wallH: 72, roofH: 58, roof: 'gable', roofC: '#4a7fb0', wall: '#f4f2ec', texture: 'siding', roundWindow: true, chimney: 0.8,
     decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 20, 26, 26, { shutters: '#4a7fb0' }); door2(x, L + 4.4 * T - 44, eave + 72 - 8 - 46, 28, 46, '#4a7fb0', { glass: true }) } })
-  zones['cottage-brick'] = filler({ x: 24.6 * T, base_y: ROW2, w: 4.4 * T, wallH: 70, roofH: 56, roof: 'hip', roofC: '#c0563f', wall: '#f2d7a0', texture: 'brick', chimney: 0.2,
+  zones['cottage-brick'] = filler({ id: 'cottage-brick', ages: true, x: 24.6 * T, base_y: ROW2, w: 4.4 * T, wallH: 70, roofH: 56, roof: 'hip', roofC: '#c0563f', wall: '#f2d7a0', texture: 'brick', chimney: 0.2,
     decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 20, 26, 26, { box: '#6b4226' }); window2(x, L + 4.4 * T - 36, eave + 20, 26, 26, { box: '#6b4226' }); door2(x, cx - 13, eave + 70 - 8 - 44, 26, 44, '#3f6b5a') } })
+
+  // two more friends' homes: one above the north path, one between the south road and the river
+  zones['cottage-rose'] = filler({ id: 'cottage-rose', ages: true, x: 25.4 * T, base_y: 6.3 * T, w: 4.2 * T, wallH: 68, roofH: 56, roof: 'gable', roofC: '#8a3f4a', wall: '#f3d9d4', texture: 'siding', roundWindow: true, chimney: 0.22,
+    decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 18, 26, 26, { shutters: '#8a3f4a' }); door2(x, L + 4.2 * T - 44, eave + 68 - 8 - 44, 26, 44, '#7a3540') } })
+  zones['cottage-teal'] = filler({ id: 'cottage-teal', ages: true, x: 33.4 * T, base_y: ROW2, w: 4.2 * T, wallH: 68, roofH: 52, roof: 'hip', roofC: '#2f6f6a', wall: '#cfe3dc', texture: 'plank', chimney: 0.75,
+    decor: (x, L, eave, cx) => { window2(x, L + 10, eave + 18, 26, 26, { box: '#6b4226' }); door2(x, L + 4.2 * T - 44, eave + 68 - 8 - 44, 26, 44, '#2f5f5a') } })
 
   // farm in the top right: barn, silo, crops
   filler({ x: 47 * T, base_y: 9.6 * T, w: 5.2 * T, wallH: 74, roofH: 64, roof: 'gambrel', roofC: '#4a7fb0', wall: '#b8402f', texture: 'plank', trim: '#f4efe2', base: '#6b6460',
@@ -802,6 +996,8 @@
     if (x0 > plaza.x - 30 && x0 < plaza.x + plaza.w + 30 && y0 > plaza.y - 20 && y0 < plaza.y + plaza.h + 60) return true
     const boxes = [
       [0, 11.5, 5.6, 18], [7, 10, 17, 18], [33, 12, 41, 18], [46, 2, 56, 13.4], [48.4, 13.4, 53.6, 18], [0, 23, 4.6, 29.5], [6.4, 21.5, 14.8, 29.5], [16.8, 22.5, 22.2, 29.5], [24, 22.5, 29.4, 29.5], [44, 24, 52, 31], [2, 5.2, 9.5, 8.6], [31, 33.4, 35, 36.4], [36, 34, 50, 36.6], [41, 36, 47.5, 39.2], [35, 37, 38, 39.6], [50.5, 37.4, 54, 39.6], [29, 0, 31, 9], [20.4, 15.8, 22, 18], [17.2, 19.8, 19, 21.6],
+      // the two newer cottages
+      [24.6, 1.4, 30.4, 6.4], [32.6, 22, 38.6, 28],
     ]
     for (const [a, b2, c, d] of boxes) if (x0 > a * T - r && x0 < c * T + r && y0 > b2 * T - r && y0 < d * T + 20) return true
     if (y0 > 6 * T && y0 < 8.4 * T && x0 > 4 * T && x0 < 50 * T) return true
@@ -835,13 +1031,21 @@
       Object.entries(zones).map(([id, b]) => [id, { x: Math.round(b.left * 2), y: Math.round(b.top * 2), w: Math.round((b.right - b.left) * 2), h: Math.round((b.bottom - b.top) * 2) }]),
     ),
     avatars: avatarSprites.map((s, i) => ({ id: AVATARS[i].name.toLowerCase(), png: scaled(s, 2) })),
-    buildings: Object.entries(zones).map(([id, b]) => ({ id, png: scaled(b.art.spr, 2) })),
+    buildings: Object.entries(zones).flatMap(([id, b]) => [
+      { id, png: scaled(b.art.spr, 2) },
+      ...Object.entries(b.looks).map(([level, spr]) => ({ id: `${id}-${level}`, png: scaled(spr, 2) })),
+    ]),
     cars: Object.entries(CARS).map(([id, col]) => ({ id, png: scaled(carSprite(col), 2) })),
     data: {
       buildings: Object.fromEntries(Object.entries(zones).map(([id, b]) => [id, box([b.art.X, b.art.Y, b.art.spr.width, b.art.spr.height])])),
       cars: Object.keys(CARS),
       lamps: lamps.map(([a, b]) => [x2(a), x2(b)]),
       windows: windows.map(box),
+      doors: Object.fromEntries(
+        Object.entries(zones)
+          .filter(([, b]) => b.door)
+          .map(([id, b]) => [id, { ...box(b.door.at), colour: b.door.colour, double: b.door.double }]),
+      ),
       bridges: bridges.map(box),
       river: river.filter((p, i) => i % 2 === 0 || i === river.length - 1).map(([a, b]) => [x2(a), x2(b)]),
       lake: { x: x2(lake.x), y: x2(lake.y), rx: x2(lake.rx), ry: x2(lake.ry) },

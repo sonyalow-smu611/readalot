@@ -2,159 +2,62 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import usersData from '@/data/users.json'
-import { currentSession, watchAuth } from '@/services/auth.js'
+import { currentSession, loadProfile, markTourSeen, watchAuth } from '@/services/auth.js'
+import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 
+// A new reader's first tour, played once in the town after Welcome: Next zooms the camera out and
+// back in on each building in turn (focus: a place id from town/places.js, which TownView glides
+// to). A step with no target and no focus shows its card over a dimmed screen. Finishing or
+// skipping saves profiles.tour_seen_at, so it never plays again on any device.
 const GUIDE_STEPS = [
   {
-    id: 'window',
-    to: '/house',
-    target: '[data-tour="window"]',
-    title: 'The window',
-    copy: 'This is the weather outside. Sun, cloud, and rain all move across the glass, and the temperature sits in the corner.',
+    id: 'town-welcome',
+    to: '/',
+    target: null,
+    title: 'Welcome to Readalot Town',
+    copy: 'This is your town. Drag the map to look around, and tap a building to go inside. Each building is a part of Readalot.',
   },
   {
-    id: 'clock',
-    to: '/house',
-    target: '[data-tour="clock"]',
-    title: 'The clock',
-    copy: 'The clock on the wall shows the time in Singapore.',
+    id: 'town-house',
+    to: '/',
+    target: null,
+    focus: 'house',
+    title: 'Your house',
+    copy: 'This blue house is yours. Inside is My Room: your bookshelf, the window with the live weather, and the chair with the book you are reading.',
   },
   {
-    id: 'credits',
-    to: '/house',
-    target: '[data-tour="credits"]',
-    title: 'Credits',
-    copy: 'This is your spending money. Buying something in the shop takes credits from here.',
+    id: 'town-library',
+    to: '/',
+    target: null,
+    focus: 'library',
+    title: 'The library',
+    copy: 'Discover books here: search for a title, browse shelves by genre, and open any book to read about it.',
   },
   {
-    id: 'shelf',
-    to: '/house',
-    target: '[data-tour="shelf"]',
-    title: 'Your bookshelf',
-    copy: 'Tap the shelf to open it. Reading, to read, and finished each have a row, and you can switch between spines and covers.',
+    id: 'town-cafe',
+    to: '/',
+    target: null,
+    focus: 'cafe',
+    title: 'The cafe',
+    copy: 'Meet other readers. See who reads like you, find them on the map, and follow them.',
   },
   {
-    id: 'quote',
-    to: '/house',
-    target: '[data-tour="quote"]',
-    title: 'Quote of the day',
-    copy: 'The note stuck on the shelf opens today’s quote.',
+    id: 'town-salon',
+    to: '/',
+    target: null,
+    focus: 'salon',
+    title: 'The hair salon',
+    copy: 'Restyle your character here, and edit your profile, your lists and your privacy.',
   },
   {
-    id: 'chair',
-    to: '/house',
-    target: '[data-tour="chair"]',
-    title: 'Currently reading',
-    copy: 'The book on the chair is the one you are reading now. Tap it to see that book.',
-  },
-  {
-    id: 'menu',
-    to: '/house',
-    target: '[data-tour="menu"]',
-    title: 'Room menu',
-    copy: 'Open this button for a mood check-in, your inventory, and the shop where decorations are bought.',
-  },
-  {
-    id: 'discover-search',
-    to: '/library',
-    target: '[data-tour="discover-search"]',
-    title: 'Search',
-    copy: 'Type a title or an author. Search opens a results page, and Back brings you here.',
-  },
-  {
-    id: 'discover-filters',
-    to: '/library',
-    target: '[data-tour="discover-filters"]',
-    title: 'Shelf filters',
-    copy: 'These chips narrow the shelves. For You shows all of them. Genres, Awards, and Community each show their own set.',
-  },
-  {
-    id: 'discover-shelf',
-    to: '/library',
-    target: '[data-tour="discover-shelf"]',
-    title: 'A shelf',
-    copy: 'Swipe the covers. Tap one for a preview, or See all to open that whole genre.',
-  },
-  {
-    id: 'people-search',
-    to: '/cafe',
-    target: '[data-tour="people-search"]',
-    title: 'Find a reader',
-    copy: 'Search by name or a favourite genre. The list and the map both follow what you type.',
-  },
-  {
-    id: 'people-map',
-    to: '/cafe',
-    target: '[data-tour="people-map"]',
-    title: 'Readers on the map',
-    copy: 'Pins are other readers in Singapore. Tap a pin to choose someone, then visit their room.',
-  },
-  {
-    id: 'people-follow',
-    to: '/cafe',
-    target: '[data-tour="people-follow"]',
-    title: 'Follow',
-    copy: 'Follow keeps that reader. The match score is how much your books and genres overlap.',
-  },
-  {
-    id: 'scan-camera',
-    to: '/scan',
-    target: '[data-tour="scan-camera"]',
-    title: 'The camera',
-    copy: 'Point this at a book cover. If the camera is blocked, you can still add a photo below.',
-  },
-  {
-    id: 'scan-snap',
-    to: '/scan',
-    target: '[data-tour="scan-snap"]',
-    title: 'Snap cover',
-    copy: 'Snap reads the cover and looks up the book. A match opens so you can put it on a shelf.',
-  },
-  {
-    id: 'scan-upload',
-    to: '/scan',
-    target: '[data-tour="scan-upload"]',
-    title: 'Upload a photo',
-    copy: 'A photo of the cover works the same way as the camera.',
-  },
-  {
-    id: 'profile-edit',
-    to: '/salon',
-    target: '[data-tour="profile-edit"]',
-    title: 'Edit profile',
-    copy: 'Change your name, avatar, age, genres, and the rest. It stays on this page.',
-  },
-  {
-    id: 'profile-shelves',
-    to: '/salon',
-    target: '[data-tour="profile-shelves"]',
-    title: 'Your lists',
-    copy: 'Reading, To read, and Finished. Tap a number to see the books in that list.',
-  },
-  {
-    id: 'profile-shop',
-    to: '/salon',
-    target: '[data-tour="profile-shop"]',
-    title: 'Coins',
-    copy: 'This is the same balance as the room. Visit the shop to spend coins on decorations.',
-  },
-  {
-    id: 'profile-map',
-    to: '/salon',
-    target: '[data-tour="profile-map"]',
-    title: 'People map',
-    copy: 'Turn this on if other readers may find your room on the People map.',
-  },
-  {
-    id: 'profile-logout',
-    to: '/salon',
-    target: '[data-tour="profile-logout"]',
-    title: 'Log out',
-    copy: 'This asks before it closes the book. Logging in again skips this tour.',
+    id: 'town-friend',
+    to: '/',
+    target: null,
+    focus: 'friend-reader-emma',
+    title: 'Friends’ houses',
+    copy: 'The small houses belong to readers you know. Tap one to visit their room and see their shelves.',
   },
 ]
-
-const TOUR_PENDING = 'readalot-tour-pending'
 
 function emptyProfile() {
   return {
@@ -162,6 +65,8 @@ function emptyProfile() {
     email: '',
     name: '',
     avatar: '🐨',
+    // the town character, always complete and valid (see lib/avatar/catalogue.js)
+    character: normaliseCharacter(null),
     gender: '',
     age: '',
     religion: '',
@@ -171,23 +76,27 @@ function emptyProfile() {
   }
 }
 
-function guideKey(id) {
-  return `readalot-guide:${id}`
-}
-
 export const useUserStore = defineStore('user', () => {
   const profile = ref(emptyProfile())
   const ready = ref(false)
   const guideStep = ref(-1)
+  // a profiles row exists: the reader finished Welcome
+  const hasProfile = ref(false)
+  const tourSeen = ref(false)
+  // the profile could not be loaded (not the same as "no profile yet")
+  const profileError = ref('')
   const readers = ref(structuredClone(usersData))
   let stopWatch = () => {}
+  // the load in progress, so the auth watcher and Verify don't load the same reader twice
+  let loading = null
+  let loadingId = ''
 
   const readersByCompatibility = computed(() =>
     [...readers.value].sort((a, b) => b.compatibility - a.compatibility),
   )
 
   const signedIn = computed(() => Boolean(profile.value.id))
-  const profileComplete = computed(() => Boolean(profile.value.name))
+  const profileComplete = computed(() => hasProfile.value)
   const guide = computed(() => (guideStep.value >= 0 ? GUIDE_STEPS[guideStep.value] : null))
   const guideCount = computed(() => GUIDE_STEPS.length)
 
@@ -195,52 +104,66 @@ export const useUserStore = defineStore('user', () => {
     return readers.value.find((reader) => reader.id === id) ?? null
   }
 
+  // Signs the reader in or out of the store and loads their saved profile.
   function applySession(session) {
     const user = session?.user
     if (!user) {
+      loading = null
+      loadingId = ''
       profile.value = emptyProfile()
+      hasProfile.value = false
+      tourSeen.value = false
+      profileError.value = ''
+      return Promise.resolve()
+    }
+    if (user.id === loadingId && loading) return loading
+    loadingId = user.id
+    profile.value = { ...emptyProfile(), id: user.id, email: user.email || '' }
+    hasProfile.value = false
+    loading = fetchProfile(user.id)
+    return loading
+  }
+
+  async function fetchProfile(id) {
+    profileError.value = ''
+    const { data, error } = await loadProfile(id)
+    if (profile.value.id !== id) return
+    if (error) {
+      profileError.value = 'Your profile could not be loaded. Check your connection and try again.'
+      loading = null
       return
     }
-    const meta = user.user_metadata || {}
-    profile.value = {
-      id: user.id,
-      email: user.email || '',
-      name: meta.name || '',
-      avatar: meta.avatar || '🐨',
-      gender: meta.gender || '',
-      age: meta.age ?? '',
-      religion: meta.religion || '',
-      favouriteGenres: Array.isArray(meta.favouriteGenres) ? meta.favouriteGenres : [],
-      location: meta.location || '',
-      discoverable: meta.discoverable === true,
-    }
+    if (!data) return
+    const { tourSeen: seen, ...details } = data
+    mergeProfile(details)
+    tourSeen.value = seen
+    hasProfile.value = true
+  }
+
+  function reloadProfile() {
+    if (!profile.value.id) return Promise.resolve()
+    loading = fetchProfile(profile.value.id)
+    return loading
+  }
+
+  // Welcome saved the profile: the row now exists.
+  function profileSaved(details) {
+    mergeProfile(details)
+    hasProfile.value = true
   }
 
   async function restore() {
     if (ready.value) return
     const { data } = await currentSession()
-    applySession(data.session)
+    await applySession(data.session)
     stopWatch()
     stopWatch = watchAuth(applySession)
     ready.value = true
   }
 
-  function expectTour() {
-    sessionStorage.setItem(TOUR_PENDING, '1')
-  }
-
-  function clearTour() {
-    sessionStorage.removeItem(TOUR_PENDING)
-  }
-
   function openGuideIfNew() {
     if (guideStep.value >= 0) return
-    if (!profile.value.id || !profile.value.name) return
-    if (sessionStorage.getItem(TOUR_PENDING) !== '1') return
-    if (localStorage.getItem(guideKey(profile.value.id)) === 'seen') {
-      sessionStorage.removeItem(TOUR_PENDING)
-      return
-    }
+    if (!hasProfile.value || tourSeen.value) return
     guideStep.value = 0
   }
 
@@ -253,10 +176,11 @@ export const useUserStore = defineStore('user', () => {
     guideStep.value += 1
   }
 
+  // Done or Skip. If saving fails the tour stays closed now and shows again next session.
   function closeGuide() {
-    sessionStorage.removeItem(TOUR_PENDING)
-    if (profile.value.id) localStorage.setItem(guideKey(profile.value.id), 'seen')
     guideStep.value = -1
+    tourSeen.value = true
+    if (profile.value.id) markTourSeen(profile.value.id)
   }
 
   function dismissGuide() {
@@ -267,6 +191,7 @@ export const useUserStore = defineStore('user', () => {
     profile.value = {
       ...profile.value,
       ...details,
+      character: normaliseCharacter(details.character ?? profile.value.character),
       id: profile.value.id,
       email: profile.value.email,
     }
@@ -282,11 +207,13 @@ export const useUserStore = defineStore('user', () => {
     readersByCompatibility,
     signedIn,
     profileComplete,
+    profileError,
+    tourSeen,
     findReader,
     applySession,
     restore,
-    expectTour,
-    clearTour,
+    reloadProfile,
+    profileSaved,
     openGuideIfNew,
     nextGuide,
     closeGuide,

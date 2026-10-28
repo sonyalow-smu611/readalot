@@ -58,6 +58,36 @@ export const sampleReaders = [
       { id: 'book-gone-girl', title: 'Gone Girl', author: 'Gillian Flynn', genre: 'Thriller', status: 'To Read' },
     ],
   },
+  {
+    id: 'reader-mei', username: 'mei.margins', displayName: 'Mei Chen', initials: 'MC',
+    tagline: 'Cosy mysteries and rainy-day rereads.', neighborhood: 'Clementi (demo)', lat: 1.315, lng: 103.765,
+    favoriteGenres: ['Mystery', 'Romance', 'Literary Fiction'],
+    books: [
+      { id: 'book-secret-history', title: 'The Secret History', author: 'Donna Tartt', genre: 'Mystery', status: 'Reading' },
+      { id: 'book-pride', title: 'Pride and Prejudice', author: 'Jane Austen', genre: 'Literary Fiction', status: 'Finished' },
+      { id: 'book-little-women', title: 'Little Women', author: 'Louisa May Alcott', genre: 'Literary Fiction', status: 'To Read' },
+    ],
+  },
+  {
+    id: 'reader-priya', username: 'priya.pagecount', displayName: 'Priya Nair', initials: 'PN',
+    tagline: 'Big fantasy series, one door-stopper at a time.', neighborhood: 'Serangoon (demo)', lat: 1.350, lng: 103.873,
+    favoriteGenres: ['Fantasy', 'Science Fiction', 'Romance'],
+    books: [
+      { id: 'book-fourth-wing', title: 'Fourth Wing', author: 'Rebecca Yarros', genre: 'Fantasy', status: 'Reading' },
+      { id: 'book-hobbit', title: 'The Hobbit', author: 'J. R. R. Tolkien', genre: 'Fantasy', status: 'Finished' },
+      { id: 'book-project-hail', title: 'Project Hail Mary', author: 'Andy Weir', genre: 'Science Fiction', status: 'To Read' },
+    ],
+  },
+  {
+    id: 'reader-daniel', username: 'daniel.dogears', displayName: 'Daniel Ong', initials: 'DO',
+    tagline: 'Started a book club, then got busy.', neighborhood: 'Pasir Ris (demo)', lat: 1.373, lng: 103.949,
+    favoriteGenres: ['History', 'Thriller', 'Literary Fiction'],
+    books: [
+      { id: 'book-sapiens', title: 'Sapiens', author: 'Yuval Noah Harari', genre: 'History', status: 'Reading' },
+      { id: 'book-gone-girl', title: 'Gone Girl', author: 'Gillian Flynn', genre: 'Thriller', status: 'Finished' },
+      { id: 'book-pride', title: 'Pride and Prejudice', author: 'Jane Austen', genre: 'Literary Fiction', status: 'To Read' },
+    ],
+  },
 ];
 
 export function getDemoReader(id) {

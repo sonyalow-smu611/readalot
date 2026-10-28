@@ -38,7 +38,8 @@ test("My Shelf fills the window too, its search kept to a comfortable width", as
 });
 
 test("the other buildings still open in the phone column", async ({ page }) => {
-  await page.goto("/library");
+  // the library fills the window too now (team review), so the cafe stands in for the rest
+  await page.goto("/cafe");
   const back = page.getByRole("link", { name: /Back to town/ });
   await expect(back).toBeVisible();
   const header = await page.locator("header", { has: back }).boundingBox();

@@ -298,6 +298,13 @@ The app is built around four main areas: **My Room, Discover Books, Discover Peo
 
 ### My Room
 
+The reader's home page: a 3D bedroom built in Blender (`client/blender/`) and drawn with
+Three.js. The reader stands in the middle and drags, pinches or scrolls to look around, or uses
+the bar of places along the bottom (Bookshelf, Chair, Window, Corkboard, Clock). Everything that
+can be tapped is a labelled button over the 3D scene.
+
+* **Bookshelf:** each of the reader's shelves has a row of the bookcase to itself, top to bottom **To be read**, **Reading** (at eye level), **Finished**, named on a brass plate on the row's board with how many books it holds. The books stand with their titles on the spines and keep their own size from visit to visit; a book pointed at (or focused) lifts a little up and out of its row. Books that do not fit in a row show as "+N more" on its board.
+* **Opening a book:** tapping a spine plays the animation designed in `bookshelf.blend`: the book slides out, flies to the reader with its cover facing them, the cover opens and the pages flip. A tap skips to the end, and reduced motion skips it altogether. Then the book's details show on a wood-framed card: the cover (or a cloth-bound stand-in with the title), title, author, stars and genres, the shelf buttons **Want to read / Reading / Finished reading**, then Synopsis, Rating and Reviews. Choosing **Reading** brings up a progress slider; a **Finished** book offers **Review** and **Rate** (they open Book Details) until both are done. **Remove from shelf** asks first, then offers Undo. Closing puts the book back on the shelf.
 The reader's room (Your house in the town): one wide pixel-art picture of the room, side on,
 drawn in the town's style. It goes left to right: the bay window nook, the reading chair and
 coffee table, the bookshelf, the clock and corkboard, then the bed. The reader swipes, drags,

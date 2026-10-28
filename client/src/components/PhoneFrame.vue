@@ -2,9 +2,14 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+const props = defineProps({
+  // fill the window whatever the page (the loading screen, before the first page is known)
+  full: { type: Boolean, default: false },
+})
+
 const route = useRoute()
 // sign-in pages (bare) and pages that opt in with meta.wide fill a laptop window
-const full = computed(() => Boolean(route.meta.bare || route.meta.wide))
+const full = computed(() => Boolean(props.full || route.meta.bare || route.meta.wide))
 </script>
 
 <template>

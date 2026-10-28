@@ -296,3 +296,46 @@ At Aasim's request, the library shows the live weather the way My Room does, thr
 rain, moon and stars), and `hall/paint.js` tints the hall like My Room, lighting it by its lamps
 after dark. `LibraryHall.vue` has the weather chip, and `hall/palette.js` the colours. The
 tint colours and the chip's icons are copied from My Room. Tested in `tests/e2e/library.spec.js`.
+
+#### Library changes after the team's review (AI-generated)
+
+The team asked for four changes to the library, and Aasim asked the assistant to make them:
+- **Live rain:** drops fall in each window only while it rains, harder for heavy rain or storms
+  (from Open-Meteo's weather code). This is in `LibraryHall.vue`, `LibraryView.vue` and
+  `hall/layout.js` (`windowGlass`).
+- **Help desk:** the search bar widens, glows and shows a librarian prompt with a Search button
+  (`LibraryView.vue`).
+- **Light switch:** turns the lamps on and off, and is remembered on the device. This is in
+  `LibraryHall.vue` and `LibraryView.vue`, with unlit lamp sprites in `hall/sprites.js` and the
+  light in `hall/paint.js`.
+- **Full screen on a computer:** `wide: true` on the `/library` route in
+  `client/src/router/index.js`, as My Room has.
+
+Tested in `tests/e2e/library.spec.js`.
+
+After a second review, Aasim asked for three more changes:
+- **Lamps:** each lamp turns off and on by tapping it, in place of one light switch. Lamp ids
+  and buttons are in `hall/layout.js` (`LAMPS`), `LibraryHall.vue` and `LibraryView.vue`; the
+  light is in `hall/paint.js`.
+- **Search bar:** it now opens up the same way whether tapped directly or from the help desk.
+- **Bookcase sheet:** covers are the size of My Shelf's, as many to a row as fit
+  (`components/ShelfSheet.vue`).
+- **"See all" page:** a genre's page (`/discover/:genre`) fills a laptop window
+  (`wide: true` in `client/src/router/index.js`). On a wide screen each shelf holds as many
+  My Shelf-sized covers as fit (`views/GenreShelfView.vue`, `components/ShelfTier.vue`); phones
+  are unchanged. Tested in `tests/e2e/library-wide.spec.js`.
+
+### Real accounts on Supabase, saved profiles and a town-only first tour (AI-generated)
+
+Written by Claude Code at Aalric's request, from the spec in
+`docs/specs/supabase-profiles-and-tour.md` (decisions made with Aalric in a Q&A session). Aalric
+waived the limit on AI-written logic for the sign-in work; Dylan reviews the `TownScene.js` change.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/profiles_and_tour.sql` | `avatar`, `character` and `tour_seen_at` on `profiles`; a `profile_private` table for gender, age and religion; row-level security so readers edit only their own rows and see only discoverable profiles |
+| Sign-in and profile | `client/src/services/auth.js`, `client/src/services/supabase.js`, `client/src/services/api.js` | The keyless preview mode is removed. The profile is read from and saved to the two tables instead of the login's metadata; saving the tour as seen |
+| Store and screens | `client/src/stores/user.js`, `client/src/views/VerifyView.vue`, `client/src/views/WelcomeView.vue`, `client/src/buildings/salon/SalonView.vue`, `client/src/components/GuideTour.vue` | "Profile complete" means a saved profile exists; the tour plays once, in the town, until Done or Skip; it is cut to the six town steps; Welcome offers Try again when the profile didn't load |
+| Camera | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue` | On the tour, each Next zooms out to the whole town and back in on the next building |
+| Server | `server/src/middleware/auth.js` | With no Supabase on the server, every request is the demo user, even with a token |
+| Tests | `tests/e2e/supabaseUser.js`, `tests/e2e/fixtures.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/auth.spec.js`, `tests/e2e/salon.spec.js`, `playwright.config.js`, `.env.example` | Test readers made with the service-role key and signed in directly (one per Playwright worker, profile reset before each test, to stay under Supabase's sign-in rate limit); new-reader, skip and returning-reader journeys; specs skip without keys |

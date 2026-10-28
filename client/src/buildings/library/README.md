@@ -11,9 +11,12 @@ links in the town and My Room still work. The server side is unchanged: `POST /a
 reads the cover with Google Vision, or returns a sample book when `GOOGLE_CLOUD_VISION_KEY` is
 not set.
 
-The hall follows the live weather, like My Room: the windows show the sky (sun, clouds, rain, or
-the moon and stars), the hall greys in cloud and rain, and after dark its lamps light it. A chip
-under the search bar shows the weather and temperature. It comes from `services/weather.js`
+The hall follows the live weather, like My Room: the windows show the sky (sun, clouds, or the
+moon and stars), rain falls on them while it rains (lightly in drizzle, hard in a storm), the
+hall greys in cloud and rain, and after dark its lamps light it. A chip under the search bar
+shows the weather and temperature. Tapping a lamp (on the desk, the walls or the ceiling) turns
+that lamp off and on, and the hall remembers which are off on that device. The search bar grows
+and asks what you're looking for whenever it's in use, tapped directly or from the help desk. On a computer the library fills the window, like My Room. It comes from `services/weather.js`
 (Open-Meteo, for Singapore) every 10 minutes; `/library?scene=sunny|cloudy|rain` previews a sky.
 
 | File | What it does |
@@ -54,4 +57,5 @@ from the top of the hall as designed (`HALL.height`, 260). The wall meets the fl
 2. Place it in `PIECES` in `hall/layout.js`, e.g.
    `{ sprite: 'globe', x: 22, y: FEET, layer: 'furniture' }`. `layer` is `wall`, `hang` (drawn
    with a string to the ceiling), `furniture` (casts a shadow on the wall) or `front`.
-3. For a lamp, add its light to `LIGHTS`.
+3. For a lamp, give it a `lamp` id and a `name` (what its button is called), and its sprite's
+   bulb in `BULBS`: it gets a button that turns it off and on, and its light.

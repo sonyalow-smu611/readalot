@@ -1,14 +1,16 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// Moving water on top of the map picture: the waterfall pours, ripples drift down the river,
-// the lake glints, fish swim in the lake and the park pond, and the plaza fountain sprays.
+// Moving water on top of the map picture: the waterfall pours, currents flow down the river
+// and drift across the lake, fish swim in the lake and the park pond, and the plaza fountain
+// sprays.
 // Positions come from map-data.json.
 import Phaser from 'phaser'
 import mapData from './map-data.json'
 
-const FLOW_SPEED = 70 // map px a second, down the river
-const RIPPLES = 36
-// how far either side of the river's middle a ripple can be, inside the water
+const FLOW_SPEED = 70 // map px a second, down the middle of the river
+const CURRENTS = 64
+// how far either side of the river's middle a current can be, inside the water
 const RIVER_HALF = 54
+const FOAM = 0xe0f4fb
 // [texture, body colour, back colour]: koi, goldfish, a silver one and a blue one
 const FISH = [
   ['fish-koi', 0xf08a3c, 0xfdf7ec],
@@ -23,6 +25,26 @@ const shadeOf = (colour) => {
 }
 
 function makeTextures(scene) {
+  // a current: one soft wave, faded out at both ends so it melts into the water
+  if (!scene.textures.exists('current')) {
+    const current = scene.textures.createCanvas('current', 72, 10)
+    const ctx = current.getContext()
+    const fade = ctx.createLinearGradient(0, 0, 72, 0)
+    fade.addColorStop(0, 'rgba(224,244,251,0)')
+    fade.addColorStop(0.5, 'rgba(224,244,251,0.9)')
+    fade.addColorStop(1, 'rgba(224,244,251,0)')
+    ctx.strokeStyle = fade
+    ctx.lineWidth = 2
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    for (let x = 2; x <= 70; x++) {
+      const y = 5 + Math.sin(((x - 2) / 68) * Math.PI * 2) * 2.5
+      if (x === 2) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.stroke()
+    current.refresh()
+  }
   const draw = (key, w, h, paint) => {
     if (scene.textures.exists(key)) return
     const g = scene.make.graphics({ add: false })
@@ -30,7 +52,6 @@ function makeTextures(scene) {
     g.generateTexture(key, w, h)
     g.destroy()
   }
-  draw('ripple', 14, 2, (g) => g.fillStyle(0xdff3fb, 1).fillRect(0, 0, 14, 2))
   draw('ring', 24, 12, (g) => g.lineStyle(2, 0xdff3fb, 1).strokeEllipse(12, 6, 20, 8))
   // fish seen from above, facing right: tail, body, a lighter back and an eye
   for (const [key, body, back] of FISH) {
@@ -144,24 +165,28 @@ export class Water {
       this.path.push({ x, y, at: prev.at + Math.hypot(x - prev.x, y - prev.y) })
     }
     this.riverLength = this.path[this.path.length - 1].at
-    // bridges and the waterfall sit over the river: no ripples there
+    // bridges and the waterfall sit over the river: no currents there
     this.covers = [...mapData.bridges, mapData.waterfall]
-    this.ripples = Array.from({ length: RIPPLES }, () => {
-      const ripple = { image: this.scene.add.image(0, 0, 'ripple').setDepth(1) }
-      this.respawn(ripple)
-      ripple.life = Math.random()
-      return ripple
+    this.currents = Array.from({ length: CURRENTS }, () => {
+      const current = { image: this.scene.add.image(0, 0, 'current').setDepth(1) }
+      this.respawn(current)
+      current.life = Math.random()
+      return current
     })
   }
 
-  respawn(ripple) {
-    ripple.at = Math.random() * this.riverLength
-    ripple.side = (Math.random() * 2 - 1) * RIVER_HALF
-    ripple.life = 0
-    ripple.lasts = 1.8 + Math.random() * 1.6
+  respawn(current) {
+    current.at = Math.random() * this.riverLength
+    current.side = (Math.random() * 2 - 1) * RIVER_HALF
+    // water runs fastest down the middle and slowest by the banks
+    current.speed = FLOW_SPEED * (1.35 - 0.7 * (Math.abs(current.side) / RIVER_HALF))
+    current.length = 0.7 + Math.random() * 0.9
+    current.life = 0
+    current.lasts = 2.4 + Math.random() * 2
   }
 
-  // The point `side` px off the river's middle, `at` px down it.
+  // The point `side` px off the river's middle, `at` px down it, and which way the water runs
+  // there (radians).
   riverPoint(at, side) {
     let i = 1
     while (i < this.path.length - 1 && this.path[i].at < at) i++
@@ -171,55 +196,94 @@ export class Water {
     const len = Math.max(1, b.at - a.at)
     const nx = -(b.y - a.y) / len
     const ny = (b.x - a.x) / len
-    return [a.x + (b.x - a.x) * t + nx * side, a.y + (b.y - a.y) * t + ny * side]
+    return [a.x + (b.x - a.x) * t + nx * side, a.y + (b.y - a.y) * t + ny * side, Math.atan2(b.y - a.y, b.x - a.x)]
   }
 
   addLake() {
     const { x, y, rx, ry } = mapData.lake
-    for (let k = 0; k < 16; k++) {
+    // slow currents drifting across the still water with the breeze
+    for (let k = 0; k < 14; k++) {
       const [gx, gy] = this.spotIn({ x, y, rx: rx * 1.04, ry: ry * 1.04 })
-      const glint = this.scene.add.image(gx, gy, 'ripple').setDepth(1).setAlpha(0)
+      const drift = this.scene.add
+        .image(gx, gy, 'current')
+        .setDepth(1)
+        .setAlpha(0)
+        .setScale(0.6 + Math.random() * 0.5, 1)
       this.scene.tweens.add({
-        targets: glint,
-        alpha: 0.9,
-        x: glint.x + 10,
-        duration: 1400 + Math.random() * 1200,
+        targets: drift,
+        alpha: 0.5,
+        x: drift.x + 40,
+        duration: 2600 + Math.random() * 1800,
         delay: Math.random() * 3000,
+        ease: 'Sine.easeInOut',
         yoyo: true,
         repeat: -1,
-        repeatDelay: Math.random() * 2000,
+        repeatDelay: Math.random() * 1500,
       })
     }
   }
 
   addFountain() {
     const [sx, sy] = mapData.fountain.spout
-    const [, by] = mapData.fountain.basin
+    const [bx, by] = mapData.fountain.basin
+    const depth = by + 10
+    // the jet: a tall spray from the top that falls back into the basin
     this.scene.add
       .particles(sx, sy, 'drop', {
-        speedY: { min: -170, max: -120 },
-        speedX: { min: -45, max: 45 },
-        gravityY: 420,
-        lifespan: 850,
-        frequency: 25,
-        tint: 0xcdeefa,
-        scale: { start: 1.2, end: 0.6 },
-        alpha: { start: 1, end: 0.2 },
+        speedY: { min: -260, max: -190 },
+        speedX: { min: -55, max: 55 },
+        gravityY: 600,
+        lifespan: 1000,
+        frequency: 10,
+        quantity: 2,
+        tint: [0xcdeefa, 0xffffff, FOAM],
+        scale: { start: 1.4, end: 0.6 },
+        alpha: { start: 1, end: 0.3 },
       })
-      .setDepth(by + 10)
+      .setDepth(depth)
+    // water spilling over the rim of the top bowl
+    this.scene.add
+      .particles(sx, sy + 32, 'drop', {
+        x: { min: -20, max: 20 },
+        speedX: { min: -35, max: 35 },
+        speedY: { min: -10, max: 10 },
+        gravityY: 500,
+        lifespan: 420,
+        frequency: 20,
+        quantity: 2,
+        tint: FOAM,
+        scale: { start: 1, end: 0.5 },
+        alpha: { start: 0.9, end: 0.2 },
+      })
+      .setDepth(depth)
+    // rings spreading where the drops land in the basin
+    this.scene.time.addEvent({
+      delay: 260,
+      loop: true,
+      callback: () => {
+        const angle = Math.random() * Math.PI * 2
+        const d = 0.3 + Math.random() * 0.55
+        this.ring(bx + Math.cos(angle) * 64 * d, by + Math.sin(angle) * 18 * d, 1.4)
+      },
+    })
   }
 
   update(delta) {
     if (this.reducedMotion) return
     const seconds = delta / 1000
     this.falls.tilePositionY -= 140 * seconds
-    for (const ripple of this.ripples) {
-      ripple.life += seconds / ripple.lasts
-      ripple.at += FLOW_SPEED * seconds
-      if (ripple.life >= 1 || ripple.at >= this.riverLength) this.respawn(ripple)
-      const [x, y] = this.riverPoint(ripple.at, ripple.side)
+    for (const current of this.currents) {
+      current.life += seconds / current.lasts
+      current.at += current.speed * seconds
+      if (current.life >= 1 || current.at >= this.riverLength) this.respawn(current)
+      const [x, y, angle] = this.riverPoint(current.at, current.side)
       const hidden = this.covers.some((box) => inside(x, y, box))
-      ripple.image.setPosition(x, y).setAlpha(hidden ? 0 : 0.85 * Math.sin(Math.PI * ripple.life))
+      // each one stretches out a little as it is carried along, and fades in and out
+      current.image
+        .setPosition(x, y)
+        .setRotation(angle)
+        .setScale(current.length * (0.8 + 0.4 * current.life), 1)
+        .setAlpha(hidden ? 0 : 0.6 * Math.sin(Math.PI * current.life))
     }
   }
 }

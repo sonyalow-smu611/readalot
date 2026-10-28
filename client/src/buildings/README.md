@@ -9,7 +9,7 @@ through a pull request a teammate reviews.
 | Your house | `house/` | `/house` | Sonz | `house/RoomView.vue` (My Room) |
 | Library | `library/` | `/library` | Aasim | `views/DiscoverBooksView.vue` (Discover) |
 | Cafe | `cafe/` | `/cafe` | Emiley | `views/PeopleView.vue` (Social) |
-| Hair Salon | `salon/` | `/salon` | Aalric | `views/ProfileView.vue` (Profile) |
+| Hair Salon | `salon/` | `/salon` | Aalric | Profile, now in `salon/` (split into `salon/components/`) |
 
 ## The contract
 
@@ -21,7 +21,7 @@ through a pull request a teammate reviews.
   changes up as events. Put your components in `<your folder>/components/`.
 - When you're ready, move your old page from `views/` into your folder and import it from
   there. Old addresses (`/room`, `/discover`, `/people`, `/profile`) already redirect to yours.
-- The town reads `profile.character` (`rosie`, `maya`, `rex`, `jay` or `nova`) to draw the
-  reader. The salon sets it. `profile.avatar` stays the emoji the Profile page uses today.
+- `profile.character` is the reader's character as part ids (see `src/lib/avatar/catalogue.js`).
+  The salon sets it; `<CharacterSprite :character="…">` draws it. `profile.avatar` stays the emoji the Profile page uses today.
 - Each building's name, colour and owner live in `src/town/places.js`, so the town's card and
   your header always match.

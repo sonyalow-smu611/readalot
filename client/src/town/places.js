@@ -12,6 +12,7 @@ export const PLACES = [
   {
     id: 'house',
     name: 'Your house',
+    label: 'Your house',
     tab: 'My Room',
     owner: 'Sonz',
     accent: '#4a7fb0',
@@ -23,6 +24,7 @@ export const PLACES = [
   {
     id: 'library',
     name: 'Library',
+    label: 'Library',
     tab: 'Discover',
     owner: 'Aasim',
     accent: '#3f6b78',
@@ -34,6 +36,7 @@ export const PLACES = [
   {
     id: 'cafe',
     name: 'Cafe',
+    label: 'Cafe',
     tab: 'Social',
     owner: 'Emiley',
     accent: '#a8483a',
@@ -45,6 +48,7 @@ export const PLACES = [
   {
     id: 'salon',
     name: 'Hair Salon',
+    label: 'Hair Salon',
     tab: 'Profile',
     owner: 'Aalric',
     accent: '#9a3f62',
@@ -63,6 +67,9 @@ const FRIEND_HOMES = [
   { reader: 'reader-ayaan', art: 'cottage-brick', x: 1554, y: 1460, w: 322, h: 304 },
   { reader: 'reader-sofia', art: 'cottage-lilac', x: 18, y: 1484, w: 270, h: 280 },
   { reader: 'reader-noah', art: 'cottage-grey', x: 44, y: 820, w: 309, h: 304 },
+  { reader: 'reader-mei', art: 'cottage-green', x: 3116, y: 840, w: 296, h: 284 },
+  { reader: 'reader-daniel', art: 'cottage-rose', x: 1606, y: 103, w: 309, h: 300 },
+  { reader: 'reader-priya', art: 'cottage-teal', x: 2118, y: 1472, w: 309, h: 292 },
 ]
 
 export const FRIEND_HOUSES = FRIEND_HOMES.flatMap(({ reader: id, ...home }) => {
@@ -80,6 +87,8 @@ export const FRIEND_HOUSES = FRIEND_HOMES.flatMap(({ reader: id, ...home }) => {
       blurb: `${reader.displayName}: “${reader.tagline}”${book ? ` Reading ${book.title} right now.` : ''}`,
       enter: `Visit ${first}`,
       route: { name: 'reader-room', params: { id } },
+      // whose house it is, to match their online status to it (see friends.js)
+      reader: id,
       ...home,
     },
   ]

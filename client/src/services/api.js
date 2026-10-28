@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
 
 async function request(path, options = {}) {
-  const { data } = await supabase.auth.getSession();
+  const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
   const token = data.session?.access_token;
   const headers = new Headers(options.headers);
 

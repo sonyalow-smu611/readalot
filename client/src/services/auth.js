@@ -1,17 +1,28 @@
-// Email sign-in through the Supabase client.
-// With empty keys, login still reaches the code screen and any code continues, so the flow can be tested.
-import { supabase } from '@/services/supabase.js'
+// Scaffolded with AI assistance — see AI_USAGE.md
+// Email sign-in and the reader's saved profile, through the Supabase client.
+// The profile lives in two tables: `profiles` (what other readers may see) and `profile_private`
+// (gender, age, religion: only the reader). See database/profiles_and_tour.sql.
+import { MISSING_KEYS, supabase } from '@/services/supabase.js'
 
 const PENDING_KEY = 'readalot-pending-auth'
-const PREVIEW_KEY = 'readalot-preview-user'
-const MISSING = 'Email cannot be sent until the Supabase keys are set.'
+
+// store field → profiles column
+const PUBLIC_FIELDS = {
+  name: 'display_name',
+  avatar: 'avatar',
+  character: 'character',
+  favouriteGenres: 'favorite_genres',
+  location: 'location_name',
+  discoverable: 'discoverable',
+}
+const PRIVATE_FIELDS = ['gender', 'age', 'religion']
 
 export function authConfigured() {
-  return Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
+  return Boolean(supabase)
 }
 
 function missing() {
-  return { data: null, error: { message: MISSING } }
+  return { data: null, error: { message: MISSING_KEYS } }
 }
 
 export function rememberPending(email, purpose) {
@@ -32,41 +43,22 @@ export function clearPending() {
   sessionStorage.removeItem(PENDING_KEY)
 }
 
-function readPreview() {
-  try {
-    const user = JSON.parse(sessionStorage.getItem(PREVIEW_KEY) || 'null')
-    if (!user?.id || !user.email) return null
-    return user
-  } catch {
-    return null
-  }
-}
-
-function writePreview(user) {
-  sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(user))
-}
-
 export async function currentSession() {
-  if (!authConfigured()) {
-    const user = readPreview()
-    return { data: { session: user ? { user } : null }, error: null }
-  }
+  if (!supabase) return { data: { session: null }, error: null }
   return supabase.auth.getSession()
 }
 
 export function watchAuth(onSession) {
-  if (!authConfigured() || typeof supabase.auth.onAuthStateChange !== 'function') return () => {}
+  if (!supabase) return () => {}
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    onSession(session)
+    // Supabase asks that no other Supabase call is awaited inside this callback
+    window.setTimeout(() => onSession(session), 0)
   })
   return () => data.subscription.unsubscribe()
 }
 
 export async function beginRegister(email, password) {
-  if (!authConfigured()) {
-    rememberPending(email, 'signup')
-    return { data: { email }, error: null }
-  }
+  if (!supabase) return missing()
   const created = await supabase.auth.signUp({ email, password })
   if (created.error) return created
   const identities = created.data.user?.identities
@@ -79,10 +71,7 @@ export async function beginRegister(email, password) {
 }
 
 export async function beginLogin(email, password) {
-  if (!authConfigured()) {
-    rememberPending(email, 'login')
-    return { data: { email }, error: null }
-  }
+  if (!supabase) return missing()
   const signed = await supabase.auth.signInWithPassword({ email, password })
   if (signed.error) return signed
   await supabase.auth.signOut()
@@ -96,18 +85,7 @@ export async function beginLogin(email, password) {
 }
 
 export async function verifyEmailCode(email, token, purpose) {
-  if (!authConfigured()) {
-    const existing = readPreview()
-    const samePerson = existing?.email === email
-    const user = {
-      id: samePerson ? existing.id : `preview-${email}`,
-      email,
-      user_metadata: samePerson ? existing.user_metadata || {} : {},
-    }
-    writePreview(user)
-    clearPending()
-    return { data: { session: { user } }, error: null }
-  }
+  if (!supabase) return missing()
   const type = purpose === 'signup' ? 'signup' : 'email'
   const result = await supabase.auth.verifyOtp({ email, token, type })
   if (!result.error) clearPending()
@@ -115,7 +93,7 @@ export async function verifyEmailCode(email, token, purpose) {
 }
 
 export async function resendCode(email, purpose) {
-  if (!authConfigured()) return { data: { email }, error: null }
+  if (!supabase) return missing()
   if (purpose === 'signup') return supabase.auth.resend({ type: 'signup', email })
   return supabase.auth.signInWithOtp({
     email,
@@ -123,24 +101,66 @@ export async function resendCode(email, purpose) {
   })
 }
 
-export async function saveProfile(details) {
-  if (!authConfigured()) {
-    const existing = readPreview()
-    if (!existing) return missing()
-    const user = {
-      ...existing,
-      user_metadata: { ...(existing.user_metadata || {}), ...details },
-    }
-    writePreview(user)
-    return { data: { user }, error: null }
+// The reader's saved profile in the store's shape, or null when they have not finished Welcome.
+export async function loadProfile(userId) {
+  if (!supabase) return missing()
+  const [shared, own] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    supabase.from('profile_private').select('*').eq('id', userId).maybeSingle(),
+  ])
+  const error = shared.error || own.error
+  if (error) return { data: null, error }
+  if (!shared.data) return { data: null, error: null }
+  const row = shared.data
+  const details = own.data || {}
+  return {
+    data: {
+      name: row.display_name || '',
+      avatar: row.avatar || '🐨',
+      character: row.character,
+      favouriteGenres: Array.isArray(row.favorite_genres) ? row.favorite_genres : [],
+      location: row.location_name || '',
+      discoverable: row.discoverable === true,
+      gender: details.gender || '',
+      age: details.age ?? '',
+      religion: details.religion || '',
+      tourSeen: Boolean(row.tour_seen_at),
+    },
+    error: null,
   }
-  return supabase.auth.updateUser({ data: details })
+}
+
+// Saves only the fields given; Welcome sends them all, the salon one or two at a time.
+export async function saveProfile(details) {
+  if (!supabase) return missing()
+  const { data } = await supabase.auth.getUser()
+  const id = data.user?.id
+  if (!id) return { data: null, error: { message: 'You are signed out. Log in again.' } }
+
+  const shared = { id }
+  for (const [field, column] of Object.entries(PUBLIC_FIELDS)) {
+    if (field in details) shared[column] = details[field]
+  }
+  const saved = await supabase.from('profiles').upsert(shared)
+  if (saved.error) return saved
+
+  const own = { id }
+  for (const field of PRIVATE_FIELDS) {
+    if (field in details) own[field] = details[field]
+  }
+  if (Object.keys(own).length > 1) {
+    const savedOwn = await supabase.from('profile_private').upsert(own)
+    if (savedOwn.error) return savedOwn
+  }
+  return { data: details, error: null }
+}
+
+export async function markTourSeen(userId) {
+  if (!supabase) return missing()
+  return supabase.from('profiles').update({ tour_seen_at: new Date().toISOString() }).eq('id', userId)
 }
 
 export async function signOut() {
-  if (!authConfigured()) {
-    sessionStorage.removeItem(PREVIEW_KEY)
-    return { error: null }
-  }
+  if (!supabase) return { error: null }
   return supabase.auth.signOut()
 }
