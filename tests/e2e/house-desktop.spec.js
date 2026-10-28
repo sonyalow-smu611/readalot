@@ -1,24 +1,16 @@
-import { expect, test } from "./fixtures.js";
+import { expect, goToPlace, mockWeather, roomCanvas, roomReady, roomRegion, skipMoodCheckIn, test } from "./fixtures.js";
 
 // Your house on a laptop: My Room and My Shelf fill the window, the same size as the town map,
 // instead of sitting in the phone column the other pages use.
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test.beforeEach(async ({ page }) => {
-  // today's mood check-in already answered, so it does not open over the room
-  await page.addInitScript(() => {
-    const now = new Date();
-    const pad = (value) => String(value).padStart(2, "0");
-    localStorage.setItem("readalot.moodCheckIn", `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
-  });
+  await skipMoodCheckIn(page);
+  await mockWeather(page);
 });
 
-const room = (page) => page.getByRole("region", { name: /^Your room/ });
-
-async function roomShown(page) {
-  await expect(page.getByRole("button", { name: /^Bookshelf, \d+ books$/ })).toBeVisible();
-  await expect(page.getByText("Opening your shelf")).toBeHidden();
-}
+const room = roomRegion;
+const roomShown = roomReady;
 
 test("My Room fills the laptop window, as the town does", async ({ page }) => {
   await page.goto("/house");
@@ -80,7 +72,7 @@ test("the Currently Reading card stays a readable width, centred", async ({ page
 test("on a laptop the room is drawn large enough to fill the window's width", async ({ page }) => {
   await page.goto("/house");
   await roomShown(page);
-  const picture = await page.locator(".strip canvas").first().boundingBox();
+  const picture = await roomCanvas(page).boundingBox();
   expect(picture.width).toBeGreaterThan(1440);
   // only plain wall above the bunting may be cut off the top
   await expect(page.getByRole("region", { name: /^Your room/ })).toHaveAttribute("data-cut", /^([0-9]|1[0-9]|2[0-4])$/);
@@ -92,7 +84,7 @@ test.describe("on a very wide, short window", () => {
   test("a room narrower than the window sits in the middle of it", async ({ page }) => {
     await page.goto("/house");
     await roomShown(page);
-    const picture = await page.locator(".strip canvas").first().boundingBox();
+    const picture = await roomCanvas(page).boundingBox();
     expect(picture.width).toBeLessThan(2600);
     expect(Math.abs(picture.x + picture.width / 2 - 1300)).toBeLessThan(2);
   });
@@ -101,11 +93,11 @@ test.describe("on a very wide, short window", () => {
 test("resizing the window keeps the part of the room being looked at in the middle", async ({ page }) => {
   await page.goto("/house");
   await roomShown(page);
-  await page.getByRole("navigation", { name: "Places in the room" }).getByRole("button", { name: "Bookshelf" }).click();
-  await page.waitForTimeout(900);
+  await goToPlace(page, "Bookshelf");
   // how far along the room the middle of the window is, from 0 (left wall) to 1 (right wall)
+  const canvas = await roomCanvas(page).elementHandle();
   const middle = (width) =>
-    room(page).evaluate((el, half) => (el.scrollLeft + half) / el.querySelector("canvas").getBoundingClientRect().width, width / 2);
+    room(page).evaluate((el, [half, picture]) => (el.scrollLeft + half) / picture.getBoundingClientRect().width, [width / 2, canvas]);
   const before = await middle(1440);
 
   await page.setViewportSize({ width: 1100, height: 700 });

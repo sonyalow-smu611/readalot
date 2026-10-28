@@ -118,8 +118,8 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               @click="askBuy(item)"
             >
               <span class="dock-card__art"><DecorArt :kind="item.id" /></span>
-              <span class="dock-card__name">{{ item.name }}</span>
-              <span class="dock-card__price">${{ item.price }}</span>
+              <span class="dock-card__name" data-testid="card-name">{{ item.name }}</span>
+              <span class="dock-card__price" data-testid="card-price">${{ item.price }}</span>
               <span class="dock-card__where">{{ item.blurb }}</span>
             </button>
           </div>

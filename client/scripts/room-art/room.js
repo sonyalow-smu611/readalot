@@ -79,18 +79,31 @@
     }, { glass: { x: at(12), y: at(top), w: 172, h: bottom - top }, panes: panes.map(([px, pw]) => ({ x: at(px), y: at(top), w: pw, h: bottom - top })) })
   }
 
+  // Fabrics for the curtains (and the themes' and the Shop's curtain colours): [base, pleat
+  // shadow, pleat light]. The room's own curtains are pink.
+  const FABRICS = {
+    pink: [C.pink, C.pinkShade, C.pinkLight],
+    sage: [C.sage, C.sageShade, C.sageLight],
+    navy: ['#4a5878', '#39445f', '#66779a'],
+    cream: [C.cream, C.creamShade, '#fdf9f0'],
+    mustard: [C.mustard, C.mustardShade, C.gold],
+    rose: ['#c98a9a', '#a96f7e', '#e3b0bb'],
+    blue: [C.blue, C.blueShade, C.blueLight],
+    lavender: ['#b3a3c9', '#9584ad', '#cfc3e0'],
+  }
+
   // curtains: pleated fabric gathered by a tie-back two thirds down
-  const curtain = (flip) => (x, W, H) => {
+  const curtain = (flip, [base, dark, light] = FABRICS.pink) => (x, W, H) => {
     const fx = (n) => (flip ? W - 1 - n : n)
     const tie = Math.round(H * 0.62)
     const pts = [[0, 0], [W, 0], [W, tie - 10], [W * 0.45, tie], [W * 0.75, H], [0, H]].map(([a, b]) => [fx(a), b])
-    fillPoly(x, pts, C.pink)
+    fillPoly(x, pts, base)
     // pleats: darker and lighter stripes inside the curtain's outline
     polyRows(pts, (y, a, b) => {
       for (let i = a; i < b; i++) {
         const k = (flip ? W - 1 - i : i) % 6
-        if (k === 0) P(x, i, y, C.pinkShade)
-        else if (k === 3) P(x, i, y, C.pinkLight)
+        if (k === 0) P(x, i, y, dark)
+        else if (k === 3) P(x, i, y, light)
       }
     })
     // the tie-back
@@ -99,6 +112,24 @@
   }
   add('curtain-left', 24, 176, curtain(false))
   add('curtain-right', 24, 176, curtain(true))
+  // every other fabric, as a pair: curtain-left-sage, curtain-right-sage…
+  for (const [name, fabric] of Object.entries(FABRICS)) {
+    if (name === 'pink') continue
+    add(`curtain-left-${name}`, 24, 176, curtain(false, fabric))
+    add(`curtain-right-${name}`, 24, 176, curtain(true, fabric))
+  }
+  // each fabric's picture in the Shop: a little pair of curtains on a rod (curtains-sage…)
+  for (const [name, [base, dark, light]] of Object.entries(FABRICS)) {
+    add(`curtains-${name}`, 30, 28, (x, W, H) => {
+      R(x, 0, 1, W, 2, C.woodDark)
+      for (const [cx, flip] of [[1, false], [W - 11, true]]) {
+        const fx = (n) => (flip ? cx + 9 - n : cx + n)
+        fillPoly(x, [[fx(0), 3], [fx(10), 3], [fx(10), 15], [fx(5), 18], [fx(8), H], [fx(0), H]], base)
+        for (let i = 0; i < 10; i += 3) R(x, fx(i), 4, 1, H - 6, i % 2 ? light : dark)
+        R(x, fx(flip ? 9 : 0), 16, 6, 2, C.mustard)
+      }
+    })
+  }
   add('curtain-rod', 220, 5, (x, W) => {
     R(x, 3, 2, W - 6, 2, C.woodDark)
     R(x, 3, 2, W - 6, 1, C.woodShade)
@@ -235,22 +266,33 @@
   })
 
   // ---------------------------------------------------------------- reading corner
-  const lamp = (lit) => (x, W, H) => {
+  // Lamp styles: the shade (unlit), its ribs and rim, and the stand. Brass is the room's own.
+  const LAMPS = {
+    brass: { shade: C.lampShade, rib: C.mustard, rim: C.mustardShade, stand: C.brown, edge: C.slate, base: C.sage, baseLight: C.sageLight, baseDark: C.sageShade },
+    white: { shade: '#f6f1e6', rib: '#e2d9c6', rim: '#cfc3ab', stand: C.woodLight, edge: C.woodShade, base: C.cream, baseLight: '#fdf9f0', baseDark: C.creamShade },
+    green: { shade: '#7fa47a', rib: '#6a8f66', rim: '#557a52', stand: '#b8913f', edge: '#8f6f2e', base: '#7fa47a', baseLight: '#a3c49c', baseDark: '#557a52' },
+  }
+
+  const lamp = (lit, style = LAMPS.brass) => (x, W, H) => {
     const shadeTop = 22, shadeBottom = 34
     const pts = [[(W - shadeTop) / 2, 0], [(W + shadeTop) / 2, 0], [(W + shadeBottom) / 2, 30], [(W - shadeBottom) / 2, 30]]
-    fillPoly(x, pts, lit ? C.lampLit : C.lampShade)
+    fillPoly(x, pts, lit ? C.lampLit : style.shade)
     polyRows(pts, (y, a, b) => {
-      for (let i = a; i < b; i++) if ((i - a) % 5 === 0) P(x, i, y, lit ? C.gold : C.mustard)
+      for (let i = a; i < b; i++) if ((i - a) % 5 === 0) P(x, i, y, lit ? C.gold : style.rib)
     })
-    R(x, (W - shadeBottom) / 2, 29, shadeBottom, 1, lit ? C.windowGlow : C.mustardShade)
+    R(x, (W - shadeBottom) / 2, 29, shadeBottom, 1, lit ? C.windowGlow : style.rim)
     if (lit) R(x, (W - shadeBottom) / 2 + 3, 26, shadeBottom - 6, 3, C.windowGlow)
-    R(x, (W >> 1) - 1, 30, 2, H - 36, C.brown)
-    R(x, (W >> 1) - 1, 30, 1, H - 36, C.slate)
-    E(x, W >> 1, H - 4, 11, 3, C.brown)
-    R(x, (W >> 1) - 10, H - 4, 20, 1, C.slate)
+    R(x, (W >> 1) - 1, 30, 2, H - 36, style.stand)
+    R(x, (W >> 1) - 1, 30, 1, H - 36, style.edge)
+    E(x, W >> 1, H - 4, 11, 3, style.stand)
+    R(x, (W >> 1) - 10, H - 4, 20, 1, style.edge)
   }
   add('floor-lamp', 36, 152, lamp(false), { glow: { x: at(18), y: at(24) } })
   add('floor-lamp-lit', 36, 152, lamp(true), { glow: { x: at(18), y: at(24) } })
+  for (const name of ['white', 'green']) {
+    add(`floor-lamp-${name}`, 36, 152, lamp(false, LAMPS[name]), { glow: { x: at(18), y: at(24) } })
+    add(`floor-lamp-${name}-lit`, 36, 152, lamp(true, LAMPS[name]), { glow: { x: at(18), y: at(24) } })
+  }
 
   // the wingback armchair: tufted back, rolled arms, short wooden legs
   add('armchair', 106, 114, (x, W, H) => {
@@ -345,12 +387,16 @@
   add('book-stack', 18, 14, stack([[18, 5, C.blue, 0], [16, 4, C.pink, 1], [14, 5, C.mustard, 2]]))
   add('book-pile-floor', 24, 30, stack([[24, 6, C.sageShade, 0], [22, 5, C.rose, 1], [23, 6, C.blue, 0], [20, 5, C.mustard, 2], [18, 5, C.teal, 3], [16, 3, C.cream, 4]]))
 
-  // the rug's front edge along the floor, with a fringe
-  add('rug', 200, 7, (x, W) => {
-    R(x, 0, 0, W, 5, C.pink)
-    for (let i = 0; i < W; i += 8) { R(x, i, 1, 4, 1, C.pinkLight); R(x, i + 4, 3, 4, 1, C.rose) }
+  // the rug's front edge along the floor, with a fringe: [base, light dash, dark dash]
+  const rug = ([base, light, dark]) => (x, W) => {
+    R(x, 0, 0, W, 5, base)
+    for (let i = 0; i < W; i += 8) { R(x, i, 1, 4, 1, light); R(x, i + 4, 3, 4, 1, dark) }
     for (let i = 1; i < W; i += 3) P(x, i, 5, C.cream)
-  })
+  }
+  add('rug', 200, 7, rug([C.pink, C.pinkLight, C.rose]))
+  add('rug-sage', 200, 7, rug([C.sage, C.sageLight, C.sageShade]))
+  add('rug-navy', 200, 7, rug(FABRICS.navy))
+  add('rug-rust', 200, 7, rug(['#b5643f', '#d08a62', '#8f4a2e']))
   add('knit-basket', 28, 24, (x, W, H) => {
     E(x, 9, 9, 6, 6, C.pink)
     E(x, 18, 10, 5, 5, C.blue)
@@ -580,21 +626,87 @@
     R(x, 2, H - 5, W - 4, 2, C.woodShade)
     for (const lx of [3, W - 7]) R(x, lx, H - 3, 4, 3, C.woodDark)
   })
-  const tableLamp = (lit) => (x, W, H) => {
+  const tableLamp = (lit, style = LAMPS.brass) => (x, W, H) => {
     const pts = [[6, 0], [W - 6, 0], [W - 1, 14], [0, 14]]
-    fillPoly(x, pts, lit ? C.lampLit : C.mustard)
-    polyRows(pts, (y, a, b) => { for (let i = a; i < b; i++) if ((i - a) % 4 === 0) P(x, i, y, lit ? C.gold : C.mustardShade) })
+    fillPoly(x, pts, lit ? C.lampLit : style === LAMPS.brass ? C.mustard : style.shade)
+    polyRows(pts, (y, a, b) => { for (let i = a; i < b; i++) if ((i - a) % 4 === 0) P(x, i, y, lit ? C.gold : style === LAMPS.brass ? C.mustardShade : style.rib) })
     if (lit) R(x, 2, 12, W - 4, 2, C.windowGlow)
     R(x, (W >> 1) - 1, 14, 2, 6, C.brown)
-    E(x, W >> 1, H - 7, 6, 6, C.sage)
-    R(x, (W >> 1) - 4, H - 10, 2, 4, C.sageLight)
-    R(x, (W >> 1) - 5, H - 2, 10, 2, C.sageShade)
+    E(x, W >> 1, H - 7, 6, 6, style.base)
+    R(x, (W >> 1) - 4, H - 10, 2, 4, style.baseLight)
+    R(x, (W >> 1) - 5, H - 2, 10, 2, style.baseDark)
   }
   add('table-lamp', 24, 34, tableLamp(false), { glow: { x: at(12), y: at(10) } })
   add('table-lamp-lit', 24, 34, tableLamp(true), { glow: { x: at(12), y: at(10) } })
+  for (const name of ['white', 'green']) {
+    add(`table-lamp-${name}`, 24, 34, tableLamp(false, LAMPS[name]), { glow: { x: at(12), y: at(10) } })
+    add(`table-lamp-${name}-lit`, 24, 34, tableLamp(true, LAMPS[name]), { glow: { x: at(12), y: at(10) } })
+  }
 
-  // the bed, side on: headboard on the left, a patchwork quilt, pillows, a throw at the foot
-  add('bed', 214, 90, (x, W, H) => {
+  // Bedding: the quilt's pattern over its box (x from X0 to X1, y from Y0 to Y1), the front pillow,
+  // the hem and the folded throw. Patchwork is the room's own.
+  const QUILTS = {
+    patchwork: (x, X0, Y0, X1, Y1) => {
+      const cols = [C.sage, C.pink, C.cream, C.mustard, C.blueLight, C.pinkLight, C.sageLight]
+      for (let qy = Y0, r = 0; qy < Y1; qy += 8, r++) {
+        for (let qx = X0, c = 0; qx < X1; qx += 12, c++) {
+          const col = cols[(r * 3 + c) % cols.length]
+          R(x, qx, qy, 12, 8, col)
+          R(x, qx, qy, 12, 1, shade(col, 1.08))
+          R(x, qx + 11, qy, 1, 8, C.paperShade)
+        }
+      }
+    },
+    gingham: (x, X0, Y0, X1, Y1) => {
+      R(x, X0, Y0, X1 - X0, Y1 - Y0, '#f6f1e6')
+      for (let qx = X0; qx < X1; qx += 8) R(x, qx, Y0, 4, Y1 - Y0, '#e9b9b4')
+      for (let qy = Y0; qy < Y1; qy += 8) R(x, X0, qy, X1 - X0, 4, '#e9b9b4')
+      for (let qx = X0; qx < X1; qx += 8) for (let qy = Y0; qy < Y1; qy += 8) R(x, qx, qy, 4, 4, '#d48f8a')
+    },
+    stripes: (x, X0, Y0, X1, Y1) => {
+      const cols = [C.blueLight, C.cream, C.blue, C.cream]
+      for (let qx = X0, k = 0; qx < X1; qx += 5, k++) R(x, qx, Y0, 5, Y1 - Y0, cols[k % cols.length])
+    },
+    floral: (x, X0, Y0, X1, Y1) => {
+      R(x, X0, Y0, X1 - X0, Y1 - Y0, '#f4dcdc')
+      for (let qy = Y0 + 3, r = 0; qy < Y1 - 1; qy += 9, r++) {
+        for (let qx = X0 + 4 + (r % 2) * 7; qx < X1 - 2; qx += 14) {
+          for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) P(x, qx + dx, qy + dy, '#d97d8c')
+          P(x, qx, qy, C.mustard)
+          P(x, qx + 3, qy + 2, C.leaf)
+        }
+      }
+    },
+    stars: (x, X0, Y0, X1, Y1) => {
+      R(x, X0, Y0, X1 - X0, Y1 - Y0, '#3f4a6b')
+      for (let qy = Y0 + 3, r = 0; qy < Y1 - 1; qy += 8, r++) {
+        for (let qx = X0 + 3 + (r % 2) * 6; qx < X1 - 2; qx += 12) {
+          P(x, qx, qy, C.gold)
+          for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) P(x, qx + dx, qy + dy, '#e9d8a0')
+        }
+      }
+      E(x, X1 - 14, Y0 + 7, 3, 3, '#f4efe2')
+      E(x, X1 - 13, Y0 + 6, 2, 2, '#3f4a6b')
+    },
+    tartan: (x, X0, Y0, X1, Y1) => {
+      R(x, X0, Y0, X1 - X0, Y1 - Y0, '#8f3a33')
+      for (let qx = X0 + 4; qx < X1; qx += 14) R(x, qx, Y0, 4, Y1 - Y0, '#2f4a3a')
+      for (let qy = Y0 + 4; qy < Y1; qy += 12) R(x, X0, qy, X1 - X0, 3, '#2f4a3a')
+      for (let qx = X0 + 10; qx < X1; qx += 14) R(x, qx, Y0, 1, Y1 - Y0, C.gold)
+      for (let qy = Y0 + 9; qy < Y1; qy += 12) R(x, X0, qy, X1 - X0, 1, C.gold)
+    },
+  }
+  const BEDDING = {
+    patchwork: { quilt: 'patchwork', pillow: [C.pinkLight, C.pink], hem: C.sage, throw: [C.mustard, C.mustardShade] },
+    gingham: { quilt: 'gingham', pillow: ['#f6f1e6', '#e9b9b4'], hem: '#d48f8a', throw: [C.sage, C.sageShade] },
+    stripes: { quilt: 'stripes', pillow: [C.blueLight, C.blue], hem: C.blue, throw: [C.cream, C.creamShade] },
+    floral: { quilt: 'floral', pillow: ['#f4dcdc', '#d97d8c'], hem: C.leaf, throw: [C.sage, C.sageShade] },
+    stars: { quilt: 'stars', pillow: ['#66779a', '#3f4a6b'], hem: C.gold, throw: [C.gold, C.mustardShade] },
+    tartan: { quilt: 'tartan', pillow: [C.cream, C.creamShade], hem: '#2f4a3a', throw: ['#2f4a3a', '#22362a'] },
+  }
+
+  // the bed, side on: headboard on the left, a quilt, pillows, a throw at the foot
+  const bed = (design) => (x, W, H) => {
     // headboard and footboard
     RR(x, 0, 0, 16, H - 6, 4, C.wood)
     R(x, 3, 6, 10, H - 18, C.woodLight)
@@ -611,24 +723,32 @@
     // pillows
     RR(x, 16, 24, 36, 20, 6, C.paper)
     R(x, 20, 40, 28, 2, C.paperShade)
-    RR(x, 22, 18, 30, 18, 6, C.pinkLight)
-    R(x, 26, 32, 22, 2, C.pink)
-    // patchwork quilt, hanging over the side with a wavy hem
-    const cols = [C.sage, C.pink, C.cream, C.mustard, C.blueLight, C.pinkLight, C.sageLight]
-    for (let qy = 34, r = 0; qy < 66; qy += 8, r++) {
-      for (let qx = 50, c = 0; qx < W - 14; qx += 12, c++) {
-        const col = cols[(r * 3 + c) % cols.length]
-        R(x, qx, qy, 12, 8, col)
-        R(x, qx, qy, 12, 1, shade(col, 1.08))
-        R(x, qx + 11, qy, 1, 8, C.paperShade)
-      }
-    }
+    RR(x, 22, 18, 30, 18, 6, design.pillow[0])
+    R(x, 26, 32, 22, 2, design.pillow[1])
+    // the quilt, hanging over the side with a wavy hem
+    QUILTS[design.quilt](x, 50, 34, W - 14, 66)
     R(x, 50, 34, W - 64, 1, C.paper)
-    for (let qx = 50; qx < W - 14; qx++) if (Math.floor(qx / 6) % 2) P(x, qx, 66, C.sage)
+    for (let qx = 50; qx < W - 14; qx++) if (Math.floor(qx / 6) % 2) P(x, qx, 66, design.hem)
     // a folded throw at the foot
-    panel(x, W - 52, 28, 36, 10, C.mustard, 1.1, 0.82)
-    for (let i = W - 50; i < W - 18; i += 4) R(x, i, 30, 2, 6, C.mustardShade)
-  })
+    panel(x, W - 52, 28, 36, 10, design.throw[0], 1.1, 0.82)
+    for (let i = W - 50; i < W - 18; i += 4) R(x, i, 30, 2, 6, design.throw[1])
+  }
+  add('bed', 214, 90, bed(BEDDING.patchwork))
+  // every other design: bed-gingham, bed-stripes…
+  for (const [name, design] of Object.entries(BEDDING)) {
+    if (name !== 'patchwork') add(`bed-${name}`, 214, 90, bed(design))
+  }
+  // each design's picture in the Shop: the quilt folded on a pillow (bedding-gingham…)
+  for (const [name, design] of Object.entries(BEDDING)) {
+    add(`bedding-${name}`, 32, 26, (x, W, H) => {
+      RR(x, 2, 0, 20, 10, 3, design.pillow[0])
+      R(x, 5, 7, 14, 1, design.pillow[1])
+      QUILTS[design.quilt](x, 0, 9, W, H - 3)
+      R(x, 0, 9, W, 1, C.paper)
+      for (let qx = 0; qx < W; qx++) if (Math.floor(qx / 4) % 2) P(x, qx, H - 3, design.hem)
+      R(x, 0, H - 2, W, 2, shade(design.hem, 0.85))
+    })
+  }
 
   add('poster-a', 36, 48, (x, W, H) => {
     panel(x, 0, 0, W, H, C.paper, 1, 0.9)
