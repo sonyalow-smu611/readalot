@@ -9,7 +9,7 @@
 // (components/town).
 import Phaser from 'phaser'
 import mapData from './map-data.json'
-import { ALL_PLACES, AVATARS, FRIEND_HOUSES, MAP_W, MAP_H, SPAWN, TOWNSFOLK } from './places.js'
+import { ALL_PLACES, AVATARS, FRIEND_HOUSES, MAP_W, MAP_H, PLACES, SPAWN, TOWNSFOLK } from './places.js'
 import { SKY_DEPTH, Sky } from './sky.js'
 import { Traffic } from './traffic.js'
 import { Water } from './water.js'
@@ -17,6 +17,7 @@ import { Campfire } from './fire.js'
 import { You } from './you.js'
 import { doorstep } from './door.js'
 import { Friend } from './friend.js'
+import { Sign, hasSign, loadSigns } from './signs.js'
 
 const MAX_ZOOM = 1.5
 const START_ZOOM = 0.6
@@ -75,6 +76,8 @@ export default class TownScene extends Phaser.Scene {
     // [{ id: reader id, online, upkeep }]: see setFriends
     this.friends = []
     this.tags = {}
+    // the big signs over the four main buildings, by place id
+    this.signs = {}
     this.aged = {}
     // friends out walking, by reader id, and the one stopped to talk to you
     this.walkers = {}
@@ -92,6 +95,7 @@ export default class TownScene extends Phaser.Scene {
       for (const level of AGED) this.load.image(`building-${art}-${level}`, `/town/buildings/${art}-${level}.png`)
     }
     for (const id of mapData.cars) this.load.image(`car-${id}`, `/town/cars/${id}.png`)
+    loadSigns(this, PLACES)
   }
 
   create() {
@@ -229,6 +233,7 @@ export default class TownScene extends Phaser.Scene {
   setSky(state) {
     this.skyState = state
     this.sky?.set(state)
+    for (const sign of Object.values(this.signs)) sign.setNight(state.night)
   }
 
   // The smallest zoom still fills the screen, so the map's edge never shows.
@@ -240,26 +245,36 @@ export default class TownScene extends Phaser.Scene {
 
   // --- Buildings: invisible zones over the picture --------------------------------------
   addPlaces() {
-    for (const place of ALL_PLACES) {
+    for (const [index, place] of ALL_PLACES.entries()) {
       const zone = this.add.zone(place.x + place.w / 2, place.y + place.h / 2, place.w, place.h)
       zone.setInteractive({ useHandCursor: true })
-      zone.on('pointerup', (pointer) => {
-        // Phaser hears pointer-ups on the whole window: a click on an HTML button over the
-        // map must not also tap the building underneath it
-        const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
-        if (onMap && !this.dragged && !this.pinch) this.select(place)
-      })
+      this.listen(zone, place)
       this.addPop(place)
-      zone.on('pointerover', () => {
-        this.hovered = place.id
-        this.pop(place.id, true)
-      })
-      zone.on('pointerout', () => {
-        if (this.hovered === place.id) this.hovered = null
-        this.pop(place.id, false)
-      })
-      if (place.label) this.addNameTag(place)
+      // the four main buildings get a big sign; friends' houses a name tag
+      if (hasSign(place)) {
+        const listen = (target) => this.listen(target, place)
+        this.signs[place.id] = new Sign(this, place, { reducedMotion: this.reducedMotion, listen, index })
+        this.signs[place.id].setNight(this.skyState.night, false)
+      } else if (place.label) this.addNameTag(place)
     }
+  }
+
+  // Taps on a building, or on its sign, choose it; pointing at either pops it.
+  listen(target, place) {
+    target.on('pointerup', (pointer) => {
+      // Phaser hears pointer-ups on the whole window: a click on an HTML button over the
+      // map must not also tap the building underneath it
+      const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
+      if (onMap && !this.dragged && !this.pinch) this.select(place)
+    })
+    target.on('pointerover', () => {
+      this.hovered = place.id
+      this.pop(place.id, true)
+    })
+    target.on('pointerout', () => {
+      if (this.hovered === place.id) this.hovered = null
+      this.pop(place.id, false)
+    })
   }
 
   // A copy of the building's art laid exactly over the picture, hidden until it pops.
@@ -280,10 +295,11 @@ export default class TownScene extends Phaser.Scene {
     const popping = this.pops[id]
     if (!popping || this.reducedMotion) return
     const { image, art } = popping
-    // its lit windows (at night) and its glow grow with it
+    // its lit windows (at night), its glow and its sign grow with it
     const onUpdate = () => {
       this.sky.scaleWindows(art, image.scale, image.x, image.y)
       if (this.haloFor === id) this.halo.setScale(image.scale)
+      this.signs[id]?.setGrowth(image.scale)
     }
     this.tweens.killTweensOf(image)
     if (up) {
@@ -354,6 +370,7 @@ export default class TownScene extends Phaser.Scene {
     const art = place && (place.art ?? place.id)
     const box = art && mapData.buildings[art]
     this.tweens.killTweensOf(this.halo)
+    for (const [id, sign] of Object.entries(this.signs)) sign.setChosen(id === place?.id)
     if (!box) {
       this.haloFor = null
       this.halo.setVisible(false)
