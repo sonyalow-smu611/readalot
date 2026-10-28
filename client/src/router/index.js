@@ -10,9 +10,11 @@ import ReaderRoomView from '@/views/ReaderRoomView.vue'
 import ReaderShelfView from '@/views/ReaderShelfView.vue'
 import SearchView from '@/views/SearchView.vue'
 import LoginView from '@/views/LoginView.vue'
+import StartView from '@/views/StartView.vue'
 import VerifyView from '@/views/VerifyView.vue'
 import WelcomeView from '@/views/WelcomeView.vue'
 import { useUserStore } from '@/stores/user'
+import { landingSeen } from '@/lib/landing.js'
 
 // `meta.order` decides which way a page slides in: deeper pages (higher) slide in from the
 // right. `meta.fullBleed` pages fill the frame and skip the shared header.
@@ -41,6 +43,8 @@ const routes = [
   // the book scanner lives in the library now
   { path: '/scan', name: 'scan-book', redirect: { name: 'library', query: { scan: '1' } } },
   { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },
+  // A first-time visitor's landing page, before signing in.
+  { path: '/start', name: 'start', component: StartView, meta: { title: 'Keep track of every book you read', bare: true, guest: true, order: 0 } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },
   { path: '/register', name: 'register', component: LoginView, meta: { title: 'Register', bare: true, guest: true, order: 0 } },
   { path: '/verify', name: 'verify', component: VerifyView, meta: { title: 'Verify email', bare: true, guest: true, order: 0 } },
@@ -62,7 +66,7 @@ router.beforeEach(async (to) => {
   if (user.signedIn && to.meta.guest) {
     return { name: user.profileComplete ? 'town' : 'welcome' }
   }
-  if (!user.signedIn && !to.meta.guest) return { name: 'login' }
+  if (!user.signedIn && !to.meta.guest) return { name: landingSeen() ? 'login' : 'start' }
   if (user.signedIn && user.profileComplete && to.name === 'welcome') {
     return { name: 'town' }
   }
