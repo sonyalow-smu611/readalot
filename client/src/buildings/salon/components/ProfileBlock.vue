@@ -1,8 +1,9 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// One titled section of the salon's profile (genres, coins, about you…): a widget card like
-// the style studio's, labelled by its title.
+// One titled section of the salon's profile (genres, coins, about you…): a pixel panel like
+// the town's signs, labelled by its title. It leans toward the mouse and pops when pressed.
 import { useId } from 'vue'
+import { vTilt } from '@/buildings/salon/tilt.js'
 
 defineProps({
   title: { type: String, required: true },
@@ -12,7 +13,7 @@ const titleId = useId()
 </script>
 
 <template>
-  <section class="block" :aria-labelledby="titleId">
+  <section v-tilt class="block" data-tilt :aria-labelledby="titleId">
     <h2 :id="titleId" class="block__title">{{ title }}</h2>
     <slot />
   </section>
@@ -22,11 +23,10 @@ const titleId = useId()
 .block {
   margin-top: 14px;
   padding: 16px;
-  border: 2px solid rgba(30, 26, 36, 0.85);
-  border-radius: 18px;
-  background: rgba(255, 253, 249, 0.94);
-  box-shadow: 5px 5px 0 rgba(30, 26, 36, 0.22);
-  backdrop-filter: blur(8px);
+  border: 3px solid var(--px-ink, #2b1d24);
+  border-radius: 4px;
+  background: var(--px-paper, #fff8ef);
+  box-shadow: inset 0 -4px 0 rgba(43, 29, 36, 0.08), var(--px-shadow, 5px 5px 0 #2b1d24);
 }
 
 .block__title {
@@ -37,13 +37,16 @@ const titleId = useId()
   font-size: 1.125rem;
 }
 
-/* a little pink star before each title */
+/* a little pixel star before each title */
 .block__title::before {
   content: '';
-  width: 12px;
-  height: 12px;
-  background: #e98aa8;
-  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  width: 4px;
+  height: 4px;
+  margin: 4px;
+  background: var(--px-pink, #d0608e);
+  box-shadow:
+    4px 0 0 var(--px-pink, #d0608e), -4px 0 0 var(--px-pink, #d0608e),
+    0 4px 0 var(--px-pink, #d0608e), 0 -4px 0 var(--px-pink, #d0608e);
 }
 
 .block :deep(.block__empty) {

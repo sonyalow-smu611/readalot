@@ -1,7 +1,8 @@
 import { supabase } from "./supabase.js";
+import { earnXp } from "./progress.js";
 
 async function request(path, options = {}) {
-  const { data } = await supabase.auth.getSession();
+  const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
   const token = data.session?.access_token;
   const headers = new Headers(options.headers);
 
@@ -107,11 +108,14 @@ export function getReviews(bookId) {
   return request(`/books/${bookId}/reviews`);
 }
 
-export function addReview(bookId, data) {
-  return request(`/books/${bookId}/reviews`, {
+// A saved review earns XP, once per book (best effort: a failed XP call doesn't fail the review).
+export async function addReview(bookId, data) {
+  const saved = await request(`/books/${bookId}/reviews`, {
     method: "POST",
     body: JSON.stringify(data)
   });
+  earnXp("write_review", bookId).catch(() => {});
+  return saved;
 }
 
 export function getQuotes(bookId) {

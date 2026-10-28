@@ -50,6 +50,30 @@ defineProps({
 .tag:hover {
   background: #f6c9dc;
   color: #1e1a24;
+  animation: tag-bounce 0.45s steps(5, end);
+}
+
+.tag:active {
+  transform: translateY(2px);
+}
+
+li:nth-child(odd) .tag {
+  background: #fff2c9;
+}
+
+@keyframes tag-bounce {
+  30% {
+    transform: translateY(-6px);
+  }
+  60% {
+    transform: translateY(1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag:hover {
+    animation: none;
+  }
 }
 
 .tag svg {

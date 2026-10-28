@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthStage from '@/components/auth/AuthStage.vue'
 import CharacterPresetPicker from '@/components/shared/CharacterPresetPicker.vue'
+import PixelCharacter from '@/components/shared/PixelCharacter.vue'
 import { presetCharacter } from '@/lib/avatar/catalogue.js'
 import { saveProfile } from '@/services/auth.js'
 import { useUserStore } from '@/stores/user'
@@ -36,6 +37,8 @@ const age = ref('')
 const religion = ref('')
 const genres = ref([])
 const character = ref('rosie')
+const heroHop = ref(0)
+watch(character, () => (heroHop.value += 1))
 
 const titles = ['Your name', 'Gender', 'Age', 'Religion', 'Genres you like', 'Pick your character']
 const notes = [
@@ -134,15 +137,26 @@ async function finish() {
     fail(result.error.message)
     return
   }
-  if (result.data?.user) user.applySession({ user: result.data.user })
-  if (!user.profile.name) user.mergeProfile(details)
+  user.profileSaved(details)
   await stage.value?.enterTown()
   router.push({ name: 'town' })
+}
+
+// The saved profile didn't load, so this reader may already have one: try again before asking.
+async function retryLoad() {
+  busy.value = true
+  await user.reloadProfile()
+  busy.value = false
+  if (user.profileComplete) router.replace({ name: 'town' })
 }
 </script>
 
 <template>
   <AuthStage ref="stage" :gaze="gaze" :spines="genres">
+    <div v-if="user.profileError" class="mb-3" role="alert">
+      <p class="stage-error mb-2">{{ user.profileError }}</p>
+      <button type="button" class="btn btn-outline-primary" :disabled="busy" @click="retryLoad">Try again</button>
+    </div>
     <p class="text-muted mb-1">{{ step + 1 }} of {{ titles.length }}</p>
     <h1 class="h3 mb-1">{{ titles[step] }}</h1>
     <p class="text-muted mb-3">{{ notes[step] }}</p>
@@ -200,7 +214,13 @@ async function finish() {
         </button>
       </div>
 
-      <CharacterPresetPicker v-else v-model="character" class="mb-3" legend="Characters" />
+      <template v-else>
+        <!-- the chosen one, big and alive; it hops in when the choice changes -->
+        <div class="welcome-hero" aria-hidden="true">
+          <PixelCharacter :character="presetCharacter(character)" :scale="4" :hop="heroHop" decorative />
+        </div>
+        <CharacterPresetPicker v-model="character" class="mb-3" legend="Characters" />
+      </template>
 
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
       <div class="d-flex gap-2">
@@ -214,6 +234,18 @@ async function finish() {
 </template>
 
 <style scoped>
+.welcome-hero {
+  display: grid;
+  place-items: end center;
+  height: 252px;
+  margin-bottom: 12px;
+  border: 2px solid #3b2a22;
+  border-radius: 6px;
+  background:
+    linear-gradient(#f6d9e4 0 72%, #3b2a22 72% calc(72% + 2px), #e6c9a8 calc(72% + 2px));
+  box-shadow: 4px 4px 0 rgba(59, 42, 34, 0.25);
+}
+
 .choices {
   display: flex;
   flex-wrap: wrap;

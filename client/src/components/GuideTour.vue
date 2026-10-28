@@ -12,6 +12,10 @@ const root = ref(null)
 const card = ref(null)
 const spot = ref(null)
 const cardOnTop = ref(false)
+const hostWidth = ref(0)
+// a building on the map: the card sits under it, its arrow pointing up at it
+const CARD_WIDTH = 420
+const EDGE = 16
 const { guide, guideStep, guideCount } = storeToRefs(user)
 
 const ringStyle = computed(() => {
@@ -21,6 +25,22 @@ const ringStyle = computed(() => {
     left: `${spot.value.left}px`,
     width: `${spot.value.width}px`,
     height: `${spot.value.height}px`,
+  }
+})
+
+// under the building, as wide as fits, its arrow lined up with the building's middle
+const cardStyle = computed(() => {
+  if (!guide.value?.focus || !spot.value) return null
+  const width = Math.min(CARD_WIDTH, hostWidth.value - EDGE * 2)
+  const middle = spot.value.left + spot.value.width / 2
+  const left = Math.min(Math.max(middle - width / 2, EDGE), hostWidth.value - EDGE - width)
+  return {
+    top: `${spot.value.top + spot.value.height + 14}px`,
+    bottom: 'auto',
+    left: `${left}px`,
+    right: 'auto',
+    width: `${width}px`,
+    '--arrow-x': `${Math.min(Math.max(middle - left, 24), width - 24)}px`,
   }
 })
 
@@ -44,6 +64,7 @@ function measure() {
     return false
   }
   const hostBox = host.getBoundingClientRect()
+  hostWidth.value = hostBox.width
   const pad = 8
   spot.value = {
     top: box.top - hostBox.top - pad,
@@ -51,7 +72,7 @@ function measure() {
     width: box.width + pad * 2,
     height: box.height + pad * 2,
   }
-  cardOnTop.value = box.top + box.height / 2 > hostBox.top + hostBox.height * 0.58
+  cardOnTop.value = !guide.value?.focus && box.top + box.height / 2 > hostBox.top + hostBox.height * 0.58
   return true
 }
 
@@ -76,16 +97,34 @@ watch(guideStep, async (step) => {
   }
   await nextTick()
   follow()
+  // a building stop's card waits for the camera to arrive (see the watch below)
+  if (guide.value.focus) return
+  showCard()
+}, { immediate: true })
+
+// the camera has settled on the building: the card comes up under it
+watch(
+  () => Boolean(guide.value?.focus && spot.value),
+  async (arrived) => {
+    if (!arrived) return
+    await nextTick()
+    showCard()
+  },
+)
+
+function showCard() {
   if (!card.value || prefersReducedMotion()) return
   gsap.fromTo(card.value, { y: cardOnTop.value ? -12 : 12, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.35, force3D: false })
-}, { immediate: true })
+}
 
 watch(() => route.path, () => {
   if (guide.value) follow()
 })
 
-// A new reader's tour begins wherever they land after signing up (the town).
-watch(() => route.name, () => user.openGuideIfNew(), { immediate: true })
+// A new reader's tour begins when they reach the town after Welcome.
+watch(() => route.name, (name) => {
+  if (name === 'town') user.openGuideIfNew()
+}, { immediate: true })
 
 onMounted(() => {
   window.addEventListener('resize', measure)
@@ -99,10 +138,16 @@ onBeforeUnmount(() => {
 
 <template>
   <div v-if="guide" ref="root" class="guide" :class="{ 'guide--top': cardOnTop }">
-    <!-- a fly-to step keeps the map in view -->
+    <!-- a fly-to step keeps the map in view until the camera arrives, then spotlights the building -->
     <div v-if="!ringStyle && !guide.focus" class="guide__dim" />
-    <div v-else class="guide__ring" :style="ringStyle" />
-    <article ref="card" class="guide__card">
+    <div v-else-if="ringStyle" class="guide__ring" :class="{ 'guide__ring--building': guide.focus }" :style="ringStyle" />
+    <article
+      v-show="!guide.focus || ringStyle"
+      ref="card"
+      class="guide__card"
+      :class="{ 'guide__card--under': cardStyle }"
+      :style="cardStyle"
+    >
       <p class="text-muted mb-1">{{ guideStep + 1 }} of {{ guideCount }}</p>
       <h2 class="h3 mb-2">{{ guide.title }}</h2>
       <p class="mb-3">{{ guide.copy }}</p>
@@ -152,6 +197,24 @@ onBeforeUnmount(() => {
   border-radius: var(--rl-radius-modal);
   background: var(--rl-surface);
   box-shadow: 0 12px 32px rgba(63, 46, 36, 0.16);
+}
+
+.guide__ring--building {
+  border-radius: 18px;
+}
+
+/* the arrow pointing up at the building */
+.guide__card--under::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: calc(var(--arrow-x) - 9px);
+  width: 18px;
+  height: 18px;
+  border-top: 1px solid var(--rl-line);
+  border-left: 1px solid var(--rl-line);
+  background: var(--rl-surface);
+  transform: rotate(45deg);
 }
 
 .guide--top .guide__card {

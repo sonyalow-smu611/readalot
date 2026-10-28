@@ -1,8 +1,10 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Hair Salon → Profile. Owner: Aalric.
-// Clouds part to show the whole salon. The reader sits in the barber chair on the left, wearing
-// the look being styled; on the right a dock of widgets holds the style studio and the profile.
+// Clouds part to show the whole salon. The reader stands by the barber chair on the left, as their
+// town sprite, wearing the look being styled; on the right a dock of widgets holds the style
+// studio and the profile. On a phone the dock is a sheet under the reader that pulls up.
+// Saves throw pixel confetti over the dock.
 // This view holds the state and does the saving; the parts in components/ show it and report
 // what the reader did.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -12,8 +14,10 @@ import AboutYou from '@/buildings/salon/components/AboutYou.vue'
 import CoinsCard from '@/buildings/salon/components/CoinsCard.vue'
 import ConfirmDialog from '@/buildings/salon/components/ConfirmDialog.vue'
 import FavouriteGenres from '@/buildings/salon/components/FavouriteGenres.vue'
+import LevelCard from '@/buildings/salon/components/LevelCard.vue'
 import PrivacyAlert from '@/buildings/salon/components/PrivacyAlert.vue'
 import PrivacySetting from '@/buildings/salon/components/PrivacySetting.vue'
+import PixelConfetti from '@/buildings/salon/components/PixelConfetti.vue'
 import ProfileEditForm from '@/buildings/salon/components/ProfileEditForm.vue'
 import ReaderCard from '@/buildings/salon/components/ReaderCard.vue'
 import SalonBackdrop from '@/buildings/salon/components/SalonBackdrop.vue'
@@ -28,6 +32,8 @@ import { useDecor } from '@/composables/useDecor'
 import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 import { saveProfile, signOut } from '@/services/auth.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
+import { useProgressStore } from '@/stores/progress.js'
+import '@/buildings/salon/pixel.css'
 import { useUserStore } from '@/stores/user'
 import { PLACES } from '@/town/places.js'
 
@@ -52,8 +58,7 @@ const panel = ref('studio')
 async function save(details) {
   const result = await saveProfile(details)
   if (result.error) return result.error.message
-  if (result.data?.user) user.applySession({ user: result.data.user })
-  else user.mergeProfile(details)
+  user.mergeProfile(details)
   return ''
 }
 
@@ -65,6 +70,13 @@ const lookSaved = ref('')
 const hop = ref(0)
 const celebrate = ref(0)
 const discarding = ref(false)
+// bumped by every save, to throw confetti
+const confetti = ref(0)
+// phones: whether the dock's sheet is pulled up over the reader
+const sheetOpen = ref(false)
+const progress = useProgressStore()
+// a level-up while in the salon is worth confetti too
+watch(() => progress.levelUps, () => (confetti.value += 1))
 let leaveAnswer = null
 let savedTimer = null
 
@@ -85,17 +97,22 @@ async function saveLook() {
   if (lookError.value) return
   draft.value = { ...user.profile.character }
   celebrate.value += 1
+  confetti.value += 1
   lookSaved.value = 'Saved. Your new look is ready for town.'
   clearTimeout(savedTimer)
   savedTimer = setTimeout(() => (lookSaved.value = ''), SAVED_NOTE_MS)
 }
 
-// Leaving with an unsaved look asks first.
-onBeforeRouteLeave(() => {
-  if (!changed.value) return true
+// Leaving with an unsaved look asks first: save it and go, drop it and go, or stay.
+function askLeave() {
+  if (!changed.value) return Promise.resolve(true)
   discarding.value = true
   return new Promise((resolve) => (leaveAnswer = resolve))
-})
+}
+
+// logging out has already asked (it must save while still signed in)
+let asked = false
+onBeforeRouteLeave(() => (asked ? true : askLeave()))
 
 function answerLeave(leave) {
   discarding.value = false
@@ -104,15 +121,13 @@ function answerLeave(leave) {
   leaveAnswer = null
 }
 
-// The tour points at things on both panels, so open the one it needs.
-watch(
-  () => user.guide?.id,
-  (id) => {
-    if (id === 'salon-studio') panel.value = 'studio'
-    else if (id?.startsWith('profile-')) panel.value = 'profile'
-  },
-  { immediate: true },
-)
+async function saveAndLeave() {
+  discarding.value = false
+  await saveLook()
+  // a failed save stays, with the error on the save bar
+  leaveAnswer?.(!lookError.value)
+  leaveAnswer = null
+}
 
 // ---- the profile
 const editing = ref(false)
@@ -156,7 +171,9 @@ async function saveEdit(details) {
   editBusy.value = true
   editError.value = await save(details)
   editBusy.value = false
-  if (!editError.value) editing.value = false
+  if (editError.value) return
+  editing.value = false
+  confetti.value += 1
 }
 
 function editAbout(key) {
@@ -168,7 +185,9 @@ async function saveAbout(details) {
   aboutBusy.value = true
   aboutError.value = await save(details)
   aboutBusy.value = false
-  if (!aboutError.value) aboutKey.value = ''
+  if (aboutError.value) return
+  aboutKey.value = ''
+  confetti.value += 1
 }
 
 async function toggleDiscoverable() {
@@ -183,7 +202,9 @@ async function toggleDiscoverable() {
     user.mergeProfile({ discoverable: !next })
     hidePrivacyAlert()
     privacyError.value = result.error.message
+    return
   }
+  confetti.value += 1
 }
 
 function showPrivacyAlert(mode) {
@@ -235,6 +256,9 @@ function visitShop() {
 }
 
 async function logout() {
+  confirmingLogout.value = false
+  if (!(await askLeave())) return
+  asked = true
   user.dismissGuide()
   await signOut()
   user.applySession(null)
@@ -258,7 +282,16 @@ async function logout() {
           :celebrate="celebrate"
         />
 
-        <aside class="dock" aria-label="Salon widgets">
+        <aside class="dock" :class="{ 'is-open': sheetOpen }" aria-label="Salon widgets">
+          <button
+            type="button"
+            class="dock__handle"
+            :aria-expanded="sheetOpen"
+            :aria-label="sheetOpen ? 'Show less' : 'Show more'"
+            @click="sheetOpen = !sheetOpen"
+          >
+            <span aria-hidden="true" />
+          </button>
           <div class="dock__tabs" role="tablist" aria-label="Salon">
             <button
               v-for="p in PANELS"
@@ -297,6 +330,7 @@ async function logout() {
                   @edit="startEdit"
                   @open-list="openList"
                 />
+                <LevelCard :xp="progress.xp" :level="progress.level" />
                 <FavouriteGenres :genres="user.profile.favouriteGenres" />
                 <CoinsCard :decor-count="decorCount" @shop="visitShop" />
                 <AboutYou
@@ -331,6 +365,7 @@ async function logout() {
               />
             </div>
           </div>
+          <PixelConfetti :burst="confetti" />
         </aside>
       </div>
 
@@ -361,14 +396,16 @@ async function logout() {
     />
     <ConfirmDialog
       v-if="discarding"
-      title="Discard your changes?"
-      text="Your new look hasn't been saved yet."
-      stay-label="Keep editing"
-      go-label="Discard"
+      title="Save your new look?"
+      text="You're leaving the salon, and your new look hasn't been saved yet."
+      save-label="Save look and leave"
+      stay-label="Stay"
+      go-label="Discard and leave"
       @stay="answerLeave(false)"
       @go="answerLeave(true)"
+      @save="saveAndLeave"
     />
-    <PrivacyAlert :mode="privacyAlert" :face="user.profile.avatar" @close="hidePrivacyAlert" />
+    <PrivacyAlert :mode="privacyAlert" :character="user.profile.character" @close="hidePrivacyAlert" />
   </BuildingShell>
 </template>
 
@@ -403,10 +440,16 @@ async function logout() {
 }
 
 .dock {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
   padding-bottom: 20px;
+}
+
+/* only phones pull the sheet up */
+.dock__handle {
+  display: none;
 }
 
 .dock__tabs {
@@ -414,25 +457,31 @@ async function logout() {
   flex: none;
   gap: 6px;
   padding: 5px;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: rgba(255, 253, 249, 0.92);
-  box-shadow: 4px 4px 0 rgba(30, 26, 36, 0.25);
+  border: 3px solid var(--px-ink);
+  border-radius: 4px;
+  background: var(--px-paper);
+  box-shadow: var(--px-shadow);
 }
 
 .dock__tab {
   flex: 1 1 0;
   min-height: 42px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 2px;
   background: transparent;
   color: var(--rl-text);
   font-weight: 700;
+  transition: transform 0.12s ease;
+}
+
+.dock__tab:hover {
+  transform: translateY(-1px);
 }
 
 .dock__tab[aria-selected='true'] {
-  background: #a84874;
+  background: var(--px-pink-dark);
   color: #fffdf9;
+  box-shadow: inset 0 -4px 0 rgba(43, 29, 36, 0.3);
 }
 
 .dock__saved {
@@ -465,39 +514,72 @@ async function logout() {
   width: 100%;
   min-height: 48px;
   margin: 16px 0 8px;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: #fffdf9;
+  border: 3px solid var(--px-ink);
+  border-radius: 4px;
+  background: var(--px-paper);
   color: #b42318;
   font-weight: 700;
-  box-shadow: 4px 4px 0 rgba(30, 26, 36, 0.22);
+  box-shadow: var(--px-shadow);
 }
 
 .logout:hover {
   background: #fbe9e7;
 }
 
-/* Narrow screens: the chair on top, the widgets underneath, all scrolling together */
+/* Narrow screens: the reader on top, the widgets in a sheet underneath that pulls up over them */
 @media (max-width: 899px) {
   .salon__layout {
     display: block;
-    overflow-y: auto;
-    padding: 12px 12px 0;
+    padding: 0;
   }
 
   .salon__stage {
-    height: min(62vh, 560px);
-    padding-bottom: 12px;
+    height: 52%;
+    padding: 12px 12px 34px;
+  }
+
+  .dock {
+    position: absolute;
+    inset: 48% 0 0;
+    z-index: 3;
+    padding: 0 12px 12px;
+    border-top: 3px solid var(--px-ink);
+    border-radius: 16px 16px 0 0;
+    background: var(--px-paper-dark);
+    box-shadow: 0 -6px 0 rgba(43, 29, 36, 0.18);
+    transition: top 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .dock.is-open {
+    top: 8%;
+  }
+
+  .dock__handle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 100%;
+    height: 28px;
+    border: 0;
+    background: none;
+  }
+
+  .dock__handle span {
+    width: 48px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--px-ink);
+    opacity: 0.45;
   }
 
   .dock__panel {
-    overflow: visible;
+    padding-right: 2px;
   }
+}
 
-  .dock__tabs {
-    position: sticky;
-    top: 0;
-    z-index: 4;
+@media (max-width: 899px) and (prefers-reduced-motion: reduce) {
+  .dock {
+    transition: none;
   }
 }
 </style>

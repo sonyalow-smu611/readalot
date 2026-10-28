@@ -94,28 +94,72 @@ time.now (room clock), Wikipedia and Dog CEO (pet photos).
 
 ## Testing
 
-End-to-end tests in `tests/e2e/` drive the running app with Playwright, the way a reader would:
-through labelled buttons and visible text, never internal structure.
+End-to-end tests in `tests/e2e/` drive the real app in a browser with [Playwright](https://playwright.dev),
+the way a reader uses it: they tap labelled buttons and read visible text, and never reach into
+the app's code or its stores.
+
+### Running the tests
 
 ```bash
-npx playwright install chromium   # first time only
-npm run test:e2e                  # all tests, headless Chrome
-npx playwright test tests/e2e/room.spec.js            # one file
-npx playwright test -g "birds fly past"               # tests whose name matches
-npx playwright show-report        # the last run's report
+npm install                                   # first time
+npx playwright install chromium               # first time: the browser the tests use
+npm run test:e2e                              # every test, headless (about 4–5 minutes)
+npx playwright test tests/e2e/room.spec.js    # one file
+npx playwright test -g "Places menu"          # tests whose name matches
+npx playwright test --headed                  # watch the browser while they run
+npx playwright test --ui                      # step through tests, with a timeline and DOM snapshots
+npx playwright test --debug -g "lamp"         # pause on each step in the inspector
+npx playwright show-report                    # open the last run's HTML report
 ```
 
-- The run starts its own API (port 3100, no Google Books key, so the built-in 16-book demo shelf) and client (port 5174). Close anything on those ports first.
-- Every test starts signed in (`tests/e2e/fixtures.js`). Live answers are mocked with `page.route`: the weather, the time, and every save to the shelf, so runs are repeatable and the shared demo shelf is never changed.
-- Headless Chrome draws the 3D room (WebGL), so the room tests really turn and tap it. A full run takes about 4 minutes.
+- **You don't need to start the app yourself.** The run starts its own API on port 3100 (with no
+  Google Books key, so the built-in 16-book demo shelf) and its own client on port 5174. If a run
+  fails at once with "address already in use", an old test server is still on one of those ports:
+  `lsof -nP -iTCP:3100 -sTCP:LISTEN` shows it, and `kill <PID>` stops it.
+- **On a busy laptop,** run fewer tests at once: `npx playwright test --workers=2`.
+- A failed test keeps its screenshot and an "error context" page snapshot in `test-results/`.
 
-| File | Covers |
-|------|--------|
-| `room.spec.js` | The window's weather (rain, birds on a clear day), the clock, turning to the bookshelf, buying and placing a decoration, the chair's Currently Reading card, the corkboard's Quote of the Day |
-| `bookshelf.spec.js` | Books in shelf order and sizes, tapping a book (it flies out and opens, skip, reduced motion, real and failed covers), the details and their actions (start, progress, finish, review, rate), remove and Undo, focus and keyboard, the book list without 3D |
-| `mood-result.spec.js` | The mood check-in and its recommendation |
-| `smoke.spec.js` | Every tab loads |
-| `scan-book.spec.js`, `shelve-book.spec.js` | Placeholders (skipped) |
+### How the tests are written
+
+- **Real journeys, start to finish.** Each file covers one part of the app a reader uses. Each
+  `test.describe` is one journey, and each test names the behaviour it checks ("a second chair
+  swaps the first back to the inventory").
+- **Stable selectors.** Tests find things the way a reader or a screen reader does:
+  `getByRole` with the accessible name, `getByText`, `getByLabel`. That also checks the app is
+  accessible. A `data-testid` is used only where there's nothing to name: the room's canvases
+  (`room-canvas`, `room-cats`), the window's view, and a Shop card's name and price.
+- **Repeatable.** Every test starts fresh: its own browser context, signed in as "Reader"
+  (`fixtures.js`), with today's mood check-in already answered unless the test is about it.
+  Anything that changes from run to run is answered with `page.route`: the weather, the time,
+  the Quote of the Day and mood recommendations. Every save to the shelf is answered too, so the
+  shared demo shelf never changes and no test depends on another having run first.
+- **No guessing at timing.** Tests wait for what they need rather than for a fixed time:
+  Playwright's auto-waiting assertions, `expect.poll` for values that settle (a canvas pixel, a
+  scroll position), `scrollSettled` for the room to stop sliding, and `nextPaint` for the screen
+  to repaint. The few fixed waits left are the point of the test (proving a cat stays still, or
+  that a tap outside opens nothing), and each says so.
+- **The room's picture.** My Room is painted on a canvas, so what's only in the picture (themes,
+  curtains, lamps, furniture, notes on the corkboard) is checked by reading its pixels at known
+  art positions (`artColour` in `fixtures.js`). Expected values are never copied from the code:
+  a test compares before and after, or one room with another.
+- **Shared helpers** live in `tests/e2e/fixtures.js`: signing in, the fixed answers, waiting for
+  the room, going to a place, reading a pixel, and buying from the Shop.
+
+### What's covered
+
+| File | Journeys |
+|------|----------|
+| `town.spec.js` | The town map, the Places list, entering each building and coming back, friends' houses, the weather chip |
+| `room.spec.js` | Looking around My Room (wheel, drag, keys, the Places menu, the first-visit hint), the bare starting room, the window's weather by day and night, the clock, tapping the bookshelf, chair and corkboard, buying and placing a decoration, crisp drawing on phone and laptop |
+| `bookshelf.spec.js` | Books on the room's bookshelf by shelf, lifting and opening a book (cover, skip, reduced motion), its details (start, progress, finish, review, rate), remove and Undo, keyboard and focus, the bookshelf without the room's pictures |
+| `my-shelf.spec.js` | My Shelf: a row per shelf, genre chips, search, moving a book, Back to room, a shelf that fails to load; long rows (Next/Previous, swipe, drag, arrow keys) |
+| `furniture.spec.js` | The Shop's pixel-art pieces and prices, hanging wall art, plants, reading chairs (swapping with the armchair), cats that wander, and all of it lit by day and night |
+| `room-themes.spec.js` | Each house's colours, curtains and bedding; buying curtains and bedding and swapping them; switching the lamps on and off |
+| `visit-room.spec.js` | From a reader's profile into their room, their furniture and books (read-only), their shelf page, leaving notes on their notice board |
+| `house-desktop.spec.js` | My Room and My Shelf on a laptop: filling the window, readable cards, resizing |
+| `mood-result.spec.js` | The mood check-in and its book recommendation, adding it to the shelf, skipping for the day |
+| `smoke.spec.js` | The Library's Discover page opens, with its search and shelf filters |
+| `scan-book.spec.js`, `shelve-book.spec.js` | Placeholders for journeys not built yet (skipped) |
 
 ## Project Structure
 
@@ -254,6 +298,13 @@ The app is built around four main areas: **My Room, Discover Books, Discover Peo
 
 ### My Room
 
+The reader's home page: a 3D bedroom built in Blender (`client/blender/`) and drawn with
+Three.js. The reader stands in the middle and drags, pinches or scrolls to look around, or uses
+the bar of places along the bottom (Bookshelf, Chair, Window, Corkboard, Clock). Everything that
+can be tapped is a labelled button over the 3D scene.
+
+* **Bookshelf:** each of the reader's shelves has a row of the bookcase to itself, top to bottom **To be read**, **Reading** (at eye level), **Finished**, named on a brass plate on the row's board with how many books it holds. The books stand with their titles on the spines and keep their own size from visit to visit; a book pointed at (or focused) lifts a little up and out of its row. Books that do not fit in a row show as "+N more" on its board.
+* **Opening a book:** tapping a spine plays the animation designed in `bookshelf.blend`: the book slides out, flies to the reader with its cover facing them, the cover opens and the pages flip. A tap skips to the end, and reduced motion skips it altogether. Then the book's details show on a wood-framed card: the cover (or a cloth-bound stand-in with the title), title, author, stars and genres, the shelf buttons **Want to read / Reading / Finished reading**, then Synopsis, Rating and Reviews. Choosing **Reading** brings up a progress slider; a **Finished** book offers **Review** and **Rate** (they open Book Details) until both are done. **Remove from shelf** asks first, then offers Undo. Closing puts the book back on the shelf.
 The reader's room (Your house in the town): one wide pixel-art picture of the room, side on,
 drawn in the town's style. It goes left to right: the bay window nook, the reading chair and
 coffee table, the bookshelf, the clock and corkboard, then the bed. The reader swipes, drags,

@@ -1,4 +1,7 @@
-import { expect, test } from "./fixtures.js";
+import { expect, mockWeather, test } from "./fixtures.js";
+
+// The mood check-in: it opens on the first visit to My Room each day, recommends a book for the
+// mood with a quote from it, and can be skipped for the day or reopened from the room menu.
 
 const WALDEN = {
   mood: "calm",
@@ -15,8 +18,10 @@ const WILLOWS = {
   quote: { quoteText: "There is nothing half so much worth doing as simply messing about in boats.", author: "Kenneth Grahame", work: "The Wind in the Willows" }
 };
 
-// Recommendations are random and the quotes come from an outside API, so both are answered here.
+// Recommendations are random and the quotes come from an outside API, so both are answered here,
+// as is the room's live weather.
 test.beforeEach(async ({ page }) => {
+  await mockWeather(page);
   await page.route("**/api/recommendations*", (route) => {
     const asked = new URL(route.request().url()).searchParams;
     route.fulfill({ json: asked.get("exclude") === "work-walden" ? WILLOWS : WALDEN });

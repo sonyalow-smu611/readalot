@@ -1,14 +1,16 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The pop-up after the People map switch flips: the reader's avatar cheers (found) or puts on
-// a mask (hidden). Screen readers hear the same news from PrivacySetting's status line.
+// The pop-up after the People map switch flips: the reader's character cheers (found) or puts
+// on a mask (hidden). Screen readers hear the same news from PrivacySetting's status line.
 import { computed } from 'vue'
+import CharacterSprite from '@/components/shared/CharacterSprite.vue'
 import { PRIVACY_ALERTS } from '@/buildings/salon/profileOptions.js'
 
 const props = defineProps({
   // 'public', 'private', or '' when closed
   mode: { type: String, default: '' },
-  face: { type: String, required: true },
+  // the reader's saved character; its face is shown
+  character: { type: Object, required: true },
 })
 
 const emit = defineEmits(['close'])
@@ -22,7 +24,9 @@ const copy = computed(() => PRIVACY_ALERTS[props.mode] ?? null)
       <div v-if="copy" :key="mode" class="spot" :class="`spot--${mode}`" aria-hidden="true" @click="emit('close')">
         <div class="spot__card">
           <div class="spot__mascot">
-            <span class="spot__face">{{ face }}</span>
+            <span class="spot__face">
+              <CharacterSprite :character="character" crop="head" :scale="3" decorative />
+            </span>
             <template v-if="mode === 'public'">
               <span v-for="n in 6" :key="n" class="spot__spark" :style="{ '--i': n }">✦</span>
               <span class="spot__heart">♥</span>
@@ -88,8 +92,8 @@ const copy = computed(() => PRIVACY_ALERTS[props.mode] ?? null)
 }
 
 .spot__face {
-  font-size: 3.5rem;
-  line-height: 1;
+  display: block;
+  line-height: 0;
 }
 
 .spot--public .spot__face {
@@ -124,10 +128,11 @@ const copy = computed(() => PRIVACY_ALERTS[props.mode] ?? null)
 
 .spot__mask {
   position: absolute;
-  top: 30px;
+  /* over the sprite's eyes */
+  top: 38px;
   left: 50%;
-  width: 70px;
-  margin-left: -35px;
+  width: 54px;
+  margin-left: -27px;
   overflow: visible;
   fill: #1b1512;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));

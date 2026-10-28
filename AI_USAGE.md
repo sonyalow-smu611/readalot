@@ -196,6 +196,32 @@ Written by Claude Code at Sonz's request, test first, from the spec in
 | Notes | `notes.js`, `components/NoteComposer.vue`, `components/NoticeBoard.vue`, `strip/paint.js` | Leave a note (140 characters, kept per reader in this browser), the notice board with the Quote of the Day and the notes, Take down, and up to three notes drawn on the corkboard |
 | Tests | `tests/e2e/visit-room.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/room.spec.js`, `tests/e2e/town.spec.js` | The visiting journey. The Shop's pixel-only check. The room's decoration journey uses the Succulent trio. The friend's house now lands on the renamed profile |
 
+### Room themes, curtains and bedding, lamp switches, a barer start and a Places menu (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the spec in
+`docs/specs/room-themes-lamps-places-menu.md`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Places menu and weather chip | `client/src/buildings/house/components/PlacesMenu.vue`, `components/RoomStrip.vue` | The bar of places becomes a labelled Places button in the top left with a list of places. The weather chip floats above the window and moves with the room |
+| Barer start | `client/src/buildings/house/strip/layout.js`, `assets/room-still.png` | Most small decorations removed from the starting room; the loading picture redrawn from the room |
+| Themes | `client/src/buildings/house/themes.js`, `visitors.js`, `RoomView.vue`, `strip/paint.js`, `client/scripts/room-art/room.js` | Each house's wall and floor colours and its own curtains, bedding, lamps and rug. The art script draws the colour and pattern variants |
+| Curtains and bedding | `client/src/buildings/house/furniture.js`, `strip/layout.js`, `components/RoomStrip.vue`, `client/src/composables/useDecor.js` | Six curtain colours and five bedding designs in the Shop. They take the place of the room's own, one set at a time (the reading nook's rule, extended to the window and the bed) |
+| Lamps | `client/src/buildings/house/lamps.js`, `components/RoomStrip.vue`, `strip/paint.js`, `strip/layout.js` | The floor and table lamps switch on and off when tapped; a lamp that's off lights nothing at night |
+| Tests | `tests/e2e/room-themes.spec.js`, `tests/e2e/fixtures.js` (the `goToPlace` helper), `room.spec.js`, `furniture.spec.js`, `visit-room.spec.js`, `bookshelf.spec.js`, `my-shelf.spec.js`, `house-desktop.spec.js` | The theme, Shop and lamp journeys. The Places menu, weather chip and bare-room checks. Every spec goes to places through the menu |
+
+### End-to-end tests: shared helpers, stable selectors, no fixed waits (AI-generated)
+
+Written by Claude Code at Sonz's request, reviewing the house's Playwright tests against the
+course's testing criteria.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shared helpers | `tests/e2e/fixtures.js` | One place for the fixed answers (weather, time, quote, mood check-in), waiting for the room, sliding to a place, reading a canvas pixel, and buying from the Shop |
+| Specs | `tests/e2e/room.spec.js`, `furniture.spec.js`, `room-themes.spec.js`, `visit-room.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `house-desktop.spec.js`, `mood-result.spec.js` | Grouped into `test.describe` journeys. Fixed waits replaced by waiting for the room to settle or the next paint. CSS selectors replaced by roles and a few test ids. The weather mocked everywhere. The curtains and bedding tests became one table-driven test |
+| Test ids | `client/src/buildings/house/components/RoomStrip.vue`, `RoomDock.vue` | `room-canvas`, `room-cats`, `card-name` and `card-price` for the checks that have nothing to name |
+| README | `README.md` | The Testing section: how to run, debug and report, how the tests are written, and what each file covers |
+
 ### Readalot Town: the map home page and the building skeleton (AI-generated)
 
 Written by Claude Code at the team's request (stack chosen by the team: Phaser 3, one map
@@ -233,6 +259,138 @@ interactivity (see the AI use rules in `PROJECT.md`).
 | Scene | `client/src/town/TownScene.js`, `client/src/components/town/PlacesMenu.vue` | Buildings and friends' houses pop when pointed at or tapped; floating name tags over friends' houses; the Places list scrolls |
 | Laptop view | `client/src/components/PhoneFrame.vue`, `client/src/router/index.js`, `client/src/components/town/PlaceCard.vue` | A `wide` route setting that lets a page fill a laptop window instead of the phone column; the town uses it, and its place card stays card-sized |
 | Tests | `tests/e2e/town.spec.js` | A friend's house opens their room; every friend is in Places; the weather chip steps through each look without errors |
+
+### Library: the pixel-art hall (AI-generated)
+
+Written by Claude Code at Aasim's request for the library (Aasim's part), in the style of My
+Room, and checked with Playwright. The library's interactivity (opening a bookcase, loading its
+books, the help desk) is critical frontend interactivity under the AI use rules in `PROJECT.md`,
+so the team needs to agree to it, and Aasim needs to review and own it.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Categories | `client/src/buildings/library/categories.js` | Eight bookcases (Popular, Fantasy, Romance, Mystery, Sci-fi, History, Classics, Awards) with their searches and spine colours |
+| Hall art | `client/src/buildings/library/hall/palette.js`, `pixel.js`, `sprites.js`, `layout.js`, `paint.js` | The hall drawn in the browser in the town's pixel style: bookcases filled with seeded spines, help desk, arched windows, lamps and their light, ladder, globe, reading nook |
+| Hall | `client/src/buildings/library/components/LibraryHall.vue`, `hall/scroll.js` | Whole-pixel sizing, sideways scrolling, a labelled button over each bookcase and the desk, the bar of places |
+| Open bookcase | `client/src/buildings/library/components/ShelfSheet.vue` | A sheet with the category's books, loading and error states, and "See all" |
+| Page | `client/src/buildings/library/LibraryView.vue`, `client/src/buildings/library/README.md` | The search bar, each bookcase's books loaded when first opened, the book preview, focus going back to the bookcase |
+| Tests | `tests/e2e/library.spec.js`, `tests/e2e/smoke.spec.js` | Every bookcase is there; a bookcase opens its books and a book its preview; the help desk leads to search. The smoke test checks the hall instead of the old filter chips |
+
+#### Book scanner in the library (AI-assisted)
+
+At Aasim's request, Khaleil's Scan Book was moved into the library as a scanning machine.
+Khaleil's camera, upload and scan code was moved, not rewritten: `views/ScanBookView.vue` became
+`client/src/buildings/library/components/ScanMachine.vue`, opened as a dialog. The assistant
+added the machine's sprite and place in the hall (`hall/sprites.js`, `hall/layout.js`), its button
+(`LibraryHall.vue`), and opening it from `LibraryView.vue`. A found book now opens the library's
+own preview (`useBookPreview`) instead of the view's own shelving code. `/scan` redirects to
+`/library?scan=1` (`client/src/router/index.js`), and `tests/e2e/scan-book.spec.js` (until now
+a skipped placeholder) tests snapping, uploading, a cover that can't be matched, and the redirect.
+The server's `/api/scan-book` and `services/vision.js` are unchanged.
+
+#### Live weather in the library (AI-generated)
+
+At Aasim's request, the library shows the live weather the way My Room does, through the shared
+`services/weather.js` (no new API or server change). `LibraryView.vue` loads it every 10 minutes
+(`?scene=` previews a sky). `hall/sprites.js` draws each window's sky for the weather (sun, clouds,
+rain, moon and stars), and `hall/paint.js` tints the hall like My Room, lighting it by its lamps
+after dark. `LibraryHall.vue` has the weather chip, and `hall/palette.js` the colours. The
+tint colours and the chip's icons are copied from My Room. Tested in `tests/e2e/library.spec.js`.
+
+#### Library changes after the team's review (AI-generated)
+
+The team asked for four changes to the library, and Aasim asked the assistant to make them:
+- **Live rain:** drops fall in each window only while it rains, harder for heavy rain or storms
+  (from Open-Meteo's weather code). This is in `LibraryHall.vue`, `LibraryView.vue` and
+  `hall/layout.js` (`windowGlass`).
+- **Help desk:** the search bar widens, glows and shows a librarian prompt with a Search button
+  (`LibraryView.vue`).
+- **Light switch:** turns the lamps on and off, and is remembered on the device. This is in
+  `LibraryHall.vue` and `LibraryView.vue`, with unlit lamp sprites in `hall/sprites.js` and the
+  light in `hall/paint.js`.
+- **Full screen on a computer:** `wide: true` on the `/library` route in
+  `client/src/router/index.js`, as My Room has.
+
+Tested in `tests/e2e/library.spec.js`.
+
+After a second review, Aasim asked for three more changes:
+- **Lamps:** each lamp turns off and on by tapping it, in place of one light switch. Lamp ids
+  and buttons are in `hall/layout.js` (`LAMPS`), `LibraryHall.vue` and `LibraryView.vue`; the
+  light is in `hall/paint.js`.
+- **Search bar:** it now opens up the same way whether tapped directly or from the help desk.
+- **Bookcase sheet:** covers are the size of My Shelf's, as many to a row as fit
+  (`components/ShelfSheet.vue`).
+- **"See all" page:** a genre's page (`/discover/:genre`) fills a laptop window
+  (`wide: true` in `client/src/router/index.js`). On a wide screen each shelf holds as many
+  My Shelf-sized covers as fit (`views/GenreShelfView.vue`, `components/ShelfTier.vue`); phones
+  are unchanged. Tested in `tests/e2e/library-wide.spec.js`.
+
+### Real accounts on Supabase, saved profiles and a town-only first tour (AI-generated)
+
+Written by Claude Code at Aalric's request, from the spec in
+`docs/specs/supabase-profiles-and-tour.md` (decisions made with Aalric in a Q&A session). Aalric
+waived the limit on AI-written logic for the sign-in work; Dylan reviews the `TownScene.js` change.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/profiles_and_tour.sql` | `avatar`, `character` and `tour_seen_at` on `profiles`; a `profile_private` table for gender, age and religion; row-level security so readers edit only their own rows and see only discoverable profiles |
+| Sign-in and profile | `client/src/services/auth.js`, `client/src/services/supabase.js`, `client/src/services/api.js` | The keyless preview mode is removed. The profile is read from and saved to the two tables instead of the login's metadata; saving the tour as seen |
+| Store and screens | `client/src/stores/user.js`, `client/src/views/VerifyView.vue`, `client/src/views/WelcomeView.vue`, `client/src/buildings/salon/SalonView.vue`, `client/src/components/GuideTour.vue` | "Profile complete" means a saved profile exists; the tour plays once, in the town, until Done or Skip; it is cut to the six town steps; Welcome offers Try again when the profile didn't load |
+| Camera | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue` | On the tour, each Next zooms out to the whole town and back in on the next building |
+| Server | `server/src/middleware/auth.js` | With no Supabase on the server, every request is the demo user, even with a token |
+| Tests | `tests/e2e/supabaseUser.js`, `tests/e2e/fixtures.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/auth.spec.js`, `tests/e2e/salon.spec.js`, `playwright.config.js`, `.env.example` | Test readers made with the service-role key and signed in directly (one per Playwright worker, profile reset before each test, to stay under Supabase's sign-in rate limit); new-reader, skip and returning-reader journeys; specs skip without keys |
+
+### First tour: one arrival move and a spotlight card (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 1).
+Dylan reviews the `TownScene.js` change.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Arrival | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/views/TownView.vue`, `client/src/stores/user.js` | A new reader's town opens already framed on their house (`start`), so Welcome's zoom and the town's first frame are one move; a stop the camera is already on doesn't zoom out and in again |
+| Spotlight | `client/src/town/TownScene.js`, `client/src/components/town/TownMap.vue`, `client/src/components/GuideTour.vue` | Each stop puts the building in the top third of the screen and reports where it is; the card spotlights it and sits under it with an arrow, never over it; the drag hint hides during the tour |
+| Tests | `tests/e2e/onboarding.spec.js` | The card is below the building at every stop |
+
+### Pixel characters, the salon room and the profile tab (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 2).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Characters | `client/src/components/shared/CharacterSprite.vue`, `PixelCharacter.vue`, `CharacterPresetPicker.vue`, `client/src/views/WelcomeView.vue`, `client/src/buildings/salon/components/CharacterCustomiser.vue` | Welcome and the salon draw the reader as the map's pixel sprite: crops for the customiser's buttons, closed eyes for blinking, and a live version that breathes, blinks, hops on a change and walks on the spot. Welcome shows a big one over the presets. The smooth figure (`CharacterFigure.vue`) and the 3D model (`characterModel.js`, `CharacterModel.vue`) are removed |
+| Salon room | `client/src/buildings/salon/salonArt.js`, `components/SalonStage.vue`, `components/SalonBackdrop.vue` | The salon redrawn at the cafe's and library's pixel size: window onto the town, neon sign, posters, shelves, lamps, basin and dryers; a tall mirror with the reader's reflection in its glass, the counter and the barber chair, the reader standing beside it |
+| Leaving | `client/src/buildings/salon/SalonView.vue`, `components/ConfirmDialog.vue` | Save look and leave, Discard and leave, or Stay; logging out asks before signing out, so the look can still be saved |
+| Profile tab | `client/src/buildings/salon/pixel.css`, `tilt.js`, `components/CountUp.vue`, `PixelConfetti.vue`, `ProfileBlock.vue`, `ReaderCard.vue`, `FavouriteGenres.vue`, `StyleStudio.vue`, `SalonView.vue` | Pixel panels in the town's colours, cards that lean toward the mouse and pop when pressed, counts that count up, bouncing genre chips, pixel confetti on every save, the reader's sprite in place of the emoji; on a phone the widgets are a sheet under the reader that pulls up |
+| Docs and tests | `AGENTS.md`, `tests/e2e/salon.spec.js` | How characters are drawn now; the leave choices, Save look and leave, and the reader and their reflection |
+
+### Reader levels, saved coins and the map badge (AI-generated)
+
+Written by Claude Code at Aalric's request, from `docs/specs/tour-pixel-salon-xp.md` (PR 3).
+Dylan reviews the badge (`PlayerBadge.vue`, `TownHud.vue`, `TownView.vue`, `WeatherButton.vue`); Sonz reviews the lines in the house (`VisitView.vue`,
+`RoomView.vue`, `useDecor.js`); Emiley reviews the line in `ReaderChat.vue`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/xp_and_coins.sql` | `xp_events` (one row per action, repeats refused by unique indexes), `coins` on `profiles`, and `earn_xp()`, `my_progress()` and `spend_coins()`; readers can't write their own XP or coins |
+| Levels | `client/src/lib/levels.js`, `client/src/services/progress.js`, `client/src/stores/progress.js`, `client/src/stores/user.js` | Level 2 at 100 XP, each level 50 more; 25 × the new level in coins at a level-up; progress loads with the profile and clears on sign-out |
+| Earning | `client/src/stores/bookshelf.js`, `client/src/services/api.js`, `client/src/buildings/house/VisitView.vue`, `client/src/buildings/house/RoomView.vue`, `client/src/components/people/ReaderChat.vue` | One line where each action already succeeds: add, start and finish a book, a review, a room visit, a note, a cafe message |
+| Coins | `client/src/composables/useDecor.js` | The Shop spends the saved balance in place of an in-memory 480 |
+| Map badge | `client/src/components/town/PlayerBadge.vue`, `TownHud.vue`, `WeatherButton.vue`, `client/src/views/TownView.vue`, `client/src/components/shared/CountUp.vue` | The reader's face in an XP ring with the level on a gold tab, name and coins, in the bottom-left corner (the weather chip moves to the top left); it bobs and blinks, floats "+XP", and pops on a level-up |
+| Salon | `client/src/buildings/salon/components/LevelCard.vue`, `SalonView.vue` | A Reader level card with XP counting up, a filling bar, the next level's coins and how to earn XP; confetti on a level-up |
+| Tests | `tests/e2e/progress.spec.js`, `tests/e2e/supabaseUser.js` | The badge, a visit's XP once a day, level-up coins, the Shop's saved coins, and the database refusing coins a reader sets |
+
+### Big signs over the four main buildings (AI-generated)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session: smooth
+bronze-and-gem signs like a game menu, one shared frame with the building's accent as the gem, a
+motif per building, the name with its app section underneath, Fredoka for the words. Friends'
+houses keep their name tags.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The sign art as SVG built from `places.js` (frame, cushion-cut gem, book, coffee cup, roof with chimney, comb and scissors), the live text, and the motion: bob, a shine across the gem, the ribbon swaying, steam and chimney smoke, the scissors snipping; a lantern glow after dark; brighter while chosen. All motion stops with reduced motion |
+| Scene | `client/src/town/TownScene.js` | Loads the signs and the font; signs replace the name tags on the four buildings, are tappable like their building, grow when it pops, and follow the night and the chosen building |
+| Font | `client/public/town/signs/fredoka-bold.woff2` | Fredoka Bold (Latin), from Google Fonts, SIL Open Font License |
 
 ### Landing page for first-time visitors (AI-generated)
 
