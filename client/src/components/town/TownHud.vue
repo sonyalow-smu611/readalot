@@ -1,25 +1,20 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The bar across the top of the town: who you are (opens the salon), Scan a book, and Places.
+// The bar across the top of the town: Places, and Friends with how many of them are online.
+// (Your badge sits in the bottom-left corner: PlayerBadge, placed by TownView.)
+import FriendsButton from './FriendsButton.vue'
+
 defineProps({
-  name: { type: String, default: 'You' },
-  avatar: { type: String, default: '' },
   placesOpen: { type: Boolean, default: false },
+  friendsOnline: { type: Number, default: 0 },
+  friendsOpen: { type: Boolean, default: false },
 })
-const emit = defineEmits(['toggle-places'])
+const emit = defineEmits(['toggle-places', 'toggle-friends'])
 </script>
 
 <template>
   <header class="town-hud">
-    <RouterLink :to="{ name: 'salon' }" class="town-hud__chip" aria-label="Your profile">
-      <span class="town-hud__avatar" aria-hidden="true">{{ avatar }}</span>
-      <span class="town-hud__name">{{ name }}</span>
-    </RouterLink>
     <span class="town-hud__spacer"></span>
-    <RouterLink :to="{ name: 'scan-book' }" class="town-hud__chip town-hud__chip--button" aria-label="Scan a book">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16" /></svg>
-      Scan
-    </RouterLink>
     <button
       type="button"
       class="town-hud__chip town-hud__chip--button"
@@ -30,6 +25,7 @@ const emit = defineEmits(['toggle-places'])
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14" /></svg>
       Places
     </button>
+    <FriendsButton :online="friendsOnline" :open="friendsOpen" @toggle="emit('toggle-friends')" />
   </header>
 </template>
 
@@ -41,6 +37,7 @@ const emit = defineEmits(['toggle-places'])
   right: 14px;
   z-index: 10;
   display: flex;
+  align-items: flex-start;
   gap: 8px;
   pointer-events: none;
 }
@@ -79,21 +76,4 @@ const emit = defineEmits(['toggle-places'])
   stroke-linejoin: round;
 }
 
-.town-hud__avatar {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 3px solid #2f5fb3;
-  border-radius: 50%;
-  background: var(--rl-secondary);
-  font-size: 16px;
-}
-
-.town-hud__name {
-  max-width: 90px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 </style>

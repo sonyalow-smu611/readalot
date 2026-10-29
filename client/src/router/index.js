@@ -10,9 +10,11 @@ import ReaderRoomView from '@/views/ReaderRoomView.vue'
 import ReaderShelfView from '@/views/ReaderShelfView.vue'
 import SearchView from '@/views/SearchView.vue'
 import LoginView from '@/views/LoginView.vue'
+import StartView from '@/views/StartView.vue'
 import VerifyView from '@/views/VerifyView.vue'
 import WelcomeView from '@/views/WelcomeView.vue'
 import { useUserStore } from '@/stores/user'
+import { landingSeen } from '@/lib/landing.js'
 
 // `meta.order` decides which way a page slides in: deeper pages (higher) slide in from the
 // right. `meta.fullBleed` pages fill the frame and skip the shared header.
@@ -22,16 +24,16 @@ const routes = [
   { path: '/', name: 'town', component: () => import('@/views/TownView.vue'), meta: { title: 'Town', fullBleed: true, wide: true, order: 0 } },
   { path: '/house', name: 'house', component: () => import('@/buildings/house/HouseView.vue'), meta: { title: 'My Room', fullBleed: true, wide: true, order: 1 } },
   { path: '/house/shelf', name: 'my-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'My Shelf', fullBleed: true, wide: true, order: 2 } },
-  { path: '/library', name: 'library', component: () => import('@/buildings/library/LibraryView.vue'), meta: { title: 'Library', fullBleed: true, order: 1 } },
+  { path: '/library', name: 'library', component: () => import('@/buildings/library/LibraryView.vue'), meta: { title: 'Library', fullBleed: true, wide: true, order: 1 } },
   { path: '/cafe', name: 'cafe', component: () => import('@/buildings/cafe/CafeView.vue'), meta: { title: 'Cafe', fullBleed: true, order: 1 } },
-  { path: '/salon', name: 'salon', component: () => import('@/buildings/salon/SalonView.vue'), meta: { title: 'Hair Salon', fullBleed: true, order: 1 } },
+  { path: '/salon', name: 'salon', component: () => import('@/buildings/salon/SalonView.vue'), meta: { title: 'Hair Salon', fullBleed: true, wide: true, order: 1 } },
   // The old addresses, and the names the pages link to, now open the buildings.
   { path: '/room', name: 'room', redirect: { name: 'house' } },
   { path: '/discover', name: 'discover-books', redirect: { name: 'library' } },
   { path: '/people', name: 'discover-people', redirect: { name: 'cafe' } },
   { path: '/profile', name: 'profile', redirect: { name: 'salon' } },
   // Pages opened from inside a building
-  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, order: 2 } },
+  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, wide: true, order: 2 } },
   { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
   // another reader's room, visited from their profile: the house's room in visiting mode
@@ -41,6 +43,8 @@ const routes = [
   // the book scanner lives in the library now
   { path: '/scan', name: 'scan-book', redirect: { name: 'library', query: { scan: '1' } } },
   { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },
+  // A first-time visitor's landing page, before signing in.
+  { path: '/start', name: 'start', component: StartView, meta: { title: 'Keep track of every book you read', bare: true, guest: true, order: 0 } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },
   { path: '/register', name: 'register', component: LoginView, meta: { title: 'Register', bare: true, guest: true, order: 0 } },
   { path: '/verify', name: 'verify', component: VerifyView, meta: { title: 'Verify email', bare: true, guest: true, order: 0 } },
@@ -62,7 +66,7 @@ router.beforeEach(async (to) => {
   if (user.signedIn && to.meta.guest) {
     return { name: user.profileComplete ? 'town' : 'welcome' }
   }
-  if (!user.signedIn && !to.meta.guest) return { name: 'login' }
+  if (!user.signedIn && !to.meta.guest) return { name: landingSeen() ? 'login' : 'start' }
   if (user.signedIn && user.profileComplete && to.name === 'welcome') {
     return { name: 'town' }
   }

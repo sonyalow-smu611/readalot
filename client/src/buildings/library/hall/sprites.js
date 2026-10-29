@@ -3,7 +3,7 @@
 // in pixel.js, each with the town's 1 px outline. Sprites are drawn once, the first time the hall
 // asks for them. A bookcase is `bookcase:<category key>`, filled with that category's colours.
 import { CATEGORIES } from '../categories.js'
-import { BOOKCASE, DESK, SCANNER } from './layout.js'
+import { BOOKCASE, DESK, SCANNER, WINDOWS } from './layout.js'
 import { PAL as C } from './palette.js'
 import { E, P, R, canvas, leaf, panel, seeded, shade, sprite } from './pixel.js'
 
@@ -80,8 +80,8 @@ function windowArched(W, H, look = 'sunny') {
   })
 }
 
-// The sky through a window's glass: two bands of sky, then the sun or moon and stars, clouds,
-// or rain, cut to the shape of the glass.
+// The sky through a window's glass: two bands of sky, then the sun or moon and stars, or clouds,
+// cut to the shape of the glass. The rain itself falls over it in the page (LibraryHall.vue).
 function sky(W, H, r, cx, look) {
   const [scene, time] = look.split('-')
   const night = time === 'night'
@@ -111,17 +111,6 @@ function sky(W, H, r, cx, look) {
     cloud(g, cx - 4, Math.floor(H * 0.22), 7, col)
     cloud(g, cx + 6, Math.floor(H * 0.38), 5, col)
   }
-  if (scene === 'rain') {
-    // short slanting streaks of rain, every few pixels
-    for (let px = 4; px < W - 3; px += 4) {
-      for (let py = ri(14, 22); py < H - 9; py += ri(10, 14)) {
-        P(g, px, py, C.raindrop)
-        P(g, px - 1, py + 1, C.raindrop)
-        P(g, px - 1, py + 2, C.raindrop)
-      }
-    }
-  }
-
   // cut it to the glass (the arch, then the rest down to the sill), drawn whole on its own canvas
   // first, since `destination-in` keeps only what each single drawing covers
   const [glass, m] = canvas(W, H)
@@ -220,13 +209,16 @@ function plant() {
   })
 }
 
-function bankerLamp() {
+// A lamp's bulb or glass: lit, or `off` with the light switch
+const bulb = (look) => (look === 'off' ? C.lampOff : C.lampLit)
+
+function bankerLamp(look) {
   return sprite(18, 20, (x, W, H) => {
     // green glass shade, lit underneath
     R(x, 1, 2, W - 2, 5, C.green)
     R(x, 2, 1, W - 4, 1, C.greenLight)
     R(x, 1, 2, W - 2, 1, C.greenLight)
-    R(x, 3, 7, W - 6, 1, C.lampLit)
+    R(x, 3, 7, W - 6, 1, bulb(look))
     // brass stem and base
     R(x, 8, 8, 2, H - 11, C.brass)
     panel(x, 3, H - 3, 12, 3, C.brass, 1.15, 0.8)
@@ -260,22 +252,22 @@ function openBook() {
   })
 }
 
-function sconce() {
+function sconce(look) {
   return sprite(10, 16, (x) => {
-    E(x, 5, 4, 3, 4, C.lampLit)
+    E(x, 5, 4, 3, 4, bulb(look))
     R(x, 2, 7, 6, 2, C.brass)
     R(x, 4, 9, 2, 5, C.brassShade)
     R(x, 2, 14, 6, 2, C.brass)
   })
 }
 
-function pendant() {
+function pendant(look) {
   return sprite(18, 12, (x, W) => {
     // a dome: the top half of an ellipse
     E(x, 9, 7, 8, 5, C.teal)
     x.clearRect(0, 8, W, 4)
     R(x, 1, 7, W - 2, 1, C.tealLight)
-    E(x, 9, 9, 3, 2, C.lampLit)
+    E(x, 9, 9, 3, 2, bulb(look))
     R(x, 8, 0, 2, 2, C.brass)
   })
 }
@@ -327,15 +319,16 @@ const MAKERS = {
   'open-book': openBook,
   sconce,
   pendant,
-  window: (look) => windowArched(34, 86, look),
-  'window-tall': (look) => windowArched(44, 112, look),
+  window: (look) => windowArched(WINDOWS.window.w, WINDOWS.window.h, look),
+  'window-tall': (look) => windowArched(WINDOWS['window-tall'].w, WINDOWS['window-tall'].h, look),
 }
 for (const category of CATEGORIES) MAKERS[`bookcase:${category.key}`] = () => bookcase(category)
 
 const cache = new Map()
 
 // The sprite called `name`, drawn the first time it is asked for. Null for an unknown name.
-// A window is `window@<look>` (e.g. `window@rain-night`), with the sky for that weather.
+// A window is `window@<look>` (e.g. `window@rain-night`), with the sky for that weather; a lamp
+// is `sconce@off` and so on with its light off.
 export function getSprite(name) {
   if (!cache.has(name)) {
     const [base, look] = name.split('@')
