@@ -21,7 +21,11 @@ async function visit(page, id, name) {
 test.describe("getting there", () => {
   test("a reader's profile in the Cafe has a button into their room", async ({ page }) => {
     await page.goto("/cafe");
-    await page.getByRole("article").filter({ hasText: "Emma Tan" }).getByRole("button", { name: "Visit Room →" }).click();
+    // tapping a reader in the café walks over to them; their card opens on arrival
+    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).click();
+    const card = page.getByRole("dialog", { name: "Meet Emma Tan" });
+    await expect(card).toBeVisible({ timeout: 15000 });
+    await card.getByRole("button", { name: "Visit Room →" }).click();
 
     await expect(page).toHaveURL(/\/people\/reader-emma$/);
     await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
