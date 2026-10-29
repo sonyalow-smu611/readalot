@@ -111,17 +111,13 @@ export function fitsZone(meta, zone) {
   return true
 }
 
-function placeOn(zone, x, entry = placing.value) {
+// Puts a piece on `spot` in `zone`: { x } (0 to 1 along the zone) and, for a piece that can stand
+// anywhere, `at`, the point in the room it stands on (see buildings/house/strip/placement.js,
+// which says where a piece fits).
+function placeOn(zone, spot, entry = placing.value) {
   if (!entry) return false
   const meta = decorMeta(entry.id)
   if (!meta || !fitsZone(meta, zone)) return false
-  const min = 0.12
-  const max = zone === 'room' ? 0.72 : 0.88
-  // a spot on the wall, the reading nook, the window or the bed is exact: what goes there goes on that spot
-  const exact = OWN_ZONES.has(zone)
-  let next = exact ? Number(x) : Math.min(max, Math.max(min, Number(x) || 0.5))
-  const crowded = !exact && placed.value.some((item) => item.zone === zone && Math.abs(item.x - next) < 0.08)
-  if (crowded) next = Math.min(max, next + 0.1)
   // one reading chair (or pair of curtains, or set of bedding) at a time: the one already there
   // goes back to the inventory
   const swapped = ONE_ZONES.has(zone) ? placed.value.filter((item) => item.zone === zone) : []
@@ -129,10 +125,15 @@ function placeOn(zone, x, entry = placing.value) {
     placed.value = placed.value.filter((item) => item.zone !== zone)
     inventory.value = [...inventory.value, ...swapped.map(({ uid, id }) => ({ uid, id }))]
   }
-  placed.value = [...placed.value, { uid: entry.uid, id: entry.id, zone, x: next }]
+  placed.value = [...placed.value, { uid: entry.uid, id: entry.id, zone, x: spot.x, ...(spot.at && { at: spot.at }) }]
   inventory.value = inventory.value.filter((item) => item.uid !== entry.uid)
   placing.value = null
   return true
+}
+
+// Moves a placed piece to `at` in `zone` (somewhere it fits).
+function moveTo(uid, zone, at) {
+  placed.value = placed.value.map((item) => (item.uid === uid ? { ...item, zone, at } : item))
 }
 
 function pick(uid) {
@@ -181,6 +182,7 @@ export function useDecor() {
     burst,
     cancelPlace,
     placeOn,
+    moveTo,
     pick,
     unplace,
   }
