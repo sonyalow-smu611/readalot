@@ -423,3 +423,18 @@ router guard, so the team reviews it through a pull request.
 | Seen once | `client/src/lib/landing.js` | Remembers in localStorage (`readalot-landing`) that the page was left through Sign up or Log in; reads and writes are guarded |
 | Routing | `client/src/router/index.js` | The `/start` guest route; a signed-out visitor who hasn't seen it goes to `/start` instead of `/login` |
 | Tests | `tests/e2e/start.spec.js` | First visit lands on `/start` and lists every stop; scrolling fades the tagline away and the next stop in; the bar and the town cards take you to each stop; tapping the scanner scene finds the book; the last screen signs up too; Sign up or Log in counts as seen and later visits go to Log in; leaving without choosing shows it again; no sideways scroll on a phone; a signed-in reader never sees it |
+
+### Daily tasks and streaks on the map (AI-generated, front end only)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan: three tasks a day (a
+check-in, a reading task, and one that changes daily), a reward that grows over a 7-day streak, and
+Duolingo-style streak freezes. Front end only while the concept and design are settled: the day is
+kept in the browser, and the coins and XP a claim gives are only added on screen. The database
+part (daily_claims, claim_daily()) comes later, through a reviewed pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Rules | `client/src/town/daily.js` | Tasks for each day (Singapore time), rewards (50 to 300 coins, a chest every 7th day), freezes (hold 2, a missed day uses one, every 7th day gives one back), and the browser storage |
+| State | `client/src/town/dailyStore.js` | Today's tasks, streak and freezes; listens to the progress and bookshelf stores so a task done in any building ticks off, without changing those stores |
+| Map | `client/src/components/town/DailyButton.vue`, `DailyPanel.vue`, `DailyTaskRow.vue`, `StreakStrip.vue`, `DailyReward.vue`, `client/src/views/TownView.vue` | The Daily button under the weather chip (streak, a ring of tasks done, a dot when the reward is ready); the panel with Go to each task's building, Claim, this week's rewards and the freezes, opening by itself on the first visit each day; the chest that pops open on Claim; Preview buttons to move the day on, in development only |
+| Tests | `tests/e2e/daily.spec.js`, `tests/e2e/town.spec.js` | The first visit opens the tasks with the check-in ticked; Go opens the building; claiming starts the streak; a missed day uses a freeze, and with none left ends the streak. The town tests mark today's tasks as already shown |

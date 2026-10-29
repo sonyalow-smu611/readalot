@@ -2,7 +2,10 @@ import { expect, test } from "./fixtures.js";
 
 // The town is home. The map is a canvas, so these checks go through the Places list, the
 // same labelled buttons a keyboard or screen reader user would use.
-test.beforeEach(async ({ page }) => {
+// Today's tasks already shown, so they don't open over the map (daily.spec.js covers them).
+test.beforeEach(async ({ page, reader }) => {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
+  await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [`readalot-daily:${reader.id}`, JSON.stringify({ day: today, shown: today })]);
   await page.goto("/");
   await expect(page.getByText("Loading the town…")).toBeHidden();
 });
