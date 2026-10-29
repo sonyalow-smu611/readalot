@@ -24,6 +24,7 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `components/BookDialog.vue` | A book's card over the page, used by the room and My Shelf (remove with Undo included) |
 | `components/WindowView.vue` | The view through the window: sky, weather and the town across the street |
 | `strip/layout.js` | **What stands where.** Every piece, the parts of the room, decoration spots, lights |
+| `strip/placement.js` | **Where a decoration may stand:** the wall, the floor and the small surfaces, and the room kept between pieces |
 | `strip/palette.json` | The room's colours, used by the art script and the room alike |
 | `strip/paint.js` | Paints the layout onto the canvas, with the light for the weather and time of day |
 | `strip/books.js` | The reader's books on the shelf |
@@ -88,8 +89,10 @@ furniture as its `y`.
 ## Other things in the layout
 
 - **`PARTS`:** the Places menu, left to right. `at` is the x the view centres on.
-- **`SLOTS`:** where shop decorations can stand. Keep their `zone` and `x` as they are, or
-  decorations readers have already placed will move. You can change `at`, where a slot is drawn.
+- **`SLOTS`:** the glowing spots a decoration can be put on with a tap. Wall art, plants and the
+  succulents can also stand anywhere else they fit (see "Putting pieces anywhere" below); a spot
+  glows only while the piece fits on it. Keep their `zone` and `x` as they are, or the visited
+  readers' furniture will move. You can change `at`, where a slot is drawn.
 - **`WALK`:** the line along the floor that pets walk on. It's also where visitors could walk later.
 - **`LIGHTS`:** the window's cool light at night, each lamp's pool of warm light, and the fairy lights.
 
@@ -124,6 +127,37 @@ To add a piece:
    and `sleep`, drawn with `catSheet` in the art script. Cats walk along `WALK`, sit, and
    sometimes nap. They're drawn on their own canvas over the room, tinted for the weather.
    With reduced motion they sit still.
+
+## Putting pieces anywhere
+
+Wall art, plants and the succulents aren't held to the glowing spots. Dragged out of the inventory,
+they land where they're let go, if they fit there (`strip/placement.js`):
+
+- **Wall art** hangs anywhere on the wall: below the bunting, above the skirting, inside the
+  room's two ends, and 8 art px (`GAP`) clear of the room's own pieces (the window and its curtains,
+  the clock, the corkboard, the bookshelf, the mirror, the furniture against the wall, and a reading
+  chair from the Shop in the armchair's place).
+- **Plants** stand anywhere along the floor; let go higher up, they land on the floor below.
+- **The succulents** sit anywhere along the top of the window seat, side table or nightstand,
+  whichever is nearest where they're let go.
+- Every piece keeps `GAP` clear of the other placed pieces. Cats walk about and take no room.
+
+Let go where it doesn't fit, a piece moves to the nearest place it does within 40 art px
+(`REACH`); if there's none, it stays in the inventory and the room says "Not enough room there".
+
+A placed piece remembers its point, `at`: the middle of wall art, the bottom middle of anything
+standing. Reading chairs, curtains and bedding still go on their one spot each, and the visited
+readers' furniture (`{ id, zone, x }`, no `at`) stands on the spot in its zone nearest `x`.
+
+To move a placed piece in My Room:
+
+- **Press and hold** it for 300 ms, then drag. It shows where it would land as it goes, and goes
+  back where it was if it's let go where it doesn't fit. A quick drag still looks around the room.
+- Or **tap it and choose Move**. The arrow buttons (or the arrow keys) nudge it 4 art px at a time,
+  up and down too on the wall, never into a place it doesn't fit. **Done** keeps it there;
+  **Cancel** or Escape puts it back.
+
+Nothing in someone else's room can be moved.
 
 ## Themes
 
@@ -165,11 +199,14 @@ down: `RoomStrip` gets `editable` off.
 Where My Room has its menu, a visitor gets **Leave a note**. A note (up to 140 characters,
 signed with the visitor's name) goes on that reader's notice board, and up to three are drawn on
 the corkboard as small paper notes (`paintNotes` in `strip/paint.js`). Tapping the corkboard
-opens the notice board. Notes stay in this browser only (`notes.js`), like the Cafe's follows
-and chat, because the sample readers aren't real accounts.
+opens the notice board, which has its own **Leave a note** button. A visitor can take down only the
+notes they left (each note keeps its author's id). Notes stay in this browser only (`notes.js`),
+like the Cafe's follows and chat, because the sample readers aren't real accounts.
+`database/room_notes.sql` is the table for keeping them on the server, so a room's owner can read
+them too.
 
 To furnish a reader's room differently, change their list in `FURNISHINGS` in `visitors.js`.
-Each piece is `{ id, zone, x }`, the same as a piece placed in My Room.
+Each piece is `{ id, zone, x }`, and stands on the spot in its zone nearest `x`.
 
 ## On a laptop
 

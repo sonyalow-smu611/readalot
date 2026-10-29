@@ -210,6 +210,21 @@ Written by Claude Code at Sonz's request, test first, from the spec in
 | Lamps | `client/src/buildings/house/lamps.js`, `components/RoomStrip.vue`, `strip/paint.js`, `strip/layout.js` | The floor and table lamps switch on and off when tapped; a lamp that's off lights nothing at night |
 | Tests | `tests/e2e/room-themes.spec.js`, `tests/e2e/fixtures.js` (the `goToPlace` helper), `room.spec.js`, `furniture.spec.js`, `visit-room.spec.js`, `bookshelf.spec.js`, `my-shelf.spec.js`, `house-desktop.spec.js` | The theme, Shop and lamp journeys. The Places menu, weather chip and bare-room checks. Every spec goes to places through the menu |
 
+### Furniture anywhere it fits, and notes from the notice board (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the tickets in
+`.scratch/room-free-placement/issues/`. The team agreed the room's decoration placing is
+AI-written (see the 3D room section above). Team to review: the placement rules in
+`strip/placement.js` and the press-and-hold carrying in `RoomStrip.vue` are interactive logic.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Placement rules | `client/src/buildings/house/strip/placement.js`, `strip/layout.js` | Where wall art, plants and the succulents may stand (the wall band, the floor, the small surfaces), 8 art px kept between pieces, and the nearest place that fits within 40 art px. One wall spot moved 1 px clear of the curtain |
+| Placing and moving | `client/src/buildings/house/components/RoomStrip.vue`, `RoomView.vue`, `strip/scroll.js`, `client/src/composables/useDecor.js` | Placed pieces keep their point; a drop lands where it's let go; press and hold to carry a placed piece; Move on its card with arrow buttons and keys; the room doesn't scroll while a piece is carried |
+| Notes | `client/src/buildings/house/notes.js`, `components/NoticeBoard.vue`, `RoomView.vue` | Leave a note on the notice board; notes keep their author's id and only their author can take them down |
+| Schema | `database/room_notes.sql` | The table for keeping notes on the server, for the team to build the endpoint on |
+| Tests | `tests/e2e/furniture.spec.js`, `tests/e2e/visit-room.spec.js` | Dropping anywhere, keeping clear, press-and-hold and Move journeys; Leave a note from the board and taking down only your own notes |
+
 ### End-to-end tests: shared helpers, stable selectors, no fixed waits (AI-generated)
 
 Written by Claude Code at Sonz's request, reviewing the house's Playwright tests against the

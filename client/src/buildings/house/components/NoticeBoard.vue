@@ -1,8 +1,9 @@
 <!--
   Scaffolded with AI assistance — see AI_USAGE.md
   Someone's notice board, opened from the corkboard in their room: the Quote of the Day at the
-  top, then the notes left there, newest first, each signed and dated with a Take down button.
-  Emits `remove` with a note's id, and `close` (also on Esc or a tap outside).
+  top, then the notes left there, newest first, each signed and dated. The visitor's own notes have
+  a Take down button. Leave a note emits `write`; the page opens the Leave a note card over the
+  board. Emits `remove` with a note's id, and `close` (also on Esc or a tap outside).
 -->
 <template>
   <div
@@ -35,12 +36,15 @@
           <li v-for="note in notes" :key="note.id" class="board__note">
             <p class="board__note-text">{{ note.text }}</p>
             <p class="board__note-by">From {{ note.author }} · {{ dateOf(note.createdAt) }}</p>
-            <button type="button" class="board__take-down" @click="$emit('remove', note.id)">Take down</button>
+            <button v-if="note.authorId === me" type="button" class="board__take-down" @click="$emit('remove', note.id)">Take down</button>
           </li>
         </ul>
         <p class="board__demo">Saved on this browser only, like the Cafe's follows and chat.</p>
 
-        <button class="btn btn-primary mt-3" type="button" @click="$emit('close')">Close</button>
+        <div class="board__actions">
+          <button class="btn btn-primary" type="button" @click="$emit('write')">Leave a note</button>
+          <button class="btn btn-outline-secondary" type="button" @click="$emit('close')">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -55,10 +59,12 @@ import { getTodayQuote } from '@/services/api.js'
 defineProps({
   // the first name of the reader whose board it is
   owner: { type: String, required: true },
-  // [{ id, author, text, createdAt }], newest first
+  // [{ id, authorId, author, text, createdAt }], newest first
   notes: { type: Array, default: () => [] },
+  // the visitor's reader id: their own notes can be taken down
+  me: { type: String, default: '' },
 })
-defineEmits(['close', 'remove'])
+defineEmits(['close', 'remove', 'write'])
 
 const dialog = ref(null)
 const { data, error, loading, run } = useAsync(getTodayQuote)
@@ -163,6 +169,12 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 700;
   color: #b42318;
+}
+
+.board__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .board__demo {

@@ -94,11 +94,12 @@ function release(entry, clientX, clientY) {
     burst(x - roomRect.left, y - roomRect.top)
   }
 
-  // it goes on the free spot nearest where it was let go
+  // it goes where it was let go, or as near as it fits
   const spot = strip.value?.dropAt(entry, clientX, clientY)
   if (!spot) {
-    const where = meta.surface === 'floor' ? 'on the floor' : 'on the window seat, nightstand or side table'
-    flash(`Drop ${meta.name} on a glowing spot ${where}.`, 'bad')
+    // wall art, plants and the succulents go anywhere they fit; the rest on a glowing spot
+    if (!meta.pet && ['wall', 'floor', 'shelf'].includes(meta.surface)) flash('Not enough room there', 'bad')
+    else flash(`Drop ${meta.name} on a glowing spot.`, 'bad')
     return
   }
   mark(clientX, clientY)
@@ -211,7 +212,7 @@ function stopNote() {
 
 function postNote(text) {
   try {
-    addNote(props.visiting.id, user.profile.name, text)
+    addNote(props.visiting.id, { id: user.profile.id, name: user.profile.name }, text)
   } catch (err) {
     noteError.value = err.message
     return
@@ -224,7 +225,7 @@ function postNote(text) {
 
 function takeDown(id) {
   try {
-    removeNote(props.visiting.id, id)
+    removeNote(props.visiting.id, id, user.profile.id)
   } catch (err) {
     flash(err.message, 'bad')
     return
@@ -391,8 +392,9 @@ onBeforeUnmount(() => {
       </svg>
       Leave a note
     </button>
+    <NoticeBoard v-if="boardOpen" :owner="visiting.firstName" :notes="notes" :me="user.profile.id" @remove="takeDown" @write="startNote" @close="boardOpen = false" />
+    <!-- after the board, so the card opens over it when it's written from there -->
     <NoteComposer v-if="writing" :owner="visiting.firstName" :error="noteError" @post="postNote" @cancel="stopNote" />
-    <NoticeBoard v-if="boardOpen" :owner="visiting.firstName" :notes="notes" @remove="takeDown" @close="boardOpen = false" />
 
     <QuoteOfDayModal v-if="quoteOpen" @close="quoteOpen = false" />
     <MoodCheckInModal v-if="moodStep === 'checkin'" @submit="submitMood" @skip="skipMood" />
