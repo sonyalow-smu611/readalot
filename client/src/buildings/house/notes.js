@@ -1,7 +1,8 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Notes left on readers' notice boards (the corkboard in their room), kept per reader in this
 // browser, as the Cafe keeps its follows and demo chat: the sample readers aren't real accounts,
-// so nothing goes to the server. Each note: { id, readerId, author, text, createdAt }, newest first.
+// so nothing goes to the server. Each note: { id, readerId, authorId, author, text, createdAt }, newest
+// first. Only the reader who left a note can take it down.
 const KEY = 'readalot.roomNotes'
 export const NOTE_MAX = 140
 
@@ -27,15 +28,16 @@ export function notesFor(readerId) {
   return Array.isArray(list) ? list : []
 }
 
-// Pins a note on a reader's board and returns it. Throws when the text is empty or too long, or
-// when it can't be saved.
+// Pins a note on a reader's board, signed by its author ({ id, name }), and returns it. Throws
+// when the text is empty or too long, or when it can't be saved.
 export function addNote(readerId, author, text) {
   const clean = String(text ?? '').trim()
   if (!clean || clean.length > NOTE_MAX) throw new Error(`A note needs 1 to ${NOTE_MAX} characters.`)
   const note = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     readerId,
-    author: author || 'A reader',
+    authorId: author?.id ?? '',
+    author: author?.name || 'A reader',
     text: clean,
     createdAt: new Date().toISOString(),
   }
@@ -45,8 +47,9 @@ export function addNote(readerId, author, text) {
   return note
 }
 
-export function removeNote(readerId, id) {
+// Takes down a note, as long as `authorId` left it.
+export function removeNote(readerId, id, authorId) {
   const all = readAll()
-  all[readerId] = notesFor(readerId).filter((note) => note.id !== id)
+  all[readerId] = notesFor(readerId).filter((note) => note.id !== id || !authorId || note.authorId !== authorId)
   writeAll(all)
 }

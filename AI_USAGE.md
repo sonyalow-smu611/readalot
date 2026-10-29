@@ -210,6 +210,21 @@ Written by Claude Code at Sonz's request, test first, from the spec in
 | Lamps | `client/src/buildings/house/lamps.js`, `components/RoomStrip.vue`, `strip/paint.js`, `strip/layout.js` | The floor and table lamps switch on and off when tapped; a lamp that's off lights nothing at night |
 | Tests | `tests/e2e/room-themes.spec.js`, `tests/e2e/fixtures.js` (the `goToPlace` helper), `room.spec.js`, `furniture.spec.js`, `visit-room.spec.js`, `bookshelf.spec.js`, `my-shelf.spec.js`, `house-desktop.spec.js` | The theme, Shop and lamp journeys. The Places menu, weather chip and bare-room checks. Every spec goes to places through the menu |
 
+### Furniture anywhere it fits, and notes from the notice board (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the tickets in
+`.scratch/room-free-placement/issues/`. The team agreed the room's decoration placing is
+AI-written (see the 3D room section above). Team to review: the placement rules in
+`strip/placement.js` and the press-and-hold carrying in `RoomStrip.vue` are interactive logic.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Placement rules | `client/src/buildings/house/strip/placement.js`, `strip/layout.js` | Where wall art, plants and the succulents may stand (the wall band, the floor, the small surfaces), 8 art px kept between pieces, and the nearest place that fits within 40 art px. One wall spot moved 1 px clear of the curtain |
+| Placing and moving | `client/src/buildings/house/components/RoomStrip.vue`, `RoomView.vue`, `strip/scroll.js`, `client/src/composables/useDecor.js` | Placed pieces keep their point; a drop lands where it's let go; press and hold to carry a placed piece; Move on its card with arrow buttons and keys; the room doesn't scroll while a piece is carried |
+| Notes | `client/src/buildings/house/notes.js`, `components/NoticeBoard.vue`, `RoomView.vue` | Leave a note on the notice board; notes keep their author's id and only their author can take them down |
+| Schema | `database/room_notes.sql` | The table for keeping notes on the server, for the team to build the endpoint on |
+| Tests | `tests/e2e/furniture.spec.js`, `tests/e2e/visit-room.spec.js` | Dropping anywhere, keeping clear, press-and-hold and Move journeys; Leave a note from the board and taking down only your own notes |
+
 ### End-to-end tests: shared helpers, stable selectors, no fixed waits (AI-generated)
 
 Written by Claude Code at Sonz's request, reviewing the house's Playwright tests against the
@@ -408,3 +423,18 @@ router guard, so the team reviews it through a pull request.
 | Seen once | `client/src/lib/landing.js` | Remembers in localStorage (`readalot-landing`) that the page was left through Sign up or Log in; reads and writes are guarded |
 | Routing | `client/src/router/index.js` | The `/start` guest route; a signed-out visitor who hasn't seen it goes to `/start` instead of `/login` |
 | Tests | `tests/e2e/start.spec.js` | First visit lands on `/start` with every section; scrolling fades the sign away and the next section in; the bar marks a picked section at once and takes you there, and See how it works scrolls to the steps; each building tab shows its place and the arrow keys move along the street; the name and look you pick wait at your door; tapping reader actions adds XP and levels up; the last screen signs up too; Sign up or Log in counts as seen and later visits go to Log in; leaving without choosing shows it again; no sideways scroll on a phone; a signed-in reader never sees it |
+
+### Daily tasks and streaks on the map (AI-generated, front end only)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan: three tasks a day (a
+check-in, a reading task, and one that changes daily), a reward that grows over a 7-day streak, and
+Duolingo-style streak freezes. Front end only while the concept and design are settled: the day is
+kept in the browser, and the coins and XP a claim gives are only added on screen. The database
+part (daily_claims, claim_daily()) comes later, through a reviewed pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Rules | `client/src/town/daily.js` | Tasks for each day (Singapore time), rewards (50 to 300 coins, a chest every 7th day), freezes (hold 2, a missed day uses one, every 7th day gives one back), and the browser storage |
+| State | `client/src/town/dailyStore.js` | Today's tasks, streak and freezes; listens to the progress and bookshelf stores so a task done in any building ticks off, without changing those stores |
+| Map | `client/src/components/town/DailyButton.vue`, `DailyPanel.vue`, `DailyTaskRow.vue`, `StreakStrip.vue`, `DailyReward.vue`, `client/src/views/TownView.vue` | The Daily button under the weather chip (streak, a ring of tasks done, a dot when the reward is ready); the panel with Go to each task's building, Claim, this week's rewards and the freezes, opening by itself on the first visit each day; the chest that pops open on Claim; Preview buttons to move the day on, in development only |
+| Tests | `tests/e2e/daily.spec.js`, `tests/e2e/town.spec.js` | The first visit opens the tasks with the check-in ticked; Go opens the building; claiming starts the streak; a missed day uses a freeze, and with none left ends the streak. The town tests mark today's tasks as already shown |
