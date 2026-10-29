@@ -44,7 +44,7 @@ const routes = [
   { path: '/scan', name: 'scan-book', redirect: { name: 'library', query: { scan: '1' } } },
   { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },
   // A first-time visitor's landing page, before signing in.
-  { path: '/start', name: 'start', component: StartView, meta: { title: 'Keep track of every book you read', bare: true, guest: true, order: 0 } },
+  { path: '/start', name: 'start', component: StartView, meta: { title: 'Social media, but for book lovers', bare: true, guest: true, order: 0 } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },
   { path: '/register', name: 'register', component: LoginView, meta: { title: 'Register', bare: true, guest: true, order: 0 } },
   { path: '/verify', name: 'verify', component: VerifyView, meta: { title: 'Verify email', bare: true, guest: true, order: 0 } },

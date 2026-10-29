@@ -3,7 +3,7 @@
 // "Town wakes up": while the app gets ready, the real town map (public/town/map.png) wakes up.
 // It starts at night with the lamps and windows lit (positions from town/map-data.json), dawn
 // breaks, the camera glides out over the town, cars drive the main road and townsfolk walk the
-// pavements, and the Readalot sign pops in over a pixel book flipping its pages. Then it fades
+// pavements, and the IKDA sign (with 읽다, the Korean word it comes from, "to read") pops in over a pixel book flipping its pages. Then it fades
 // into the app.
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -17,7 +17,7 @@ const emit = defineEmits(['done'])
 const root = ref(null)
 const map = ref(null)
 const router = useRouter()
-const letters = 'Readalot'.split('')
+const letters = 'IKDA'.split('')
 
 // The main road runs across the map at y 1216; cars keep left, walkers keep to the pavements.
 const ROAD_Y = 1216
@@ -86,6 +86,7 @@ onMounted(async () => {
   timeline
     .from(q('.boot__sign'), { y: -40, scale: 0.6, autoAlpha: 0, duration: 0.6, ease: 'back.out(2)' }, 0.5)
     .from(q('.boot__letter'), { y: -30, autoAlpha: 0, duration: 0.45, stagger: 0.05, ease: 'bounce.out' }, 0.7)
+    .from(q('.boot__korean'), { autoAlpha: 0, y: 8, duration: 0.35 }, 1.1)
     .from(q('.boot__note'), { autoAlpha: 0, y: 8, duration: 0.35 }, 1.3)
     .from(q('.boot__book'), { y: 40, autoAlpha: 0, duration: 0.55, ease: 'back.out(1.8)' }, 0.2)
     .to(root.value, { autoAlpha: 0, duration: 0.4, ease: 'power2.in' }, 2.6)
@@ -140,9 +141,10 @@ onBeforeUnmount(() => timeline?.kill())
 
     <div class="boot__front">
       <div class="boot__sign">
-        <p class="boot__brand" aria-label="Readalot">
+        <p class="boot__brand" aria-label="IKDA">
           <span v-for="(letter, index) in letters" :key="index" class="boot__letter" aria-hidden="true">{{ letter }}</span>
         </p>
+        <p class="boot__korean"><span lang="ko">읽다</span> · to read</p>
         <p class="boot__note">Waking up the town…</p>
       </div>
       <div class="boot__book" :style="bookStyle" aria-hidden="true" />
@@ -251,6 +253,18 @@ onBeforeUnmount(() => timeline?.kill())
 
 .boot__letter {
   display: inline-block;
+}
+
+/* the Korean word the name comes from, and what it means */
+.boot__korean {
+  margin: 8px 0 0;
+  color: #2b2230;
+  font-size: clamp(1.1rem, 2.6vw, 1.4rem);
+  font-weight: 700;
+}
+
+.boot__korean span {
+  color: #2f5fb3;
 }
 
 .boot__note {

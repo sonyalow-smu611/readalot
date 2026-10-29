@@ -1,128 +1,163 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The landing page a first-time visitor sees before signing in. A bar stays on top with a link
-// to each stop and Sign up. It opens on a shelf of books over the town, with the tagline, a line
-// saying what the app does and Sign up, then a shelf with one book per feature, then one screen
-// per stop, each a different corner of town at a different time of day with townsfolk about,
-// then Sign up again under the night sky. The words and scenes fade in as they arrive and away as
-// they leave, and the air shifts with the mouse. Leaving through Sign up or Log in remembers it
-// has been seen (lib/landing.js), so after that the router sends visitors straight to sign in.
+// The landing page a first-time visitor sees before signing in, under the name IKDA. A bar stays
+// on top with a link to each section and Sign up. It opens on the town map in daylight with the
+// IKDA sign and the way in; then, as the visitor scrolls, evening falls over the sky behind the
+// page (StartBackdrop): Meet Maya, the town's buildings, making your character, levels, how it
+// works, questions, and finally your house at night with Sign up again. The words fade in as they
+// arrive. Leaving through Sign up or Log in remembers the page has been seen (lib/landing.js), so
+// after that the router sends visitors straight to sign in.
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { prefersReducedMotion } from '@/lib/motion'
 import { markLandingSeen } from '@/lib/landing.js'
+import { presetCharacter } from '@/lib/avatar/catalogue.js'
 import { useScrollFade } from '@/composables/useScrollFade.js'
-import { usePointerParallax } from '@/composables/usePointerParallax.js'
-import { STOPS } from '@/components/start/stops.js'
-import StartTownScene from '@/components/start/StartTownScene.vue'
-import StartSky from '@/components/start/StartSky.vue'
-import StartActions from '@/components/start/StartActions.vue'
-import StartStop from '@/components/start/StartStop.vue'
 import StartNav from '@/components/start/StartNav.vue'
-import StartFeatureShelf from '@/components/start/StartFeatureShelf.vue'
-import StartStreet from '@/components/start/StartStreet.vue'
-import StartShelf from '@/components/start/StartShelf.vue'
+import StartHero from '@/components/start/StartHero.vue'
+import StartBackdrop from '@/components/start/StartBackdrop.vue'
+import StartPersona from '@/components/start/StartPersona.vue'
+import StartTown from '@/components/start/StartTown.vue'
+import StartCharacter from '@/components/start/StartCharacter.vue'
+import StartLevels from '@/components/start/StartLevels.vue'
+import StartSteps from '@/components/start/StartSteps.vue'
+import StartFaq from '@/components/start/StartFaq.vue'
+import StartEnd from '@/components/start/StartEnd.vue'
 
-const NAV = STOPS.map((stop) => ({ id: stop.id, label: stop.tab }))
+const NAV = [
+  { id: 'maya', label: 'Meet Maya' },
+  { id: 'town', label: 'The town' },
+  { id: 'you', label: 'Your character' },
+  { id: 'levels', label: 'Levels' },
+  { id: 'how', label: 'How it works' },
+  { id: 'faq', label: 'FAQ' },
+]
 
-const root = ref(null)
+// the character the visitor makes, shown again on the level badge and at their door
+const character = ref(presetCharacter('rosie'))
+const name = ref('')
+
 const scroller = ref(null)
-useScrollFade(scroller)
-usePointerParallax(root)
+useScrollFade(scroller, { hold: 0.1, span: 0.35, drift: 20 })
 
-// the stop most in view, for the bar
+// how far down the page the visitor is (0 to 1), for the sky
+const progress = ref(0)
+let frame = 0
+
+function measure() {
+  frame = 0
+  const el = scroller.value
+  // the page may have been left since this was asked for
+  if (!el) return
+  const room = el.scrollHeight - el.clientHeight
+  progress.value = room > 0 ? el.scrollTop / room : 0
+}
+
+function onScroll() {
+  if (!frame) frame = window.requestAnimationFrame(measure)
+}
+
+// the section most in view, for the bar
 const active = ref('')
 let watcher = null
+// while the page scrolls to a section picked in the bar, the bar keeps that one marked
+let heading = ''
+let headingTimer = 0
+
+function arrive() {
+  heading = ''
+  window.clearTimeout(headingTimer)
+}
 
 function go(id) {
-  document.getElementById(`start-${id}`)?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
+  const target = document.getElementById(`start-${id}`)
+  if (!target) return
+  active.value = NAV.some((item) => item.id === id) ? id : ''
+  heading = id
+  window.clearTimeout(headingTimer)
+  // scrollend says when the page has got there; the timer is for browsers without it
+  headingTimer = window.setTimeout(arrive, 1200)
+  target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
 }
 
 onMounted(() => {
+  // the router names every page "… · Readalot"; the landing page goes by IKDA
+  document.title = 'IKDA · Social media, but for book lovers'
+  measure()
+  scroller.value.addEventListener('scrollend', arrive)
   if (!('IntersectionObserver' in window)) return
   watcher = new IntersectionObserver(
     (entries) => {
+      if (heading) return
       for (const entry of entries) {
-        if (entry.isIntersecting) active.value = entry.target.id.replace('start-', '')
-        else if (active.value === entry.target.id.replace('start-', '')) active.value = ''
+        const id = entry.target.id.replace('start-', '')
+        if (entry.isIntersecting) active.value = NAV.some((item) => item.id === id) ? id : ''
       }
     },
-    { root: scroller.value, threshold: 0.5 },
+    // a section counts as in view while it crosses the middle of the screen
+    { root: scroller.value, rootMargin: '-50% 0px -50% 0px' },
   )
-  for (const stop of STOPS) {
-    const el = document.getElementById(`start-${stop.id}`)
-    if (el) watcher.observe(el)
-  }
+  for (const el of scroller.value.querySelectorAll('section[id^="start-"]')) watcher.observe(el)
 })
 
-onBeforeUnmount(() => watcher?.disconnect())
+onBeforeUnmount(() => {
+  watcher?.disconnect()
+  window.clearTimeout(headingTimer)
+  scroller.value?.removeEventListener('scrollend', arrive)
+  window.cancelAnimationFrame(frame)
+})
 </script>
 
 <template>
-  <div ref="root" class="start">
-    <div ref="scroller" class="start__scroll">
+  <div class="start">
+    <StartBackdrop :progress="progress" />
+    <div ref="scroller" class="start__scroll" @scroll.passive="onScroll">
       <StartNav :items="NAV" :active="active" @go="go" @choose="markLandingSeen" />
-      <section class="start__hero" aria-labelledby="start-title">
-        <StartTownScene />
-        <div class="start__shade" aria-hidden="true" />
-        <!-- fireflies over the town -->
-        <StartSky colour="#ffe9a3" :seed="7" :count="24" :clouds="false" />
-        <div class="start__pitch" data-fade>
-          <StartShelf />
-          <p class="start__brand">Readalot · a reading tracker</p>
-          <h1 id="start-title" class="start__tagline">Keep track of every book you read.</h1>
-          <p class="start__sub">
-            Shelve what you're reading, find your next favourite book, and meet readers who love the
-            same books, all in a cozy pixel town.
-          </p>
-          <StartActions @choose="markLandingSeen" />
-        </div>
-        <p class="start__cue" aria-hidden="true">
-          Scroll to see how it works
-          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
-        </p>
-      </section>
-
-      <StartFeatureShelf :stops="STOPS" @go="go" />
-
-      <StartStop
-        v-for="(stop, i) in STOPS"
-        :id="stop.id"
-        :key="stop.id"
-        :title="stop.title"
-        :tab="stop.tab"
-        :line="stop.line"
-        :points="stop.points"
-        :accent="stop.accent"
-        :art="stop.art"
-        :decor="stop.decor"
-        :flip="i % 2 === 1"
-        :seed="i + 1"
-        :sky="stop.sky"
-        :sun="stop.sun"
-        :scenery="stop.scenery"
-      />
-
-      <section class="start__end" aria-labelledby="start-end-title">
-        <span class="start__moon" aria-hidden="true" />
-        <StartSky colour="#f6d77a" :seed="11" />
-        <!-- everyone in town turns out to see you off -->
-        <StartStreet :houses="['cottage-green', 'library', 'cottage-white', 'cafe', 'cottage-lilac', 'salon']" :walkers="['rosie', 'maya', 'rex', 'jay', 'nova']" />
-        <div class="start__pitch" data-fade>
-          <img class="start__home" src="/town/buildings/house.png" alt="" aria-hidden="true" />
-          <h2 id="start-end-title" class="start__tagline">Your next book is waiting.</h2>
-          <StartActions @choose="markLandingSeen" />
-        </div>
-      </section>
+      <StartHero @choose="markLandingSeen" @how="go('how')" />
+      <StartPersona />
+      <StartTown />
+      <StartCharacter v-model:character="character" v-model:name="name" />
+      <StartLevels :character="character" />
+      <StartSteps />
+      <StartFaq />
+      <StartEnd :character="character" :name="name" @choose="markLandingSeen" />
     </div>
   </div>
 </template>
 
+<style>
+/* Nunito for buttons, tabs and small labels, as on the IKDA page */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap');
+</style>
+
 <style scoped>
+/* the landing page's colours: warm paper and dark pixel outlines, with the sign's blue and gold
+   and a green for the way in. Words are in the serif; buttons and labels in Nunito. */
 .start {
+  --s-ink: #2b1d24;
+  --s-paper: #fff8ef;
+  --s-paper-dark: #f4e6d6;
+  --s-muted: #6e5b52;
+  --s-blue: #2f5fb3;
+  --s-gold: #f6e27a;
+  --s-green: #3fae5a;
+  --s-pink: #d0608e;
+  --s-ui: 'Nunito', 'Trebuchet MS', system-ui, sans-serif;
   position: relative;
   height: 100%;
   overflow: hidden;
-  background: var(--rl-primary);
+  background: #1e1a24;
+  color: var(--s-ink);
+  font-family: var(--rl-font-title);
+  font-size: 17px;
+}
+
+.start :deep(:where(button, input, .actions__btn, .actions__login, .start-nav__signup, .place__name, .inside__tab, .controls__label, .end__tag, .step__number, .step__time, .step__where, .step__gets, .badge__level, .badge__coins, .badge__news, .badge__next, .hero__note)) {
+  font-family: var(--s-ui);
+}
+
+/* the name in the bar stays in the sign's serif */
+.start :deep(.start-nav__brand) {
+  font-family: var(--rl-font-title);
 }
 
 .start__scroll {
@@ -130,128 +165,12 @@ onBeforeUnmount(() => watcher?.disconnect())
   inset: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  scroll-padding-top: 60px;
 }
 
-.start__hero,
-.start__end {
-  position: relative;
-  min-height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 56px 16px;
-  text-align: center;
-}
-
-/* dims the town so the white words read clearly over it */
-.start__shade {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(30, 26, 36, 0.7), rgba(30, 26, 36, 0.45));
-}
-
-.start__pitch {
-  position: relative;
-  z-index: 1;
-}
-
-/* the last screen: night over the town, with the whole street out */
-.start__end {
-  padding-bottom: 260px;
-  overflow: hidden;
-  background: linear-gradient(180deg, #1e1a24 0%, #2f2540 55%, #6b4a5c 100%);
-}
-
-/* a crescent moon over the night street */
-.start__moon {
-  position: absolute;
-  top: 14%;
-  right: 16%;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  box-shadow: inset -22px 10px 0 0 #f6e7b8, 0 0 60px 10px rgba(246, 231, 184, 0.15);
-  translate: calc(var(--px, 0) * -6px) calc(var(--py, 0) * -4px);
-}
-
-@media (max-width: 767px) {
-  .start__end {
-    padding-bottom: 190px;
-  }
-}
-
-/* your house from the town, at half size; it leans with the mouse */
-.start__home {
-  display: block;
-  width: 266px;
-  height: 210px;
-  margin: 0 auto 20px;
-  image-rendering: pixelated;
-  filter: drop-shadow(8px 8px 0 rgba(30, 26, 36, 0.45));
-  translate: calc(var(--px, 0) * 12px) calc(var(--py, 0) * 8px);
-}
-
-.start__brand {
-  margin: 0 0 8px;
-  color: rgba(255, 253, 249, 0.85);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.start__sub {
-  max-width: 560px;
-  margin: -12px auto 26px;
-  color: rgba(255, 253, 249, 0.9);
-  font-size: clamp(16px, 2vw, 19px);
-  line-height: 1.5;
-  text-shadow: 0 1px 10px rgba(30, 26, 36, 0.6);
-}
-
-.start__tagline {
-  max-width: 760px;
-  margin: 0 auto 28px;
-  font-family: var(--rl-font-title);
-  font-size: clamp(34px, 7vw, 60px);
-  font-weight: 700;
-  line-height: 1.12;
-  color: var(--rl-surface);
-  text-shadow: 0 2px 16px rgba(30, 26, 36, 0.55);
-}
-
-.start__cue {
-  position: absolute;
-  z-index: 1;
-  bottom: 28px;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 0;
-  color: rgba(255, 253, 249, 0.8);
-  font-size: 13px;
-}
-
-.start__cue svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  animation: start-cue 1.6s ease-in-out infinite;
-}
-
-@keyframes start-cue {
-  50% { transform: translateY(5px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .start__cue svg {
-    animation: none;
+@media (max-width: 575px) {
+  .start__scroll {
+    scroll-padding-top: 100px;
   }
 }
 </style>
