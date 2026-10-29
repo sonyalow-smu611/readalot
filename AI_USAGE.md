@@ -453,3 +453,17 @@ part (daily_claims, claim_daily()) comes later, through a reviewed pull request.
 | State | `client/src/town/dailyStore.js` | Today's tasks, streak and freezes; listens to the progress and bookshelf stores so a task done in any building ticks off, without changing those stores |
 | Map | `client/src/components/town/DailyButton.vue`, `DailyPanel.vue`, `DailyTaskRow.vue`, `StreakStrip.vue`, `DailyReward.vue`, `client/src/views/TownView.vue` | The Daily button under the weather chip (streak, a ring of tasks done, a dot when the reward is ready); the panel with Go to each task's building, Claim, this week's rewards and the freezes, opening by itself on the first visit each day; the chest that pops open on Claim; Preview buttons to move the day on, in development only |
 | Tests | `tests/e2e/daily.spec.js`, `tests/e2e/town.spec.js` | The first visit opens the tasks with the check-in ticked; Go opens the building; claiming starts the streak; a missed day uses a freeze, and with none left ends the streak. The town tests mark today's tasks as already shown |
+
+### Failing e2e tests after merging main (AI-generated)
+
+Written by Claude Code at Sonz's request, test first: the existing tests were the red ones, and
+each was traced to its cause before anything changed. Two are app fixes; the rest are the tests
+waiting for what the app really does. Team to review: `GuideTour.vue` and `supabaseUser.js` are
+shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Tour | `client/src/components/GuideTour.vue` | A building stop keeps looking for its building until the camera arrives, instead of giving up after 3.6 s; on a slow device the card never showed and the tour stuck |
+| Inventory | `client/src/buildings/house/components/RoomDock.vue` | Dragging a piece out of the Inventory with a mouse no longer starts the browser's own image drag, which cancelled the drop |
+| Loading screen | `tests/e2e/supabaseUser.js` | Signed-in tests wait for the loading screen (the town waking up) to finish before each step; until then the app fills the window and covers the page |
+| Tests | `tests/e2e/bookshelf.spec.js`, `furniture.spec.js`, `onboarding.spec.js` | Blocking the room's pictures blocks only images (the dev server serves an imported picture as a script, so the whole app failed to start); the drag waits for the Inventory card to settle; the tour journey is marked slow and waits longer for each camera glide |

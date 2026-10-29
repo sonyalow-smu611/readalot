@@ -144,6 +144,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               class="dock-card dock-card--drag"
               data-card
               @pointerdown="grab($event, entry)"
+              @dragstart.prevent
               @click="beginPlace(entry)"
             >
             <span class="dock-card__art"><DecorArt :kind="entry.id" /></span>

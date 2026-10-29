@@ -378,7 +378,10 @@ test.describe("from the room", () => {
 // My Shelf instead, where every book can still be opened.
 test.describe("without the room's pictures", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("**/room/strip/**", (route) => route.abort());
+    // only the pictures: the dev server also serves a picture an import names as a script
+    await page.route("**/room/strip/**", (route) =>
+      route.request().resourceType() === "image" ? route.abort() : route.fallback()
+    );
     await page.reload();
   });
 

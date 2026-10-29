@@ -375,9 +375,9 @@ const apart = (a, b) => Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), b.y - (a.
 async function dragIn(page, name, x, y) {
   await buy(page, name);
   const card = inventory(page).getByRole("button", { name: new RegExp(name) });
-  const from = await card.boundingBox();
+  // hover waits for the Inventory to finish sliding in, so the press lands on the card
+  await card.hover();
   const to = await screenOf(page, x, y);
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(to.x, to.y, { steps: 12 });
   await page.mouse.up();
