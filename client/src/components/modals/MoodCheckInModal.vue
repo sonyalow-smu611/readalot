@@ -23,7 +23,7 @@
           <button
             v-for="option in MOODS"
             :key="option.value"
-            class="mood__option"
+            class="btn btn-chip mood__option"
             :class="{ 'is-on': mood === option.value }"
             type="button"
             :aria-pressed="mood === option.value"
@@ -35,7 +35,7 @@
         </div>
 
         <button class="btn btn-primary mood__continue" type="submit" :disabled="!mood">Continue</button>
-        <button class="mood__skip" type="button" @click="$emit('skip')">Skip for today</button>
+        <button class="btn btn-link mood__skip" type="button" @click="$emit('skip')">Skip for today</button>
       </form>
     </div>
   </div>
@@ -95,26 +95,10 @@ onMounted(() => dialog.value.focus());
 }
 
 .mood__option {
-  display: flex;
   flex-direction: column;
   gap: 2px;
   min-height: 62px;
   padding: 10px 8px;
-  border: 1px solid var(--rl-line);
-  border-radius: var(--rl-radius-card);
-  background: var(--rl-secondary);
-  color: var(--rl-text);
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.mood__option:hover {
-  border-color: var(--rl-primary);
-}
-
-.mood__option.is-on {
-  border-color: var(--rl-primary);
-  background: var(--rl-primary);
-  color: var(--rl-surface);
 }
 
 .mood__name {
@@ -136,18 +120,6 @@ onMounted(() => dialog.value.focus());
 
 .mood__skip {
   margin-top: 6px;
-  padding: 8px 12px;
-  border: 0;
-  background: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rl-muted);
-  text-decoration: underline;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .mood__option {
-    transition: none;
-  }
-}
 </style>

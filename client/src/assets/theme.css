@@ -48,32 +48,7 @@ h3,
   color: var(--rl-muted) !important;
 }
 
-.btn-primary {
-  --bs-btn-bg: var(--rl-primary);
-  --bs-btn-border-color: var(--rl-primary);
-  --bs-btn-color: var(--rl-surface);
-  --bs-btn-hover-bg: #2c241e;
-  --bs-btn-hover-border-color: #2c241e;
-  --bs-btn-hover-color: var(--rl-surface);
-  --bs-btn-active-bg: #2c241e;
-  --bs-btn-active-border-color: #2c241e;
-  --bs-btn-disabled-bg: var(--rl-primary);
-  --bs-btn-disabled-border-color: var(--rl-primary);
-  --bs-btn-disabled-color: var(--rl-surface);
-  --bs-btn-focus-shadow-rgb: 154, 122, 85;
-}
-
-.btn-outline-primary {
-  --bs-btn-color: var(--rl-primary);
-  --bs-btn-border-color: var(--rl-primary);
-  --bs-btn-hover-bg: var(--rl-secondary);
-  --bs-btn-hover-color: var(--rl-primary);
-  --bs-btn-hover-border-color: var(--rl-primary);
-  --bs-btn-active-bg: var(--rl-primary);
-  --bs-btn-active-border-color: var(--rl-primary);
-  --bs-btn-active-color: var(--rl-surface);
-  --bs-btn-focus-shadow-rgb: 154, 122, 85;
-}
+/* Buttons: styles/pixel-buttons.css */
 
 :focus-visible {
   outline: 2px solid var(--rl-accent);

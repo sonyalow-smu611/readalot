@@ -131,7 +131,7 @@ async function submit() {
           />
           <button
             type="button"
-            class="secret__eye"
+            class="btn btn-link btn-icon secret__eye"
             :aria-pressed="showPassword"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
             @mousedown.prevent
@@ -190,16 +190,11 @@ async function submit() {
 .secret__eye {
   position: absolute;
   top: 50%;
-  right: 6px;
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--rl-accent);
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.secret__eye:active:not(:disabled) {
   transform: translateY(-50%);
 }
 

@@ -49,12 +49,12 @@
     </header>
 
     <!-- shelf status -->
-    <div class="btn-group w-100 details__status" role="group" aria-label="Reading status">
+    <div class="d-flex w-100 details__status" role="group" aria-label="Reading status">
       <button
         v-for="option in STATUS_OPTIONS"
         :key="option.value"
         type="button"
-        class="btn details__status-btn"
+        class="btn btn-chip details__status-btn"
         :class="{ 'is-active': status === option.value }"
         :aria-pressed="status === option.value"
         :disabled="saving"
@@ -86,17 +86,17 @@
       <div v-else-if="status === 'read' && linksToPage" key="read" class="details__panel details__finished">
         <RouterLink
           v-if="shelved.reviewed && shelved.myRating"
-          class="btn details__link-btn is-active"
+          class="btn btn-primary details__link-btn"
           :to="page"
           @click="$emit('leave')"
         >
           View review and rating
         </RouterLink>
         <template v-else>
-          <RouterLink class="btn details__link-btn is-active" :to="page" @click="$emit('leave')">
+          <RouterLink class="btn btn-primary details__link-btn" :to="page" @click="$emit('leave')">
             {{ shelved.reviewed ? "View review" : "Review" }}
           </RouterLink>
-          <RouterLink class="btn details__link-btn" :to="page" @click="$emit('leave')">
+          <RouterLink class="btn btn-secondary details__link-btn" :to="page" @click="$emit('leave')">
             {{ shelved.myRating ? "View rating" : "Rate" }}
           </RouterLink>
         </template>
@@ -476,53 +476,8 @@ function formatDate(value) {
   gap: 6px;
 }
 
-.details__status-btn,
-.details__link-btn {
-  --bs-btn-padding-y: 8px;
-  --bs-btn-font-family: var(--rl-font-body);
-  --bs-btn-font-size: 13px;
-  --bs-btn-font-weight: 700;
-  --bs-btn-color: var(--rl-text);
-  --bs-btn-bg: var(--rl-surface);
-  --bs-btn-border-color: var(--rl-line);
-  --bs-btn-hover-color: var(--rl-text);
-  --bs-btn-hover-bg: var(--soft);
-  --bs-btn-hover-border-color: var(--rl-line);
-  --bs-btn-active-color: var(--rl-surface);
-  --bs-btn-active-bg: var(--accent);
-  --bs-btn-active-border-color: var(--accent);
-  --bs-btn-disabled-color: var(--rl-muted);
-  --bs-btn-disabled-bg: var(--rl-surface);
-  --bs-btn-disabled-border-color: var(--rl-line);
-  --bs-btn-focus-shadow-rgb: 63, 46, 36;
-  --bs-btn-border-radius: 999px;
-  min-height: 40px;
-  line-height: 18px;
-}
-
-/* a toggle group of separate chips, not one joined bar */
 .details__status > .details__status-btn {
   flex: 1;
-  border-radius: 999px !important;
-  margin-left: 0 !important;
-}
-
-.details__status-btn.is-active,
-.details__link-btn.is-active {
-  --bs-btn-color: var(--rl-surface);
-  --bs-btn-bg: var(--accent);
-  --bs-btn-border-color: var(--accent);
-  --bs-btn-hover-color: var(--rl-surface);
-  --bs-btn-hover-bg: var(--accent);
-  --bs-btn-hover-border-color: var(--accent);
-}
-
-/* the main action, like the place card's "Go inside"; the quieter one, the cafe's secondary */
-.details__link-btn {
-  --bs-btn-border-radius: 12px;
-  --bs-btn-bg: var(--soft);
-  --bs-btn-border-color: var(--soft-line);
-  min-height: 44px;
 }
 
 .details__error {

@@ -12,10 +12,15 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import './assets/theme.css'
 import './styles/theme.css'
 import './styles/transitions.css'
+// every button's pixel look, in My Room's colours
+import './styles/pixel-buttons.css'
+import { applyRoomPalette } from './lib/roomPalette'
 
 import App from './App.vue'
 import router from './router'
 import { registerMotionDirectives } from './directives'
+
+applyRoomPalette()
 
 const app = createApp(App)
 

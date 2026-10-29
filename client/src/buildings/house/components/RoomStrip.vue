@@ -57,6 +57,7 @@
             />
 
             <button
+              data-hit
               class="strip__pin strip__hit"
               data-tour="shelf"
               type="button"
@@ -71,6 +72,7 @@
                 {{ row.label }}<span class="visually-hidden"> shelf, {{ row.count }} {{ row.count === 1 ? "book" : "books" }}</span>
               </span>
               <button
+              data-hit
                 v-for="spine in row.spines"
                 :key="spine.book.id"
                 class="strip__pin strip__hit strip__book"
@@ -101,6 +103,7 @@
             </div>
 
             <button
+              data-hit
               class="strip__pin strip__hit chair__book"
               data-tour="chair"
               type="button"
@@ -113,6 +116,7 @@
               <span class="strip__tip">{{ currentBook ? 'Currently reading' : 'Nothing on the go' }}</span>
             </button>
             <button
+              data-hit
               class="strip__pin strip__hit"
               data-tour="quote"
               type="button"
@@ -126,6 +130,7 @@
 
             <!-- the lamps: a tap switches each one off or on -->
             <button
+              data-hit
               v-for="lamp in LAMPS"
               :key="lamp.id"
               type="button"
@@ -140,6 +145,7 @@
                  button over it (a cat's follows it as it walks) -->
             <template v-for="item in placed" :key="item.uid">
               <button
+              data-hit
                 v-if="artOf(item)"
                 type="button"
                 class="strip__pin strip__hit placed-art"
@@ -155,6 +161,7 @@
                 </span>
               </button>
               <button
+              data-hit
                 v-else-if="isPet(item)"
                 type="button"
                 class="strip__pin placed-cat"
@@ -169,6 +176,7 @@
 
             <!-- while placing or dragging a piece: the free spots it can go on -->
             <button
+              data-hit
               v-for="slot in freeSlots"
               :key="slot.id"
               type="button"
@@ -190,6 +198,7 @@
     <!-- while a book comes off the shelf: a tap skips to it open, and nothing else in the room
          can be tapped or moved -->
     <button
+              data-hit
       v-if="bookPhase === 'opening'"
       class="strip__skip"
       type="button"
