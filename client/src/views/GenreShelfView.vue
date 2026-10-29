@@ -105,8 +105,7 @@ const tiers = computed(() => {
         v-for="sort in SORTS"
         :key="sort.key"
         type="button"
-        class="genre__chip"
-        :class="{ 'is-active': sortKey === sort.key }"
+        class="btn btn-chip genre__chip"
         :aria-pressed="sortKey === sort.key"
         :disabled="loading"
         @click="sortKey = sort.key"
@@ -160,28 +159,15 @@ const tiers = computed(() => {
 .genre__sorts {
   display: flex;
   gap: 8px;
-  margin-bottom: 20px;
+  /* room below and to the right for the chips' pixel shadow, which the scroll would clip */
+  padding: 0 3px 3px 0;
+  margin-bottom: 17px;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
 .genre__chip {
   flex-shrink: 0;
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: var(--paper);
-  border: var(--outline);
-  border-radius: 999px;
-  color: var(--ink);
-}
-
-.genre__chip.is-active {
-  background: var(--mint);
-}
-
-.genre__chip:disabled {
-  opacity: 0.5;
 }
 
 .genre__skeleton {

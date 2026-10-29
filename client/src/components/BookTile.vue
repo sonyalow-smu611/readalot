@@ -12,7 +12,7 @@ defineEmits(['select'])
 </script>
 
 <template>
-  <button type="button" class="book-tile" @click="$emit('select', book)">
+  <button data-card type="button" class="book-tile" @click="$emit('select', book)">
     <BookCover class="book-tile__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
     <span class="book-tile__title">{{ book.title }}</span>
     <span class="book-tile__author">{{ book.authors?.join(', ') || 'Unknown author' }}</span>

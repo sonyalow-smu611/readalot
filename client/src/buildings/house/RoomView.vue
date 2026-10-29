@@ -356,7 +356,7 @@ onBeforeUnmount(() => {
         <CurrentlyReadingCard v-else :book="currentBook" :owner="visiting?.firstName ?? ''" />
         <button
           type="button"
-          class="home__reading-close"
+          class="btn btn-secondary btn-icon home__reading-close"
           aria-label="Close"
           @click="closeReading({ refocus: true })"
         >
@@ -385,7 +385,7 @@ onBeforeUnmount(() => {
 
     <RoomDock v-if="!visiting" @mood="openMood" />
     <!-- in someone else's room, the one thing to do: leave them a note -->
-    <button v-else type="button" class="home__note" @click="startNote">
+    <button v-else type="button" class="btn btn-primary home__note" @click="startNote">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
         <path d="M5 4h14v12l-4 4H5z M15 20v-4h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
         <path d="M8 9h8M8 12.5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
@@ -450,20 +450,8 @@ onBeforeUnmount(() => {
 
 .home__reading-close {
   position: absolute;
-  top: -10px;
-  right: -8px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  font-size: 12px;
-  line-height: 1;
-  color: var(--rl-primary);
-  box-shadow: 0 2px 6px rgba(63, 46, 36, 0.2);
+  top: -14px;
+  right: -10px;
 }
 
 /* the card rises from the floor, out from under the chair */
@@ -486,23 +474,8 @@ onBeforeUnmount(() => {
   right: 12px;
   bottom: 12px;
   z-index: 20;
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
   min-height: 52px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--house-accent, var(--rl-primary));
-  box-shadow: 0 6px 18px rgba(63, 46, 36, 0.28);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--rl-surface);
-}
-
-.home__note:focus-visible {
-  outline: 3px solid var(--rl-surface);
-  outline-offset: 2px;
 }
 
 .drag-ghost {

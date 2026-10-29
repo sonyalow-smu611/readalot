@@ -126,8 +126,7 @@ onMounted(() => {
             v-for="name in genres"
             :key="name"
             type="button"
-            class="my-shelf__chip"
-            :class="{ 'is-active': genre === name }"
+            class="btn btn-chip my-shelf__chip"
             :aria-pressed="genre === name"
             @click="genre = name"
           >
@@ -224,29 +223,15 @@ onMounted(() => {
 .my-shelf__chips {
   display: flex;
   gap: 8px;
-  margin-bottom: 22px;
-  padding-bottom: 2px;
+  margin-bottom: 21px;
+  /* room below and to the right for the chips' pixel shadow, which the scroll would clip */
+  padding: 0 3px 3px 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-/* the town's chips: white with a fine line; the chosen one in the house's colour */
 .my-shelf__chip {
   flex-shrink: 0;
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rl-text);
-}
-
-.my-shelf__chip.is-active {
-  border-color: var(--house-accent);
-  background: var(--house-accent);
-  color: var(--rl-surface);
 }
 
 .my-shelf__empty {

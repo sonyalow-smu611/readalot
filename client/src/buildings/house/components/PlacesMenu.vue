@@ -9,7 +9,7 @@
     <button
       ref="toggle"
       type="button"
-      class="places__toggle"
+      class="btn btn-secondary places__toggle"
       :aria-expanded="open"
       aria-controls="room-places"
       @click="open = !open"
@@ -18,7 +18,7 @@
       Places
     </button>
     <nav v-show="open" id="room-places" class="places__list" aria-label="Places in the room" @keydown.esc="close">
-      <button v-for="place in places" :key="place.id" type="button" class="places__item" @click="pick(place.id)">
+      <button v-for="place in places" :key="place.id" type="button" class="btn btn-secondary places__item" @click="pick(place.id)">
         {{ place.label }}
       </button>
     </nav>
@@ -78,24 +78,8 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
-/* the town's chips (TownHud): white, a fine line and a soft shadow */
 .places__toggle {
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 0 14px 0 12px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rl-text);
-}
-
-.places__toggle[aria-expanded='true'] {
-  border-color: var(--house-accent, var(--rl-primary));
 }
 
 .places__bars {
@@ -113,33 +97,15 @@ onBeforeUnmount(() => {
 
 .places__list {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   display: flex;
   flex-direction: column;
+  gap: 8px;
   min-width: 160px;
-  padding: 6px;
-  border: 1px solid var(--rl-line);
-  border-radius: 16px;
-  background: var(--rl-surface);
-  box-shadow: 0 10px 28px rgba(63, 46, 36, 0.22);
 }
 
 .places__item {
-  min-height: 40px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  background: none;
-  font-size: 14px;
-  font-weight: 700;
-  text-align: left;
-  color: var(--rl-text);
-}
-
-.places__item:hover,
-.places__item:focus-visible {
-  background: var(--house-accent, var(--rl-primary));
-  color: var(--rl-surface);
+  justify-content: flex-start;
 }
 </style>

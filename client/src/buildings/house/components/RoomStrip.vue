@@ -72,7 +72,7 @@
                 {{ row.label }}<span class="visually-hidden"> shelf, {{ row.count }} {{ row.count === 1 ? "book" : "books" }}</span>
               </span>
               <button
-              data-hit
+                data-hit
                 v-for="spine in row.spines"
                 :key="spine.book.id"
                 class="strip__pin strip__hit strip__book"
@@ -145,7 +145,7 @@
                  button over it (a cat's follows it as it walks) -->
             <template v-for="item in placed" :key="item.uid">
               <button
-              data-hit
+                data-hit
                 v-if="artOf(item)"
                 type="button"
                 class="strip__pin strip__hit placed-art"
@@ -156,12 +156,12 @@
                 @click="pickItem(item.uid)"
               >
                 <span v-if="selected === item.uid" class="placed__actions">
-                  <span v-if="standsAnywhere(item.zone)" class="placed__action" @click.stop="startMove(item)">Move</span>
-                  <span class="placed__action placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+                  <span v-if="standsAnywhere(item.zone)" data-button class="btn btn-secondary btn-sm" @click.stop="startMove(item)">Move</span>
+                  <span data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
                 </span>
               </button>
               <button
-              data-hit
+                data-hit
                 v-else-if="isPet(item)"
                 type="button"
                 class="strip__pin placed-cat"
@@ -170,7 +170,7 @@
                 :style="catStyle(item)"
                 @click="pickItem(item.uid)"
               >
-                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+                <span v-if="selected === item.uid" data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
               </button>
             </template>
 
@@ -198,7 +198,7 @@
     <!-- while a book comes off the shelf: a tap skips to it open, and nothing else in the room
          can be tapped or moved -->
     <button
-              data-hit
+      data-hit
       v-if="bookPhase === 'opening'"
       class="strip__skip"
       type="button"
@@ -210,20 +210,20 @@
 
     <p v-if="editable && placing" class="strip__placing" role="status">
       Tap a glowing spot for the {{ placingMeta?.name }}.
-      <button type="button" class="strip__cancel" @click="cancelPlace">Cancel</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="cancelPlace">Cancel</button>
     </p>
 
     <!-- moving a placed piece from its card: arrow buttons (or the arrow keys), Done, Cancel -->
     <div v-if="moving" class="strip__placing strip__moving" role="group" :aria-label="`Moving ${moving.name}`">
       <span>Moving {{ moving.name }}</span>
-      <button type="button" class="strip__nudge" aria-label="Move left" @click="nudge(-1, 0)">←</button>
+      <button type="button" class="btn btn-secondary btn-icon" aria-label="Move left" @click="nudge(-1, 0)">←</button>
       <template v-if="moving.zone === 'wall'">
-        <button type="button" class="strip__nudge" aria-label="Move up" @click="nudge(0, -1)">↑</button>
-        <button type="button" class="strip__nudge" aria-label="Move down" @click="nudge(0, 1)">↓</button>
+        <button type="button" class="btn btn-secondary btn-icon" aria-label="Move up" @click="nudge(0, -1)">↑</button>
+        <button type="button" class="btn btn-secondary btn-icon" aria-label="Move down" @click="nudge(0, 1)">↓</button>
       </template>
-      <button type="button" class="strip__nudge" aria-label="Move right" @click="nudge(1, 0)">→</button>
-      <button type="button" class="strip__cancel" @click="stopMove(true)">Done</button>
-      <button type="button" class="strip__cancel" @click="stopMove(false)">Cancel</button>
+      <button type="button" class="btn btn-secondary btn-icon" aria-label="Move right" @click="nudge(1, 0)">→</button>
+      <button type="button" class="btn btn-primary btn-sm" @click="stopMove(true)">Done</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="stopMove(false)">Cancel</button>
     </div>
 
     <PlacesMenu class="strip__menu" :places="PARTS" @go="goTo" />
@@ -1248,19 +1248,8 @@ defineExpose({ dropAt, putBack })
   transform: translateX(-50%);
 }
 
-.placed__action {
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--rl-surface);
-  font-size: 0.68rem;
+.placed__actions .btn {
   white-space: nowrap;
-  color: var(--rl-text);
-  box-shadow: 0 2px 6px rgba(63, 46, 36, 0.2);
-}
-
-.placed__remove {
-  background: #b42318;
-  color: #fff;
 }
 
 /* a piece of furniture from the library: drawn in the room, its button an invisible box under
@@ -1430,28 +1419,6 @@ defineExpose({ dropAt, putBack })
   padding: 6px 10px;
   border-radius: 18px;
   white-space: normal;
-}
-
-.strip__nudge {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  font-size: 14px;
-  line-height: 1;
-  color: var(--rl-text);
-}
-
-.strip__cancel {
-  padding: 3px 10px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: none;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--rl-primary);
 }
 
 /* the Places menu, in the top left corner (the coins are in the top right) */

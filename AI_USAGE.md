@@ -225,6 +225,21 @@ AI-written (see the 3D room section above). Team to review: the placement rules 
 | Schema | `database/room_notes.sql` | The table for keeping notes on the server, for the team to build the endpoint on |
 | Tests | `tests/e2e/furniture.spec.js`, `tests/e2e/visit-room.spec.js` | Dropping anywhere, keeping clear, press-and-hold and Move journeys; Leave a note from the board and taking down only your own notes |
 
+### Pixel buttons: the shared look and the house's buttons (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from tickets 01 and 02 in
+`.scratch/pixel-buttons/issues/` (spec `docs/specs/pixel-buttons.md`). Styling only: no label,
+role, name or behaviour changed. Team to review: the shared stylesheet touches every building's
+Bootstrap buttons, so it goes in as its own pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| The look | `client/src/styles/pixel-buttons.css`, `client/src/lib/roomPalette.js`, `client/src/main.js`, `client/src/assets/theme.css` | One pixel button look on Bootstrap's button classes, in My Room's colours: square corners, a 2 px outline, light and dark bands, a hard shadow it presses into, a keyboard-only focus ring, a flat disabled state, 44 px tap areas; the kinds Primary, Secondary, Accent, Danger, Quiet, Icon and Chip |
+| Shared pages | `client/src/components/AppButton.vue`, `client/src/views/WelcomeView.vue`, `client/src/views/GenreShelfView.vue`, `client/src/views/LoginView.vue`, `client/src/components/AppHeader.vue`, `client/src/components/book/`, `client/src/components/modals/` | The sticker button's colours mapped onto the kinds; Welcome's and the genre shelf's choices became Chips; the pop-ups' and book pages' buttons use the kinds |
+| Marks | `client/src/components/Book.vue`, `BookTile.vue`, `client/src/buildings/library/components/LibraryHall.vue`, `client/src/buildings/house/components/RoomStrip.vue`, `CurrentlyReadingCard.vue`, `RoomDock.vue` | Tap zones over the art marked `data-hit`, cards that are a button marked `data-card`, and Move/Remove inside a placed piece marked `data-button` |
+| The house | `client/src/buildings/house/RoomView.vue`, `ShelfView.vue`, `components/RoomDock.vue`, `PlacesMenu.vue`, `RoomStrip.vue`, `BookDialog.vue`, `NoticeBoard.vue`, `ShelfRow.vue` | Every button in the house on a kind, its own pills, rounded corners, blurred shadows and per-theme tint removed, keeping only layout |
+| Tests | `tests/e2e/buttons.spec.js` | The look check: every visible button that isn't a tap zone or card has square corners, a solid outline, an unblurred shadow, 44 px and a 4.5:1 label, on the shared pages, the pop-ups, Welcome and every part of the house at 360 px |
+
 ### End-to-end tests: shared helpers, stable selectors, no fixed waits (AI-generated)
 
 Written by Claude Code at Sonz's request, reviewing the house's Playwright tests against the

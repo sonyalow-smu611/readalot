@@ -38,7 +38,7 @@
           </template>
 
           <button
-              data-hit
+            data-hit
             class="hall__hit"
             data-place="desk"
             type="button"
@@ -50,7 +50,7 @@
           </button>
 
           <button
-              data-hit
+            data-hit
             class="hall__hit"
             data-place="scanner"
             type="button"
@@ -64,7 +64,7 @@
           </button>
 
           <button
-              data-hit
+            data-hit
             v-for="box in cases"
             :key="box.category"
             class="hall__hit"
@@ -83,7 +83,7 @@
 
           <!-- each lamp turns off and on by itself: tap the lamp -->
           <button
-              data-hit
+            data-hit
             v-for="lamp in LAMPS"
             :key="lamp.id"
             class="hall__hit hall__lamp"

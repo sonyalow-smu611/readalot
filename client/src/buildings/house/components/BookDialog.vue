@@ -21,7 +21,7 @@
     <BookDetailsContent :book="book" @leave="$emit('leave')" />
     <div class="book-dialog__links">
       <RouterLink :to="`/books/${book.id}`">Open book page</RouterLink>
-      <button type="button" class="book-dialog__remove" @click="askRemove(book)">Remove from shelf</button>
+      <button type="button" class="btn btn-danger btn-sm" @click="askRemove(book)">Remove from shelf</button>
     </div>
   </BookCard>
   <RemoveBookModal v-if="removing" :book="removing" @close="removing = null" @remove="confirmRemove" />
@@ -128,6 +128,7 @@ onMounted(async () => {
 
 .book-dialog__links {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-top: 20px;
@@ -139,13 +140,5 @@ onMounted(async () => {
 
 .book-dialog__links a {
   color: var(--book-accent, var(--rl-primary));
-}
-
-.book-dialog__remove {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-weight: 700;
-  color: #b42318;
 }
 </style>

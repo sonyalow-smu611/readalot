@@ -134,7 +134,7 @@ watch(
       <div v-if="!loading && books.length && !(atStart && atEnd)" class="shelf-row__pager">
         <button
           type="button"
-          class="shelf-row__page"
+          class="btn btn-secondary btn-icon shelf-row__page"
           :aria-label="`Previous books in ${shelf}`"
           :disabled="atStart"
           @click="page(-1)"
@@ -143,7 +143,7 @@ watch(
         </button>
         <button
           type="button"
-          class="shelf-row__page"
+          class="btn btn-secondary btn-icon shelf-row__page"
           :aria-label="`Next books in ${shelf}`"
           :disabled="atEnd"
           @click="page(1)"
@@ -206,26 +206,11 @@ watch(
 
 .shelf-row__pager {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* the town's round buttons: white with a fine line */
 .shelf-row__page {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0 0 2px;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
   font-size: 20px;
-  line-height: 1;
-  color: var(--house-accent, var(--rl-text));
-}
-
-.shelf-row__page:disabled {
-  opacity: 0.35;
 }
 
 .shelf-row__list {
