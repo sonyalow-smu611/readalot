@@ -30,7 +30,7 @@ onMounted(() => card.value?.focus())
   >
     <div class="friend-card__top">
       <span class="friend-card__tab">Friend</span>
-      <button type="button" class="friend-card__close" aria-label="Close" @click="emit('close')">
+      <button type="button" class="btn btn-secondary btn-icon friend-card__close" aria-label="Close" @click="emit('close')">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     </div>
@@ -41,8 +41,8 @@ onMounted(() => card.value?.focus())
     </p>
     <p v-if="house" class="friend-card__blurb">{{ house.blurb }}</p>
     <div class="friend-card__actions">
-      <button type="button" class="friend-card__talk" @click="emit('talk', friend)">Say hi</button>
-      <button v-if="house" type="button" class="friend-card__visit" @click="emit('visit', house)">
+      <button type="button" class="btn btn-primary friend-card__talk" @click="emit('talk', friend)">Say hi</button>
+      <button v-if="house" type="button" class="btn btn-secondary friend-card__visit" @click="emit('visit', house)">
         Visit {{ first }}'s house
       </button>
     </div>
@@ -92,15 +92,7 @@ onMounted(() => card.value?.focus())
 }
 
 .friend-card__close {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin: -8px -10px -8px 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--rl-text);
+  flex: none;
 }
 
 .friend-card__close svg {
@@ -156,21 +148,5 @@ onMounted(() => card.value?.focus())
 .friend-card__talk,
 .friend-card__visit {
   flex: 1;
-  min-height: 48px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.friend-card__talk {
-  border: none;
-  background: #d9762b;
-  color: var(--rl-surface);
-}
-
-.friend-card__visit {
-  border: 1px solid var(--rl-line);
-  background: var(--rl-surface);
-  color: var(--rl-text);
 }
 </style>

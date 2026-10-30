@@ -1,11 +1,13 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// One shelf on My Shelf: its name, then a sideways row of covers that scrolls the way the reader
+// One shelf on My Shelf, drawn as a shelf tier (the genre page's part: a header card with its
+// name, the covers, and a plank under them), whose sideways row of covers scrolls the way the reader
 // is used to on each device: a finger or trackpad swipe, Shift + wheel, a mouse drag, the
 // scrollbar, Previous / Next buttons, and the arrow keys from cover to cover (the row is one tab
 // stop). A plain wheel is left to the page. Emits `select` with the book whose cover is clicked.
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BookTile from '@/components/BookTile.vue'
+import ShelfTier from '@/components/ShelfTier.vue'
 import SkeletonBlock from '@/components/SkeletonBlock.vue'
 import { prefersReducedMotion } from '@/lib/motion'
 
@@ -128,13 +130,12 @@ watch(
 </script>
 
 <template>
-  <section class="shelf-row">
-    <header class="shelf-row__head">
-      <h2 class="shelf-row__title"><span aria-hidden="true">{{ emoji }}</span> {{ title }}</h2>
+  <ShelfTier class="shelf-row" :label="title" :emoji="emoji" :level="2">
+    <template #actions>
       <div v-if="!loading && books.length && !(atStart && atEnd)" class="shelf-row__pager">
         <button
           type="button"
-          class="shelf-row__page"
+          class="btn btn-secondary btn-icon shelf-row__page"
           :aria-label="`Previous books in ${shelf}`"
           :disabled="atStart"
           @click="page(-1)"
@@ -143,7 +144,7 @@ watch(
         </button>
         <button
           type="button"
-          class="shelf-row__page"
+          class="btn btn-secondary btn-icon shelf-row__page"
           :aria-label="`Next books in ${shelf}`"
           :disabled="atEnd"
           @click="page(1)"
@@ -151,7 +152,7 @@ watch(
           ›
         </button>
       </div>
-    </header>
+    </template>
 
     <div v-if="loading" class="shelf-row__list shelf-row__list--loading">
       <div v-for="n in SKELETON_CARDS" :key="n" class="shelf-row__item">
@@ -181,51 +182,17 @@ watch(
         <BookTile :book="book" :tabindex="index === active ? 0 : -1" @select="emit('select', $event)" />
       </li>
     </ul>
-  </section>
+  </ShelfTier>
 </template>
 
 <style scoped>
-.shelf-row {
-  margin-bottom: 24px;
-}
-
-.shelf-row__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.shelf-row__title {
-  margin: 0;
-  font-family: var(--rl-font-title);
-  font-size: 1.1rem;
-  color: var(--rl-text);
-}
-
 .shelf-row__pager {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* the town's round buttons: white with a fine line */
 .shelf-row__page {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0 0 2px;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
   font-size: 20px;
-  line-height: 1;
-  color: var(--house-accent, var(--rl-text));
-}
-
-.shelf-row__page:disabled {
-  opacity: 0.35;
 }
 
 .shelf-row__list {

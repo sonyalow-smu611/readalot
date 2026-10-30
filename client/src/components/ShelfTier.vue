@@ -1,13 +1,17 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// One shelf tier: a scrolling row of book tiles standing on a wooden plank. The genre page
-// stacks several of these; another reader's full bookshelf (T25) can reuse it the same way.
+// One shelf tier: a header card naming the shelf, a scrolling row of book tiles, and the wooden
+// plank they stand on, which parts it from the next tier. The genre page stacks several of these;
+// My Shelf's rows (house ShelfRow) are tiers too, putting their own row and buttons in the slots.
 import BookTile from './BookTile.vue'
 
 defineProps({
   books: { type: Array, default: () => [] },
-  // optional small heading above the row, e.g. "Shelf 1"
+  // the header card's heading, e.g. "Shelf 1"
   label: { type: String, default: '' },
+  emoji: { type: String, default: '' },
+  // the heading's level, so it sits under the page's own headings
+  level: { type: Number, default: 3 },
 })
 
 defineEmits(['select'])
@@ -15,12 +19,21 @@ defineEmits(['select'])
 
 <template>
   <section class="shelf-tier">
-    <p v-if="label" class="shelf-tier__label">{{ label }}</p>
-    <div class="shelf-tier__row">
-      <div v-for="book in books" :key="book.id" class="shelf-tier__item">
-        <BookTile :book="book" @select="$emit('select', $event)" />
+    <header v-if="label" class="shelf-tier__head">
+      <component :is="`h${level}`" class="shelf-tier__label">
+        <span v-if="emoji" aria-hidden="true">{{ emoji }}</span> {{ label }}
+      </component>
+      <!-- buttons at the card's right end, e.g. My Shelf's Previous / Next -->
+      <slot name="actions" />
+    </header>
+    <!-- the books; My Shelf puts its own scrolling row here -->
+    <slot>
+      <div class="shelf-tier__row">
+        <div v-for="book in books" :key="book.id" class="shelf-tier__item">
+          <BookTile :book="book" @select="$emit('select', $event)" />
+        </div>
       </div>
-    </div>
+    </slot>
     <div class="shelf-tier__plank" aria-hidden="true"></div>
   </section>
 </template>
@@ -30,13 +43,27 @@ defineEmits(['select'])
   margin-bottom: 22px;
 }
 
+/* a pixel card, like the pixel buttons: square, a 2 px outline, a hard shadow */
+.shelf-tier__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0 3px 12px 0;
+  padding: 6px 6px 6px 12px;
+  border: 2px solid var(--px-outline);
+  border-radius: 0;
+  background: var(--px-paper);
+  box-shadow: var(--px-shadow);
+}
+
 .shelf-tier__label {
-  margin: 0 0 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
+  margin: 0;
+  font-family: var(--rl-font-title);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--px-outline);
 }
 
 .shelf-tier__row {

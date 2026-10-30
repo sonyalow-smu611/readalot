@@ -90,7 +90,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   <div class="dock">
     <button
       type="button"
-      class="dock__fab"
+      class="btn btn-secondary btn-icon dock__fab"
       :class="{ 'is-open': open }"
       :aria-expanded="open"
       data-tour="menu"
@@ -103,7 +103,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
     <section v-if="shopOpen && !placing" ref="panel" class="panel" aria-label="Decoration shop">
       <header class="panel__bar">
         <h2 class="panel__title">Shop</h2>
-        <button type="button" class="panel__close" @click="shopOpen = false">Close</button>
+        <button type="button" class="btn btn-secondary btn-sm" @click="shopOpen = false">Close</button>
       </header>
       <p class="panel__note">Swipe the row. Each card says where that piece can sit.</p>
       <div class="panel__row">
@@ -115,6 +115,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               :key="item.id"
               type="button"
               class="dock-card"
+              data-card
               @click="askBuy(item)"
             >
               <span class="dock-card__art"><DecorArt :kind="item.id" /></span>
@@ -130,7 +131,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
     <section v-if="inventoryOpen && !placing" ref="panel" class="panel" aria-label="Inventory">
       <header class="panel__bar">
         <h2 class="panel__title">Inventory</h2>
-        <button type="button" class="panel__close" @click="inventoryOpen = false">Close</button>
+        <button type="button" class="btn btn-secondary btn-sm" @click="inventoryOpen = false">Close</button>
       </header>
         <p v-if="!inventory.length" class="panel__empty">Buy something in the shop, then place it in the room.</p>
         <template v-else>
@@ -141,7 +142,9 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               :key="entry.uid"
               type="button"
               class="dock-card dock-card--drag"
+              data-card
               @pointerdown="grab($event, entry)"
+              @dragstart.prevent
               @click="beginPlace(entry)"
             >
             <span class="dock-card__art"><DecorArt :kind="entry.id" /></span>
@@ -159,17 +162,17 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </p>
       <p v-if="!canAfford" class="confirm__warn">Not enough credits.</p>
       <div class="confirm__actions">
-        <button type="button" class="confirm__btn" :disabled="!canAfford" @click="confirmBuy">
+        <button type="button" class="btn btn-primary confirm__btn" :disabled="!canAfford" @click="confirmBuy">
           Confirm
         </button>
-        <button type="button" class="confirm__btn confirm__btn--quiet" @click="cancelBuy">
+        <button type="button" class="btn btn-secondary confirm__btn" @click="cancelBuy">
           Cancel
         </button>
       </div>
     </div>
 
     <div v-show="open" ref="menu" class="dock__menu">
-      <button type="button" class="dock__item" @click="$emit('mood')">
+      <button type="button" class="btn btn-secondary dock__item" @click="$emit('mood')">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
@@ -184,7 +187,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         </span>
         Mood check-in
       </button>
-      <button type="button" class="dock__item" :class="{ 'is-on': inventoryOpen }" @click="showInventory">
+      <button type="button" class="btn btn-secondary dock__item" @click="showInventory">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path
@@ -197,7 +200,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         </span>
         Inventory
       </button>
-      <button type="button" class="dock__item" :class="{ 'is-on': shopOpen }" @click="showShop">
+      <button type="button" class="btn btn-accent dock__item" @click="showShop">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path
@@ -244,24 +247,8 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 }
 
 .dock__item {
-  display: flex;
-  align-items: center;
+  justify-content: flex-start;
   gap: 6px;
-  height: 44px;
-  padding: 0 14px 0 12px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  color: var(--rl-text);
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-}
-
-.dock__item.is-on {
-  border-color: var(--house-accent, var(--rl-primary));
-  background: var(--house-accent, var(--rl-primary));
-  color: var(--rl-surface);
 }
 
 .dock__glyph {
@@ -271,21 +258,8 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 }
 
 .dock__fab {
-  display: grid;
-  place-items: center;
   width: 52px;
   height: 52px;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  color: var(--rl-text);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-}
-
-.dock__fab.is-open {
-  border-color: var(--house-accent, var(--rl-primary));
-  background: var(--house-accent, var(--rl-primary));
-  color: var(--rl-surface);
 }
 
 .dock__bars,
@@ -364,15 +338,6 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   color: var(--rl-muted);
   font-size: 0.75rem;
   line-height: 1.35;
-}
-
-.panel__close,
-.confirm__btn {
-  border: 0;
-  background: transparent;
-  color: var(--rl-muted);
-  font-size: 0.78rem;
-  font-weight: 700;
 }
 
 .panel__row {
@@ -479,21 +444,6 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 
 .confirm__btn {
   flex: 1;
-  min-height: 44px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: var(--house-accent, var(--rl-primary));
-  color: var(--rl-surface);
-}
-
-.confirm__btn:disabled {
-  opacity: 0.4;
-}
-
-.confirm__btn--quiet {
-  border: 1px solid var(--rl-line);
-  background: var(--rl-surface);
-  color: var(--rl-text);
 }
 
 @media (prefers-reduced-motion: reduce) {

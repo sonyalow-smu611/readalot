@@ -28,7 +28,7 @@ onMounted(() => card.value?.focus())
   >
     <div class="place-card__top">
       <span class="place-card__tab" :style="{ background: place.accent }">{{ place.tab }}</span>
-      <button type="button" class="place-card__close" aria-label="Close" @click="emit('close')">
+      <button type="button" class="btn btn-secondary btn-icon place-card__close" aria-label="Close" @click="emit('close')">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     </div>
@@ -38,7 +38,7 @@ onMounted(() => card.value?.focus())
       {{ presence.online ? 'Online now' : `Last seen ${presence.lastSeen}` }}
     </p>
     <p class="place-card__blurb">{{ place.blurb }}</p>
-    <button type="button" class="place-card__enter" :style="{ background: place.accent }" @click="emit('enter', place)">
+    <button type="button" class="btn btn-primary w-100 place-card__enter" @click="emit('enter', place)">
       {{ place.enter }}
     </button>
   </div>
@@ -86,15 +86,7 @@ onMounted(() => card.value?.focus())
 }
 
 .place-card__close {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin: -8px -10px -8px 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--rl-text);
+  flex: none;
 }
 
 .place-card__close svg {
@@ -142,13 +134,4 @@ onMounted(() => card.value?.focus())
   color: var(--rl-muted);
 }
 
-.place-card__enter {
-  width: 100%;
-  min-height: 48px;
-  border: none;
-  border-radius: 12px;
-  color: var(--rl-surface);
-  font-weight: 700;
-  font-size: 15px;
-}
 </style>

@@ -137,7 +137,7 @@ async function scan(imageBase64) {
     >
       <header class="scanner__head">
         <h2 id="scanner-title" class="scanner__title"><span aria-hidden="true">📷</span> Book scanner</h2>
-        <button type="button" class="scanner__close" aria-label="Close" @click="$emit('close')">✕</button>
+        <button type="button" class="btn btn-secondary btn-icon scanner__close" aria-label="Close" @click="$emit('close')">✕</button>
       </header>
       <p class="scanner__lead">Hold a book's cover up to the camera, with its title in view.</p>
 
@@ -246,16 +246,7 @@ async function scan(imageBase64) {
 }
 
 .scanner__close {
-  display: grid;
-  place-items: center;
   flex: none;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  color: var(--rl-primary);
 }
 
 .scanner__lead {

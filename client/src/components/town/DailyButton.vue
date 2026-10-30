@@ -28,7 +28,7 @@ const label = computed(() => {
 <template>
   <button
     type="button"
-    class="daily-button"
+    class="btn btn-secondary daily-button"
     :class="{ 'is-ready': ready, 'is-lit': streak > 0 }"
     :aria-label="label"
     :aria-expanded="open"
@@ -56,22 +56,8 @@ const label = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
-  padding: 0 8px 0 5px;
-  border: 3px solid #2b1d24;
-  border-radius: 999px;
-  background: #fff8ef;
-  box-shadow: 0 3px 0 #2b1d24, 0 6px 14px rgba(43, 29, 36, 0.2);
-  color: #2b1d24;
-  font-weight: 800;
-  font-size: 15px;
+  --bs-btn-padding-x: 8px;
   pointer-events: auto;
-  transition: transform 0.12s ease;
-}
-
-.daily-button:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #2b1d24;
 }
 
 .daily-button__fire {

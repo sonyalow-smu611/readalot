@@ -107,7 +107,7 @@ function onBackdropClick() {
 
 <template>
     <div v-if="visible" ref="backdrop" class="book-overlay" @click.self="onBackdropClick">
-      <button type="button" class="book-overlay__close" aria-label="Close book" @click="close">✕</button>
+      <button type="button" class="btn btn-secondary btn-icon book-overlay__close" aria-label="Close book" @click="close">✕</button>
 
       <!-- FEATURED: giant cover, tap to read; what to do with the book sits under it -->
       <div v-if="view === 'featured'" ref="featuredEl" class="featured">
@@ -151,20 +151,6 @@ function onBackdropClick() {
   position: absolute;
   top: 18px;
   right: 18px;
-  width: 44px;
-  height: 44px;
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-  color: var(--ink);
-  background: var(--paper);
-  border: 1px solid rgba(28, 27, 25, 0.35);
-  border-radius: 2px;
-  cursor: pointer;
-}
-
-.book-overlay__close:focus-visible {
-  outline: 1px solid rgba(28, 27, 25, 0.55);
-  outline-offset: 3px;
 }
 
 /* --- FEATURED --- */

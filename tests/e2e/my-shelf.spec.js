@@ -132,6 +132,119 @@ test.describe("the shelf in the room and My Shelf", () => {
   });
 });
 
+// --- Headed shelves, the same part as a genre's shelves --------------------------------------
+
+// how a shelf's header card and the plank under it look, to set My Shelf beside a genre page
+function tierLook(tier) {
+  return tier.evaluate((el) => {
+    const pick = (node, keys) => {
+      const style = getComputedStyle(node);
+      return Object.fromEntries(keys.map((key) => [key, style[key]]));
+    };
+    const head = el.querySelector(".shelf-tier__head");
+    return {
+      head: pick(head, ["backgroundColor", "borderTopWidth", "borderTopStyle", "borderTopColor", "borderRadius", "boxShadow"]),
+      heading: pick(head.querySelector("h2, h3"), ["fontFamily", "fontWeight", "fontSize", "color"]),
+      plank: pick(el.querySelector(".shelf-tier__plank"), ["height", "backgroundImage", "borderTopColor"]),
+    };
+  });
+}
+
+test.describe("each shelf under its own heading", () => {
+  test("every row on My Shelf has a header card, and a plank parts it from the next", async ({ page }) => {
+    await page.goto("/house/shelf");
+
+    let below = -Infinity;
+    for (const [, label] of SHELVES) {
+      const tier = row(page, label).locator(".shelf-tier");
+      await expect(tier).toHaveCount(1);
+      const head = tier.locator(".shelf-tier__head");
+      await expect(head.getByRole("heading", { name: new RegExp(`${label} · \\d+`) })).toBeVisible();
+
+      // a card, not text floating on the page
+      const { backgroundColor, borderTopWidth } = (await tierLook(tier)).head;
+      expect(backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+      expect(parseFloat(borderTopWidth)).toBeGreaterThan(0);
+
+      // the plank sits under the row's covers, and the next header starts below it
+      const top = (await head.boundingBox()).y;
+      expect(top).toBeGreaterThan(below);
+      const plank = await tier.locator(".shelf-tier__plank").boundingBox();
+      expect(plank.height).toBeGreaterThan(0);
+      below = plank.y + plank.height;
+    }
+  });
+
+  test("My Shelf's shelves look like a genre page's shelves", async ({ page }) => {
+    const books = Array.from({ length: 8 }, (_, i) => ({ id: `tier-${i}`, title: `Tier book ${i + 1}`, authors: ["A. Writer"], coverUrl: "" }));
+    await page.route("**/api/books/search**", (route) => route.fulfill({ json: { books } }));
+    await page.goto("/discover/fantasy");
+    const genreTier = page.locator(".shelf-tier").first();
+    await expect(genreTier.getByRole("heading", { name: "Shelf 1" })).toBeVisible();
+    const genreLook = await tierLook(genreTier);
+
+    await page.goto("/house/shelf");
+    const shelfTier = row(page, "To be read").locator(".shelf-tier");
+    await expect(shelfTier.getByRole("heading", { name: /To be read/ })).toBeVisible();
+    expect(await tierLook(shelfTier)).toEqual(genreLook);
+  });
+});
+
+// --- A book's card: the genre page's card -----------------------------------------------------
+
+test.describe("a book's card on My Shelf", () => {
+  const card = (page) => page.getByRole("dialog", { name: "Book details" });
+  const hobbit = (page) => row(page, "To be read").getByRole("button", { name: /^The Hobbit/ });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/house/shelf");
+    await hobbit(page).click();
+    await expect(card(page)).toBeVisible();
+  });
+
+  test("is the genre page's card, and closing it goes back to the cover", async ({ page }) => {
+    const { id } = (await shelfBooks(page)).find((book) => book.title === "The Hobbit");
+    await expect(card(page).getByRole("heading", { name: "The Hobbit" })).toBeVisible();
+    await expect(card(page).getByText("Reading status")).toBeVisible();
+    await expect(card(page).getByRole("button", { name: "Want to Read" })).toHaveAttribute("aria-pressed", "true");
+    await expect(card(page).getByRole("link", { name: "Open full book page" })).toHaveAttribute("href", `/books/${id}`);
+
+    await card(page).getByRole("button", { name: "Close book" }).click();
+    await expect(card(page)).toBeHidden();
+    await expect(hobbit(page)).toBeFocused();
+  });
+
+  test("Reading shows a progress slider, and moving it saves", async ({ page }) => {
+    await expect(card(page).getByRole("slider")).toHaveCount(0);
+    await card(page).getByRole("button", { name: "Reading", exact: true }).click();
+    await expect(card(page).getByRole("button", { name: "Reading", exact: true })).toHaveAttribute("aria-pressed", "true");
+
+    const saved = page.waitForRequest((request) => request.method() === "PATCH" && request.postDataJSON()?.progress === 40);
+    await card(page).getByRole("slider").fill("40");
+    await saved;
+    await expect(card(page).getByText("40% read")).toBeVisible();
+  });
+
+  test("Remove from shelf takes it off, and Undo puts it back", async ({ page }) => {
+    await page.route("**/api/user-books", (route) =>
+      route.request().method() === "POST" ? route.fulfill({ json: { userBook: {} } }) : route.fallback()
+    );
+    await card(page).getByRole("button", { name: "Remove from shelf" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Yes, remove" }).click();
+
+    await expect(card(page)).toBeHidden();
+    await expect(hobbit(page)).toHaveCount(0);
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(hobbit(page)).toHaveCount(1);
+  });
+
+  test("Open full book page goes to the book's page", async ({ page }) => {
+    await card(page).getByRole("link", { name: "Open full book page" }).click();
+    await expect(page).toHaveURL(/\/books\/[^/]+$/);
+    await expect(page.getByRole("heading", { level: 1, name: "The Hobbit" })).toBeVisible();
+  });
+});
+
 // --- Rows that scroll sideways, on a laptop ---------------------------------------------------
 
 test.describe("a long row on a laptop", () => {

@@ -24,7 +24,7 @@ const emit = defineEmits(['toggle'])
       <button
         type="button"
         role="switch"
-        class="switch"
+        class="btn btn-chip btn-sm switch"
         data-tour="profile-map"
         :aria-checked="discoverable"
         aria-labelledby="discoverable-label"
@@ -32,7 +32,7 @@ const emit = defineEmits(['toggle'])
         :disabled="busy"
         @click="emit('toggle')"
       >
-        <span class="switch__thumb" />
+        {{ discoverable ? 'On' : 'Off' }}
       </button>
     </div>
     <p v-if="error" class="field-error" role="alert">{{ error }}</p>
@@ -59,39 +59,8 @@ const emit = defineEmits(['toggle'])
 }
 
 .switch {
-  position: relative;
   flex: none;
-  width: 54px;
-  height: 32px;
-  padding: 0;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: #ead2de;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.switch__thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 24px;
-  height: 24px;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: #fffdf9;
-  transition: transform 0.2s ease;
-}
-
-.switch[aria-checked='true'] {
-  background: #a84874;
-}
-
-.switch[aria-checked='true'] .switch__thumb {
-  transform: translateX(20px);
-}
-
-.switch:disabled {
-  opacity: 0.6;
+  min-width: 64px;
 }
 
 .field-error {

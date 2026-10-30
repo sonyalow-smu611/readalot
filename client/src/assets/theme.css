@@ -10,7 +10,8 @@
   --rl-line: #cdbfaf;
   --rl-wood: #6b4a34;
 
-  --rl-font-title: Georgia, "Times New Roman", serif;
+  /* the pixel buttons' font: titles, card titles and tags are Arial bold, like the buttons */
+  --rl-font-title: Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
   --rl-font-body: Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
   --rl-radius-card: 12px;
   --rl-radius-modal: 22px;
@@ -48,32 +49,7 @@ h3,
   color: var(--rl-muted) !important;
 }
 
-.btn-primary {
-  --bs-btn-bg: var(--rl-primary);
-  --bs-btn-border-color: var(--rl-primary);
-  --bs-btn-color: var(--rl-surface);
-  --bs-btn-hover-bg: #2c241e;
-  --bs-btn-hover-border-color: #2c241e;
-  --bs-btn-hover-color: var(--rl-surface);
-  --bs-btn-active-bg: #2c241e;
-  --bs-btn-active-border-color: #2c241e;
-  --bs-btn-disabled-bg: var(--rl-primary);
-  --bs-btn-disabled-border-color: var(--rl-primary);
-  --bs-btn-disabled-color: var(--rl-surface);
-  --bs-btn-focus-shadow-rgb: 154, 122, 85;
-}
-
-.btn-outline-primary {
-  --bs-btn-color: var(--rl-primary);
-  --bs-btn-border-color: var(--rl-primary);
-  --bs-btn-hover-bg: var(--rl-secondary);
-  --bs-btn-hover-color: var(--rl-primary);
-  --bs-btn-hover-border-color: var(--rl-primary);
-  --bs-btn-active-bg: var(--rl-primary);
-  --bs-btn-active-border-color: var(--rl-primary);
-  --bs-btn-active-color: var(--rl-surface);
-  --bs-btn-focus-shadow-rgb: 154, 122, 85;
-}
+/* Buttons: styles/pixel-buttons.css */
 
 :focus-visible {
   outline: 2px solid var(--rl-accent);
@@ -110,9 +86,10 @@ h3,
   padding-inline: 1rem;
 }
 
+/* the pixel look (styles/pixel-surfaces.css): square, a black outline, a hard shadow */
 .rl-modal .modal-content {
-  border: 1px solid var(--rl-line);
-  border-radius: var(--rl-radius-modal);
+  border: var(--px-border);
+  border-radius: 0;
   background: var(--rl-surface);
-  box-shadow: 0 18px 50px rgba(44, 36, 30, 0.3);
+  box-shadow: var(--px-shadow);
 }

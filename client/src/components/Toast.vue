@@ -27,7 +27,7 @@ watch(
 <template>
   <p v-if="state.visible" ref="el" class="app-toast" role="status">
     {{ state.message }}
-    <button v-if="state.action" type="button" class="app-toast__action" @click="act">{{ state.action.label }}</button>
+    <button v-if="state.action" type="button" class="btn btn-accent btn-sm app-toast__action" @click="act">{{ state.action.label }}</button>
   </p>
 </template>
 
@@ -38,6 +38,11 @@ watch(
   bottom: 88px;
   z-index: 30;
   max-width: calc(100% - 32px);
+  /* the message and its button (Undo) side by side */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
   margin: 0;
   padding: 10px 16px;
   transform: translateX(-50%);
@@ -52,13 +57,6 @@ watch(
 }
 
 .app-toast__action {
-  margin-left: 10px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
+  flex: none;
 }
 </style>

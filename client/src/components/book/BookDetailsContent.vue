@@ -49,12 +49,12 @@
     </header>
 
     <!-- shelf status -->
-    <div class="btn-group w-100 details__status" role="group" aria-label="Reading status">
+    <div class="d-flex w-100 details__status" role="group" aria-label="Reading status">
       <button
         v-for="option in STATUS_OPTIONS"
         :key="option.value"
         type="button"
-        class="btn details__status-btn"
+        class="btn btn-chip details__status-btn"
         :class="{ 'is-active': status === option.value }"
         :aria-pressed="status === option.value"
         :disabled="saving"
@@ -66,37 +66,27 @@
     <p v-if="statusError" class="details__error" role="alert">{{ statusError }}</p>
 
     <Transition name="pop">
-      <label v-if="status === 'reading'" key="reading" class="details__panel details__progress">
-        <span class="details__progress-label">
-          <span>Progress</span>
-          <output>{{ percent }}% read</output>
-        </span>
-        <input
-          v-model.number="percent"
-          class="form-range details__slider"
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          :style="{ '--fill': `${percent}%` }"
-          :aria-valuetext="`${percent} percent read`"
-          @change="bookshelf.setProgress(shelved.id, percent)"
-        />
-      </label>
+      <ReadingProgress
+        v-if="status === 'reading'"
+        key="reading"
+        class="details__panel"
+        :progress="shelved.progress"
+        @change="bookshelf.setProgress(shelved.id, $event)"
+      />
       <div v-else-if="status === 'read' && linksToPage" key="read" class="details__panel details__finished">
         <RouterLink
           v-if="shelved.reviewed && shelved.myRating"
-          class="btn details__link-btn is-active"
+          class="btn btn-primary details__link-btn"
           :to="page"
           @click="$emit('leave')"
         >
           View review and rating
         </RouterLink>
         <template v-else>
-          <RouterLink class="btn details__link-btn is-active" :to="page" @click="$emit('leave')">
+          <RouterLink class="btn btn-primary details__link-btn" :to="page" @click="$emit('leave')">
             {{ shelved.reviewed ? "View review" : "Review" }}
           </RouterLink>
-          <RouterLink class="btn details__link-btn" :to="page" @click="$emit('leave')">
+          <RouterLink class="btn btn-secondary details__link-btn" :to="page" @click="$emit('leave')">
             {{ shelved.myRating ? "View rating" : "Rate" }}
           </RouterLink>
         </template>
@@ -105,7 +95,7 @@
 
     <section class="details__section" aria-labelledby="details-synopsis">
       <h3 id="details-synopsis" class="details__heading">Synopsis</h3>
-      <p class="details__synopsis">{{ book?.description || "No synopsis for this book yet." }}</p>
+      <BookSynopsis class="details__synopsis" :text="book?.description" />
     </section>
 
     <section class="details__section" aria-labelledby="details-rating">
@@ -150,6 +140,8 @@
 <script setup>
 import { computed, defineComponent, h, ref, watch } from 'vue'
 import { primaryAuthor } from '@/lib/book'
+import BookSynopsis from '@/components/book/BookSynopsis.vue'
+import ReadingProgress from '@/components/book/ReadingProgress.vue'
 import { shelfName, spineLook } from '@/services/shelves.js'
 import { getReviews } from '@/services/api.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
@@ -232,16 +224,6 @@ async function choose(next) {
   }
 }
 
-// follows the slider while it is dragged; saved when it is let go
-const percent = ref(0)
-watch(
-  () => shelved.value?.progress,
-  (progress) => {
-    percent.value = progress || 0
-  },
-  { immediate: true },
-)
-
 // --- Reviews ------------------------------------------------------------------------------
 const reviews = ref([])
 const reviewsLoading = ref(false)
@@ -281,7 +263,7 @@ function formatDate(value) {
 
 <style scoped>
 /* The town's design system (src/assets/theme.css), as on the town's place cards and the cafe:
-   warm dark text, muted captions, Georgia titles, a fine line between sections, cream pill
+   warm dark text, muted captions, Arial bold titles, a fine line between sections, cream pill
    tags. --book-accent is the colour of the building the card was opened in. */
 .details {
   --accent: var(--book-accent, var(--rl-primary));
@@ -289,6 +271,9 @@ function formatDate(value) {
   --soft: #f4ede4;
   --soft-line: #e0d2c2;
 
+  /* its own width decides the layout: two columns only on a wide card (the book page on a
+     laptop), whatever the window */
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -434,9 +419,39 @@ function formatDate(value) {
   margin: 0;
 }
 
+/* A wide card (the book page on a laptop): the cover on the left, the title and the rest of the
+   hero beside it; status, synopsis and reviews carry on under both */
+@container (min-width: 720px) {
+  .details__hero {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    grid-auto-flow: dense;
+    column-gap: 32px;
+    align-content: start;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .details__hero > * {
+    grid-column: 2;
+  }
+
+  .details__cover {
+    grid-column: 1;
+    grid-row: 1 / span 8;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .details__genres {
+    justify-content: flex-start;
+  }
+}
+
 .details__genre {
   padding: 5px 10px;
-  border-radius: 20px;
+  border: var(--px-border);
+  border-radius: 0;
   background: var(--tag);
   font-family: var(--rl-font-body);
   font-size: 11px;
@@ -476,53 +491,8 @@ function formatDate(value) {
   gap: 6px;
 }
 
-.details__status-btn,
-.details__link-btn {
-  --bs-btn-padding-y: 8px;
-  --bs-btn-font-family: var(--rl-font-body);
-  --bs-btn-font-size: 13px;
-  --bs-btn-font-weight: 700;
-  --bs-btn-color: var(--rl-text);
-  --bs-btn-bg: var(--rl-surface);
-  --bs-btn-border-color: var(--rl-line);
-  --bs-btn-hover-color: var(--rl-text);
-  --bs-btn-hover-bg: var(--soft);
-  --bs-btn-hover-border-color: var(--rl-line);
-  --bs-btn-active-color: var(--rl-surface);
-  --bs-btn-active-bg: var(--accent);
-  --bs-btn-active-border-color: var(--accent);
-  --bs-btn-disabled-color: var(--rl-muted);
-  --bs-btn-disabled-bg: var(--rl-surface);
-  --bs-btn-disabled-border-color: var(--rl-line);
-  --bs-btn-focus-shadow-rgb: 63, 46, 36;
-  --bs-btn-border-radius: 999px;
-  min-height: 40px;
-  line-height: 18px;
-}
-
-/* a toggle group of separate chips, not one joined bar */
 .details__status > .details__status-btn {
   flex: 1;
-  border-radius: 999px !important;
-  margin-left: 0 !important;
-}
-
-.details__status-btn.is-active,
-.details__link-btn.is-active {
-  --bs-btn-color: var(--rl-surface);
-  --bs-btn-bg: var(--accent);
-  --bs-btn-border-color: var(--accent);
-  --bs-btn-hover-color: var(--rl-surface);
-  --bs-btn-hover-bg: var(--accent);
-  --bs-btn-hover-border-color: var(--accent);
-}
-
-/* the main action, like the place card's "Go inside"; the quieter one, the cafe's secondary */
-.details__link-btn {
-  --bs-btn-border-radius: 12px;
-  --bs-btn-bg: var(--soft);
-  --bs-btn-border-color: var(--soft-line);
-  min-height: 44px;
 }
 
 .details__error {
@@ -539,58 +509,6 @@ function formatDate(value) {
   border: 1px solid var(--soft-line);
   border-radius: 16px;
   background: var(--rl-surface);
-}
-
-.details__progress {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.details__progress-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.details__progress-label output {
-  color: var(--rl-muted);
-}
-
-.details__slider {
-  height: 20px;
-}
-
-.details__slider::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent) var(--fill), var(--rl-placeholder) var(--fill));
-}
-
-.details__slider::-moz-range-track {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--rl-placeholder);
-}
-
-.details__slider::-moz-range-progress {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--accent);
-}
-
-.details__slider::-webkit-slider-thumb {
-  margin-top: -6px;
-  background: var(--accent);
-}
-
-.details__slider::-moz-range-thumb {
-  background: var(--accent);
-}
-
-.details__slider:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(63, 46, 36, 0.2);
 }
 
 .details__finished {
@@ -630,8 +548,6 @@ function formatDate(value) {
 }
 
 .details__synopsis {
-  margin: 0;
-  white-space: pre-line;
   color: var(--rl-text);
 }
 

@@ -36,7 +36,7 @@
           <li v-for="note in notes" :key="note.id" class="board__note">
             <p class="board__note-text">{{ note.text }}</p>
             <p class="board__note-by">From {{ note.author }} · {{ dateOf(note.createdAt) }}</p>
-            <button v-if="note.authorId === me" type="button" class="board__take-down" @click="$emit('remove', note.id)">Take down</button>
+            <button v-if="note.authorId === me" type="button" class="btn btn-danger btn-sm board__take-down" @click="$emit('remove', note.id)">Take down</button>
           </li>
         </ul>
         <p class="board__demo">Saved on this browser only, like the Cafe's follows and chat.</p>
@@ -163,12 +163,6 @@ onMounted(() => {
 
 .board__take-down {
   margin-top: 6px;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 12px;
-  font-weight: 700;
-  color: #b42318;
 }
 
 .board__actions {

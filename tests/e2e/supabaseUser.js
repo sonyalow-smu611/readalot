@@ -156,4 +156,8 @@ export async function signInPage(page, session) {
       // about:blank has no storage; the app's own page comes next
     }
   }, [key, JSON.stringify(session)]);
+  // Every load opens on the town waking up (the loading screen, a few seconds). Until it ends the
+  // app fills the window and covers the page, so each step waits for it to finish first.
+  const loading = page.getByRole("status").filter({ has: page.getByLabel("IKDA") });
+  await page.addLocatorHandler(loading, async () => {}, { noWaitAfter: false });
 }

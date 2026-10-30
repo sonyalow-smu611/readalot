@@ -66,7 +66,7 @@
           </template>
         </StateView>
 
-        <button class="result__close" type="button" @click="$emit('close')">
+        <button class="btn btn-link result__close" type="button" @click="$emit('close')">
           Close <span aria-hidden="true">×</span>
         </button>
       </div>
@@ -210,13 +210,7 @@ onMounted(() => {
 }
 
 .result__close {
-  display: block;
+  display: flex;
   margin: 2px auto 0;
-  padding: 8px 12px;
-  border: 0;
-  background: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rl-muted);
 }
 </style>

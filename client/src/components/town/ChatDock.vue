@@ -30,7 +30,7 @@ const current = computed(() => props.chats.find((chat) => chat.id === props.open
       <header class="chat-dock__top">
         <span class="chat-dock__dot" :class="{ 'is-online': current.online }" aria-hidden="true"></span>
         <h2 class="chat-dock__title">{{ current.displayName }}</h2>
-        <button type="button" class="chat-dock__icon" aria-label="Minimise chat" @click="emit('toggle', current.id)">
+        <button type="button" class="btn btn-secondary btn-icon chat-dock__icon" aria-label="Minimise chat" @click="emit('toggle', current.id)">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
         </button>
       </header>
@@ -51,7 +51,7 @@ const current = computed(() => props.chats.find((chat) => chat.id === props.open
           <span class="chat-dock__dot" :class="{ 'is-online': chat.online }" aria-hidden="true"></span>
           {{ first(chat.displayName) }}
         </button>
-        <button type="button" class="chat-dock__icon chat-dock__icon--small" :aria-label="`Close chat with ${chat.displayName}`" @click="emit('close', chat.id)">
+        <button type="button" class="btn btn-secondary btn-icon chat-dock__icon" :aria-label="`Close chat with ${chat.displayName}`" @click="emit('close', chat.id)">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
         </button>
       </div>
@@ -73,27 +73,28 @@ const current = computed(() => props.chats.find((chat) => chat.id === props.open
   overflow-x: auto;
 }
 
+/* a pixel card (styles/pixel-surfaces.css) holding the name and its close button */
 .chat-dock__box {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  height: 44px;
-  border: 1px solid var(--rl-line);
-  border-radius: 12px;
+  gap: 2px;
+  padding: 2px 5px 5px 2px;
+  border: var(--px-border);
+  border-radius: 0;
   background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
+  box-shadow: var(--px-shadow);
 }
 
 .chat-dock__box.is-open {
-  border-color: #d9762b;
-  box-shadow: 0 0 0 2px rgba(217, 118, 43, 0.25), 0 4px 14px rgba(63, 46, 36, 0.15);
+  background: var(--px-paper-shade);
 }
 
 .chat-dock__name {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 100%;
+  min-height: 44px;
   padding: 0 4px 0 12px;
   border: none;
   background: transparent;
@@ -113,24 +114,6 @@ const current = computed(() => props.chats.find((chat) => chat.id === props.open
 
 .chat-dock__dot.is-online {
   background: #3fae5a;
-}
-
-.chat-dock__icon {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--rl-text);
-}
-
-.chat-dock__icon--small {
-  width: 32px;
-  height: 32px;
-  margin-right: 4px;
-  color: var(--rl-muted);
 }
 
 .chat-dock__icon svg {

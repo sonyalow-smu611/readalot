@@ -21,7 +21,11 @@ async function visit(page, id, name) {
 test.describe("getting there", () => {
   test("a reader's profile in the Cafe has a button into their room", async ({ page }) => {
     await page.goto("/cafe");
-    await page.getByRole("article").filter({ hasText: "Emma Tan" }).getByRole("button", { name: "Visit Room →" }).click();
+    // tapping a reader in the café walks over to them; their card opens on arrival
+    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).click();
+    const card = page.getByRole("dialog", { name: "Meet Emma Tan" });
+    await expect(card).toBeVisible({ timeout: 15000 });
+    await card.getByRole("button", { name: "Visit Room →" }).click();
 
     await expect(page).toHaveURL(/\/people\/reader-emma$/);
     await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
@@ -155,6 +159,26 @@ test.describe("their books", () => {
 
     await page.getByRole("link", { name: "Back to Sofia's room" }).click();
     await expect(page).toHaveURL(/\/people\/reader-sofia\/room$/);
+  });
+
+  test("a book on their shelf page opens the genre page's card, without the status buttons", async ({ page }) => {
+    await page.goto("/people/reader-sofia/room/shelf");
+    const cover = page.getByRole("region", { name: "Currently reading, 1 book" }).getByRole("button", { name: /Pride and Prejudice/ });
+    await cover.click();
+
+    const card = page.getByRole("dialog", { name: "Book details" });
+    await expect(card.getByRole("heading", { name: "Pride and Prejudice" })).toBeVisible();
+    await expect(card.getByText("On Sofia's Currently reading shelf")).toBeVisible();
+    // the genre card's synopsis, which the room's visitor card doesn't have
+    await expect(card.getByText("No synopsis for this book yet.")).toBeVisible();
+    await expect(card.getByText("Reading status")).toHaveCount(0);
+    await expect(card.getByRole("button", { name: /^(Want to Read|Reading|Read)$/ })).toHaveCount(0);
+    await expect(card.getByRole("slider")).toHaveCount(0);
+    await expect(card.getByRole("button", { name: "Remove from shelf" })).toHaveCount(0);
+
+    await page.keyboard.press("Escape");
+    await expect(card).toBeHidden();
+    await expect(cover).toBeFocused();
   });
 });
 

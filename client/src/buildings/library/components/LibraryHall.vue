@@ -38,6 +38,7 @@
           </template>
 
           <button
+            data-hit
             class="hall__hit"
             data-place="desk"
             type="button"
@@ -49,6 +50,7 @@
           </button>
 
           <button
+            data-hit
             class="hall__hit"
             data-place="scanner"
             type="button"
@@ -62,6 +64,7 @@
           </button>
 
           <button
+            data-hit
             v-for="box in cases"
             :key="box.category"
             class="hall__hit"
@@ -80,6 +83,7 @@
 
           <!-- each lamp turns off and on by itself: tap the lamp -->
           <button
+            data-hit
             v-for="lamp in LAMPS"
             :key="lamp.id"
             class="hall__hit hall__lamp"
@@ -104,7 +108,7 @@
     </div>
 
     <nav class="hall__places" aria-label="Places in the library">
-      <button v-for="part in PARTS" :key="part.id" type="button" class="hall__place" @click="goTo(part)">
+      <button v-for="part in PARTS" :key="part.id" type="button" class="btn btn-secondary btn-sm hall__place" @click="goTo(part)">
         {{ part.label }}
       </button>
     </nav>
@@ -497,7 +501,7 @@ onBeforeUnmount(() => {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cpath fill='%235a5a68' d='M3 0h3v1h1v1h1v1h1v2h-9v-2h1v-1h1v-1h1z'/%3E%3Cpath fill='%237fb6d9' d='M1 6h1v2h-1zM4 6h1v2h-1zM7 6h1v2h-1z'/%3E%3C/svg%3E");
 }
 
-/* the bar of places: the town's chips, white with a fine line */
+/* the bar of places: Secondary pixel buttons */
 .hall__places {
   position: absolute;
   bottom: 18px;
@@ -507,7 +511,8 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 6px;
   margin-bottom: -14px;
-  padding: 2px 0 14px;
+  /* room below and to the right for the buttons' pixel shadow, which the scroll would clip */
+  padding: 2px 3px 14px 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -518,20 +523,6 @@ onBeforeUnmount(() => {
 
 .hall__place {
   flex: none;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.12);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rl-text);
-}
-
-.hall__place:focus-visible {
-  outline: 3px solid var(--library-accent, var(--rl-primary));
-  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

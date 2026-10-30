@@ -79,7 +79,7 @@ function moveTab(event) {
         :key="t.id"
         type="button"
         role="tab"
-        class="customiser__tab"
+        class="btn btn-chip btn-sm customiser__tab"
         :aria-selected="tab === t.id"
         :aria-controls="`${uid}-panel`"
         :tabindex="tab === t.id ? 0 : -1"
@@ -136,24 +136,12 @@ function moveTab(event) {
 .customiser__tabs {
   display: flex;
   gap: 6px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--rl-secondary);
+  /* room for the chips' pixel shadow */
+  padding: 0 3px 3px 0;
 }
 
 .customiser__tab {
   flex: 1 1 0;
-  min-height: 40px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--rl-text);
-  font-weight: 700;
-}
-
-.customiser__tab[aria-selected='true'] {
-  background: var(--rl-primary);
-  color: var(--rl-surface);
 }
 
 .customiser__panel {

@@ -1,0 +1,215 @@
+/* Scaffolded with AI assistance — see AI_USAGE.md
+   Every button in the app, drawn the way My Room's sprites are: square corners, a 2 px outline in
+   the room's outline colour, a light band along the top and a dark band along the bottom, and a
+   hard shadow it presses into. Colours are My Room's (--room-*, set from its palette by
+   lib/roomPalette.js; the fallbacks are the same colours).
+
+   Pick a kind with Bootstrap's classes, plus a modifier where Bootstrap has none:
+     .btn-primary                       Primary: the main action
+     .btn-secondary, .btn-outline-*     Secondary: Cancel, Close, Back and the other choices
+     .btn-accent                        Accent: the one fun action (Shop, Buy)
+     .btn-danger                        Danger: taking something away
+     .btn-link                          Quiet: a small text action inside a card
+     .btn-icon                          Icon: a square button that is only an icon
+     .btn-chip                          Chip: a toggle or filter; pressed or selected fills in
+   .btn-sm is a little tighter, still 44 px tall.
+
+   The invisible tap zones over the pixel art (data-hit) and cards that are a button (data-card)
+   don't use these. */
+
+:root {
+  --px-outline: var(--room-outline, #1e1a24);
+  --px-paper: var(--room-paper, #f9f3e6);
+  --px-paper-shade: var(--room-paperShade, #e6dccb);
+  --px-shadow: 3px 3px 0 var(--px-outline);
+  --px-shadow-pressed: 1px 1px 0 var(--px-outline);
+}
+
+.btn {
+  /* the fill, its light top band and dark bottom band, and the label */
+  --px-fill: var(--px-paper);
+  --px-light: #fffdf7;
+  --px-dark: var(--px-paper-shade);
+  --px-label: var(--px-outline);
+  --px-hover: var(--px-paper-shade);
+
+  --bs-btn-bg: var(--px-fill);
+  --bs-btn-color: var(--px-label);
+  --bs-btn-border-color: var(--px-outline);
+  --bs-btn-border-width: 2px;
+  --bs-btn-border-radius: 0;
+  --bs-btn-font-weight: 700;
+  --bs-btn-hover-bg: var(--px-hover);
+  --bs-btn-hover-color: var(--px-label);
+  --bs-btn-hover-border-color: var(--px-outline);
+  --bs-btn-active-bg: var(--px-fill);
+  --bs-btn-active-color: var(--px-label);
+  --bs-btn-active-border-color: var(--px-outline);
+  --bs-btn-disabled-bg: var(--px-paper-shade);
+  --bs-btn-disabled-color: var(--room-slate, #6e6a62);
+  --bs-btn-disabled-border-color: var(--px-outline);
+  --bs-btn-disabled-opacity: 1;
+  --bs-btn-box-shadow: none;
+  --bs-btn-focus-box-shadow: none;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 0;
+  font-size: max(14px, 0.95rem);
+  box-shadow:
+    inset 0 2px 0 var(--px-light),
+    inset 0 -2px 0 var(--px-dark),
+    var(--px-shadow);
+  transition: transform 0.06s steps(1), box-shadow 0.06s steps(1);
+}
+
+.btn:active:not(:disabled),
+.btn.active:not(.btn-chip):not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset 0 2px 0 var(--px-light),
+    inset 0 -2px 0 var(--px-dark),
+    var(--px-shadow-pressed);
+}
+
+/* only for the keyboard: a chunky ring in the outline colour */
+.btn:focus-visible {
+  outline: 3px solid var(--px-outline);
+  outline-offset: 2px;
+  box-shadow:
+    inset 0 2px 0 var(--px-light),
+    inset 0 -2px 0 var(--px-dark),
+    var(--px-shadow);
+}
+
+/* flat and greyed: it won't do anything yet */
+.btn:disabled,
+.btn.disabled {
+  box-shadow: none;
+  transform: none;
+}
+
+/* hover only where there's a pointer to hover with */
+@media (hover: none) {
+  .btn:hover {
+    --bs-btn-hover-bg: var(--px-fill);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}
+
+/* Windows high contrast and other forced colours: keep a visible outline */
+@media (forced-colors: active) {
+  .btn {
+    border: 2px solid ButtonText;
+  }
+}
+
+.btn-sm {
+  --bs-btn-padding-y: 0.3rem;
+  --bs-btn-padding-x: 0.75rem;
+  --bs-btn-font-size: 14px;
+}
+
+/* --- The kinds ------------------------------------------------------------------------------ */
+
+/* Primary: dark wood, paper label */
+.btn-primary,
+.btn-success {
+  --px-fill: var(--room-woodDeep, #7a5d4d);
+  --px-light: var(--room-woodDark, #94755c);
+  --px-dark: var(--room-brown, #574f3c);
+  --px-label: var(--px-paper);
+  --px-hover: var(--room-brown, #574f3c);
+}
+
+/* Secondary: paper, dark label (the default above) */
+.btn-secondary,
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-dark,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-light {
+  --px-fill: var(--px-paper);
+}
+
+/* Accent: mustard, dark label */
+.btn-accent {
+  --px-fill: var(--room-mustard, #e0b65e);
+  --px-light: var(--room-gold, #f2d48a);
+  --px-dark: var(--room-mustardShade, #c0954a);
+  --px-hover: var(--room-gold, #f2d48a);
+}
+
+/* Danger: brick red, paper label */
+.btn-danger {
+  --px-fill: var(--room-redShade, #a8483a);
+  --px-light: var(--room-red, #c0563f);
+  --px-dark: var(--room-brown, #574f3c);
+  --px-label: var(--px-paper);
+  --px-hover: var(--room-brown, #574f3c);
+}
+
+/* Quiet: no fill or outline, an underlined dark label */
+.btn-link {
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-bg: transparent;
+  --bs-btn-hover-border-color: transparent;
+  --bs-btn-active-bg: transparent;
+  --bs-btn-active-border-color: transparent;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: transparent;
+  --bs-btn-color: var(--px-outline);
+  --bs-btn-hover-color: var(--px-outline);
+  --bs-btn-active-color: var(--px-outline);
+
+  border: 0;
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.btn-link:active:not(:disabled),
+.btn-link:focus-visible {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Icon: square, the icon in the middle */
+.btn-icon {
+  --bs-btn-padding-x: 0;
+  --bs-btn-padding-y: 0;
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Chip: a toggle or filter. Pressed or selected, it takes Primary's fill. */
+.btn-chip {
+  --bs-btn-padding-y: 0.35rem;
+  --bs-btn-padding-x: 0.8rem;
+  --bs-btn-font-size: 14px;
+}
+
+.btn-chip[aria-pressed='true'],
+.btn-chip[aria-checked='true'],
+.btn-chip[aria-selected='true'],
+.btn-chip.active,
+.btn-chip.is-on {
+  --px-fill: var(--room-woodDeep, #7a5d4d);
+  --px-light: var(--room-woodDark, #94755c);
+  --px-dark: var(--room-brown, #574f3c);
+  --px-label: var(--px-paper);
+  --px-hover: var(--room-brown, #574f3c);
+}

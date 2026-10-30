@@ -299,11 +299,11 @@ onBeforeUnmount(() => {
     </p>
 
     <div class="cafe-scene__controls" role="group" aria-label="Walk around the café">
-      <button class="cafe-scene__up" aria-label="Walk up" @pointerdown="startTouch('up', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▲</button>
-      <button class="cafe-scene__left" aria-label="Walk left" @pointerdown="startTouch('left', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">◀</button>
-      <button class="cafe-scene__down" aria-label="Walk down" @pointerdown="startTouch('down', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▼</button>
-      <button class="cafe-scene__right" aria-label="Walk right" @pointerdown="startTouch('right', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▶</button>
-      <button class="cafe-scene__talk" aria-label="Talk to closest reader" @click="interact">E</button>
+      <button type="button" class="btn btn-secondary btn-icon cafe-scene__up" aria-label="Walk up" @pointerdown="startTouch('up', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▲</button>
+      <button type="button" class="btn btn-secondary btn-icon cafe-scene__left" aria-label="Walk left" @pointerdown="startTouch('left', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">◀</button>
+      <button type="button" class="btn btn-secondary btn-icon cafe-scene__down" aria-label="Walk down" @pointerdown="startTouch('down', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▼</button>
+      <button type="button" class="btn btn-secondary btn-icon cafe-scene__right" aria-label="Walk right" @pointerdown="startTouch('right', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▶</button>
+      <button type="button" class="btn btn-secondary btn-icon cafe-scene__talk" aria-label="Talk to closest reader" @click="interact">E</button>
     </div>
   </section>
 </template>
@@ -324,9 +324,9 @@ onBeforeUnmount(() => {
 .cafe-scene__reader:focus-visible .cafe-scene__reader-name { outline:3px solid #ffef83; outline-offset:3px; }
 .cafe-scene__counter { position:absolute; z-index:8; top:12px; right:12px; margin:0; padding:7px 10px; border:2px solid #48382d; border-radius:8px; background:#fff7df; font-size:12px; font-weight:700; box-shadow:3px 3px 0 #48382d; }
 .cafe-scene__tip { position:absolute; z-index:8; bottom:12px; left:10px; max-width:calc(100% - 150px); margin:0; padding:8px; border:1px solid #624536; border-radius:8px; background:#fff7e9e8; color:#4c3528; font-size:11px; line-height:1.45; pointer-events:none; }
-.cafe-scene__controls { position:absolute; z-index:9; right:10px; bottom:10px; display:grid; grid-template-columns:repeat(3, 37px); grid-template-rows:repeat(2, 37px); gap:3px; }
-.cafe-scene__controls button { min-width:37px; min-height:37px; border:2px solid #604636; border-radius:8px; background:#fff8e7ee; color:#604636; font-size:15px; font-weight:800; box-shadow:2px 2px 0 #604636; touch-action:none; user-select:none; }
-.cafe-scene__controls button:active { background:#e3bc86; box-shadow:none; }
+.cafe-scene__controls { position:absolute; z-index:9; right:10px; bottom:10px; display:grid; grid-template-columns:repeat(3, 44px); grid-template-rows:repeat(2, 44px); gap:5px; }
+/* the walk pad: Icon pixel buttons; a held one keeps walking, so no text selection or scrolling */
+.cafe-scene__controls button { touch-action:none; user-select:none; }
 .cafe-scene__up { grid-column:2; grid-row:1; }
 .cafe-scene__left { grid-column:1; grid-row:2; }
 .cafe-scene__down { grid-column:2; grid-row:2; }

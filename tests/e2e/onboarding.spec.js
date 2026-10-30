@@ -40,6 +40,8 @@ async function fillWelcome(page, name) {
 
 test.describe("a new reader", () => {
   test("fills in Welcome, then the tour visits every building once", async ({ page, reader }) => {
+    // six camera glides across the town map, each waited for
+    test.slow();
     await page.goto("/");
     // no profile yet, so the town sends them to Welcome
     await expect(page.getByRole("heading", { name: "Your name" })).toBeVisible();
@@ -49,7 +51,8 @@ test.describe("a new reader", () => {
     await expect(page.getByRole("heading", { name: "Welcome to Readalot Town" })).toBeVisible();
     for (const stop of TOUR) {
       await page.getByRole("button", { name: "Next" }).click();
-      await expect(page.getByRole("heading", { name: stop })).toBeVisible();
+      // the card waits for the camera to arrive, which runs on the map's frames: slower on a busy machine
+      await expect(page.getByRole("heading", { name: stop })).toBeVisible({ timeout: 15000 });
       // the building's own card stays closed so it doesn't cover the tour
       await expect(page.getByRole("button", { name: /^Enter|^Go inside|^Visit/ })).toHaveCount(0);
       // the tour's card sits below the building, never over it

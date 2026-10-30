@@ -25,7 +25,7 @@ const note = computed(() => {
         <CreditChip class="coins__balance" />
         <p class="coins__note">{{ note }}</p>
       </div>
-      <button type="button" class="btn btn-primary coins__shop" data-tour="profile-shop" @click="emit('shop')">
+      <button type="button" class="btn btn-accent coins__shop" data-tour="profile-shop" @click="emit('shop')">
         Visit the shop
       </button>
     </div>
@@ -33,6 +33,10 @@ const note = computed(() => {
 </template>
 
 <style scoped>
+.coins__shop {
+  flex: none;
+}
+
 .coins {
   display: flex;
   align-items: center;
@@ -50,20 +54,4 @@ const note = computed(() => {
   font-size: 0.875rem;
 }
 
-.coins__shop {
-  flex: none;
-  min-height: 44px;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: #f6e27a;
-  color: #1e1a24;
-  font-weight: 700;
-  box-shadow: 3px 3px 0 #1e1a24;
-}
-
-.coins__shop:hover {
-  border-color: #1e1a24;
-  background: #fff1b8;
-  color: #1e1a24;
-}
 </style>
