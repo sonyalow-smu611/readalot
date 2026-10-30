@@ -143,11 +143,16 @@
                 v-if="artOf(item)"
                 type="button"
                 class="strip__pin strip__hit placed-art"
+                :class="{ 'is-carried': carrying?.uid === item.uid }"
                 :aria-label="decorName(item)"
                 :style="boxStyle(artOf(item).box)"
+                @pointerdown="holdItem($event, item)"
                 @click="pickItem(item.uid)"
               >
-                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+                <span v-if="selected === item.uid" class="placed__actions">
+                  <span v-if="standsAnywhere(item.zone)" class="placed__action" @click.stop="startMove(item)">Move</span>
+                  <span class="placed__action placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+                </span>
               </button>
               <button
                 v-else-if="isPet(item)"
@@ -199,6 +204,19 @@
       <button type="button" class="strip__cancel" @click="cancelPlace">Cancel</button>
     </p>
 
+    <!-- moving a placed piece from its card: arrow buttons (or the arrow keys), Done, Cancel -->
+    <div v-if="moving" class="strip__placing strip__moving" role="group" :aria-label="`Moving ${moving.name}`">
+      <span>Moving {{ moving.name }}</span>
+      <button type="button" class="strip__nudge" aria-label="Move left" @click="nudge(-1, 0)">←</button>
+      <template v-if="moving.zone === 'wall'">
+        <button type="button" class="strip__nudge" aria-label="Move up" @click="nudge(0, -1)">↑</button>
+        <button type="button" class="strip__nudge" aria-label="Move down" @click="nudge(0, 1)">↓</button>
+      </template>
+      <button type="button" class="strip__nudge" aria-label="Move right" @click="nudge(1, 0)">→</button>
+      <button type="button" class="strip__cancel" @click="stopMove(true)">Done</button>
+      <button type="button" class="strip__cancel" @click="stopMove(false)">Cancel</button>
+    </div>
+
     <PlacesMenu class="strip__menu" :places="PARTS" @go="goTo" />
   </div>
 </template>
@@ -225,6 +243,7 @@ import { layoutBooks, spineBox } from '@/buildings/house/strip/books.js'
 import { paintCats, paintRoom, spriteIds } from '@/buildings/house/strip/paint.js'
 import { createScroll } from '@/buildings/house/strip/scroll.js'
 import { createFlight } from '@/buildings/house/strip/flight.js'
+import { SURFACES, boxAt, fits, landingFor, nudged, wallObstacles } from '@/buildings/house/strip/placement.js'
 
 const ZONE_NAMES = {
   seat: 'on the window seat',
@@ -261,7 +280,8 @@ const props = defineProps({
   error: { type: String, default: '' },
   // the Currently Reading card opened from the coffee table is showing
   readingOpen: Boolean,
-  // the furniture standing in the room: [{ uid, id, zone, x }]
+  // the furniture standing in the room: [{ uid, id, zone, x, at }] (`at`, the point it stands on,
+  // for a piece that can stand anywhere; without it, a piece stands on the spot in its zone nearest x)
   furniture: { type: Array, default: () => [] },
   // the reader's own room: pieces can be put on spots, picked and taken down
   editable: { type: Boolean, default: false },
@@ -282,7 +302,7 @@ const props = defineProps({
 // toggle-lamp: a lamp tapped, with its id
 const emit = defineEmits(['open-book', 'pick-book', 'open-shelf', 'quote', 'retry', 'toggle-lamp'])
 
-const { placing, placingMeta, drag, selected, pick, unplace, placeOn, cancelPlace, flash } = useDecor()
+const { placing, placingMeta, drag, selected, pick, unplace, placeOn, moveTo, cancelPlace, flash } = useDecor()
 const placed = toRef(props, 'furniture')
 
 const root = ref(null)
@@ -479,11 +499,12 @@ function isPet(item) {
 // the piece on its way into the room: picked to place, or being dragged out of the inventory
 const movingMeta = computed(() => placingMeta.value ?? (drag.value?.moved ? decorMeta(drag.value.id) : null))
 
-// spots that piece can go on, that nothing stands on yet (none in someone else's room)
+// spots that piece can go on, where it fits (none in someone else's room)
 const freeSlots = computed(() => {
   const meta = movingMeta.value
   if (!meta || !props.editable) return []
-  return SLOTS.filter((slot) => fitsZone(meta, slot.zone) && !takenSlot(slot))
+  const rules = rulesFor(null)
+  return SLOTS.filter((slot) => fitsZone(meta, slot.zone) && (ONE_SPOT.has(slot.zone) || meta.pet || fits(meta.sprite, slot.zone, slot.at, rules)))
 })
 
 // where a spot is, said the way the room says it ("on the side table", "on the wall by the window")
@@ -491,11 +512,21 @@ function slotName(slot) {
   return slot.name ?? ZONE_NAMES[slot.zone]
 }
 
-// pets wander off, so only the pieces that stay put take a spot. The reading nook, the window and
-// the bed are never taken: a new chair (curtains, bedding) swaps with the one there.
-function takenSlot(slot) {
-  if (ONE_SPOT.has(slot.zone)) return false
-  return placed.value.some((item) => !isPet(item) && item.zone === slot.zone && Math.abs(item.x - slot.x) < 0.04)
+// the wall, the floor and the small surfaces: a piece there can stand anywhere it fits
+function standsAnywhere(zone) {
+  return zone === 'wall' || zone === 'room' || SURFACES.some((surface) => surface.zone === zone)
+}
+
+// What a piece moving in the room (or `uid`, being moved) must keep clear of (see placement.js):
+// the other pieces standing anywhere (not cats, which walk about), and on the wall the room's own
+// pieces, with a new chair (curtains, bedding) in place of the room's own.
+function rulesFor(uid) {
+  const others = placed.value
+    .filter((item) => item.uid !== uid && !isPet(item) && standsAnywhere(item.zone))
+    .map((item) => artOf(item)?.box)
+    .filter(Boolean)
+  const standIns = placed.value.flatMap((item) => swapsOf(item) ?? [artOf(item)]).filter((art) => art?.replaces)
+  return { others, obstacles: wallObstacles(standIns.map((art) => art.replaces), standIns.map((art) => art.box)) }
 }
 
 // the spot a placed piece stands on: the slot in its zone nearest its x
@@ -523,16 +554,19 @@ function artOf(item) {
   const swaps = swapsOf(item)
   if (swaps) return swaps[0]
   const sprite = !isPet(item) && furnitureSprite(item.id)
-  const slot = sprite && slotOf(item)
-  if (!slot) return null
-  const { w, h } = SPRITES[sprite]
+  if (!sprite) return null
   const wall = item.zone === 'wall'
-  const x = Math.round(slot.at.x - w / 2)
-  const y = wall ? Math.round(slot.at.y - h / 2) : (slot.base ?? slot.at.y) - h
-  // the floor's spots are in front of the furniture; the small surfaces are on top of it; a
-  // reading chair stands in for the armchair
+  let box
+  if (item.at) box = boxAt(sprite, item.zone, item.at)
+  else {
+    const slot = slotOf(item)
+    if (!slot) return null
+    box = boxAt(sprite, item.zone, wall ? slot.at : { x: slot.at.x, y: slot.base ?? slot.at.y })
+  }
+  // the floor is in front of the furniture; the small surfaces are on top of it; a reading chair
+  // stands in for the armchair
   const layer = wall ? 'wall' : item.zone === 'room' ? 'front' : 'furniture'
-  return { sprite, box: { x, y, w, h }, layer, replaces: item.zone === 'chair' ? 'armchair' : null }
+  return { sprite, box, layer, replaces: item.zone === 'chair' ? 'armchair' : null }
 }
 
 // what the room paints for them, after its own pieces in each layer
@@ -632,7 +666,12 @@ function loop(now) {
 
 function placeAt(slot) {
   const meta = placingMeta.value
-  if (placeOn(slot.zone, slot.x)) flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${slotName(slot)}.`, 'ok')
+  if (placeOn(slot.zone, spotOf(slot))) flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${slotName(slot)}.`, 'ok')
+}
+
+// what placing a piece on a slot records: where along its zone, and the point, when it can stand anywhere
+function spotOf(slot) {
+  return standsAnywhere(slot.zone) ? { x: slot.x, at: slot.at } : { x: slot.x }
 }
 
 function switchLamp(id) {
@@ -641,25 +680,167 @@ function switchLamp(id) {
 }
 
 function pickItem(uid) {
-  if (!props.editable || scroll?.wasDrag()) return
+  if (!props.editable || scroll?.wasDrag() || justCarried) return
   pick(uid)
 }
 
-// A piece dragged out of the inventory and let go at (x, y): put it on the free spot nearest
-// there, if one is close. Returns the spot, or null.
+// where a piece standing anywhere is, said the way the room says it ("on the wall", "on the side table")
+function zoneName(zone) {
+  return zone === 'wall' ? 'on the wall' : ZONE_NAMES[zone]
+}
+
+// the art point under screen point (x, y)
+function artPoint(x, y) {
+  const stage = scroller.value.firstElementChild.getBoundingClientRect()
+  const { unit } = size.value
+  return { x: (x - stage.left) / unit, y: (y - stage.top) / unit - offset.value }
+}
+
+// A piece dragged out of the inventory and let go at screen (x, y). Wall art, plants and the
+// succulents land there, or as near as they fit (placement.js); a chair, curtains, bedding or a
+// cat goes on the free spot nearest there, if one is close. Returns { name } (where it went), or
+// null when it didn't go anywhere.
 function dropAt(entry, x, y) {
   const meta = decorMeta(entry.id)
   if (!props.editable || !meta || !ready.value) return null
-  const stage = scroller.value.firstElementChild.getBoundingClientRect()
+  const point = artPoint(x, y)
+  const rules = rulesFor(null)
+  if (!meta.pet && ['wall', 'floor', 'shelf'].includes(meta.surface)) {
+    const landing = landingFor(meta, point.x, point.y, rules)
+    if (!landing || !placeOn(landing.zone, { x: Math.round((landing.at.x / ROOM.width) * 100) / 100, at: landing.at }, entry)) return null
+    return { name: zoneName(landing.zone) }
+  }
   const { unit } = size.value
   let best = null
   for (const slot of SLOTS) {
-    if (!fitsZone(meta, slot.zone) || takenSlot(slot)) continue
-    const gap = Math.hypot(stage.left + slot.at.x * unit - x, stage.top + (offset.value + slot.at.y) * unit - y)
+    if (!fitsZone(meta, slot.zone)) continue
+    const gap = Math.hypot(slot.at.x - point.x, slot.at.y - point.y) * unit
     if (gap < 70 && (!best || gap < best.gap)) best = { slot, gap }
   }
-  if (!best || !placeOn(best.slot.zone, best.slot.x, entry)) return null
+  if (!best || !placeOn(best.slot.zone, spotOf(best.slot), entry)) return null
   return { ...best.slot, name: slotName(best.slot) }
+}
+
+// --- Moving a placed piece by pressing and holding it ----------------------------------------
+// A press held still for HOLD_MS on wall art, a plant or the succulents picks the piece up; it
+// follows the pointer, shown where it would land (as near as it fits), and is put down where it's
+// let go. Let go where nothing fits, it goes back where it was. A press that moves sooner is a
+// drag to look around the room, as anywhere else.
+const HOLD_MS = 300
+const HOLD_SLOP = 8 // px a press may wander and still be held
+// the piece being carried: { uid, zone, at } (where it was picked up), and `landing`, where it would go now
+const carrying = ref(null)
+let hold = null
+let justCarried = false
+
+function holdItem(event, item) {
+  if (!props.editable || isPet(item) || !standsAnywhere(item.zone) || (event.button != null && event.button !== 0)) return
+  const start = { x: event.clientX, y: event.clientY }
+  hold = { start, timer: window.setTimeout(() => pickUp(item), HOLD_MS) }
+  justCarried = false
+  window.addEventListener('pointermove', onHoldMove)
+  window.addEventListener('pointerup', onHoldUp)
+  window.addEventListener('pointercancel', onHoldUp)
+  window.addEventListener('touchmove', stopTouchScroll, { passive: false })
+}
+
+function pickUp(item) {
+  hold = null
+  selected.value = null
+  carrying.value = { uid: item.uid, zone: item.zone, at: item.at, landing: { zone: item.zone, at: item.at } }
+}
+
+// while a piece is carried on a touch screen, the finger moves the piece, not the room
+function stopTouchScroll(event) {
+  if (carrying.value && event.cancelable) event.preventDefault()
+}
+
+function onHoldMove(event) {
+  if (hold) {
+    if (Math.hypot(event.clientX - hold.start.x, event.clientY - hold.start.y) > HOLD_SLOP) endHold()
+    return
+  }
+  const carried = carrying.value
+  if (!carried) return
+  const item = placed.value.find((one) => one.uid === carried.uid)
+  const point = artPoint(event.clientX, event.clientY)
+  const landing = landingFor(decorMeta(item.id), point.x, point.y, rulesFor(item.uid))
+  carrying.value = { ...carried, landing }
+  if (landing) moveTo(item.uid, landing.zone, landing.at)
+}
+
+function onHoldUp() {
+  const carried = carrying.value
+  endHold()
+  if (!carried) return
+  justCarried = true
+  // the click that ends the press doesn't also pick the piece
+  window.setTimeout(() => {
+    justCarried = false
+  })
+  const meta = decorMeta(placed.value.find((one) => one.uid === carried.uid)?.id)
+  if (!carried.landing) {
+    moveTo(carried.uid, carried.zone, carried.at)
+    flash('Not enough room there', 'bad')
+    return
+  }
+  flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${zoneName(carried.landing.zone)}.`, 'ok')
+}
+
+function endHold() {
+  if (hold) window.clearTimeout(hold.timer)
+  hold = null
+  carrying.value = null
+  window.removeEventListener('pointermove', onHoldMove)
+  window.removeEventListener('pointerup', onHoldUp)
+  window.removeEventListener('pointercancel', onHoldUp)
+  window.removeEventListener('touchmove', stopTouchScroll)
+}
+
+// --- Moving a placed piece from its card ----------------------------------------------------
+// Move on a piece's card: the arrow buttons or keys nudge it NUDGE art px at a time, never into a
+// place it doesn't fit (it stops as close as it fits). Done keeps it there; Cancel or Escape puts
+// it back where it was.
+const NUDGE = 4
+// the piece being moved: { uid, name, zone, at } (where it was when Move was tapped)
+const moving = ref(null)
+
+function startMove(item) {
+  selected.value = null
+  moving.value = { uid: item.uid, name: decorName(item), zone: item.zone, at: item.at }
+  window.addEventListener('keydown', onMoveKey, true)
+}
+
+function nudge(dx, dy) {
+  const item = placed.value.find((one) => one.uid === moving.value?.uid)
+  if (!item) return
+  const meta = decorMeta(item.id)
+  const rules = rulesFor(item.uid)
+  for (let step = NUDGE; step > 0; step -= 1) {
+    const next = nudged(meta, item.zone, item.at, dx * step, dy * step, rules)
+    if (next) {
+      moveTo(item.uid, item.zone, next)
+      return
+    }
+  }
+}
+
+function stopMove(keep) {
+  const current = moving.value
+  if (!current) return
+  if (!keep) moveTo(current.uid, current.zone, current.at)
+  moving.value = null
+  window.removeEventListener('keydown', onMoveKey, true)
+}
+
+const KEY_STEPS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }
+function onMoveKey(event) {
+  if (event.key === 'Escape') stopMove(false)
+  else if (KEY_STEPS[event.key]) nudge(...KEY_STEPS[event.key])
+  else return
+  // the keys move the piece, not the room
+  event.preventDefault()
+  event.stopPropagation()
 }
 
 // --- Moving along the room --------------------------------------------------------------------
@@ -807,7 +988,7 @@ let resize = null
 onMounted(async () => {
   setTime()
   clockTimer = window.setInterval(setTime, 1000)
-  scroll = createScroll(scroller.value, { locked: () => bookPhase.value !== 'closed', onMove: onScroll })
+  scroll = createScroll(scroller.value, { locked: () => bookPhase.value !== 'closed' || Boolean(carrying.value), onMove: onScroll })
   flight = createFlight(root.value)
   measure()
   resize = new ResizeObserver(measure)
@@ -837,6 +1018,8 @@ onBeforeUnmount(() => {
   resize?.disconnect()
   scroll?.dispose()
   flight?.dispose()
+  endHold()
+  window.removeEventListener('keydown', onMoveKey, true)
 })
 
 defineExpose({ dropAt, putBack })
@@ -1046,17 +1229,28 @@ defineExpose({ dropAt, putBack })
   font-weight: 700;
 }
 
-.placed__remove {
+.placed__actions {
   position: absolute;
   bottom: 100%;
   left: 50%;
+  display: flex;
+  gap: 4px;
   margin-bottom: 4px;
-  padding: 3px 8px;
   transform: translateX(-50%);
+}
+
+.placed__action {
+  padding: 3px 8px;
   border-radius: 999px;
-  background: #b42318;
+  background: var(--rl-surface);
   font-size: 0.68rem;
   white-space: nowrap;
+  color: var(--rl-text);
+  box-shadow: 0 2px 6px rgba(63, 46, 36, 0.2);
+}
+
+.placed__remove {
+  background: #b42318;
   color: #fff;
 }
 
@@ -1065,6 +1259,15 @@ defineExpose({ dropAt, putBack })
 .placed-art {
   z-index: 0;
   overflow: visible;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* a piece picked up to move: outlined while it's carried */
+.placed-art.is-carried {
+  outline: 2px dashed var(--house-accent, var(--rl-accent));
+  outline-offset: 2px;
+  cursor: grabbing;
 }
 
 .strip__hit:not(.placed-art) {
@@ -1207,6 +1410,29 @@ defineExpose({ dropAt, putBack })
   white-space: nowrap;
   color: var(--rl-text);
   box-shadow: 0 4px 12px rgba(63, 46, 36, 0.2);
+}
+
+/* the moving bar wraps on a narrow phone rather than run off the screen */
+.strip__moving {
+  flex-wrap: wrap;
+  justify-content: center;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 6px 10px;
+  border-radius: 18px;
+  white-space: normal;
+}
+
+.strip__nudge {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--rl-line);
+  border-radius: 50%;
+  background: var(--rl-surface);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--rl-text);
 }
 
 .strip__cancel {

@@ -210,6 +210,21 @@ Written by Claude Code at Sonz's request, test first, from the spec in
 | Lamps | `client/src/buildings/house/lamps.js`, `components/RoomStrip.vue`, `strip/paint.js`, `strip/layout.js` | The floor and table lamps switch on and off when tapped; a lamp that's off lights nothing at night |
 | Tests | `tests/e2e/room-themes.spec.js`, `tests/e2e/fixtures.js` (the `goToPlace` helper), `room.spec.js`, `furniture.spec.js`, `visit-room.spec.js`, `bookshelf.spec.js`, `my-shelf.spec.js`, `house-desktop.spec.js` | The theme, Shop and lamp journeys. The Places menu, weather chip and bare-room checks. Every spec goes to places through the menu |
 
+### Furniture anywhere it fits, and notes from the notice board (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from the tickets in
+`.scratch/room-free-placement/issues/`. The team agreed the room's decoration placing is
+AI-written (see the 3D room section above). Team to review: the placement rules in
+`strip/placement.js` and the press-and-hold carrying in `RoomStrip.vue` are interactive logic.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Placement rules | `client/src/buildings/house/strip/placement.js`, `strip/layout.js` | Where wall art, plants and the succulents may stand (the wall band, the floor, the small surfaces), 8 art px kept between pieces, and the nearest place that fits within 40 art px. One wall spot moved 1 px clear of the curtain |
+| Placing and moving | `client/src/buildings/house/components/RoomStrip.vue`, `RoomView.vue`, `strip/scroll.js`, `client/src/composables/useDecor.js` | Placed pieces keep their point; a drop lands where it's let go; press and hold to carry a placed piece; Move on its card with arrow buttons and keys; the room doesn't scroll while a piece is carried |
+| Notes | `client/src/buildings/house/notes.js`, `components/NoticeBoard.vue`, `RoomView.vue` | Leave a note on the notice board; notes keep their author's id and only their author can take them down |
+| Schema | `database/room_notes.sql` | The table for keeping notes on the server, for the team to build the endpoint on |
+| Tests | `tests/e2e/furniture.spec.js`, `tests/e2e/visit-room.spec.js` | Dropping anywhere, keeping clear, press-and-hold and Move journeys; Leave a note from the board and taking down only your own notes |
+
 ### End-to-end tests: shared helpers, stable selectors, no fixed waits (AI-generated)
 
 Written by Claude Code at Sonz's request, reviewing the house's Playwright tests against the
@@ -391,3 +406,48 @@ real app with demo readers.
 | Page | `landing/index.html`, `landing/styles.css` | Hero with the name, slogan, purpose and sign-up link; the problem; Mia's persona and Friday-night scenario; the town's places; levels and coins; three steps; FAQ; final call to action |
 | Behaviour | `landing/main.js` | Scenes that fade in and out both ways as you scroll, a sky from morning to night, the active section link, the drifting town map, the places as keyboard-friendly tabs that cross-fade smoothly, and an XP ring using the app's level and coin rules |
 | Your character | `landing/avatar.js`, `landing/main.js`, `landing/index.html`, `landing/styles.css` | A mini salon (looks, hair, skin, outfit, Surprise me, a name) drawn with the app's character code; the character then wears the XP badge, and stands by its house as the town lights up at night |
+
+### Big signs over the four main buildings (AI-generated)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session: smooth
+bronze-and-gem signs like a game menu, one shared frame with the building's accent as the gem, a
+motif per building, the name with its app section underneath, Fredoka for the words. Friends'
+houses keep their name tags.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The sign art as SVG built from `places.js` (frame, cushion-cut gem, book, coffee cup, roof with chimney, comb and scissors), the live text, and the motion: bob, a shine across the gem, the ribbon swaying, steam and chimney smoke, the scissors snipping; a lantern glow after dark; brighter while chosen. All motion stops with reduced motion |
+| Scene | `client/src/town/TownScene.js` | Loads the signs and the font; signs replace the name tags on the four buildings, are tappable like their building, grow when it pops, and follow the night and the chosen building |
+| Font | `client/public/town/signs/fredoka-bold.woff2` | Fredoka Bold (Latin), from Google Fonts, SIL Open Font License |
+
+### Landing page for first-time visitors (AI-generated)
+
+Written by Claude Code at Khaleil's request and checked with Playwright. It changes the shared
+router guard, so the team reviews it through a pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Landing page | `client/src/views/StartView.vue`, `client/src/components/start/StartHero.vue`, `StartTownScene.vue`, `StartActions.vue`, `StartSection.vue`, `StartPanel.vue` | `/start`, laid out like the team's IKDA page and named IKDA: the town map behind a light paper wash with the IKDA sign and 읽다 · to read under it, "Social media, but for book lovers.", Sign up, See how it works and Log in; then one section after another on pixel-outlined paper cards, ending with Sign up again |
+| Bar | `client/src/components/start/StartNav.vue` | A bar that stays on top with a link to each section and Sign up; the dark highlight slides to a picked link at once and stays while the page scrolls there, and on a phone the row of links scrolls to keep it in view |
+| Sky | `client/src/components/start/StartBackdrop.vue`, `StartSky.vue` | One sky behind the page that follows the scroll from early evening to night: the sun sets, clouds thin out, stars come out, the moon rises, and a far row of the town's houses darkens and switches its lights on one by one; a soft lantern glow follows the mouse (not on touch screens or with reduced motion) |
+| Sections | `client/src/components/start/StartPersona.vue`, `StartTown.vue`, `stops.js`, `StartStopArt.vue`, `StartBookcase.vue`, `StartBookRow.vue`, `StartCafeScene.vue`, `StartSalonScene.vue`, `StartCharacter.vue`, `StartLevels.vue`, `StartSteps.vue`, `StartFaq.vue`, `StartEnd.vue`, `StartStreet.vue` | Meet Maya (one line about her, then her evening as five picture steps: where, what she does, what she gets); Explore the town (the four buildings as tabs, each showing its scene from the app's art and a few points); Now make yourself (a small character studio with the free parts from `lib/avatar/catalogue.js`); Levels (tap reader actions to see XP, levels and coins add up, using `lib/levels.js` and the XP in `database/xp_and_coins.sql`; nothing is saved); How it works; FAQ; and the last screen, your house at night with the character you made at the door. Decoration and try-outs only, not part of the app's main interactivity |
+| Scroll fade | `client/src/composables/useScrollFade.js` | The words fade in as they scroll into view and away as they leave, drifting a little; a section taller than the screen stays clear while it covers the middle; everything stays clear with reduced motion |
+| Loading screen name | `client/src/components/LoadingScreen.vue` | The sign on the loading screen says IKDA instead of Readalot, with a line under it: 읽다 · to read (the Korean word the name comes from); the rest of the screen is unchanged |
+| Seen once | `client/src/lib/landing.js` | Remembers in localStorage (`readalot-landing`) that the page was left through Sign up or Log in; reads and writes are guarded |
+| Routing | `client/src/router/index.js` | The `/start` guest route; a signed-out visitor who hasn't seen it goes to `/start` instead of `/login` |
+| Tests | `tests/e2e/start.spec.js` | First visit lands on `/start` with every section; scrolling fades the sign away and the next section in; the bar marks a picked section at once and takes you there, and See how it works scrolls to the steps; each building tab shows its place and the arrow keys move along the street; the name and look you pick wait at your door; tapping reader actions adds XP and levels up; the last screen signs up too; Sign up or Log in counts as seen and later visits go to Log in; leaving without choosing shows it again; no sideways scroll on a phone; a signed-in reader never sees it |
+
+### Daily tasks and streaks on the map (AI-generated, front end only)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan: three tasks a day (a
+check-in, a reading task, and one that changes daily), a reward that grows over a 7-day streak, and
+Duolingo-style streak freezes. Front end only while the concept and design are settled: the day is
+kept in the browser, and the coins and XP a claim gives are only added on screen. The database
+part (daily_claims, claim_daily()) comes later, through a reviewed pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Rules | `client/src/town/daily.js` | Tasks for each day (Singapore time), rewards (50 to 300 coins, a chest every 7th day), freezes (hold 2, a missed day uses one, every 7th day gives one back), and the browser storage |
+| State | `client/src/town/dailyStore.js` | Today's tasks, streak and freezes; listens to the progress and bookshelf stores so a task done in any building ticks off, without changing those stores |
+| Map | `client/src/components/town/DailyButton.vue`, `DailyPanel.vue`, `DailyTaskRow.vue`, `StreakStrip.vue`, `DailyReward.vue`, `client/src/views/TownView.vue` | The Daily button under the weather chip (streak, a ring of tasks done, a dot when the reward is ready); the panel with Go to each task's building, Claim, this week's rewards and the freezes, opening by itself on the first visit each day; the chest that pops open on Claim; Preview buttons to move the day on, in development only |
+| Tests | `tests/e2e/daily.spec.js`, `tests/e2e/town.spec.js` | The first visit opens the tasks with the check-in ticked; Go opens the building; claiming starts the streak; a missed day uses a freeze, and with none left ends the streak. The town tests mark today's tasks as already shown |

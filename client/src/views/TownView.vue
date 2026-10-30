@@ -3,7 +3,8 @@
 // Home after signing in: the town. This view only holds the state and wires the town's parts
 // together; each building opens one teammate's page (see src/buildings/), and each friend's
 // house opens that reader's room. The sky follows the live weather unless a preview is chosen.
-// Going in, your character walks to the door first, and the page zooms through it.
+// Going in, your character walks to the door first, and the page zooms through it. The day's
+// tasks open by themselves on the first visit each day (not during the first tour).
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -11,6 +12,8 @@ import { ALL_PLACES, FRIEND_HOUSES } from '@/town/places.js'
 import { getFriends, presence } from '@/town/friends.js'
 import { useUserStore } from '@/stores/user'
 import { useProgressStore } from '@/stores/progress.js'
+import { useDailyStore } from '@/town/dailyStore.js'
+import { MAX_FREEZES } from '@/town/daily.js'
 import { fetchWeather } from '@/services/weather.js'
 import TownMap from '@/components/town/TownMap.vue'
 import TownHud from '@/components/town/TownHud.vue'
@@ -21,12 +24,17 @@ import PlayerBadge from '@/components/town/PlayerBadge.vue'
 import FriendsList from '@/components/town/FriendsList.vue'
 import FriendCard from '@/components/town/FriendCard.vue'
 import ChatDock from '@/components/town/ChatDock.vue'
+import DailyButton from '@/components/town/DailyButton.vue'
+import DailyPanel from '@/components/town/DailyPanel.vue'
+import DailyReward from '@/components/town/DailyReward.vue'
 
 const WEATHER_EVERY = 10 * 60 * 1000
+const PREVIEW_DAYS = import.meta.env.DEV
 
 const router = useRouter()
 const user = useUserStore()
 const progress = useProgressStore()
+const daily = useDailyStore()
 const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
@@ -35,6 +43,16 @@ const arrivingForTour = user.tourPending
 const selected = ref(null)
 const placesOpen = ref(false)
 const friendsOpen = ref(false)
+const dailyOpen = ref(false)
+// the reward just claimed, shown over the town until "Nice!"
+const gift = ref(null)
+const dailyChip = computed(() => ({
+  streak: daily.streak,
+  done: daily.doneCount,
+  total: daily.tasks.length,
+  ready: daily.canClaim,
+  claimed: daily.claimed,
+}))
 const friends = ref([])
 // the friend out walking whose card is open, and the request to glide to one
 const friendId = ref(null)
@@ -111,6 +129,27 @@ onMounted(() => {
 
 onBeforeUnmount(() => clearInterval(weatherTimer))
 
+// Being in town ticks off today's check-in (and moves the day on if midnight has passed).
+watch(
+  () => profile.value.id,
+  (id) => {
+    daily.start(id)
+    daily.checkIn()
+  },
+  { immediate: true },
+)
+
+// The first visit each day opens the tasks, once the map is up and any tour is over.
+watch(
+  () => ready.value && !guide.value && daily.shouldShow,
+  (show) => {
+    if (!show) return
+    daily.markShown()
+    openDaily()
+  },
+  { immediate: true },
+)
+
 // The first-time tour flies the camera to the building it is talking about.
 watch(
   () => (ready.value ? guide.value?.focus : null),
@@ -127,20 +166,53 @@ function select(place) {
   selected.value = place
   placesOpen.value = false
   friendsOpen.value = false
+  dailyOpen.value = false
   hint.value = false
 }
 
-// one panel open at a time: Places or Friends
+// one panel open at a time: Daily, Places or Friends
 function togglePlaces() {
   placesOpen.value = !placesOpen.value
-  if (placesOpen.value) friendsOpen.value = false
+  if (placesOpen.value) friendsOpen.value = dailyOpen.value = false
   hint.value = false
 }
 
 function toggleFriends() {
   friendsOpen.value = !friendsOpen.value
-  if (friendsOpen.value) placesOpen.value = false
+  if (friendsOpen.value) placesOpen.value = dailyOpen.value = false
   hint.value = false
+}
+
+function toggleDaily() {
+  if (dailyOpen.value) dailyOpen.value = false
+  else openDaily()
+}
+
+function openDaily() {
+  daily.start(profile.value.id)
+  dailyOpen.value = true
+  placesOpen.value = friendsOpen.value = false
+  selected.value = null
+  friendId.value = null
+  hint.value = false
+}
+
+// A task's Go: the map glides to the building and its card opens.
+function goDo(placeId) {
+  dailyOpen.value = false
+  go(placeId)
+}
+
+function claimDaily() {
+  const claimed = daily.claim()
+  if (!claimed) return
+  dailyOpen.value = false
+  gift.value = claimed
+}
+
+function closeGift() {
+  daily.collect(gift.value)
+  gift.value = null
 }
 
 function go(id, { tour = false } = {}) {
@@ -154,6 +226,7 @@ function selectFriend(id) {
   selected.value = null
   placesOpen.value = false
   friendsOpen.value = false
+  dailyOpen.value = false
   hint.value = false
   friendId.value = id
 }
@@ -198,6 +271,7 @@ function enter(place) {
   openChat.value = null
   placesOpen.value = false
   friendsOpen.value = false
+  dailyOpen.value = false
   hint.value = false
   entering.value = place
   walk.value = { id: place.id, key: Date.now() }
@@ -244,8 +318,30 @@ function goInside(place) {
       @toggle-places="togglePlaces"
       @toggle-friends="toggleFriends"
     />
+    <!-- today's tasks and the streak, on the left under the weather chip -->
+    <DailyButton class="town__daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
     <PlacesMenu :places="ALL_PLACES" :open="placesOpen" @go="go" />
     <FriendsList :friends="friendsInTown" :open="friendsOpen" @go="findFriend" />
+    <Transition name="town-fade">
+      <DailyPanel
+        v-if="dailyOpen"
+        :tasks="daily.tasks"
+        :streak="daily.streak"
+        :freezes="daily.freezes"
+        :max-freezes="MAX_FREEZES"
+        :week="daily.week"
+        :reward="daily.reward"
+        :can-claim="daily.canClaim"
+        :claimed="daily.claimed"
+        :notice="daily.notice"
+        :preview="PREVIEW_DAYS"
+        @go="goDo"
+        @claim="claimDaily"
+        @dismiss-notice="daily.dismissNotice"
+        @preview-days="daily.previewDays"
+        @preview-reset="daily.previewReset"
+      />
+    </Transition>
     <WeatherButton v-if="ready" :mode="skyMode" :weather="weather" @change="skyMode = $event" />
     <!-- you, in the bottom-left corner: level, XP and coins; opens the salon -->
     <PlayerBadge
@@ -289,6 +385,8 @@ function goInside(place) {
     </Transition>
 
     <ChatDock v-if="ready && chats.length" :chats="chats" :open="openChat" @toggle="toggleChat" @close="closeChat" />
+
+    <DailyReward v-if="gift" :reward="gift" @close="closeGift" />
   </section>
 </template>
 
@@ -299,6 +397,14 @@ function goInside(place) {
   overflow: hidden;
   background: #6fb14b;
   touch-action: none;
+}
+
+/* Daily, under the weather chip */
+.town .town__daily {
+  position: absolute;
+  left: 14px;
+  top: 72px;
+  z-index: 10;
 }
 
 /* your badge, bottom left (the weather chip has the top-left corner) */

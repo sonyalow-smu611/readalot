@@ -219,6 +219,44 @@ test.describe("notes on the notice board", () => {
     await expect(board.getByText("No notes yet. Be the first to leave one.")).toBeVisible();
   });
 
+  test("their notice board has Leave a note, which pins the note on the board", async ({ page }) => {
+    await visit(page, "reader-noah", "Noah");
+    let board = await openBoard(page);
+    await board.getByRole("button", { name: "Leave a note" }).click();
+    let card = page.getByRole("dialog", { name: "Leave a note for Noah" });
+    await card.getByRole("button", { name: "Cancel" }).click();
+    board = page.getByRole("dialog", { name: "Notice board" });
+    await expect(board.getByText("No notes yet. Be the first to leave one.")).toBeVisible();
+
+    await board.getByRole("button", { name: "Leave a note" }).click();
+    card = page.getByRole("dialog", { name: "Leave a note for Noah" });
+    await card.getByRole("textbox", { name: "Your note" }).fill("Your shelf is so tidy");
+    await card.getByRole("button", { name: "Post note" }).click();
+    await expect(card).toBeHidden();
+    await expect(board.getByRole("listitem").filter({ hasText: "Your shelf is so tidy" })).toBeVisible();
+    await expect(page.getByRole("status")).toHaveText("Your note is on Noah's board");
+  });
+
+  test("a visitor can take down only the notes they left", async ({ page }) => {
+    // a note someone else left on Emma's board earlier
+    await page.addInitScript(() => {
+      if (localStorage.getItem("readalot.roomNotes")) return;
+      const note = { id: "maya-1", readerId: "reader-emma", authorId: "someone-else", author: "Maya", text: "Lend me Circe?", createdAt: "2026-10-01T09:00:00.000Z" };
+      localStorage.setItem("readalot.roomNotes", JSON.stringify({ "reader-emma": [note] }));
+    });
+    await visit(page, "reader-emma", "Emma");
+    await leaveNote(page, "Emma", "Mine to take down");
+
+    const board = await openBoard(page);
+    const theirs = board.getByRole("listitem").filter({ hasText: "Lend me Circe?" });
+    const mine = board.getByRole("listitem").filter({ hasText: "Mine to take down" });
+    await expect(theirs.getByText("From Maya")).toBeVisible();
+    await expect(theirs.getByRole("button", { name: "Take down" })).toHaveCount(0);
+    await mine.getByRole("button", { name: "Take down" }).click();
+    await expect(mine).toHaveCount(0);
+    await expect(theirs).toBeVisible();
+  });
+
   // the corkboard's pixels in the room's picture, as one number to compare
   async function corkboardPixels(page) {
     const picture = await roomCanvas(page).elementHandle();

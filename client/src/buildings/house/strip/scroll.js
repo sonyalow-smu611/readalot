@@ -4,7 +4,7 @@
 //   a mouse can drag the room, and it glides on a little when let go
 //   the left and right arrow keys move a third of the view
 //   glideTo() eases the room to a spot (the Places menu), at once with reduced motion
-// While `locked()` (a book is out), none of these move the room.
+// While `locked()` (a book is out, or a piece is being carried), none of these move the room.
 import { prefersReducedMotion } from '@/lib/motion'
 
 const DRAG_START = 5 // px a press must move before it is a drag, not a tap
@@ -48,6 +48,8 @@ export function createScroll(el, { locked = () => false, onMove = () => {} } = {
 
   function onPointerMove(event) {
     if (!press || event.pointerId !== press.id) return
+    // something picked up in the room follows the pointer instead
+    if (locked()) return
     const dx = event.clientX - press.x
     if (!dragged && Math.abs(dx) < DRAG_START) return
     if (!dragged) {

@@ -92,7 +92,7 @@ export const PARTS = [
 // the bookshelf and the room's own pictures. `at` is the point a piece hangs centred on; `name`
 // says where that is. Keep the order: a spot's id is its place in this list.
 const WALL = [
-  { at: { x: 277, y: 192 }, name: 'by the window' },
+  { at: { x: 278, y: 192 }, name: 'by the window' },
   { at: { x: 441, y: 188 }, name: 'by the reading chair' },
   { at: { x: 745, y: 106 }, name: 'above the corkboard' },
   { at: { x: 858, y: 240 }, name: 'over the nightstand' },
