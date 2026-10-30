@@ -299,7 +299,7 @@ async function logout() {
               :key="p.id"
               type="button"
               role="tab"
-              class="dock__tab"
+              class="btn btn-chip dock__tab"
               :aria-selected="panel === p.id"
               aria-controls="salon-panel"
               @click="panel = p.id"
@@ -351,7 +351,7 @@ async function logout() {
                   @toggle="toggleDiscoverable"
                 />
                 <SavedQuotes />
-                <button type="button" class="logout" data-tour="profile-logout" @click="confirmingLogout = true">
+                <button type="button" class="btn btn-secondary logout" data-tour="profile-logout" @click="confirmingLogout = true">
                   Log out
                 </button>
               </template>
@@ -465,23 +465,6 @@ async function logout() {
 
 .dock__tab {
   flex: 1 1 0;
-  min-height: 42px;
-  border: 0;
-  border-radius: 2px;
-  background: transparent;
-  color: var(--rl-text);
-  font-weight: 700;
-  transition: transform 0.12s ease;
-}
-
-.dock__tab:hover {
-  transform: translateY(-1px);
-}
-
-.dock__tab[aria-selected='true'] {
-  background: var(--px-pink-dark);
-  color: #fffdf9;
-  box-shadow: inset 0 -4px 0 rgba(43, 29, 36, 0.3);
 }
 
 .dock__saved {
@@ -512,18 +495,7 @@ async function logout() {
 .logout {
   display: block;
   width: 100%;
-  min-height: 48px;
   margin: 16px 0 8px;
-  border: 3px solid var(--px-ink);
-  border-radius: 4px;
-  background: var(--px-paper);
-  color: #b42318;
-  font-weight: 700;
-  box-shadow: var(--px-shadow);
-}
-
-.logout:hover {
-  background: #fbe9e7;
 }
 
 /* Narrow screens: the reader on top, the widgets in a sheet underneath that pulls up over them */
@@ -559,7 +531,7 @@ async function logout() {
     place-items: center;
     flex: none;
     width: 100%;
-    height: 28px;
+    height: 44px;
     border: 0;
     background: none;
   }

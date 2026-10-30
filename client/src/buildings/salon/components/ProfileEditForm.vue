@@ -177,8 +177,7 @@ async function submit() {
           v-for="genre in GENRES"
           :key="genre"
           type="button"
-          class="genre"
-          :class="{ 'is-on': genres.includes(genre) }"
+          class="btn btn-chip genre"
           :aria-pressed="genres.includes(genre)"
           @click="toggleGenre(genre)"
         >
@@ -223,23 +222,11 @@ form {
 .genres {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px 8px;
 }
 
 .genre {
-  min-height: 44px;
-  padding: 6px 14px;
-  border: 2px solid #ead2de;
-  border-radius: 999px;
-  background: var(--rl-canvas);
-  color: var(--rl-text);
   font-size: 0.875rem;
-}
-
-.genre.is-on {
-  background: #a84874;
-  border-color: #1e1a24;
-  color: #fffdf9;
 }
 
 .field-error {

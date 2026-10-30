@@ -301,6 +301,19 @@ test.describe("the house", () => {
     expect(await offLook(page.locator("body"))).toEqual([]);
   });
 
+  test("a book's card on My Shelf and on a friend's shelf has pixel buttons", async ({ page }) => {
+    await page.goto("/house/shelf");
+    await page.getByRole("region", { name: /^Currently reading, \d+ books?$/ }).getByRole("button").first().click();
+    const card = page.getByRole("dialog", { name: "Book details" });
+    await expect(card.getByRole("button", { name: "Remove from shelf" })).toBeVisible();
+    await expect.poll(() => offLook(card)).toEqual([]);
+
+    await page.goto("/people/reader-sofia/room/shelf");
+    await page.getByRole("button", { name: /Pride and Prejudice/ }).click();
+    await expect(card.getByRole("button", { name: "Close book" })).toBeVisible();
+    await expect.poll(() => offLook(card)).toEqual([]);
+  });
+
   test("a visited room, its note card and its notice board have pixel buttons", async ({ page }) => {
     await page.goto("/people/reader-emma/room");
     await roomReady(page);
@@ -327,5 +340,221 @@ test.describe("the house", () => {
     const card = page.getByRole("dialog", { name: "Currently reading" });
     await expect(card.getByRole("button", { name: "Close" })).toBeVisible();
     await expect.poll(() => offLook(card)).toEqual([]);
+  });
+});
+
+// --- Shared components (pixel-buttons 07) ------------------------------------------------------
+
+// a reader who has saved their profile but not yet seen the tour
+const tourReader = signedOut.extend({
+  page: async ({ page }, use, testInfo) => {
+    testInfo.skip(!hasSupabase, NEEDS_SUPABASE);
+    const reader = await createReader({ profile: { name: "Reader", favouriteGenres: ["Fantasy"] }, tourSeen: false });
+    await signInPage(page, reader.session);
+    await use(page);
+    await reader.remove();
+  },
+});
+
+test.describe("shared components", () => {
+  test("the app header has pixel buttons", async ({ page }) => {
+    await page.route("**/api/books/search**", (route) => route.fulfill({ json: { books: [] } }));
+    await page.goto("/search");
+    const header = page.getByRole("banner");
+    await expect(header.getByRole("button", { name: "Back" })).toBeVisible();
+    expect(await offLook(header)).toEqual([]);
+  });
+
+  test("the toast's Undo is a pixel button", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("readalot.skipRemoveConfirm", "yes"));
+    await page.route("**/api/user-books/*", (route) => route.fulfill({ json: { userBook: {} } }));
+    await page.goto("/house/shelf");
+    await page.getByRole("button", { name: /^The Hobbit/ }).click();
+    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Remove from shelf" }).click();
+    const toast = page.getByRole("status").filter({ hasText: "Removed" });
+    await expect(toast.getByRole("button", { name: "Undo" })).toBeVisible();
+    expect(await offLook(toast)).toEqual([]);
+  });
+
+  test("a part that couldn't load has a pixel Retry", async ({ page }) => {
+    await page.route("**/api/user-books", (route) => route.fulfill({ status: 500, json: { error: "Nap time." } }));
+    await page.goto("/house/shelf");
+    const retry = page.getByRole("button", { name: "Retry" });
+    await expect(retry).toBeVisible();
+    expect(await offLook(retry.locator(".."))).toEqual([]);
+  });
+
+  test("a book page that couldn't open has a pixel Retry", async ({ page }) => {
+    await page.route("**/api/books/missing-book", (route) => route.fulfill({ status: 500, json: { error: "Gone." } }));
+    await page.goto("/books/missing-book");
+    const retry = page.getByRole("button", { name: "Retry" });
+    await expect(retry).toBeVisible();
+    expect(await offLook(retry.locator(".."))).toEqual([]);
+  });
+
+  test("the bottom sheet has pixel buttons", async ({ page }) => {
+    await page.goto("/playground");
+    await page.getByRole("button", { name: "Open a sheet" }).click();
+    const sheet = page.getByRole("dialog", { name: "A bottom sheet" });
+    await expect(sheet.getByRole("button", { name: "Close" })).toBeVisible();
+    await expect.poll(() => offLook(sheet)).toEqual([]);
+  });
+
+  test("a book lifted off the shelf, and opened, has pixel buttons", async ({ page }) => {
+    await page.goto("/playground");
+    await page.getByRole("button", { name: / by / }).first().click();
+    const close = page.getByRole("button", { name: "Close book" });
+    await expect(close).toBeVisible();
+    await expect.poll(() => offLook(close.locator(".."))).toEqual([]);
+
+    // opened: the spread, with the shelf's actions for the book
+    await page.locator(".featured__book").click();
+    const spread = page.getByRole("dialog", { name: "Book details" });
+    await expect(spread).toBeVisible();
+    await expect.poll(() => offLook(close.locator(".."))).toEqual([]);
+  });
+});
+
+tourReader("the guide tour's card has pixel buttons", async ({ page }) => {
+  await mockWeather(page);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Welcome to Readalot Town" })).toBeVisible({ timeout: 15000 });
+  await expect.poll(() => offLook(page.locator(".guide__card"))).toEqual([]);
+});
+
+// --- The buildings (pixel-buttons 03-06) -------------------------------------------------------
+
+test.describe("the library", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockWeather(page);
+    const books = ["The Dragon's Library", "Emma"].map((title, i) => ({ id: `lib-${i}`, title, authors: ["A. Writer"], coverUrl: "" }));
+    await page.route("**/api/books/search**", (route) => route.fulfill({ json: { books } }));
+    await page.goto("/library");
+  });
+
+  test("the hall, its places and the help desk's search have pixel buttons", async ({ page }) => {
+    await expect(page.getByRole("navigation", { name: "Places in the library" })).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+    await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Help desk" }).click();
+    await page.getByRole("button", { name: "Help desk: search for any book" }).click();
+    await expect(page.getByRole("searchbox", { name: "Search books or authors" })).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+  });
+
+  test("a bookcase's shelf sheet has pixel buttons", async ({ page }) => {
+    await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Fantasy" }).click();
+    await page.getByRole("button", { name: "Fantasy bookcase" }).click();
+    const sheet = page.getByRole("dialog", { name: "Fantasy" });
+    await expect(sheet.getByRole("link", { name: "See all Fantasy" })).toBeVisible();
+    await expect.poll(() => offLook(sheet)).toEqual([]);
+  });
+
+  test("the scan machine has pixel buttons", async ({ page }) => {
+    await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Scanner" }).click();
+    await page.getByRole("button", { name: "Book scanner: scan a book cover" }).click();
+    const scanner = page.getByRole("dialog", { name: "Book scanner" });
+    await expect(scanner).toBeVisible();
+    await expect.poll(() => offLook(scanner)).toEqual([]);
+  });
+});
+
+test.describe("the cafe and its readers", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockWeather(page);
+  });
+
+  test("the cafe and a reader's card have pixel buttons", async ({ page }) => {
+    await page.goto("/cafe");
+    await expect(page.getByRole("button", { name: /^Walk to Emma Tan/ })).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).click();
+    const card = page.getByRole("dialog", { name: "Meet Emma Tan" });
+    await expect(card).toBeVisible({ timeout: 15000 });
+    await expect.poll(() => offLook(card)).toEqual([]);
+  });
+
+  test("a reader's page and its chat have pixel buttons", async ({ page }) => {
+    await page.goto("/people/reader-emma");
+    await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+  });
+});
+
+test.describe("the salon", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockWeather(page);
+    await page.goto("/salon");
+    await expect(page.getByRole("heading", { name: "Hair Salon" })).toBeVisible();
+  });
+
+  test("the style studio and its save question have pixel buttons", async ({ page }) => {
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+    await page.getByRole("button", { name: "Surprise me" }).click();
+    await page.getByRole("link", { name: "Back to town" }).click();
+    const ask = page.getByRole("dialog", { name: "Save your new look?" });
+    await expect(ask).toBeVisible();
+    await expect.poll(() => offLook(ask)).toEqual([]);
+  });
+
+  test("the profile's cards, its form, a shelf's list and Log out have pixel buttons", async ({ page }) => {
+    await page.getByRole("tab", { name: "Profile" }).click();
+    await expect(page.getByRole("button", { name: "Edit profile" })).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+
+    await page.getByRole("button", { name: "Edit location" }).click();
+    await expect(page.getByLabel("Location")).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+    await page.getByRole("button", { name: "Save" }).click();
+
+    await page.getByRole("button", { name: "Edit profile" }).click();
+    await expect(page.getByLabel("Name")).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    await page.getByRole("button", { name: /To read/ }).click();
+    const list = page.getByRole("dialog", { name: /To read/ });
+    await expect(list).toBeVisible();
+    await expect.poll(() => offLook(list)).toEqual([]);
+    await list.getByRole("button", { name: "Close" }).click();
+
+    await page.getByRole("button", { name: "Log out" }).click();
+    const leave = page.getByRole("dialog", { name: "Close this book?" });
+    await expect(leave).toBeVisible();
+    await expect.poll(() => offLook(leave)).toEqual([]);
+  });
+});
+
+test.describe("the town", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockWeather(page);
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Places" })).toBeVisible({ timeout: 15000 });
+  });
+
+  test("the map's buttons, the Places menu and a place card have pixel buttons", async ({ page }) => {
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+    await page.getByRole("button", { name: "Places" }).click();
+    const places = page.getByRole("navigation", { name: "Places in town" });
+    await expect(places).toBeVisible();
+    await expect.poll(() => offLook(places)).toEqual([]);
+    await places.getByRole("button", { name: /^Library/ }).click();
+    const card = page.getByRole("dialog", { name: "Library" });
+    await expect(card.getByRole("button", { name: "Enter the library" })).toBeVisible();
+    await expect.poll(() => offLook(card)).toEqual([]);
+  });
+
+  test("the friends list, a friend's card and the chat dock have pixel buttons", async ({ page }) => {
+    await page.getByRole("button", { name: "Friends, 2 online" }).click();
+    const list = page.getByRole("navigation", { name: "Friends in town" });
+    await expect(list).toBeVisible();
+    await expect.poll(() => offLook(list)).toEqual([]);
+    await list.getByRole("button", { name: /Emma Tan/ }).click();
+    const card = page.getByRole("dialog", { name: "Emma Tan" });
+    await expect(card.getByRole("button", { name: "Say hi" })).toBeVisible();
+    await expect.poll(() => offLook(card)).toEqual([]);
+    await card.getByRole("button", { name: "Say hi" }).click();
+    const chat = page.getByRole("region", { name: "Chat with Emma Tan" });
+    await expect(chat).toBeVisible();
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
   });
 });

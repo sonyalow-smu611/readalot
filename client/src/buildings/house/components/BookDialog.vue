@@ -32,8 +32,7 @@ import { nextTick, onMounted, ref } from 'vue'
 import BookCard from '@/components/book/BookCard.vue'
 import BookDetailsContent from '@/components/book/BookDetailsContent.vue'
 import RemoveBookModal from '@/components/modals/RemoveBookModal.vue'
-import { useToast } from '@/composables/useToast'
-import { useBookshelfStore } from '@/stores/bookshelf'
+import { useRemoveBook } from '@/buildings/house/useRemoveBook'
 
 defineProps({
   book: { type: Object, required: true },
@@ -44,58 +43,7 @@ defineProps({
 const emit = defineEmits(['close', 'leave'])
 
 const card = ref(null)
-const bookshelf = useBookshelfStore()
-const { show: showToast } = useToast()
-
-// --- Removing the book --------------------------------------------------------------------
-// "Don't ask again" is remembered on this device; Undo in the toast is the safety net either way.
-const SKIP_CONFIRM_KEY = 'readalot.skipRemoveConfirm'
-const removing = ref(null)
-
-function skipConfirm() {
-  try {
-    return localStorage.getItem(SKIP_CONFIRM_KEY) === 'yes'
-  } catch {
-    return false
-  }
-}
-
-function askRemove(book) {
-  if (skipConfirm()) removeBook(book)
-  else removing.value = book
-}
-
-function confirmRemove({ remember }) {
-  const book = removing.value
-  removing.value = null
-  if (remember) {
-    try {
-      localStorage.setItem(SKIP_CONFIRM_KEY, 'yes')
-    } catch {
-      // storage unavailable: it asks again next visit
-    }
-  }
-  removeBook(book)
-}
-
-async function removeBook(book) {
-  emit('close', { removed: true })
-  try {
-    const removed = await bookshelf.removeBook(book.id)
-    if (!removed) return
-    showToast(`Removed “${removed.title}”`, 5000, { label: 'Undo', run: () => undoRemove(removed) })
-  } catch {
-    showToast(`Couldn't remove “${book.title}”. Try again.`)
-  }
-}
-
-async function undoRemove(book) {
-  try {
-    await bookshelf.restoreBook(book)
-  } catch {
-    showToast(`Couldn't put “${book.title}” back. Try again.`)
-  }
-}
+const { removing, askRemove, confirmRemove } = useRemoveBook(() => emit('close', { removed: true }))
 
 onMounted(async () => {
   await nextTick()

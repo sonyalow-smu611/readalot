@@ -17,7 +17,7 @@ const label = computed(() => `Friends, ${props.online} online`)
 <template>
   <button
     type="button"
-    class="friends-button"
+    class="btn btn-secondary friends-button"
     :aria-label="label"
     :aria-expanded="open"
     aria-controls="town-friends"
@@ -42,13 +42,6 @@ const label = computed(() => `Friends, ${props.online} online`)
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 0 8px 0 14px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-  color: var(--rl-text);
   pointer-events: auto;
 }
 

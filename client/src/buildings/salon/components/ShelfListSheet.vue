@@ -45,7 +45,7 @@ function escape() {
           <h2 id="list-title" class="list__title">
             {{ stat.label }} <span class="list__count">{{ books.length }}</span>
           </h2>
-          <button ref="closeButton" type="button" class="list__close" aria-label="Close" @click="emit('close')">
+          <button ref="closeButton" type="button" class="btn btn-secondary btn-icon list__close" aria-label="Close" @click="emit('close')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
@@ -66,7 +66,7 @@ function escape() {
               v-if="removingId !== book.id"
               :id="`remove-${book.id}`"
               type="button"
-              class="list__remove"
+              class="btn btn-danger btn-icon list__remove"
               :aria-label="`Remove ${book.title} from ${stat.label}`"
               @click="emit('ask-remove', book.id)"
             >
@@ -139,21 +139,6 @@ function escape() {
   font-weight: 400;
 }
 
-.list__close {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-right: -8px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: var(--rl-text);
-}
-
-.list__close:hover {
-  background: var(--rl-secondary);
-}
 
 .list__close svg {
   width: 20px;
@@ -195,20 +180,9 @@ function escape() {
 }
 
 .list__remove {
-  display: grid;
   flex: none;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: var(--rl-muted);
-}
-
-.list__remove:hover {
-  background: #fbe9e7;
-  color: #b42318;
+  /* clear of the scrolling list's edge, so its pixel shadow shows */
+  margin-right: 3px;
 }
 
 .list__remove svg {

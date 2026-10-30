@@ -5,7 +5,7 @@
         <h2>💌 Reader Chat</h2>
         <p>Leave a message for this bookworm.</p>
       </div>
-      <button type="button" class="small-button" @click="resetChat">Reset demo</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="resetChat">Reset demo</button>
     </div>
 
     <div class="demo-bar">
@@ -34,7 +34,7 @@
       <label for="reader-chat-text" class="visually-hidden">Message</label>
       <input id="reader-chat-text" v-model="draft" maxlength="1000"
              placeholder="Write a message…" :disabled="sending" required />
-      <button :disabled="sending || !draft.trim()" type="submit">
+      <button class="btn btn-primary" :disabled="sending || !draft.trim()" type="submit">
         {{ sending ? 'Sending…' : 'Send' }}
       </button>
     </form>
@@ -130,7 +130,6 @@ watch(() => props.readerId, () => {
 .chat-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .chat-title h2 { margin: 0 0 5px; font-size: 19px; color: #624b3c; }
 .chat-title p, .chat-footer { color: #897666; font-size: 12px; }
-.small-button { border-radius: 10px; padding: 7px 10px; border: 1px solid #ddcabb; background: white; font-size: 11px; cursor: pointer; }
 .demo-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0; flex-wrap: wrap; font-size: 10px; color: #79695e; }
 .demo-bar label { display: flex; align-items: center; gap: 6px; }
 .demo-bar select { border-radius: 7px; padding: 5px; background: white; border: 1px solid #d9c9bc; max-width: 125px; }
@@ -144,8 +143,6 @@ watch(() => props.readerId, () => {
 .message-bubble small { display: block; text-align: right; color: #756d74; font-size: 10px; }
 .message-compose { display: flex; gap: 7px; margin-top: 10px; }
 .message-compose input { flex: 1; min-width: 0; padding: 11px; border: 1px solid #d9c9bc; border-radius: 10px; font: inherit; }
-.message-compose button { padding: 10px 14px; background: #76598c; color: white; border: 0; border-radius: 10px; cursor: pointer; }
-.message-compose button:disabled { opacity: .5; cursor: not-allowed; }
 .chat-error { font-size: 12px; color: #a73b39; }
 .chat-footer { margin-bottom: 0; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }

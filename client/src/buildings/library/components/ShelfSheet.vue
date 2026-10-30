@@ -40,7 +40,7 @@ onMounted(() => panel.value?.focus())
         <h2 :id="headingId" class="shelf-sheet__title">
           <span aria-hidden="true">{{ category.emoji }}</span> {{ category.title }}
         </h2>
-        <button type="button" class="shelf-sheet__close" aria-label="Close" @click="$emit('close')">✕</button>
+        <button type="button" class="btn btn-secondary btn-icon shelf-sheet__close" aria-label="Close" @click="$emit('close')">✕</button>
       </header>
 
       <div class="shelf-sheet__body">
@@ -127,16 +127,7 @@ onMounted(() => panel.value?.focus())
 }
 
 .shelf-sheet__close {
-  display: grid;
-  place-items: center;
   flex: none;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  color: var(--rl-primary);
 }
 
 .shelf-sheet__body {

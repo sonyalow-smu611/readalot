@@ -115,7 +115,7 @@ function typed() {
           <button
             :id="`about-edit-${field.key}`"
             type="button"
-            class="fact__edit"
+            class="btn btn-secondary btn-icon fact__edit"
             :aria-label="`Edit ${field.label.toLowerCase()}`"
             :disabled="Boolean(editingKey)"
             @click="emit('edit', field.key)"
@@ -178,30 +178,6 @@ function typed() {
   position: absolute;
   top: 8px;
   right: 8px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: #fbe7f0;
-  color: #a84874;
-}
-
-/* a 44px touch target around the small button */
-.fact__edit::before {
-  content: '';
-  position: absolute;
-  inset: -8px;
-}
-
-.fact__edit:hover:not(:disabled) {
-  background: #f6c9dc;
-}
-
-.fact__edit:disabled {
-  opacity: 0.4;
 }
 
 .fact__edit svg {
@@ -222,7 +198,6 @@ function typed() {
 }
 
 .fact__actions .btn {
-  min-height: 36px;
   padding-inline: 14px;
 }
 

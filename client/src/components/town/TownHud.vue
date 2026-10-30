@@ -17,7 +17,7 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
     <span class="town-hud__spacer"></span>
     <button
       type="button"
-      class="town-hud__chip town-hud__chip--button"
+      class="btn btn-secondary town-hud__places"
       :aria-expanded="placesOpen"
       aria-controls="town-places"
       @click="emit('toggle-places')"
@@ -63,11 +63,15 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
   pointer-events: auto;
 }
 
-.town-hud__chip--button {
-  padding: 0 14px;
+.town-hud__places {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
 }
 
-.town-hud__chip svg {
+.town-hud__chip svg,
+.town-hud__places svg {
   width: 18px;
   height: 18px;
   fill: none;

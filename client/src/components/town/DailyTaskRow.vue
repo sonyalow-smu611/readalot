@@ -21,7 +21,7 @@ const emit = defineEmits(['go'])
     <button
       v-if="!task.done && task.place"
       type="button"
-      class="daily-task__go"
+      class="btn btn-primary btn-sm daily-task__go"
       :aria-label="`Go: ${task.title}`"
       @click="emit('go', task.place)"
     >
@@ -92,23 +92,9 @@ const emit = defineEmits(['go'])
 
 .daily-task__go {
   flex: none;
-  min-width: 52px;
-  min-height: 36px;
-  padding: 0 14px;
-  border: 2px solid var(--rl-primary);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  color: var(--rl-primary);
-  font-weight: 800;
-  font-size: 14px;
 }
 
 .daily-task__go:hover,
-.daily-task__go:focus-visible {
-  background: var(--rl-primary);
-  color: var(--rl-surface);
-}
-
 @keyframes daily-tick {
   from {
     transform: scale(0.4);

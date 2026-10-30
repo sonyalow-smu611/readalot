@@ -45,7 +45,7 @@ const emit = defineEmits(['go'])
   min-height: 44px;
   padding: 0 12px;
   border: none;
-  border-radius: 10px;
+  border-radius: 0;
   background: transparent;
   color: var(--rl-text);
   text-align: left;

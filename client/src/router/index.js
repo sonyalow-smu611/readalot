@@ -42,7 +42,7 @@ const routes = [
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 3 } },
   // the book scanner lives in the library now
   { path: '/scan', name: 'scan-book', redirect: { name: 'library', query: { scan: '1' } } },
-  { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },
+  { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, wide: true, order: 3 } },
   // A first-time visitor's landing page, before signing in.
   { path: '/start', name: 'start', component: StartView, meta: { title: 'Social media, but for book lovers', bare: true, guest: true, order: 0 } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },

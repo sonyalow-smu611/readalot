@@ -15,7 +15,7 @@
       <div v-else class="book-page__state" role="alert">
         <strong>Couldn't open this book.</strong>
         {{ error || "It may have been taken off the shelves." }}
-        <button type="button" class="btn book-page__retry" @click="load">Retry</button>
+        <button type="button" class="btn btn-primary book-page__retry" @click="load">Retry</button>
       </div>
     </BookCard>
   </section>
@@ -73,6 +73,9 @@ onMounted(() => {
 .book-page__card {
   position: absolute;
   inset: 10%;
+  /* on a laptop it fills the window, up to a width that still reads well */
+  max-width: 1100px;
+  margin-inline: auto;
 }
 
 .book-page__state {
@@ -98,16 +101,6 @@ onMounted(() => {
 }
 
 .book-page__retry {
-  --bs-btn-font-size: 14px;
-  --bs-btn-font-weight: 700;
-  --bs-btn-color: var(--rl-surface);
-  --bs-btn-bg: var(--rl-primary);
-  --bs-btn-border-color: var(--rl-primary);
-  --bs-btn-hover-color: var(--rl-surface);
-  --bs-btn-hover-bg: var(--rl-primary);
-  --bs-btn-hover-border-color: var(--rl-primary);
-  --bs-btn-border-radius: 12px;
-  min-height: 44px;
   margin-top: 4px;
 }
 </style>

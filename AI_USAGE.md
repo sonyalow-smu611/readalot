@@ -467,3 +467,46 @@ shared.
 | Inventory | `client/src/buildings/house/components/RoomDock.vue` | Dragging a piece out of the Inventory with a mouse no longer starts the browser's own image drag, which cancelled the drop |
 | Loading screen | `tests/e2e/supabaseUser.js` | Signed-in tests wait for the loading screen (the town waking up) to finish before each step; until then the app fills the window and covers the page |
 | Tests | `tests/e2e/bookshelf.spec.js`, `furniture.spec.js`, `onboarding.spec.js` | Blocking the room's pictures blocks only images (the dev server serves an imported picture as a script, so the whole app failed to start); the drag waits for the Inventory card to settle; the tour journey is marked slow and waits longer for each camera glide |
+
+### My Shelf's rows under header cards (AI-generated)
+
+Written by Claude Code at Sonz's request, test first (ticket pixel-and-reviews 06). My Shelf's three
+rows are now shelf tiers, the same part as a genre page's shelves: a header card, the covers, and
+the plank under them. Team to review: `ShelfTier.vue` is shared with the Library's genre page,
+whose "Shelf 1" labels become pixel header cards too.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shelf tier | `client/src/components/ShelfTier.vue` | The floating label becomes a header card (square, 2 px outline, hard shadow, a heading at a chosen level) with a slot for buttons at its end; the row of books is a slot, so another part can put its own row on the plank |
+| My Shelf | `client/src/buildings/house/components/ShelfRow.vue` | Each row is drawn as a shelf tier: its name and Previous / Next in the header card, its scrolling covers in the slot; scrolling, drag, keys and focus unchanged |
+| Tests | `tests/e2e/my-shelf.spec.js` | Every row has a header card and a plank parting it from the next; My Shelf's header card and plank look exactly like a genre page's |
+
+### Readable synopsis, and My Shelf opening the genre page's card (AI-generated)
+
+Written by Claude Code at Sonz's request, test first (tickets pixel-and-reviews 07 and 08). Team
+to review: `BookPreviewModal.vue`, `BookDetailsContent.vue`, `lib/book.js` and the two new
+components in `components/book/` are shared with the Library, Discover, search and the book page.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Synopsis | `client/src/lib/book.js`, `client/src/components/book/BookSynopsis.vue` | `synopsisParagraphs`: Google's tags dropped and entities decoded (parsed with DOMParser, never shown as HTML), `<p>` and blank lines made paragraphs, `<br>` kept as a line break. The component cuts a long synopsis at six lines with Read more / Show less (`aria-expanded`, `aria-controls`), shows a short one whole, and says when there's none |
+| Book cards | `client/src/components/BookPreviewModal.vue`, `client/src/components/book/BookDetailsContent.vue` | Both show `BookSynopsis`. The genre card takes a name, a close label, a shelf line, status buttons and the book-page link on or off, and a slot for extras; its close button is a pixel button and its buttons keep the 44 px tap height |
+| Progress | `client/src/components/book/ReadingProgress.vue` | The progress slider, moved out of `BookDetailsContent` so the room's card and My Shelf's card share it |
+| My Shelf | `client/src/buildings/house/ShelfView.vue`, `useRemoveBook.js`, `components/BookDialog.vue` | My Shelf opens the genre card, still named "Book details": status buttons move the book, the slider while it's being read, Remove from shelf with Undo (moved into `useRemoveBook`, which the room's card uses too). A friend's shelf opens it without status buttons or the book-page link (their demo books have no page) |
+| Tests | `tests/e2e/synopsis.spec.js`, `my-shelf.spec.js`, `visit-room.spec.js`, `buttons.spec.js` | HTML cleaned into paragraphs, Read more / Show less, short and missing synopses, on the genre card and the book page; My Shelf's card (genre card, progress saves, remove and Undo, Open full book page, focus back on the cover); a friend's shelf card with no status buttons; both cards pass the pixel button check |
+
+### Pixel fonts and surfaces, the book page on a laptop, shared buttons (AI-generated)
+
+Written by Claude Code at Sonz's request, test first (tickets pixel-and-reviews 01 and 05, and
+pixel-buttons 07). Team to review: all of it is shared, and 01 changes every building's titles,
+Bootstrap cards, tags, text boxes and modals. Buildings' own card components (place card, cafe
+card…) are left to their owners and to ticket 03.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Fonts | `client/src/assets/theme.css` | `--rl-font-title` is Arial (bold on headings), the pixel buttons' font, instead of Georgia |
+| Surfaces | `client/src/styles/pixel-surfaces.css`, `client/src/main.js`, `client/src/assets/theme.css`, `client/src/components/book/BookCard.vue`, `BookDetailsContent.vue` | Bootstrap's `.card`, `.modal-content`, `.badge`, `.form-control` and `.form-select`, the app's modals (`.rl-modal`), the book's card and its genre tags: square, a 2 px outline in My Room's outline colour, and a hard 3 px shadow on the raised ones. Bootstrap's and the town's radius variables are 0 |
+| Design system | `design-system/tokens.json`, `README.md`, `design-system.json`, `components/*/README.md`, `components/*/preview.html` | An `outline` colour, Arial as the one family, radii 0 apart from book covers, hard shadows; the previews and READMEs show and describe the pixel look |
+| Book page | `client/src/router/index.js`, `client/src/views/BookDetailsView.vue`, `client/src/components/book/BookDetailsContent.vue` | The book page fills a laptop window (up to 1100 px): on a card at least 720 px wide, the cover sits on the left with the title and details beside it, and status, synopsis and reviews below. A phone, and the room's card, stay one column |
+| Shared buttons | `client/src/components/Toast.vue`, `BottomSheet.vue`, `BookOpenOverlay.vue`, `client/src/views/BookDetailsView.vue` | The toast's Undo (Accent, small), the sheet's and the open book's ✕ (Icon) and the book page's Retry (Primary) are pixel buttons, with their own button styling removed |
+| Tests | `tests/e2e/pixel-look.spec.js`, `book-page.spec.js`, `buttons.spec.js` | Titles on six pages aren't Georgia; the book card, a genre tag, a modal and a text box are square and outlined, the raised ones with a hard shadow; the book page's laptop and phone layouts; the look check on the app header, toast, Retry, bottom sheet, opened book and guide tour |

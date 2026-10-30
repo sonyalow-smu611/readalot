@@ -3,18 +3,22 @@
 // My Shelf: every book on the reader's shelf, opened from the bookshelf in My Room. Laid out like
 // the Library: a search box, genre chips, then one row of covers per shelf (To be read, Currently
 // reading, Finished reading), each scrolling sideways. A chip shows one genre in every row; the search narrows by title or
-// author. A cover opens the book's card, the same as in the room.
+// author. A cover opens the genre page's book card, with the progress slider while it's being read
+// and Remove from shelf.
 // Opened from someone else's room (/people/:id/room/shelf), it's their shelf instead: their books,
-// to look through, with no search and nothing to add, and their books' cards read-only.
+// to look through, with no search and nothing to add, and their books' cards without the status
+// buttons.
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import StateView from '@/components/StateView.vue'
-import BookDialog from '@/buildings/house/components/BookDialog.vue'
-import VisitorBookDialog from '@/buildings/house/components/VisitorBookDialog.vue'
+import BookPreviewModal from '@/components/BookPreviewModal.vue'
+import ReadingProgress from '@/components/book/ReadingProgress.vue'
+import RemoveBookModal from '@/components/modals/RemoveBookModal.vue'
 import ShelfRow from '@/buildings/house/components/ShelfRow.vue'
+import { useRemoveBook } from '@/buildings/house/useRemoveBook'
 import { readerRoom } from '@/buildings/house/visitors.js'
-import { SHELVES } from '@/services/shelves.js'
+import { SHELVES, shelfName } from '@/services/shelves.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { PLACES } from '@/town/places.js'
 
@@ -72,11 +76,24 @@ const rows = computed(() =>
 
 // --- A book's card ------------------------------------------------------------------------
 const openedBook = ref(null)
+// the shelf's own copy of the open book, so a move or a new percent shows in the card at once
+const shownBook = computed(() => (openedBook.value && bookshelf.findBook(openedBook.value.id)) ?? openedBook.value)
+const moveError = ref('')
 const page = ref(null)
 let trigger = null
 
+async function moveBook(status) {
+  await bookshelf.setStatus(shownBook.value.id, status)
+  moveError.value = bookshelf.moveError
+}
+
+const { removing, askRemove, confirmRemove } = useRemoveBook(() => {
+  openedBook.value = null
+})
+
 function openBook(book) {
   trigger = document.activeElement
+  moveError.value = ''
   openedBook.value = book
 }
 
@@ -179,9 +196,38 @@ onMounted(() => {
     </BuildingShell>
 
     <template v-if="openedBook">
-      <VisitorBookDialog v-if="visiting" :book="openedBook" :owner="visiting.firstName" :accent="place.accent" @close="closeBook" />
-      <BookDialog v-else :book="openedBook" :accent="place.accent" @close="closeBook" @leave="openedBook = null" />
+      <BookPreviewModal
+        v-if="visiting"
+        :book="openedBook"
+        label="Book details"
+        close-label="Close book"
+        :tab="`On ${visiting.firstName}'s ${shelfName(openedBook.status)} shelf`"
+        :statuses="false"
+        :links-to-page="false"
+        @close="closeBook"
+      />
+      <BookPreviewModal
+        v-else
+        :book="shownBook"
+        label="Book details"
+        close-label="Close book"
+        :tab="shelfName(shownBook.status)"
+        @close="closeBook"
+        @status="moveBook"
+      >
+        <ReadingProgress
+          v-if="shownBook.status === 'reading'"
+          class="my-shelf__progress"
+          :progress="shownBook.progress"
+          @change="bookshelf.setProgress(shownBook.id, $event)"
+        />
+        <p v-if="moveError" class="my-shelf__error" role="alert">{{ moveError }}</p>
+        <button type="button" class="btn btn-danger btn-sm my-shelf__remove" @click="askRemove(shownBook)">
+          Remove from shelf
+        </button>
+      </BookPreviewModal>
     </template>
+    <RemoveBookModal v-if="removing" :book="removing" @close="removing = null" @remove="confirmRemove" />
   </div>
 </template>
 
@@ -262,5 +308,20 @@ onMounted(() => {
 
 .my-shelf__empty-links a {
   color: var(--house-accent);
+}
+
+/* My Shelf's extras in the book's card, under its status buttons */
+.my-shelf__progress {
+  margin-top: 12px;
+}
+
+.my-shelf__error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #a23d3d;
+}
+
+.my-shelf__remove {
+  margin-top: 12px;
 }
 </style>

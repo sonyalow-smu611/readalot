@@ -214,7 +214,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
             aria-label="Search books or authors"
           />
           <!-- mousedown.prevent keeps the typing in the box, so the button stays to be clicked -->
-          <button v-if="asking" type="submit" class="btn btn-sm library__go" @mousedown.prevent>Search</button>
+          <button v-if="asking" type="submit" class="btn btn-primary btn-sm library__go" @mousedown.prevent>Search</button>
         </div>
         <p v-if="asking" class="library__ask" role="status">
           The librarian is listening: type a title or an author, then press Enter.
@@ -302,10 +302,6 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 
 .library__go {
   flex: none;
-  border-radius: 999px;
-  background: var(--library-accent);
-  font-weight: 700;
-  color: #fff;
 }
 
 .library__ask {

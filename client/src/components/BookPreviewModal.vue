@@ -1,4 +1,6 @@
-<!-- Quick Book Preview (reference screen 07). Opens whenever `book` is set. -->
+<!-- Quick Book Preview (reference screen 07). Opens whenever `book` is set. The genre page, Discover
+     and search open it; My Shelf and a friend's shelf open it too, naming it "Book details",
+     with the shelf it's on, and their own extras (progress, Remove) in the slot. -->
 <template>
   <div
     v-if="book"
@@ -7,7 +9,7 @@
     tabindex="-1"
     role="dialog"
     aria-modal="true"
-    :aria-label="`Quick preview: ${book.title}`"
+    :aria-label="label || `Quick preview: ${book.title}`"
     @click.self="$emit('close')"
     @keydown.esc="$emit('close')"
   >
@@ -16,18 +18,19 @@
         <div class="preview__top">
           <BookCover class="preview__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
           <div class="preview__meta">
+            <p v-if="tab" class="preview__tab">{{ tab }}</p>
             <h2 class="preview__title">{{ book.title }}</h2>
             <p class="preview__author">{{ book.authors?.join(", ") || "Unknown author" }}</p>
             <span v-if="book.averageRating" class="preview__rating">
               {{ Number(book.averageRating).toFixed(1) }} <span aria-hidden="true">★</span>
               <span class="visually-hidden">out of 5</span>
             </span>
-            <p class="preview__synopsis">{{ book.description || "No synopsis available yet." }}</p>
           </div>
         </div>
+        <BookSynopsis class="preview__synopsis" :text="book.description" />
 
-        <p class="preview__eyebrow">Reading status</p>
-        <div class="preview__statuses">
+        <p v-if="statuses" class="preview__eyebrow">Reading status</p>
+        <div v-if="statuses" class="preview__statuses">
           <button
             v-for="option in STATUSES"
             :key="option.value"
@@ -41,11 +44,14 @@
           </button>
         </div>
 
-        <RouterLink class="btn btn-primary preview__open" :to="`/books/${book.id}`">
+        <!-- what the page opening it adds, e.g. My Shelf's progress and Remove from shelf -->
+        <slot />
+
+        <RouterLink v-if="linksToPage" class="btn btn-primary preview__open" :to="`/books/${book.id}`">
           Open full book page
         </RouterLink>
-        <button class="preview__close" type="button" @click="$emit('close')">
-          Close <span aria-hidden="true">×</span>
+        <button class="btn btn-secondary preview__close" type="button" @click="$emit('close')">
+          {{ closeLabel }}
         </button>
       </div>
     </div>
@@ -56,10 +62,20 @@
 import { nextTick, ref, watch } from "vue";
 import { STATUSES } from "../services/shelves.js";
 import BookCover from "./BookCover.vue";
+import BookSynopsis from "./book/BookSynopsis.vue";
 
 const props = defineProps({
   // Book shape; `status` (want_to_read | reading | read) highlights the current shelf
-  book: { type: Object, default: null }
+  book: { type: Object, default: null },
+  // the dialog's name; "Quick preview: <title>" when not given
+  label: { type: String, default: "" },
+  closeLabel: { type: String, default: "Close" },
+  // a line above the title, e.g. which shelf the book is on
+  tab: { type: String, default: "" },
+  // the Reading status buttons; off for someone else's book
+  statuses: { type: Boolean, default: true },
+  // Open full book page; off for books that have no page (the demo readers')
+  linksToPage: { type: Boolean, default: true }
 });
 defineEmits(["close", "status"]);
 
@@ -100,6 +116,15 @@ watch(
   min-width: 0;
 }
 
+.preview__tab {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rl-accent);
+}
+
 .preview__title {
   margin: 2px 0 4px;
   font-size: 18px;
@@ -124,15 +149,10 @@ watch(
 }
 
 .preview__synopsis {
-  display: -webkit-box;
-  margin: 0;
-  overflow: hidden;
+  margin-top: 14px;
   font-size: 13px;
   line-height: 1.45;
   color: var(--rl-muted);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
 }
 
 .preview__eyebrow {
@@ -151,28 +171,14 @@ watch(
 
 .preview__statuses .btn {
   flex: 1;
-  min-height: 42px;
   padding-inline: 4px;
-  font-size: 13px;
-  font-weight: 700;
 }
 
 .preview__open {
-  min-height: 42px;
   margin-top: 12px;
-  padding-block: 9px;
-  font-size: 14px;
-  font-weight: 700;
 }
 
 .preview__close {
-  align-self: center;
   margin-top: 8px;
-  padding: 8px 16px;
-  border: 0;
-  background: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rl-muted);
 }
 </style>

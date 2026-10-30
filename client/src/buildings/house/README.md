@@ -8,7 +8,7 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `HouseView.vue` | The building's entry view, inside the shared `BuildingShell` |
 | `RoomView.vue` | The room page: the room, the Currently Reading card, book details, modals, the menu. With `visiting`, someone else's room |
 | `VisitView.vue` | Someone else's room (`/people/:id/room`), opened from their profile in the Cafe |
-| `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf. At `/people/:id/room/shelf`, the visited reader's shelf |
+| `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf. A cover opens the genre page's book card (`BookPreviewModal`), with the progress slider and Remove from shelf. At `/people/:id/room/shelf`, the visited reader's shelf, whose card has no status buttons |
 | `furniture.js` | **The furniture library:** the pieces in the room's pixel style that the Shop sells (the Shop sells nothing else) |
 | `visitors.js` | Other readers' rooms: the Cafe's sample readers, their books in the shelf's shape, the furniture in each room and its theme |
 | `themes.js` | **Each house's look:** wall and floor colours, and its own curtains, bedding, lamps and rug |
@@ -16,12 +16,13 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `components/PlacesMenu.vue` | The Places button in the room's top left corner and its list of places |
 | `notes.js` | Notes left on readers' notice boards, kept per reader in this browser |
 | `components/RoomStrip.vue` | The room itself: scrolling, the tappable spots, the shelf's name plates, books, furniture, cats. Takes the furniture and whether it can be edited from the page |
-| `components/VisitorBookDialog.vue` | A book off someone else's shelf: what it is and which shelf, with nothing to change |
+| `components/VisitorBookDialog.vue` | A book off someone else's shelf in their room: what it is and which shelf, with nothing to change |
 | `components/NoteComposer.vue` | The Leave a note card |
 | `components/NoticeBoard.vue` | A visited reader's notice board: the Quote of the Day, then the notes left there |
-| `components/ShelfRow.vue` | One shelf on My Shelf: a sideways row of covers that scrolls by swipe, wheel, drag, buttons or arrow keys |
+| `components/ShelfRow.vue` | One shelf on My Shelf, drawn as the genre page's shelf tier (header card, covers, plank): a sideways row of covers that scrolls by swipe, wheel, drag, buttons or arrow keys |
 | `components/DecorArt.vue` | A decoration's picture in the Shop and inventory: a furniture piece's own sprite, kept crisp |
-| `components/BookDialog.vue` | A book's card over the page, used by the room and My Shelf (remove with Undo included) |
+| `components/BookDialog.vue` | A book's card over the room (remove with Undo included) |
+| `useRemoveBook.js` | Remove from shelf for the room's and My Shelf's cards: ask first (unless told not to), then Undo in a toast |
 | `components/WindowView.vue` | The view through the window: sky, weather and the town across the street |
 | `strip/layout.js` | **What stands where.** Every piece, the parts of the room, decoration spots, lights |
 | `strip/placement.js` | **Where a decoration may stand:** the wall, the floor and the small surfaces, and the room kept between pieces |

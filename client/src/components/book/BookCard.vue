@@ -37,15 +37,15 @@ defineExpose({ focus: () => root.value?.focus() })
   position: relative;
 }
 
-/* The town's card (the place cards on the map, the cafe's reader cards): a white surface, a
-   fine line, round corners and a deep soft shadow. Where it sits and how big is up to whoever
-   shows it; --book-accent is the colour of the building it was opened in. */
+/* A pixel card (styles/pixel-surfaces.css): a white surface, square, a black outline and a hard
+   shadow. Where it sits and how big is up to whoever shows it; --book-accent is the colour of
+   the building it was opened in. */
 .book-card {
   overflow: hidden;
-  border: 1px solid var(--rl-line);
-  border-radius: var(--rl-radius-modal, 22px);
+  border: var(--px-border);
+  border-radius: 0;
   background: var(--rl-surface);
-  box-shadow: 0 14px 36px rgba(63, 46, 36, 0.25);
+  box-shadow: var(--px-shadow);
 }
 
 .book-card__page {

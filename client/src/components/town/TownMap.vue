@@ -160,7 +160,7 @@ onBeforeUnmount(() => {
     <div v-if="state === 'ready'" class="town-map__zoom">
       <button
         type="button"
-        class="town-map__round town-map__follow"
+        class="btn btn-chip btn-icon town-map__follow"
         :class="{ 'is-on': following }"
         aria-label="Follow my character"
         :aria-pressed="following"
@@ -172,10 +172,10 @@ onBeforeUnmount(() => {
           <circle class="town-map__follow-dot" cx="12" cy="12" r="1.6" />
         </svg>
       </button>
-      <button type="button" class="town-map__round" aria-label="Zoom in" @click="zoom(1.25)">
+      <button type="button" class="btn btn-secondary btn-icon town-map__round" aria-label="Zoom in" @click="zoom(1.25)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
-      <button type="button" class="town-map__round" aria-label="Zoom out" @click="zoom(0.8)">
+      <button type="button" class="btn btn-secondary btn-icon town-map__round" aria-label="Zoom out" @click="zoom(0.8)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /></svg>
       </button>
     </div>
@@ -216,19 +216,8 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
-.town-map__round {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-  color: var(--rl-text);
-}
-
-.town-map__round svg {
+.town-map__round svg,
+.town-map__follow svg {
   width: 20px;
   height: 20px;
   fill: none;
@@ -247,9 +236,4 @@ onBeforeUnmount(() => {
   stroke: none;
 }
 
-.town-map__follow.is-on {
-  border-color: #2f5fb3;
-  background: #2f5fb3;
-  color: var(--rl-surface);
-}
 </style>

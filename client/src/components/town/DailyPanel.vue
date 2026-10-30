@@ -65,7 +65,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
     <p v-if="notice" class="daily-panel__notice" :class="`is-${notice.kind}`" role="status">
       <span>{{ noticeText }}</span>
-      <button type="button" class="daily-panel__x" aria-label="Dismiss" @click="emit('dismiss-notice')">×</button>
+      <button type="button" class="btn btn-secondary btn-icon daily-panel__x" aria-label="Dismiss" @click="emit('dismiss-notice')">×</button>
     </p>
 
     <div class="daily-panel__streak">
@@ -86,7 +86,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
       <DailyTaskRow v-for="task in tasks" :key="task.id" :task="task" @go="emit('go', $event)" />
     </ul>
 
-    <button type="button" class="daily-panel__claim" :class="{ 'is-ready': canClaim }" :disabled="!canClaim" @click="emit('claim')">
+    <button type="button" class="btn btn-accent daily-panel__claim" :class="{ 'is-ready': canClaim }" :disabled="!canClaim" @click="emit('claim')">
       {{ claimLabel }}
     </button>
 
@@ -95,9 +95,9 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
     <div v-if="preview" class="daily-panel__preview" role="group" aria-label="Preview">
       <span>Preview</span>
-      <button type="button" @click="emit('preview-days', 1)">Next day</button>
-      <button type="button" @click="emit('preview-days', 2)">Skip a day</button>
-      <button type="button" @click="emit('preview-reset')">Reset</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="emit('preview-days', 1)">Next day</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="emit('preview-days', 2)">Skip a day</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="emit('preview-reset')">Reset</button>
     </div>
   </section>
 </template>
@@ -161,14 +161,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
 .daily-panel__x {
   flex: none;
-  width: 28px;
-  height: 28px;
-  margin: -4px -6px 0 auto;
-  border: none;
-  background: transparent;
-  color: inherit;
-  font-size: 20px;
-  line-height: 1;
+  margin: -4px 0 0 auto;
 }
 
 .daily-panel__streak {
@@ -228,29 +221,6 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
 .daily-panel__claim {
   flex: none;
-  min-height: 48px;
-  border: 3px solid #2b1d24;
-  border-radius: 999px;
-  background: var(--rl-secondary);
-  color: var(--rl-muted);
-  font-weight: 800;
-  font-size: 16px;
-}
-
-.daily-panel__claim.is-ready {
-  background: #f6c94a;
-  color: #2b1d24;
-  box-shadow: 0 4px 0 #2b1d24;
-  animation: daily-claim 1.4s ease-in-out infinite;
-}
-
-.daily-panel__claim.is-ready:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #2b1d24;
-}
-
-.daily-panel__claim:disabled {
-  border-color: var(--rl-line);
 }
 
 .daily-panel__note {
@@ -269,14 +239,6 @@ onBeforeUnmount(() => window.clearInterval(clock))
   border-top: 1px dashed var(--rl-line);
   font-size: 12px;
   color: var(--rl-muted);
-}
-
-.daily-panel__preview button {
-  padding: 4px 10px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-canvas);
-  font-size: 12px;
 }
 
 /* a glow, not a grow: the button stays still to tap */

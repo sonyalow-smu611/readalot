@@ -69,7 +69,7 @@ const sorted = computed(() =>
   min-height: 52px;
   padding: 6px 12px;
   border: none;
-  border-radius: 10px;
+  border-radius: 0;
   background: transparent;
   color: var(--rl-text);
   text-align: left;
