@@ -1,9 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// Your friends in town, and how long since each of them was online: the readers who have a house
-// in town (town/places.js), from the people store (GET /api/people), with when each was last
-// active.
-import { FRIEND_HOUSES } from '@/town/places.js'
-import { usePeopleStore } from '@/stores/people.js'
+// How long since a reader was online, and what that does to their house.
 
 const MINUTE = 60 * 1000
 const HOUR = 60 * MINUTE
@@ -16,23 +12,10 @@ export const DUSTY_AFTER = 30 * DAY
 export const NEGLECTED_AFTER = 60 * DAY
 export const DERELICT_AFTER = 90 * DAY
 
-// [{ id, displayName, lastSeenAt, character }], lastSeenAt an ISO date (or null when never seen)
-// and character their town look (part ids, see lib/avatar/catalogue.js). Throws when the readers
-// can't be loaded.
-export async function getFriends() {
-  const people = usePeopleStore()
-  await people.load()
-  if (people.error) throw new Error(people.error)
-  return FRIEND_HOUSES.flatMap(({ reader: id }) => {
-    const reader = people.find(id)
-    if (!reader) return []
-    return [{ id, displayName: reader.displayName, lastSeenAt: reader.lastSeenAt, character: reader.character }]
-  })
-}
-
 // { online, upkeep: 'kept' | 'dusty' | 'neglected' | 'derelict', lastSeen: '6 days ago' } for one
-// friend.
+// reader. Someone with no last-active date yet hasn't been away: they're just not known.
 export function presence(lastSeenAt, now = Date.now()) {
+  if (!lastSeenAt) return { online: false, upkeep: 'kept', lastSeen: 'a while ago' }
   const away = Math.max(0, now - new Date(lastSeenAt).getTime())
   const online = away < ONLINE_WITHIN
   let upkeep = 'kept'

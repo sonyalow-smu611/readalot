@@ -66,6 +66,9 @@ Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /l
   `client/public/town/avatars/<id>.png`) or `<PixelCharacter>` (the same sprite, alive: it
   breathes, blinks and hops). Both live in `components/shared/`. Welcome and the salon set it.
 - `stores/bookshelf.js` → the reader's books and reading status, used by the room and book pages.
+- `town/nearbyStore.js` → friends, friend requests and readers nearby, and `setPublic()`: public
+  and sharing your last rough area are one setting (`profiles.discoverable`), shared by the map
+  chip and the salon. Spec: [docs/specs/nearby-readers-and-friend-houses.md](docs/specs/nearby-readers-and-friend-houses.md).
 
 ## Map
 

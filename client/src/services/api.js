@@ -77,8 +77,26 @@ export function getWeather(lat, lng) {
   return request(`/weather?lat=${lat}&lng=${lng}`);
 }
 
-export function getNearbyReaders(lat, lng) {
-  return request(`/people/nearby?lat=${lat}&lng=${lng}`);
+// Says you're active, with your rough position if you have one; answers with the readers near you.
+export function checkInNearby(position = {}) {
+  return request("/nearby", { method: "POST", body: JSON.stringify(position) });
+}
+
+// { friends, incoming, outgoing }: see server/src/services/friends.js
+export function getFriendships() {
+  return request("/friends");
+}
+
+export function sendFriendRequest(readerId) {
+  return request("/friends/requests", { method: "POST", body: JSON.stringify({ readerId }) });
+}
+
+export function answerFriendRequest(requestId, accept) {
+  return request(`/friends/requests/${requestId}/${accept ? "accept" : "decline"}`, { method: "POST" });
+}
+
+export function removeFriendship(readerId) {
+  return request(`/friends/${encodeURIComponent(readerId)}`, { method: "DELETE" });
 }
 
 // Other readers with their shelves (see stores/people.js); `id` is the reader's username.

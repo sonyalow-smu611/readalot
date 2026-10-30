@@ -7,7 +7,7 @@ import { computed } from 'vue'
 import ReaderChat from '@/components/people/ReaderChat.vue'
 
 const props = defineProps({
-  // [{ id, displayName, online }], newest first
+  // [{ id, userId, displayName, online }], newest first
   chats: { type: Array, required: true },
   // the id of the chat that is open, or null when they're all tucked away
   open: { type: String, default: null },
@@ -35,7 +35,7 @@ const current = computed(() => props.chats.find((chat) => chat.id === props.open
         </button>
       </header>
       <div class="chat-dock__body">
-        <ReaderChat :reader-id="current.id" :reader-name="current.displayName" />
+        <ReaderChat :reader-id="current.userId" :reader-name="current.displayName" />
       </div>
     </section>
 

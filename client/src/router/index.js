@@ -2,7 +2,6 @@
 // Vue Router — maps URLs to views so every building is deep-linkable and the back button works.
 import { createRouter, createWebHistory } from 'vue-router'
 import BookDetailsView from '@/views/BookDetailsView.vue'
-import DiscoverPeopleView from '@/views/DiscoverPeopleView.vue'
 import GenreShelfView from '@/views/GenreShelfView.vue'
 import MoodView from '@/views/MoodView.vue'
 import PlaygroundView from '@/views/PlaygroundView.vue'

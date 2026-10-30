@@ -3,6 +3,8 @@ import express from "express";
 
 import booksRouter from "./routes/books.js";
 import creaturesRouter from "./routes/creatures.js";
+import friendsRouter from "./routes/friends.js";
+import nearbyRouter from "./routes/nearby.js";
 import peopleRouter from "./routes/people.js";
 import messagesRouter from "./routes/messages.js";
 import quoteRouter from "./routes/quote.js";
@@ -31,6 +33,8 @@ app.use("/api/weather", weatherRouter);
 app.use("/api/time", timeRouter);
 app.use("/api/creatures", creaturesRouter);
 app.use("/api/people", peopleRouter);
+app.use("/api/nearby", nearbyRouter);
+app.use("/api/friends", friendsRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/stores", storesRouter);
 app.use("/api/recommendations", recommendationsRouter);

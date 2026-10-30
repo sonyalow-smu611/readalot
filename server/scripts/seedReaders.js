@@ -58,6 +58,19 @@ await ok(
   )
 );
 
+// Their rough areas are set around SMU, so a grader there has readers nearby to add.
+await ok(
+  "reader_areas",
+  supabase.from("reader_areas").upsert(
+    DEMO_READERS.map((reader, k) => ({
+      reader: reader.id,
+      lat_cell: 130 - (k % 2),
+      lng_cell: 10385 + (k % 3) - 1,
+      updated_at: new Date(now).toISOString()
+    }))
+  )
+);
+
 await ok(
   "books",
   supabase.from("books").upsert(

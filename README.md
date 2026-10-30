@@ -149,7 +149,9 @@ npx playwright show-report                    # open the last run's HTML report
 
 | File | Journeys |
 |------|----------|
-| `town.spec.js` | The town map, the Places list, entering each building and coming back, friends' houses, the weather chip |
+| `town.spec.js` | The town map, the Places list, entering each building and coming back, the weather chip |
+| `friends.spec.js` | Friends' houses appearing, the friends list, chatting to a friend out walking, removing a friend |
+| `nearby.spec.js` | The public or private question, a blocked browser, under-18s, finding readers near you, a friend request between two readers, what the server sends |
 | `room.spec.js` | Looking around My Room (wheel, drag, keys, the Places menu, the first-visit hint), the bare starting room, the window's weather by day and night, the clock, tapping the bookshelf, chair and corkboard, buying and placing a decoration, crisp drawing on phone and laptop |
 | `bookshelf.spec.js` | Books on the room's bookshelf by shelf, lifting and opening a book (cover, skip, reduced motion), its details (start, progress, finish, review, rate), remove and Undo, keyboard and focus, the bookshelf without the room's pictures |
 | `my-shelf.spec.js` | My Shelf: a row per shelf, genre chips, search, moving a book, Back to room, a shelf that fails to load; long rows (Next/Previous, swipe, drag, arrow keys) |

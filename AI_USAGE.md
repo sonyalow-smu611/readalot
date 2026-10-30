@@ -532,3 +532,21 @@ stay as they are.
 | Area | Files | What AI produced |
 |------|-------|------------------|
 | Signs | `client/src/town/signs.js` | The four signs redrawn as pixel art at 4 map pixels to a block, from each place's accent colour, in place of the SVG art: the bronze frame, a plate of flat colour bands, and the book, cup, roof, and comb and scissors. Blinking sparkles replace the plate's smooth shine. The Fredoka words, the movement, the night glow and tapping are unchanged |
+
+### Nearby readers and friends' houses (AI-generated)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session
+(`docs/specs/nearby-readers-and-friend-houses.md`). The team agreed that AI writes this feature,
+including its backend endpoints and interactivity. Team to review: `server/`, `stores/user.js`,
+`services/` and `database/` are shared; Aalric reviews the salon's privacy switch.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/nearby_friends.sql` | `reader_areas` (rough areas, server only), `friendships` (requests, friends, house spots), `location_asked_at` on `profiles`; triggers that keep under-18s private and delete a reader's area when they go private |
+| Server | `server/src/services/nearby.js`, `friends.js`, `readers.js`, `server/src/routes/nearby.js`, `friends.js`, `people.js`, `server/src/middleware/auth.js`, `server/scripts/seedReaders.js` | Check-in that saves a rough area and answers with who is near; friend requests, accept, decline and remove; house spots; friends stay visible when private; the old open `/api/people/nearby` removed; demo readers' areas near SMU |
+| Client | `client/src/town/nearbyStore.js`, `client/src/services/location.js`, `api.js`, `auth.js`, `client/src/stores/user.js` | One public/private setting, the browser's location rounded to about 1 km before sending, the 30-second refresh |
+| Town | `client/src/town/TownScene.js`, `friend.js`, `places.js`, `friends.js`, `daily.js`, `dailyStore.js`, `client/src/views/TownView.vue`, `client/src/components/town/` (`LocationPrompt.vue`, `LocationChip.vue`, `FriendRequestRow.vue`, `FriendCard.vue`, `FriendsList.vue`, `FriendsButton.vue`, `TownHud.vue`, `TownMap.vue`, `ChatDock.vue`) | Cottages that appear with friends; readers nearby walking in town with a blue glow; the question after the tour; requests, Add friend and Remove friend; the daily friend tasks skipped with no friends |
+| Map art | `client/scripts/town-art/town.js`, `client/public/town/map.png` | The map redrawn with the seven cottages off the picture |
+| Salon | `client/src/buildings/salon/SalonView.vue`, `components/PrivacySetting.vue`, `profileOptions.js`, `client/src/components/start/StartFaq.vue` | The privacy switch uses the same setting, and its wording says what it now does |
+| Removed | `client/src/views/DiscoverPeopleView.vue`, `client/src/composables/useLocation.js` | An old page with no route of its own, and an unused stub |
+| Tests | `tests/e2e/nearby.spec.js`, `friends.spec.js`, `town.spec.js`, `salon.spec.js`, `supabaseUser.js` | The new journeys, with a faked location |
