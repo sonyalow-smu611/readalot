@@ -523,3 +523,12 @@ card…) are left to their owners and to ticket 03.
 | Book page | `client/src/router/index.js`, `client/src/views/BookDetailsView.vue`, `client/src/components/book/BookDetailsContent.vue` | The book page fills a laptop window (up to 1100 px): on a card at least 720 px wide, the cover sits on the left with the title and details beside it, and status, synopsis and reviews below. A phone, and the room's card, stay one column |
 | Shared buttons | `client/src/components/Toast.vue`, `BottomSheet.vue`, `BookOpenOverlay.vue`, `client/src/views/BookDetailsView.vue` | The toast's Undo (Accent, small), the sheet's and the open book's ✕ (Icon) and the book page's Retry (Primary) are pixel buttons, with their own button styling removed |
 | Tests | `tests/e2e/pixel-look.spec.js`, `book-page.spec.js`, `buttons.spec.js` | Titles on six pages aren't Georgia; the book card, a genre tag, a modal and a text box are square and outlined, the raised ones with a hard shadow; the book page's laptop and phone layouts; the look check on the app header, toast, Retry, bottom sheet, opened book and guide tour |
+
+### Pixel signs on the town map (AI-generated)
+
+Written by Claude Code at Dylan's request. Only the four big signs changed: friends' name tags
+stay as they are.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The four signs redrawn as pixel art at 4 map pixels to a block, from each place's accent colour, in place of the SVG art: the bronze frame, a plate of flat colour bands, and the book, cup, roof, and comb and scissors. Blinking sparkles replace the plate's smooth shine. The Fredoka words, the movement, the night glow and tapping are unchanged |
