@@ -94,7 +94,6 @@ const emit = defineEmits(['go'])
   flex: none;
 }
 
-.daily-task__go:hover,
 @keyframes daily-tick {
   from {
     transform: scale(0.4);
