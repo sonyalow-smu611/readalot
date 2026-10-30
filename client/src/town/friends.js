@@ -1,11 +1,9 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// Your friends in town, and how long since each of them was online. For now they are the demo
-// readers (services/peopleDemo.js) with made-up last-seen times. When the real friends API is
-// ready (GET /api/friends → [{ id, displayName, lastSeenAt, character }]), only getFriends()
-// changes.
-import { getDemoReader } from '@/services/peopleDemo.js'
-import { makeRnd } from '@/lib/avatar/draw.js'
-import { PRESETS, randomCharacter } from '@/lib/avatar/catalogue.js'
+// Your friends in town, and how long since each of them was online: the readers who have a house
+// in town (town/places.js), from the people store (GET /api/people), with when each was last
+// active.
+import { FRIEND_HOUSES } from '@/town/places.js'
+import { usePeopleStore } from '@/stores/people.js'
 
 const MINUTE = 60 * 1000
 const HOUR = 60 * MINUTE
@@ -18,31 +16,18 @@ export const DUSTY_AFTER = 30 * DAY
 export const NEGLECTED_AFTER = 60 * DAY
 export const DERELICT_AFTER = 90 * DAY
 
-// how long ago each demo friend was last online: two online, and one house at each stage
-const DEMO_AWAY = {
-  'reader-emma': MINUTE,
-  'reader-ayaan': MINUTE,
-  'reader-priya': 2 * DAY,
-  'reader-sofia': 12 * DAY,
-  'reader-mei': 35 * DAY,
-  'reader-noah': 70 * DAY,
-  'reader-daniel': 100 * DAY,
-}
-
-// [{ id, displayName, lastSeenAt, character }], lastSeenAt an ISO date and character their town
-// look (part ids, see lib/avatar/catalogue.js). Async, like the API call it stands in for.
-export async function getFriends(now = Date.now()) {
-  return Object.entries(DEMO_AWAY).flatMap(([id, away]) => {
-    const reader = getDemoReader(id)
+// [{ id, displayName, lastSeenAt, character }], lastSeenAt an ISO date (or null when never seen)
+// and character their town look (part ids, see lib/avatar/catalogue.js). Throws when the readers
+// can't be loaded.
+export async function getFriends() {
+  const people = usePeopleStore()
+  await people.load()
+  if (people.error) throw new Error(people.error)
+  return FRIEND_HOUSES.flatMap(({ reader: id }) => {
+    const reader = people.find(id)
     if (!reader) return []
-    return [{ id, displayName: reader.displayName, lastSeenAt: new Date(now - away).toISOString(), character: demoLook(id) }]
+    return [{ id, displayName: reader.displayName, lastSeenAt: reader.lastSeenAt, character: reader.character }]
   })
-}
-
-// A demo friend's look: made up from their id, so it is the same every time.
-function demoLook(id) {
-  const seed = [...id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) & 0x7fffffff, 7)
-  return randomCharacter(PRESETS[seed % PRESETS.length].id, makeRnd(seed))
 }
 
 // { online, upkeep: 'kept' | 'dusty' | 'neglected' | 'derelict', lastSeen: '6 days ago' } for one

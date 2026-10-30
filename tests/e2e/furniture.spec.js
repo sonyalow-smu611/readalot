@@ -498,7 +498,7 @@ test.describe("moving a placed piece by pressing and holding it", () => {
   });
 
   test("nothing in someone else's room can be picked up", async ({ page }) => {
-    await page.goto("/people/reader-emma/room");
+    await page.goto("/people/emma.reads/room");
     await roomReady(page);
     await goToPlace(page, "Chair");
     const before = await artBox(placed(page, "Moon poster"));

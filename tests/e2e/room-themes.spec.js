@@ -15,10 +15,10 @@ test.beforeEach(async ({ page }) => {
 
 const ROOMS = {
   mine: "/house",
-  emma: "/people/reader-emma/room",
-  ayaan: "/people/reader-ayaan/room",
-  sofia: "/people/reader-sofia/room",
-  noah: "/people/reader-noah/room",
+  emma: "/people/emma.reads/room",
+  ayaan: "/people/ayaan.pages/room",
+  sofia: "/people/sofia.shelves/room",
+  noah: "/people/noah.bookmarks/room",
 };
 
 async function open(page, room) {

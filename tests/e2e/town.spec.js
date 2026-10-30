@@ -70,7 +70,7 @@ test("a friend's house opens their profile", async ({ page }) => {
   const card = await openPlace(page, "Emma's house");
   await expect(card.getByText("Emma Tan", { exact: false })).toBeVisible();
   await card.getByRole("button", { name: "Visit Emma" }).click();
-  await expect(page).toHaveURL(/\/people\/reader-emma$/, WALK_IN);
+  await expect(page).toHaveURL(/\/people\/emma\.reads$/, WALK_IN);
   await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Visit Emma's room" })).toBeVisible();
 });
@@ -153,7 +153,7 @@ test("a friend's card leads to their house", async ({ page }) => {
   await page.getByRole("button", { name: "Friends, 2 online" }).click();
   await page.getByRole("navigation", { name: "Friends in town" }).getByRole("button", { name: /Ayaan Rahman/ }).click();
   await page.getByRole("dialog", { name: "Ayaan Rahman" }).getByRole("button", { name: "Visit Ayaan's house" }).click();
-  await expect(page).toHaveURL(/\/people\/reader-ayaan$/, WALK_IN);
+  await expect(page).toHaveURL(/\/people\/ayaan\.pages$/, WALK_IN);
 });
 
 test("a friend's place card says when they are online", async ({ page }) => {

@@ -8,9 +8,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { ALL_PLACES, FRIEND_HOUSES } from '@/town/places.js'
+import { FRIEND_HOUSES, PLACES, nameFriendHouses } from '@/town/places.js'
 import { getFriends, presence } from '@/town/friends.js'
 import { useUserStore } from '@/stores/user'
+import { usePeopleStore } from '@/stores/people.js'
 import { useProgressStore } from '@/stores/progress.js'
 import { useDailyStore } from '@/town/dailyStore.js'
 import { MAX_FREEZES } from '@/town/daily.js'
@@ -35,6 +36,7 @@ const router = useRouter()
 const user = useUserStore()
 const progress = useProgressStore()
 const daily = useDailyStore()
+const people = usePeopleStore()
 const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
@@ -54,6 +56,9 @@ const dailyChip = computed(() => ({
   claimed: daily.claimed,
 }))
 const friends = ref([])
+// every place you can go, the friends' houses named after whoever lives there
+const friendHouses = computed(() => nameFriendHouses(people.readers))
+const allPlaces = computed(() => [...PLACES, ...friendHouses.value])
 // the friend out walking whose card is open, and the request to glide to one
 const friendId = ref(null)
 const friendFocus = ref(null)
@@ -98,7 +103,7 @@ const friendsInTown = computed(() => {
 const onlineCount = computed(() => friendsInTown.value.filter((friend) => friend.online).length)
 const chats = computed(() => chatIds.value.map((id) => friendsInTown.value.find((friend) => friend.id === id)).filter(Boolean))
 const selectedFriend = computed(() => friendsInTown.value.find((friend) => friend.id === friendId.value) ?? null)
-const selectedFriendHouse = computed(() => FRIEND_HOUSES.find((place) => place.id === selectedFriend.value?.house) ?? null)
+const selectedFriendHouse = computed(() => friendHouses.value.find((place) => place.id === selectedFriend.value?.house) ?? null)
 const selectedPresence = computed(() => {
   const reader = selected.value?.reader
   return reader ? (friendsInTown.value.find((friend) => friend.id === reader) ?? null) : null
@@ -163,7 +168,8 @@ function select(place) {
   // during the tour the camera's glide outlines the building; its card would cover the tour's
   if (guide.value || entering.value) return
   friendId.value = null
-  selected.value = place
+  // the map hands over the bare place; the card wants it named
+  selected.value = allPlaces.value.find((named) => named.id === place.id) ?? place
   placesOpen.value = false
   friendsOpen.value = false
   dailyOpen.value = false
@@ -320,7 +326,7 @@ function goInside(place) {
     />
     <!-- today's tasks and the streak, on the left under the weather chip -->
     <DailyButton class="town__daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
-    <PlacesMenu :places="ALL_PLACES" :open="placesOpen" @go="go" />
+    <PlacesMenu :places="allPlaces" :open="placesOpen" @go="go" />
     <FriendsList :friends="friendsInTown" :open="friendsOpen" @go="findFriend" />
     <Transition name="town-fade">
       <DailyPanel

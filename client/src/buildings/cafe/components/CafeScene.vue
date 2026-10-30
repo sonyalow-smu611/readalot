@@ -2,10 +2,9 @@
 // AI-assisted starter: match the town's 2D avatar renderer and salon's pixel artwork.
 // Movement and reader approach are kept here, separate from profile and router logic.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { sampleReaders, getCompatibility } from '@/services/peopleDemo.js'
 import { drawAvatar, makeRnd, mk } from '@/lib/avatar/draw.js'
 import {
-  characterSeed, normaliseCharacter, presetCharacter, toDrawParams,
+  characterSeed, normaliseCharacter, toDrawParams,
 } from '@/lib/avatar/catalogue.js'
 import { CAFE_W, CAFE_H } from '@/buildings/cafe/cafeArt.js'
 
@@ -13,6 +12,8 @@ const props = defineProps({
   art: { type: Object, required: true },
   character: { type: Object, default: null },
   selectedId: { type: String, default: '' },
+  // the readers in the cafe (stores/people.js), each with their match `score`
+  readers: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['select'])
 
@@ -34,19 +35,12 @@ const obstacles = [
   { x: 287, y: 422, w: 68, h: 56 },
 ]
 
-// Profile names and match scores are taken from the SAME demo source as Reader Room.
-// Presets come from the hair salon's shared character catalogue (not new assets).
-const looks = {
-  'reader-emma': 'maya',
-  'reader-ayaan': 'jay',
-  'reader-sofia': 'rosie',
-  'reader-noah': 'nova',
-}
+// Who sits at which table, by reader id; each is drawn in their own town look.
 const seats = {
-  'reader-emma': { x: 79, y: 220, meetX: 174, meetY: 262 },
-  'reader-ayaan': { x: 278, y: 220, meetX: 186, meetY: 262 },
-  'reader-sofia': { x: 91, y: 356, meetX: 171, meetY: 382 },
-  'reader-noah': { x: 264, y: 356, meetX: 190, meetY: 382 },
+  'emma.reads': { x: 79, y: 220, meetX: 174, meetY: 262 },
+  'ayaan.pages': { x: 278, y: 220, meetX: 186, meetY: 262 },
+  'sofia.shelves': { x: 91, y: 356, meetX: 171, meetY: 382 },
+  'noah.bookmarks': { x: 264, y: 356, meetX: 190, meetY: 382 },
 }
 
 function avatarImage(raw) {
@@ -64,13 +58,12 @@ function seatedAvatar(raw) {
   return seated.toDataURL('image/png')
 }
 
-const readers = sampleReaders.map((reader) => ({
+const readers = computed(() => props.readers.filter((reader) => seats[reader.id]).map((reader) => ({
   ...reader,
   ...seats[reader.id],
   firstName: reader.displayName.split(' ')[0],
-  score: getCompatibility(reader),
-  sprite: seatedAvatar(presetCharacter(looks[reader.id] || 'rosie')),
-}))
+  sprite: seatedAvatar(reader.character),
+})))
 
 const selfSprite = computed(() => avatarImage(props.character))
 const outerSize = computed(() => ({
@@ -158,7 +151,7 @@ function selectReader(reader) {
 function nearestReader() {
   let closest = null
   let distance = Infinity
-  for (const reader of readers) {
+  for (const reader of readers.value) {
     const d = Math.hypot(reader.meetX - position.value.x, reader.meetY - position.value.y)
     if (d < distance) {
       closest = reader

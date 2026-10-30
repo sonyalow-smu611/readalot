@@ -24,22 +24,45 @@ const route = useRoute()
 const place = PLACES.find((p) => p.id === 'house')
 const bookshelf = useBookshelfStore()
 
-// someone else's shelf being visited; null on My Shelf
+// someone else's shelf being visited (fetched); null on My Shelf
 const visitingId = route.params.id ?? null
-const visiting = visitingId ? readerRoom(visitingId) : null
-const books = computed(() => visiting?.books ?? bookshelf.books)
-const loading = computed(() => !visiting && bookshelf.loading)
-const error = computed(() => (visiting ? '' : bookshelf.error))
+const visiting = ref(null)
+const visitLoading = ref(Boolean(visitingId))
+const visitError = ref('')
+const books = computed(() => (visitingId ? (visiting.value?.books ?? []) : bookshelf.books))
+const loading = computed(() => (visitingId ? visitLoading.value : bookshelf.loading))
+const error = computed(() => (visitingId ? visitError.value : bookshelf.error))
+// no such reader: the page says so
+const missing = computed(() => visitingId && !visiting.value && !visitLoading.value && !visitError.value)
 
-const shell = visiting
-  ? {
-      title: `${visiting.firstName}'s Shelf`,
+const shell = computed(() => {
+  const reader = visiting.value
+  if (reader) {
+    return {
+      title: `${reader.firstName}'s Shelf`,
       subtitle: 'Visiting',
-      owner: visiting.name,
-      back: { name: 'reader-house', params: { id: visiting.id } },
-      backLabel: `Back to ${visiting.firstName}'s room`,
+      owner: reader.name,
+      back: { name: 'reader-house', params: { id: reader.id } },
+      backLabel: `Back to ${reader.firstName}'s room`,
     }
-  : { title: place.name, subtitle: 'My Shelf', owner: place.owner, back: { name: 'house' }, backLabel: 'Back to room' }
+  }
+  if (visitingId) {
+    return { title: 'Shelf', subtitle: 'Visiting', owner: place.owner, back: { name: 'reader-house', params: { id: visitingId } }, backLabel: 'Back to their room' }
+  }
+  return { title: place.name, subtitle: 'My Shelf', owner: place.owner, back: { name: 'house' }, backLabel: 'Back to room' }
+})
+
+async function loadVisiting() {
+  visitLoading.value = true
+  visitError.value = ''
+  try {
+    visiting.value = await readerRoom(visitingId)
+  } catch (err) {
+    visitError.value = err.message || "Couldn't load their shelf."
+  } finally {
+    visitLoading.value = false
+  }
+}
 
 const query = ref('')
 const genre = ref(ALL)
@@ -92,15 +115,21 @@ async function closeBook() {
   ;(cover ?? (trigger?.isConnected ? trigger : null))?.focus()
 }
 
+function retry() {
+  if (visitingId) loadVisiting()
+  else bookshelf.load()
+}
+
 onMounted(() => {
-  if (!visitingId) bookshelf.load()
+  if (visitingId) loadVisiting()
+  else bookshelf.load()
 })
 </script>
 
 <template>
   <div ref="page" class="shelf-page" :style="{ '--house-accent': place.accent }">
     <BuildingShell
-      v-if="!visitingId || visiting"
+      v-if="!missing"
       :title="shell.title"
       :subtitle="shell.subtitle"
       :owner="shell.owner"
@@ -109,7 +138,7 @@ onMounted(() => {
       :back-label="shell.backLabel"
     >
       <section class="my-shelf" :aria-label="visiting ? shell.title : 'My Shelf'">
-        <form v-if="!visiting" class="my-shelf__search" role="search" @submit.prevent>
+        <form v-if="!visitingId" class="my-shelf__search" role="search" @submit.prevent>
           <span aria-hidden="true">🔍</span>
           <input
             v-model="query"
@@ -135,7 +164,7 @@ onMounted(() => {
           </button>
         </div>
 
-        <StateView v-if="error" :error="error" @retry="bookshelf.load" />
+        <StateView v-if="error" :error="error" @retry="retry" />
 
         <div v-else-if="visiting && !books.length" class="my-shelf__empty">
           <strong>No books yet</strong>

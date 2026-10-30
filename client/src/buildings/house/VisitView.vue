@@ -3,7 +3,7 @@
 // Someone else's room, opened from their profile in the Cafe: the same room as My Room, drawn
 // from the same template, with their books and furniture in it. Visitors look around; they can't
 // change anything.
-import { computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import RoomView from './RoomView.vue'
@@ -13,17 +13,27 @@ import { useProgressStore } from '@/stores/progress.js'
 
 const route = useRoute()
 const place = PLACES.find((p) => p.id === 'house')
-const reader = computed(() => readerRoom(route.params.id))
+const reader = ref(null)
+const loading = ref(true)
+const error = ref('')
 const progress = useProgressStore()
 
-// visiting a reader's room earns XP, once per reader a day
-watch(
-  () => reader.value?.id,
-  (id) => {
-    if (id) progress.earn('visit_room', id)
-  },
-  { immediate: true },
-)
+async function load(id) {
+  loading.value = true
+  error.value = ''
+  try {
+    reader.value = await readerRoom(id)
+    // visiting a reader's room earns XP, once per reader a day
+    if (reader.value) progress.earn('visit_room', reader.value.id)
+  } catch (err) {
+    reader.value = null
+    error.value = err.message || "Couldn't load their room."
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(() => route.params.id, load, { immediate: true })
 </script>
 
 <template>
@@ -38,6 +48,17 @@ watch(
     :back-label="`Back to ${reader.firstName}'s profile`"
   >
     <RoomView :key="reader.id" :visiting="reader" :style="{ '--house-accent': place.accent }" />
+  </BuildingShell>
+
+  <BuildingShell v-else-if="loading" title="Visiting" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+    <p class="visit-missing" role="status">Knocking on the door…</p>
+  </BuildingShell>
+
+  <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+    <div class="visit-missing" role="alert">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn-link" @click="load(route.params.id)">Try again</button>
+    </div>
   </BuildingShell>
 
   <BuildingShell v-else title="Room not found" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
