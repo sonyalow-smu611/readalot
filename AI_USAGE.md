@@ -409,6 +409,19 @@ Dylan reviews the badge (`PlayerBadge.vue`, `TownHud.vue`, `TownView.vue`, `Weat
 | Salon | `client/src/buildings/salon/components/LevelCard.vue`, `SalonView.vue` | A Reader level card with XP counting up, a filling bar, the next level's coins and how to earn XP; confetti on a level-up |
 | Tests | `tests/e2e/progress.spec.js`, `tests/e2e/supabaseUser.js` | The badge, a visit's XP once a day, level-up coins, the Shop's saved coins, and the database refusing coins a reader sets |
 
+### IKDA landing page (AI-generated)
+
+Written by Claude Code at Aalric's request: a standalone page in `landing/` (HTML, CSS and
+JavaScript, no framework). The persona (Mia), her scenario and all copy are AI-written; every
+feature it mentions exists in the app. Pixel art is the app's own; screenshots are frames of the
+real app with demo readers.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Page | `landing/index.html`, `landing/styles.css` | Hero with the name, slogan, purpose and sign-up link; the problem; Mia's persona and Friday-night scenario; the town's places; levels and coins; three steps; FAQ; final call to action |
+| Behaviour | `landing/main.js` | Scenes that fade in and out both ways as you scroll, a sky from morning to night, the active section link, the drifting town map, the places as keyboard-friendly tabs that cross-fade smoothly, and an XP ring using the app's level and coin rules |
+| Your character | `landing/avatar.js`, `landing/main.js`, `landing/index.html`, `landing/styles.css` | A mini salon (looks, hair, skin, outfit, Surprise me, a name) drawn with the app's character code; the character then wears the XP badge, and stands by its house as the town lights up at night |
+
 ### Big signs over the four main buildings (AI-generated)
 
 Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session: smooth

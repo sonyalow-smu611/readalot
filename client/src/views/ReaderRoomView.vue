@@ -2,30 +2,45 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import ReaderChat from '../components/people/ReaderChat.vue';
-import {
-  myDemoProfile, getDemoReader, getCompatibility, getCurrentlyReading,
-  getSharedBooks, getSharedGenres, isFollowing, toggleFollow,
-} from '../services/peopleDemo.js';
+import { getCurrentlyReading, STATUS_LABELS } from '@/lib/readerMatch.js';
+import { usePeopleStore } from '@/stores/people.js';
 
 const route = useRoute();
-const reader = computed(() => getDemoReader(route.params.id));
+const people = usePeopleStore();
+const reader = ref(null);
+const loading = ref(true);
+const loadError = ref('');
 const following = ref(false);
 const error = ref('');
 const filter = ref('All');
-const statuses = ['All', 'Reading', 'To Read', 'Finished'];
+const statuses = ['All', ...Object.values(STATUS_LABELS)];
 const currentBook = computed(() => reader.value ? getCurrentlyReading(reader.value) : null);
-const sharedBooks = computed(() => reader.value ? getSharedBooks(reader.value) : []);
-const sharedGenres = computed(() => reader.value ? getSharedGenres(reader.value) : []);
-const filteredBooks = computed(() => (reader.value?.books ?? []).filter((book) => filter.value === 'All' || book.status === filter.value));
-watch(() => route.params.id, (id) => {
-  following.value = isFollowing(id);
+const sharedBooks = computed(() => reader.value ? people.sharedBooks(reader.value) : []);
+const sharedGenres = computed(() => reader.value ? people.sharedGenres(reader.value) : []);
+const filteredBooks = computed(() => (reader.value?.books ?? []).filter((book) => filter.value === 'All' || STATUS_LABELS[book.status] === filter.value));
+
+async function load(id) {
+  loading.value = true;
+  loadError.value = '';
   filter.value = 'All';
   error.value = '';
-}, { immediate: true });
-function follow() {
+  try {
+    reader.value = await people.fetchReader(id);
+    following.value = people.isFollowing(id);
+  } catch (err) {
+    reader.value = null;
+    loadError.value = err.message || "Couldn't load this reader.";
+  } finally {
+    loading.value = false;
+  }
+}
+
+watch(() => route.params.id, load, { immediate: true });
+
+async function follow() {
   error.value = '';
-  try { following.value = toggleFollow(reader.value.id); }
-  catch (err) { error.value = err.message; }
+  try { following.value = await people.toggleFollow(reader.value.id); }
+  catch (err) { error.value = err.message || 'Could not save your follow.'; }
 }
 </script>
 
@@ -39,7 +54,7 @@ function follow() {
         <div class="profile-details">
           <h1>{{ reader.displayName }}</h1>
           <p>@{{ reader.username }} · {{ reader.neighborhood }}</p>
-          <span class="match">{{ getCompatibility(reader) }}% Reading Match</span>
+          <span class="match">{{ people.compatibility(reader) }}% Reading Match</span>
         </div>
       </header>
       <p class="tagline">“{{ reader.tagline }}”</p>
@@ -67,7 +82,7 @@ function follow() {
 
       <section class="info-panel">
         <h2>🤝 Books You Both Have</h2>
-        <p class="muted">{{ sharedBooks.length }} shared book(s) with {{ myDemoProfile.displayName }}</p>
+        <p class="muted">{{ sharedBooks.length }} shared book(s) with you</p>
         <div v-if="sharedBooks.length" class="book-list">
           <div v-for="book in sharedBooks" :key="book.id" class="book-line"><div class="mini-cover">📚</div><div><strong>{{ book.title }}</strong><span>by {{ book.author }}</span></div></div>
         </div>
@@ -80,15 +95,17 @@ function follow() {
           <button v-for="status in statuses" :key="status" type="button" :class="{ active: filter === status }" @click="filter = status">{{ status }}</button>
         </div>
         <div v-if="filteredBooks.length" class="book-list">
-          <div v-for="book in filteredBooks" :key="book.id" class="book-line"><div class="mini-cover">📕</div><div><strong>{{ book.title }}</strong><span>by {{ book.author }}</span><small>{{ book.status }} · {{ book.genre }}</small></div></div>
+          <div v-for="book in filteredBooks" :key="book.id" class="book-line"><div class="mini-cover">📕</div><div><strong>{{ book.title }}</strong><span>by {{ book.author }}</span><small>{{ STATUS_LABELS[book.status] }}{{ book.genre ? ` · ${book.genre}` : '' }}</small></div></div>
         </div>
         <p v-else class="muted">No books in this category yet.</p>
       </section>
 
       <div id="reader-chat"><ReaderChat :key="reader.id" :reader-id="reader.id" :reader-name="reader.displayName" /></div>
-      <p class="demo-note">Demo mode: fictional profiles; follows and chat history are saved only in this browser.</p>
+      <p class="demo-note">Chat history is saved only in this browser.</p>
     </template>
-    <section v-else class="info-panel"><h1>Reader not in demo</h1><p>This local prototype contains four sample readers. Return to Discover People to visit one.</p><RouterLink to="/people">Browse sample readers →</RouterLink></section>
+    <p v-else-if="loading" class="muted" role="status">Loading reader…</p>
+    <section v-else-if="loadError" class="info-panel" role="alert"><h1>Couldn't load this reader</h1><p>{{ loadError }}</p><button type="button" class="follow-button" @click="load(route.params.id)">Try again</button></section>
+    <section v-else class="info-panel"><h1>Reader not found</h1><p>There's no reader at this address. Find readers in the Cafe.</p><RouterLink to="/people">Find readers →</RouterLink></section>
   </main>
 </template>
 

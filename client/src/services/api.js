@@ -81,6 +81,23 @@ export function getNearbyReaders(lat, lng) {
   return request(`/people/nearby?lat=${lat}&lng=${lng}`);
 }
 
+// Other readers with their shelves (see stores/people.js); `id` is the reader's username.
+export function getReaders() {
+  return request("/people");
+}
+
+export function getReader(id) {
+  return request(`/people/${encodeURIComponent(id)}`);
+}
+
+export function getFollowing() {
+  return request("/people/following");
+}
+
+export function setFollowing(id, follow) {
+  return request(`/people/${encodeURIComponent(id)}/follow`, { method: follow ? "PUT" : "DELETE" });
+}
+
 export function getCompatibility(userId) {
   return request(`/people/${userId}/compatibility`);
 }

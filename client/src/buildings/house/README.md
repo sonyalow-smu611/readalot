@@ -10,7 +10,7 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `VisitView.vue` | Someone else's room (`/people/:id/room`), opened from their profile in the Cafe |
 | `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf. A cover opens the genre page's book card (`BookPreviewModal`), with the progress slider and Remove from shelf. At `/people/:id/room/shelf`, the visited reader's shelf, whose card has no status buttons |
 | `furniture.js` | **The furniture library:** the pieces in the room's pixel style that the Shop sells (the Shop sells nothing else) |
-| `visitors.js` | Other readers' rooms: the Cafe's sample readers, their books in the shelf's shape, the furniture in each room and its theme |
+| `visitors.js` | Other readers' rooms: the reader (fetched through `stores/people.js`), their books in the shelf's shape, the furniture in each room and its theme |
 | `themes.js` | **Each house's look:** wall and floor colours, and its own curtains, bedding, lamps and rug |
 | `lamps.js` | The lamps, on or off, for the visit (My Room and each room visited keep their own) |
 | `components/PlacesMenu.vue` | The Places button in the room's top left corner and its list of places |
@@ -202,7 +202,7 @@ signed with the visitor's name) goes on that reader's notice board, and up to th
 the corkboard as small paper notes (`paintNotes` in `strip/paint.js`). Tapping the corkboard
 opens the notice board, which has its own **Leave a note** button. A visitor can take down only the
 notes they left (each note keeps its author's id). Notes stay in this browser only (`notes.js`),
-like the Cafe's follows and chat, because the sample readers aren't real accounts.
+like the Cafe's chat, for now.
 `database/room_notes.sql` is the table for keeping them on the server, so a room's owner can read
 them too.
 

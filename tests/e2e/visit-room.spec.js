@@ -27,11 +27,11 @@ test.describe("getting there", () => {
     await expect(card).toBeVisible({ timeout: 15000 });
     await card.getByRole("button", { name: "Visit Room →" }).click();
 
-    await expect(page).toHaveURL(/\/people\/reader-emma$/);
+    await expect(page).toHaveURL(/\/people\/emma\.reads$/);
     await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
     await page.getByRole("link", { name: "Visit Emma's room" }).click();
 
-    await expect(page).toHaveURL(/\/people\/reader-emma\/room$/);
+    await expect(page).toHaveURL(/\/people\/emma\.reads\/room$/);
     await expect(page.getByRole("heading", { level: 1, name: "Emma's Room" })).toBeVisible();
     await expect(roomOf(page, "Emma")).toBeVisible();
     // her three books are on the bookshelf
@@ -39,13 +39,13 @@ test.describe("getting there", () => {
     await expect(page.getByRole("button", { name: "The Hobbit by J. R. R. Tolkien" })).toBeAttached();
 
     await page.getByRole("link", { name: "Back to Emma's profile" }).click();
-    await expect(page).toHaveURL(/\/people\/reader-emma$/);
+    await expect(page).toHaveURL(/\/people\/emma\.reads$/);
   });
 
   test("someone else's room has no room menu, credits or mood check-in", async ({ page }) => {
     // the mood check-in would open on a first visit of the day in My Room
     await page.addInitScript(() => localStorage.removeItem("readalot.moodCheckIn"));
-    await visit(page, "reader-ayaan", "Ayaan");
+    await visit(page, "ayaan.pages", "Ayaan");
     await expect(page.getByRole("button", { name: "Dune by Frank Herbert" })).toBeAttached();
     await expect(page.getByRole("button", { name: "Room menu" })).toHaveCount(0);
     // My Room shows the reader's 480 credits in the corner
@@ -65,7 +65,7 @@ test.describe("their furniture", () => {
   const piece = (page, name) => page.getByRole("button", { name, exact: true });
 
   test("each reader's room has their own furniture, which a visitor can't take down", async ({ page }) => {
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     for (const name of ["Wingback chair", "Moon poster", "Botanical print", "Monstera", "Ginger tabby"]) {
       await expect(piece(page, name)).toHaveCount(1);
     }
@@ -73,7 +73,7 @@ test.describe("their furniture", () => {
     await piece(page, "Moon poster").click();
     await expect(page.getByText("Remove", { exact: true })).toHaveCount(0);
 
-    await visit(page, "reader-ayaan", "Ayaan");
+    await visit(page, "ayaan.pages", "Ayaan");
     await expect(piece(page, "Papasan chair")).toHaveCount(1);
     await expect(piece(page, "Black cat")).toHaveCount(1);
     await expect(piece(page, "Wingback chair")).toHaveCount(0);
@@ -110,7 +110,7 @@ test.describe("their furniture", () => {
 
 test.describe("their books", () => {
   test("a book off their shelf shows its details, with nothing a visitor can change", async ({ page }) => {
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     await page.getByRole("button", { name: "The Hobbit by J. R. R. Tolkien" }).click();
 
     const card = page.getByRole("dialog", { name: "Book details" });
@@ -129,7 +129,7 @@ test.describe("their books", () => {
   });
 
   test("the book on their coffee table is the one they're reading", async ({ page }) => {
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     await page.getByRole("button", { name: /^Currently reading The Secret History/ }).click();
     const card = page.getByRole("dialog", { name: "Currently reading" });
     await expect(card.getByRole("heading", { name: "The Secret History" })).toBeVisible();
@@ -139,10 +139,10 @@ test.describe("their books", () => {
   });
 
   test("their bookshelf opens their shelf page: every book, and nothing to add or search", async ({ page }) => {
-    await visit(page, "reader-sofia", "Sofia");
+    await visit(page, "sofia.shelves", "Sofia");
     await page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).click({ position: { x: 8, y: 8 } });
 
-    await expect(page).toHaveURL(/\/people\/reader-sofia\/room\/shelf$/);
+    await expect(page).toHaveURL(/\/people\/sofia\.shelves\/room\/shelf$/);
     await expect(page.getByRole("heading", { level: 1, name: "Sofia's Shelf" })).toBeVisible();
     for (const shelf of ["To be read", "Currently reading", "Finished reading"]) {
       await expect(page.getByRole("region", { name: `${shelf}, 1 book` })).toBeVisible();
@@ -158,7 +158,7 @@ test.describe("their books", () => {
     await card.getByRole("button", { name: "Close book" }).click();
 
     await page.getByRole("link", { name: "Back to Sofia's room" }).click();
-    await expect(page).toHaveURL(/\/people\/reader-sofia\/room$/);
+    await expect(page).toHaveURL(/\/people\/sofia\.shelves\/room$/);
   });
 
   test("a book on their shelf page opens the genre page's card, without the status buttons", async ({ page }) => {
@@ -202,7 +202,7 @@ test.describe("notes on the notice board", () => {
   });
 
   test("Leave a note pins a signed note on their notice board, under the Quote of the Day", async ({ page }) => {
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     await page.getByRole("button", { name: "Leave a note" }).click();
     const card = page.getByRole("dialog", { name: "Leave a note for Emma" });
     const post = card.getByRole("button", { name: "Post note" });
@@ -224,7 +224,7 @@ test.describe("notes on the notice board", () => {
   });
 
   test("notes stay on that reader's board, after a reload too, and can be taken down", async ({ page }) => {
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     await leaveNote(page, "Emma", "See you at book club");
     await page.reload();
     await expect(roomOf(page, "Emma")).toBeVisible();
@@ -232,19 +232,19 @@ test.describe("notes on the notice board", () => {
     await expect(board.getByText("See you at book club")).toBeVisible();
     await board.getByRole("button", { name: "Close" }).click();
 
-    await visit(page, "reader-noah", "Noah");
+    await visit(page, "noah.bookmarks", "Noah");
     board = await openBoard(page);
     await expect(board.getByText("No notes yet. Be the first to leave one.")).toBeVisible();
     await expect(board.getByText("See you at book club")).toHaveCount(0);
 
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     board = await openBoard(page);
     await board.getByRole("listitem").filter({ hasText: "See you at book club" }).getByRole("button", { name: "Take down" }).click();
     await expect(board.getByText("No notes yet. Be the first to leave one.")).toBeVisible();
   });
 
   test("their notice board has Leave a note, which pins the note on the board", async ({ page }) => {
-    await visit(page, "reader-noah", "Noah");
+    await visit(page, "noah.bookmarks", "Noah");
     let board = await openBoard(page);
     await board.getByRole("button", { name: "Leave a note" }).click();
     let card = page.getByRole("dialog", { name: "Leave a note for Noah" });
@@ -265,10 +265,10 @@ test.describe("notes on the notice board", () => {
     // a note someone else left on Emma's board earlier
     await page.addInitScript(() => {
       if (localStorage.getItem("readalot.roomNotes")) return;
-      const note = { id: "maya-1", readerId: "reader-emma", authorId: "someone-else", author: "Maya", text: "Lend me Circe?", createdAt: "2026-10-01T09:00:00.000Z" };
-      localStorage.setItem("readalot.roomNotes", JSON.stringify({ "reader-emma": [note] }));
+      const note = { id: "maya-1", readerId: "emma.reads", authorId: "someone-else", author: "Maya", text: "Lend me Circe?", createdAt: "2026-10-01T09:00:00.000Z" };
+      localStorage.setItem("readalot.roomNotes", JSON.stringify({ "emma.reads": [note] }));
     });
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     await leaveNote(page, "Emma", "Mine to take down");
 
     const board = await openBoard(page);
@@ -299,7 +299,7 @@ test.describe("notes on the notice board", () => {
   }
 
   test("notes are pinned on the corkboard itself, three at most", async ({ page }) => {
-    await visit(page, "reader-emma", "Emma");
+    await visit(page, "emma.reads", "Emma");
     const plain = await corkboardPixels(page);
 
     await leaveNote(page, "Emma", "First!");

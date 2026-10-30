@@ -163,7 +163,8 @@ export default class TownScene extends Phaser.Scene {
     for (const place of FRIEND_HOUSES) {
       const friend = this.friends.find((f) => f.id === place.reader)
       const upkeep = friend?.upkeep ?? 'kept'
-      this.addNameTag(place, Boolean(friend?.online))
+      // the house is named after whoever lives there, once they're known
+      if (friend) this.addNameTag({ ...place, label: friend.displayName.split(' ')[0] }, Boolean(friend.online))
       const box = mapData.buildings[place.art]
       if (!box) continue
       const aged = `building-${place.art}-${upkeep}`
