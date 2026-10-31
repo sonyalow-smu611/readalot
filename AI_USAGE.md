@@ -523,3 +523,48 @@ card…) are left to their owners and to ticket 03.
 | Book page | `client/src/router/index.js`, `client/src/views/BookDetailsView.vue`, `client/src/components/book/BookDetailsContent.vue` | The book page fills a laptop window (up to 1100 px): on a card at least 720 px wide, the cover sits on the left with the title and details beside it, and status, synopsis and reviews below. A phone, and the room's card, stay one column |
 | Shared buttons | `client/src/components/Toast.vue`, `BottomSheet.vue`, `BookOpenOverlay.vue`, `client/src/views/BookDetailsView.vue` | The toast's Undo (Accent, small), the sheet's and the open book's ✕ (Icon) and the book page's Retry (Primary) are pixel buttons, with their own button styling removed |
 | Tests | `tests/e2e/pixel-look.spec.js`, `book-page.spec.js`, `buttons.spec.js` | Titles on six pages aren't Georgia; the book card, a genre tag, a modal and a text box are square and outlined, the raised ones with a hard shadow; the book page's laptop and phone layouts; the look check on the app header, toast, Retry, bottom sheet, opened book and guide tour |
+
+### Database calls matched to the Supabase schema, ready for reviews (AI-generated)
+
+Written by Claude Code at Sonz's request, before tickets pixel-and-reviews 09 and 10. Sonz ran
+`database/reviews.sql` on the team's Supabase project first. Team to review: all of it is
+shared server code, and the reviews `POST` is a backend endpoint, so the team needs to agree to it
+and record that here, as ticket 10 asks.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Reviews table | `database/reviews.sql`, `database/schema.sql` | One review per reader per book, a required 1–5 rating, an optional caption up to 500 characters, `updated_at` and an index on `book_id`. Shelf ratings were copied into reviews. A new project's `schema.sql` creates the same table, without `user_books.rating` |
+| Shelf | `server/src/routes/userBooks.js`, `client/src/stores/bookshelf.js` | My Shelf's "my rating" comes from the reviews table, and "reviewed" means the review has a caption. The shelf no longer writes a rating, and saving a book already on the shelf updates its row instead of adding a second |
+| Reviews | `server/src/routes/books.js` | Saving a review checks the rating (1–5) and caption (≤ 500) and gives a 400 when either is wrong. Saving again edits the reader's one review and sets `updated_at` |
+| Removed | `server/src/routes/users.js`, `server/src/app.js`, `client/src/services/api.js` | `/api/users/:id` and `/api/users/:id/books`, which nothing called. The second joined `books` from `user_books`, which has no foreign key to it, so it could only fail |
+
+### A reader's profile in the pixel style (AI-generated)
+
+Written by Claude Code at Sonz's request, for tickets reader-profile-pixel 01–05 (spec
+`docs/specs/reader-profile-pixel-redesign.md`) and the last part of pixel-buttons 04. The profile
+is the Cafe's page (Emiley's part); Emiley agreed to the change and reviews the pull request. It
+reads the Library's palette and bookcase colours, so the Library's owner should see it too.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Profile page | `client/src/views/ReaderRoomView.vue` | Redrawn on the Library wall's parchment, one column up to 420 px: Back to Discover, the reader card, Visit <name>'s room (green), Follow (wood brown, a pressed toggle) and Message (rug red), then three cards. The tagline, the filtered bookshelf list and the inline chat are gone; an empty Books You Both Have links to their room's shelf. Colours are read from the Library's palette |
+| Reader card | `client/src/components/people/ReaderCard.vue` | Their town character (`reader.character`, the same one the town draws) on sky and grass, name as the page heading, `@username · neighbourhood` without "(demo)", and a "Reading match" progress bar |
+| Cards and books | `client/src/components/people/PixelCard.vue`, `GenreChip.vue`, `PixelBookRow.vue`, `genreColour.js` | A card with a brass tab heading, paper inside, teal line and hard shadow; a genre chip (starred and announced when you share it) whose label is paper or ink, whichever reads better; a small pixel book in its genre's colour; one genre-to-colour lookup from the Library's bookcases (others are wood) |
+| Chat | `client/src/components/people/ReaderChatDialog.vue` | The existing chat in a pixel-framed dialog, "Message <first name>": it takes focus, closes with Escape, Close or a tap outside, and focus goes back to Message |
+| Tests | `tests/e2e/reader-profile.spec.js`, `buttons.spec.js`, `visit-room.spec.js` | The profile journey (card, character, Follow and its failure, Message, each card and its empty state, not found, 360 px); the reader page and chat look check turned back on; four old `reader-<name>` addresses changed to usernames |
+
+### Everyone's reviews, and writing your own (AI-generated, team-agreed)
+
+Written by Claude Code at Sonz's request, test first (tickets pixel-and-reviews 09 and 10). The
+team agreed to AI writing the reviews endpoints (listing with reviewers, saving, deleting) and
+the review form, as ticket 10 asks. Team to review: the server routes and service, and the
+shared book cards (`BookPreviewModal.vue`, `BookDetailsContent.vue`), which the Library,
+Discover, search, My Shelf, the room and the book page all use.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Reviews service | `server/src/services/reviews.js`, `server/data/demoReviews.js` | A book's reviews, newest first, each with its reviewer's name, character, avatar and page link (none for a private profile), and whether it's yours. Saving (one per reader per book, so saving again edits it), deleting your own, and your ratings for the shelf. Without Supabase, the demo readers' reviews of Pride and Prejudice and Dune, one by a private reader, kept in memory |
+| Routes | `server/src/routes/books.js`, `server/src/routes/userBooks.js` | `GET`, `POST` and `DELETE /api/books/:id/reviews` through the service (`POST` checks 1–5 stars and ≤ 500 characters). The shelf's "my rating" and "reviewed" come from the reviews in both modes |
+| Cards | `client/src/composables/useBookReviews.js`, `client/src/components/book/BookReviews.vue`, `ReviewList.vue`, `ReviewForm.vue`, `StarMeter.vue`, `client/src/components/BookPreviewModal.vue`, `BookDetailsContent.vue` | The genre card, My Shelf's and the room's cards and the book page list every review (name with avatar, stars, caption, "3 days ago" with the exact date on hover). The name goes to the reader's page, yours to the salon. The rating is the Readalot readers' average, or Google's. A form to rate (required) and caption (optional, 500 at most), then Edit your review and Delete your review on yours only. The stars meter moved out of `BookDetailsContent` into its own component |
+| Shelf | `client/src/stores/bookshelf.js`, `client/src/services/api.js`, `client/src/lib/time.js` | `setMyReview` shows a saved or deleted review's rating on a shelved book at once. `saveReview` and `deleteReview` API calls. `timeAgo` and `exactDate` |
+| Tests | `tests/e2e/reviews.spec.js` | Every review on the book page; a reviewer's name goes to their page, a private one isn't a link; the readers' average and Google's fallback; the list on the genre card, My Shelf's card and the room's card; write, edit and delete through labelled buttons; the rating and 500-character rules in the form and the API; the shelf reading your rating from your review |

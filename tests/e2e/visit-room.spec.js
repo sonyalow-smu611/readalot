@@ -162,7 +162,7 @@ test.describe("their books", () => {
   });
 
   test("a book on their shelf page opens the genre page's card, without the status buttons", async ({ page }) => {
-    await page.goto("/people/reader-sofia/room/shelf");
+    await page.goto("/people/sofia.shelves/room/shelf");
     const cover = page.getByRole("region", { name: "Currently reading, 1 book" }).getByRole("button", { name: /Pride and Prejudice/ });
     await cover.click();
 
