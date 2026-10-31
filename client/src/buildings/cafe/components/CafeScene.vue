@@ -2,9 +2,10 @@
 // AI-assisted starter: match the town's 2D avatar renderer and salon's pixel artwork.
 // Movement and reader approach are kept here, separate from profile and router logic.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { sampleReaders, getCompatibility } from '@/services/peopleDemo.js'
 import { drawAvatar, makeRnd, mk } from '@/lib/avatar/draw.js'
 import {
-  characterSeed, normaliseCharacter, toDrawParams,
+  characterSeed, normaliseCharacter, presetCharacter, toDrawParams,
 } from '@/lib/avatar/catalogue.js'
 import { CAFE_W, CAFE_H } from '@/buildings/cafe/cafeArt.js'
 
@@ -12,8 +13,6 @@ const props = defineProps({
   art: { type: Object, required: true },
   character: { type: Object, default: null },
   selectedId: { type: String, default: '' },
-  // the readers in the cafe (stores/people.js), each with their match `score`
-  readers: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['select'])
 
@@ -35,12 +34,19 @@ const obstacles = [
   { x: 287, y: 422, w: 68, h: 56 },
 ]
 
-// Who sits at which table, by reader id; each is drawn in their own town look.
+// Profile names and match scores are taken from the SAME demo source as Reader Room.
+// Presets come from the hair salon's shared character catalogue (not new assets).
+const looks = {
+  'reader-emma': 'maya',
+  'reader-ayaan': 'jay',
+  'reader-sofia': 'rosie',
+  'reader-noah': 'nova',
+}
 const seats = {
-  'emma.reads': { x: 79, y: 220, meetX: 174, meetY: 262 },
-  'ayaan.pages': { x: 278, y: 220, meetX: 186, meetY: 262 },
-  'sofia.shelves': { x: 91, y: 356, meetX: 171, meetY: 382 },
-  'noah.bookmarks': { x: 264, y: 356, meetX: 190, meetY: 382 },
+  'reader-emma': { x: 79, y: 220, meetX: 174, meetY: 262 },
+  'reader-ayaan': { x: 278, y: 220, meetX: 186, meetY: 262 },
+  'reader-sofia': { x: 91, y: 356, meetX: 171, meetY: 382 },
+  'reader-noah': { x: 264, y: 356, meetX: 190, meetY: 382 },
 }
 
 function avatarImage(raw) {
@@ -58,12 +64,13 @@ function seatedAvatar(raw) {
   return seated.toDataURL('image/png')
 }
 
-const readers = computed(() => props.readers.filter((reader) => seats[reader.id]).map((reader) => ({
+const readers = sampleReaders.map((reader) => ({
   ...reader,
   ...seats[reader.id],
   firstName: reader.displayName.split(' ')[0],
-  sprite: seatedAvatar(reader.character),
-})))
+  score: getCompatibility(reader),
+  sprite: seatedAvatar(presetCharacter(looks[reader.id] || 'rosie')),
+}))
 
 const selfSprite = computed(() => avatarImage(props.character))
 const outerSize = computed(() => ({
@@ -151,7 +158,7 @@ function selectReader(reader) {
 function nearestReader() {
   let closest = null
   let distance = Infinity
-  for (const reader of readers.value) {
+  for (const reader of readers) {
     const d = Math.hypot(reader.meetX - position.value.x, reader.meetY - position.value.y)
     if (d < distance) {
       closest = reader
@@ -292,11 +299,11 @@ onBeforeUnmount(() => {
     </p>
 
     <div class="cafe-scene__controls" role="group" aria-label="Walk around the café">
-      <button type="button" class="btn btn-secondary btn-icon cafe-scene__up" aria-label="Walk up" @pointerdown="startTouch('up', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▲</button>
-      <button type="button" class="btn btn-secondary btn-icon cafe-scene__left" aria-label="Walk left" @pointerdown="startTouch('left', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">◀</button>
-      <button type="button" class="btn btn-secondary btn-icon cafe-scene__down" aria-label="Walk down" @pointerdown="startTouch('down', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▼</button>
-      <button type="button" class="btn btn-secondary btn-icon cafe-scene__right" aria-label="Walk right" @pointerdown="startTouch('right', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▶</button>
-      <button type="button" class="btn btn-secondary btn-icon cafe-scene__talk" aria-label="Talk to closest reader" @click="interact">E</button>
+      <button class="cafe-scene__up" aria-label="Walk up" @pointerdown="startTouch('up', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▲</button>
+      <button class="cafe-scene__left" aria-label="Walk left" @pointerdown="startTouch('left', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">◀</button>
+      <button class="cafe-scene__down" aria-label="Walk down" @pointerdown="startTouch('down', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▼</button>
+      <button class="cafe-scene__right" aria-label="Walk right" @pointerdown="startTouch('right', $event)" @pointerup="stopTouch" @pointercancel="stopTouch" @lostpointercapture="stopTouch">▶</button>
+      <button class="cafe-scene__talk" aria-label="Talk to closest reader" @click="interact">E</button>
     </div>
   </section>
 </template>
@@ -317,9 +324,9 @@ onBeforeUnmount(() => {
 .cafe-scene__reader:focus-visible .cafe-scene__reader-name { outline:3px solid #ffef83; outline-offset:3px; }
 .cafe-scene__counter { position:absolute; z-index:8; top:12px; right:12px; margin:0; padding:7px 10px; border:2px solid #48382d; border-radius:8px; background:#fff7df; font-size:12px; font-weight:700; box-shadow:3px 3px 0 #48382d; }
 .cafe-scene__tip { position:absolute; z-index:8; bottom:12px; left:10px; max-width:calc(100% - 150px); margin:0; padding:8px; border:1px solid #624536; border-radius:8px; background:#fff7e9e8; color:#4c3528; font-size:11px; line-height:1.45; pointer-events:none; }
-.cafe-scene__controls { position:absolute; z-index:9; right:10px; bottom:10px; display:grid; grid-template-columns:repeat(3, 44px); grid-template-rows:repeat(2, 44px); gap:5px; }
-/* the walk pad: Icon pixel buttons; a held one keeps walking, so no text selection or scrolling */
-.cafe-scene__controls button { touch-action:none; user-select:none; }
+.cafe-scene__controls { position:absolute; z-index:9; right:10px; bottom:10px; display:grid; grid-template-columns:repeat(3, 37px); grid-template-rows:repeat(2, 37px); gap:3px; }
+.cafe-scene__controls button { min-width:37px; min-height:37px; border:2px solid #604636; border-radius:8px; background:#fff8e7ee; color:#604636; font-size:15px; font-weight:800; box-shadow:2px 2px 0 #604636; touch-action:none; user-select:none; }
+.cafe-scene__controls button:active { background:#e3bc86; box-shadow:none; }
 .cafe-scene__up { grid-column:2; grid-row:1; }
 .cafe-scene__left { grid-column:1; grid-row:2; }
 .cafe-scene__down { grid-column:2; grid-row:2; }
