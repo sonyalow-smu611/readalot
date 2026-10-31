@@ -2,9 +2,12 @@ import { Router } from "express";
 import { requireUser } from "../middleware/auth.js";
 import { MAX_SEARCH_RESULTS, fallbackBooks, getGoogleBook, searchGoogleBooks } from "../services/books.js";
 import { demoBookDetails, findDemoBook } from "../services/demoShelf.js";
+import { deleteReview, listReviews, saveReview } from "../services/reviews.js";
 import { supabase } from "../services/supabase.js";
 
 const router = Router();
+// as the reviews_text_length check in database/reviews.sql
+const REVIEW_MAX = 500;
 
 router.get("/search", async (req, res) => {
   try {
@@ -33,36 +36,40 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/:id/reviews", async (req, res, next) => {
+// Every reader's review of the book, newest first, with who wrote it.
+router.get("/:id/reviews", requireUser, async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from("reviews")
-      .select("*")
-      .eq("book_id", req.params.id)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    res.json({ reviews: data });
+    res.json({ reviews: await listReviews(req.params.id, req.user.id) });
   } catch (err) {
     next(err);
   }
 });
 
+// One review per reader per book, so saving again edits it. The reviews table enforces the
+// same limits (database/reviews.sql); these checks give a clear 400 instead of a database error.
 router.post("/:id/reviews", requireUser, async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from("reviews")
-      .insert({
-        user_id: req.user.id,
-        book_id: req.params.id,
-        rating: req.body.rating,
-        review_text: req.body.reviewText
-      })
-      .select()
-      .single();
+    const rating = Number(req.body.rating);
+    const reviewText = typeof req.body.reviewText === "string" ? req.body.reviewText.trim() : "";
 
-    if (error) throw error;
-    res.status(201).json({ review: data });
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be 1 to 5 stars" });
+    }
+    if (reviewText.length > REVIEW_MAX) {
+      return res.status(400).json({ error: `Review must be ${REVIEW_MAX} characters or fewer` });
+    }
+
+    res.status(201).json({ review: await saveReview(req.user.id, req.params.id, { rating, text: reviewText }) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Deletes the reader's own review of the book (nobody can delete someone else's).
+router.delete("/:id/reviews", requireUser, async (req, res, next) => {
+  try {
+    await deleteReview(req.user.id, req.params.id);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

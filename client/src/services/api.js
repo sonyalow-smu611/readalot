@@ -41,14 +41,6 @@ export function getBook(id) {
   return request(`/books/${id}`);
 }
 
-export function getUser(id) {
-  return request(`/users/${id}`);
-}
-
-export function getUserBooks(id) {
-  return request(`/users/${id}/books`);
-}
-
 export function getMyBooks() {
   return request("/user-books");
 }
@@ -125,14 +117,20 @@ export function getReviews(bookId) {
   return request(`/books/${bookId}/reviews`);
 }
 
-// A saved review earns XP, once per book (best effort: a failed XP call doesn't fail the review).
-export async function addReview(bookId, data) {
+// Saves your review of the book (rating 1-5, reviewText up to 500 characters): your first, or
+// an edit of the one you have. A saved review earns XP, once per book (best effort: a failed XP
+// call doesn't fail the review).
+export async function saveReview(bookId, { rating, reviewText }) {
   const saved = await request(`/books/${bookId}/reviews`, {
     method: "POST",
-    body: JSON.stringify(data)
+    body: JSON.stringify({ rating, reviewText })
   });
   earnXp("write_review", bookId).catch(() => {});
   return saved;
+}
+
+export function deleteReview(bookId) {
+  return request(`/books/${bookId}/reviews`, { method: "DELETE" });
 }
 
 export function getQuotes(bookId) {
