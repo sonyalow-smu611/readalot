@@ -14,7 +14,9 @@ through a pull request a teammate reviews.
 ## The contract
 
 - Your entry view (`HouseView.vue`, `LibraryView.vue`, …) wraps everything in
-  `<BuildingShell>`. It gives every building the same header and **Back to town** button. Use
+  `<BuildingShell>`. It gives every building the same **Back to town** button, top left, with no
+  bar: your page's background runs to the top. On a `flush` page the button floats over it, so
+  start anything of yours in the top left at `calc(var(--building-back-space, 0px) + 10px)`. Use
   `flush` only for a page that fills the screen itself, like the 3D room.
 - `WipPanel` marks anything not built yet: `<WipPanel owner="…" :items="[…]" />`.
 - Build with components and props (see the Code rules in `PROJECT.md`): data down as props,
@@ -24,4 +26,4 @@ through a pull request a teammate reviews.
 - `profile.character` is the reader's character as part ids (see `src/lib/avatar/catalogue.js`).
   The salon sets it; `<CharacterSprite :character="…">` draws it. `profile.avatar` stays the emoji the Profile page uses today.
 - Each building's name, colour and owner live in `src/town/places.js`, so the town's card and
-  your header always match.
+  your page always match.

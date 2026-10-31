@@ -1424,7 +1424,7 @@ defineExpose({ dropAt, putBack })
 /* the Places menu, in the top left corner (the coins are in the top right) */
 .strip__menu {
   position: absolute;
-  top: 10px;
+  top: calc(var(--building-back-space, 0px) + 10px);
   left: 12px;
   z-index: 7;
 }

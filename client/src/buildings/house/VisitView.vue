@@ -42,7 +42,6 @@ watch(() => route.params.id, load, { immediate: true })
     :title="`${reader.firstName}'s Room`"
     subtitle="Visiting"
     :owner="reader.name"
-    :accent="place.accent"
     flush
     :back="{ name: 'reader-room', params: { id: reader.id } }"
     :back-label="`Back to ${reader.firstName}'s profile`"
@@ -50,18 +49,18 @@ watch(() => route.params.id, load, { immediate: true })
     <RoomView :key="reader.id" :visiting="reader" :style="{ '--house-accent': place.accent }" />
   </BuildingShell>
 
-  <BuildingShell v-else-if="loading" title="Visiting" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+  <BuildingShell v-else-if="loading" title="Visiting" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
     <p class="visit-missing" role="status">Knocking on the door…</p>
   </BuildingShell>
 
-  <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+  <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
     <div class="visit-missing" role="alert">
       <p>{{ error }}</p>
       <button type="button" class="btn btn-link" @click="load(route.params.id)">Try again</button>
     </div>
   </BuildingShell>
 
-  <BuildingShell v-else title="Room not found" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+  <BuildingShell v-else title="Room not found" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
     <div class="visit-missing">
       <p>We couldn't find that reader.</p>
       <RouterLink :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink>

@@ -10,7 +10,7 @@ const place = PLACES.find((p) => p.id === 'house')
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <!-- the house's colour from the town, for the room's buttons and cards -->
     <RoomView :style="{ '--house-accent': place.accent }" />
   </BuildingShell>

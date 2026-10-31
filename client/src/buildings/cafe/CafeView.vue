@@ -137,7 +137,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <main class="cafe" aria-label="Readalot cafe" data-tour="people-map">
       <CafeViewport :image="image" :foreground="foreground" :readers="guests" :player-image="selfImage" :selected-id="activeId"
         @walking="startWalking" @arrive="arrived" @route-error="movementError = $event" />
@@ -169,12 +169,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .cafe{position:relative;width:100%;height:100%;min-height:0;overflow:hidden;background:#bf9064}
 .cafe__weather,.cafe__count,.cafe__notice{position:absolute;z-index:5;margin:0;background:#fff9e9e8;color:#493424;border:2px solid #5b4334;border-radius:9px;box-shadow:2px 3px 0 #3c292455;font:700 12px/1.35 system-ui,sans-serif;padding:8px 12px}
-.cafe__weather{top:12px;right:12px}.cafe__count{top:12px;left:12px}
+.cafe__weather{top:12px;right:12px}.cafe__count{top:calc(var(--building-back-space,0px) + 12px);left:12px}
 .cafe__notice{left:50%;bottom:55px;transform:translateX(-50%);max-width:min(480px,90%);text-align:center}
 .cafe__notice button{margin-left:8px;border:0;border-radius:6px;background:#39735e;color:white;padding:6px 9px;cursor:pointer}
 .cafe__card{position:absolute;z-index:10;right:14px;bottom:14px;width:min(360px,calc(100% - 28px))}
 .cafe-card-enter-active,.cafe-card-leave-active{transition:opacity 140ms ease,transform 140ms ease}
 .cafe-card-enter-from,.cafe-card-leave-to{opacity:0;transform:translateY(12px)}
-@media(max-width:640px){.cafe__weather,.cafe__count{font-size:10px;padding:5px 7px;top:7px}.cafe__card{left:0;right:0;bottom:0;width:100%}.cafe__notice{bottom:48px;font-size:11px}}
+@media(max-width:640px){.cafe__weather,.cafe__count{font-size:10px;padding:5px 7px}.cafe__weather{top:7px}.cafe__count{top:calc(var(--building-back-space,0px) + 7px)}.cafe__card{left:0;right:0;bottom:0;width:100%}.cafe__notice{bottom:48px;font-size:11px}}
 @media(prefers-reduced-motion:reduce){.cafe-card-enter-active,.cafe-card-leave-active{transition:none}}
 </style>

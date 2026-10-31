@@ -43,11 +43,12 @@ the person asks, through a pull request a teammate reviews. Details: [client/src
 Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /library | /cafe | /salon
                                                                  │
                          buildings/<name>/<Name>View.vue ────────┘
-                           └─ <BuildingShell title owner accent>   ← same header + "Back to town"
+                           └─ <BuildingShell title owner>   ← same "Back to town" button, no header bar
                                 └─ your page (today: the old page from views/, e.g. DiscoverBooksView)
 ```
 
-- Each building's entry view wraps everything in `components/shared/BuildingShell.vue`. Use its
+- Each building's entry view wraps everything in `components/shared/BuildingShell.vue`: the back
+  button, with no bar, so the page runs to the top. Use its
   `flush` prop only for a page that fills the screen itself (the 3D room).
 - `components/shared/WipPanel.vue` marks anything not built yet.
 - Put a building's own components in `buildings/<name>/components/`. To take over an old page,

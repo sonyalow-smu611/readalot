@@ -610,3 +610,15 @@ calls in `client/src/services/api.js`.
 | Route | `server/src/routes/roomNotes.js`, `server/src/app.js` | `GET`, `POST` and `DELETE /api/rooms/:readerId/notes`. A real sign-in is needed (no demo-user fallback); without Supabase the token's account id is taken unchecked. 1–140 characters, never on your own board; 403 for someone else's note. The board is your own, a discoverable reader's, or (without Supabase) any account id |
 | Room | `client/src/buildings/house/notes.js`, `RoomView.vue`, `components/NoticeBoard.vue`, `components/NoteComposer.vue`, `client/src/services/api.js` | Notes load from and save to the API instead of this browser. The board shows loading and Retry on failure; Post note says Posting… while it works and keeps the text with a message if it fails. Your own room's corkboard is now your notice board: the Quote of the Day, the notes left for you, Take down on each, no Leave a note |
 | Tests | `tests/e2e/visit-room.spec.js`, `room.spec.js`, `buttons.spec.js`, `furniture.spec.js` | A note shows on another device; a board that can't load, and Retry; Posting…; a note that can't be pinned; another reader's note (left through the API as a made-up second reader) can't be taken down by a visitor, but can by the board's owner in their own room. Each test takes down the notes it left. The corkboard's name in your own room is Notice board |
+
+### No bar on the buildings: the back button over the page (AI-generated)
+
+Written by Claude Code at Dylan's request. Team to review: `BuildingShell` is shared, and every
+building moved a little (the house, library and cafe each had something in the top left).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shell | `client/src/components/shared/BuildingShell.vue` | The coloured bar is gone, so the page's own background runs to the top. The back button is a pixel button (Secondary) in the top left: floating on a `flush` page, at the top of the page otherwise. The title and owner stay for screen readers. `--building-back-space` says how far down a `flush` page's own top-left controls start. The `accent` prop went with the bar |
+| Buildings | `client/src/buildings/house/` (`HouseView.vue`, `VisitView.vue`, `ShelfView.vue`, `components/RoomStrip.vue`), `client/src/buildings/library/` (`LibraryView.vue`, `components/LibraryHall.vue`), `client/src/buildings/cafe/CafeView.vue`, `client/src/buildings/salon/SalonView.vue` | `accent` no longer passed. Places, the library's search bar and weather chip, and the cafe's reader count sit below the back button |
+| Docs | `AGENTS.md`, `client/src/buildings/README.md` | The shell's new contract |
+| Tests | `tests/e2e/back-button.spec.js`, `house-desktop.spec.js` | No bar and the back button in the corner, clear of the page's controls, on a phone and a laptop; the width checks read the page instead of the old header |

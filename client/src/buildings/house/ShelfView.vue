@@ -150,7 +150,6 @@ onMounted(() => {
       :title="shell.title"
       :subtitle="shell.subtitle"
       :owner="shell.owner"
-      :accent="place.accent"
       :back="shell.back"
       :back-label="shell.backLabel"
     >
@@ -217,7 +216,7 @@ onMounted(() => {
       </section>
     </BuildingShell>
 
-    <BuildingShell v-else title="Shelf not found" :owner="place.owner" :accent="place.accent" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+    <BuildingShell v-else title="Shelf not found" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
       <div class="my-shelf__empty">
         <p>We couldn't find that reader.</p>
         <div class="my-shelf__empty-links"><RouterLink :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink></div>

@@ -267,7 +267,7 @@ async function logout() {
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <div class="salon">
       <SalonBackdrop class="salon__room" :src="art.backdrop" />
 

@@ -441,7 +441,7 @@ onBeforeUnmount(() => {
 /* the weather chip, under the search bar */
 .hall__chips {
   position: absolute;
-  top: 60px;
+  top: calc(var(--building-back-space, 0px) + 60px);
   left: 12px;
   z-index: 3;
   display: flex;
