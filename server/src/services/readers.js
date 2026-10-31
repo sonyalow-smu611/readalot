@@ -119,17 +119,39 @@ export async function listReaders(viewerId) {
   return withBooks(data);
 }
 
-// One discoverable reader by username (or account id), or null.
-export async function findReader(handle) {
+// Readers by account id, public or private: your friends, who stay in your town when they go
+// private. Only ever called with ids the viewer has a friendship with.
+export async function readersByIds(ids) {
+  if (!ids.length) return [];
+  if (!env.HAS_SUPABASE) return demoReaders().filter((reader) => ids.includes(reader.userId));
+  const { data, error } = await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", ids);
+  if (error) throw error;
+  return withBooks(data);
+}
+
+async function areFriends(viewerId, otherId) {
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("id")
+    .eq("status", "accepted")
+    .or(`and(requester.eq.${viewerId},addressee.eq.${otherId}),and(requester.eq.${otherId},addressee.eq.${viewerId})`);
+  if (error) throw error;
+  return data.length > 0;
+}
+
+// One reader by username (or account id), or null: a discoverable reader, or one of viewerId's
+// friends.
+export async function findReader(handle, viewerId) {
   if (!env.HAS_SUPABASE) return demoReaders().find((reader) => reader.id === handle || reader.userId === handle) ?? null;
   const { data, error } = await supabase
     .from("profiles")
-    .select(PROFILE_COLUMNS)
-    .eq("discoverable", true)
+    .select(`${PROFILE_COLUMNS}, discoverable`)
     .eq(isUuid(handle) ? "id" : "username", handle)
     .maybeSingle();
   if (error) throw error;
-  return data ? (await withBooks([data]))[0] : null;
+  if (!data) return null;
+  if (!data.discoverable && !(viewerId && (await areFriends(viewerId, data.id)))) return null;
+  return (await withBooks([data]))[0];
 }
 
 // The ids (as in reader.id) of the readers someone follows.

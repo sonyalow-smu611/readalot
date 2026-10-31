@@ -78,3 +78,74 @@ test("with no freezes left, a missed day ends the streak", async ({ page, reader
   await expect(panel).toContainText("Your 5-day streak ended");
   await expect(panel).toContainText("0-day streak");
 });
+
+// The same tasks from anywhere else in the app, on a tab on the edge of the page.
+test.describe("on other pages", () => {
+  const tab = (page) => page.getByRole("button", { name: /^Daily tasks/ });
+
+  test("the tab opens today's tasks, with what's left", async ({ page, reader }) => {
+    await setDaily(page, reader.id, { done: ["check-in"] });
+    await page.goto("/library");
+    await expect(tab(page)).toHaveAccessibleName(/1 of 3 finished/);
+    await expect(page.getByRole("region", { name: "Daily tasks" })).toBeHidden();
+
+    await tab(page).click();
+    const panel = page.getByRole("region", { name: "Daily tasks" });
+    const tasks = panel.getByRole("list", { name: "Today’s tasks" }).getByRole("listitem");
+    await expect(tasks).toHaveCount(3);
+    await expect(tasks.first()).toContainText("Done");
+    await expect(panel.getByRole("button", { name: "Finish 2 more to claim" })).toBeDisabled();
+  });
+
+  test("it closes with Escape or a tap outside, even beside the phone column", async ({ page, reader }) => {
+    await setDaily(page, reader.id, { done: ["check-in"], shown: dayKey() });
+    await page.goto("/search");
+    const panel = page.getByRole("region", { name: "Daily tasks" });
+
+    await tab(page).click();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(tab(page)).toBeFocused();
+
+    await tab(page).click();
+    await expect(panel).toBeVisible();
+    await page.mouse.click(10, 300);
+    await expect(panel).toBeHidden();
+  });
+
+  test("a page's own dialog sits over the tab", async ({ page }) => {
+    await page.goto("/house");
+    await expect(page.getByRole("dialog", { name: "How are you feeling today?" })).toBeVisible();
+    await expect(tab(page).click({ trial: true, timeout: 2000 })).rejects.toThrow();
+  });
+
+  test("Go takes you to the task's building", async ({ page, reader }) => {
+    await setDaily(page, reader.id, { done: ["check-in"], shown: dayKey() });
+    await page.goto("/search");
+    await tab(page).click();
+    await page.getByRole("button", { name: "Go: Update your reading progress" }).click();
+    await expect(page).toHaveURL(/\/house$/);
+    await expect(page.getByRole("region", { name: "Daily tasks" })).toBeHidden();
+  });
+
+  test("the reward can be claimed there too", async ({ page, reader }) => {
+    await setDaily(page, reader.id, { done: EVERY_TASK, shown: dayKey() });
+    await page.goto("/search");
+    await expect(tab(page)).toHaveAccessibleName(/reward ready to claim/);
+    await tab(page).click();
+    await page.getByRole("button", { name: /^Claim \d+ coins/ }).click();
+    await page.getByRole("button", { name: "Nice!" }).click();
+    await expect(tab(page)).toHaveAccessibleName(/reward claimed/);
+  });
+
+  test("each page has it, the town has just its own, and signing in has none", async ({ page }) => {
+    for (const url of ["/house", "/house/shelf", "/cafe", "/salon", "/search"]) {
+      await page.goto(url);
+      await expect(tab(page)).toContainText("Daily task");
+    }
+    await page.goto("/");
+    await expect(page.getByText("Loading the town…")).toBeHidden();
+    await expect(page.getByRole("button", { name: /Daily tasks, / })).toHaveCount(1);
+  });
+});

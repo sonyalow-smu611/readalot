@@ -180,7 +180,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <section class="library" :style="{ '--library-accent': place.accent }">
       <LibraryHall
         :active="openKey"
@@ -252,7 +252,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
    screen it keeps to a comfortable width */
 .library__search {
   position: absolute;
-  top: 10px;
+  top: calc(var(--building-back-space, 0px) + 10px);
   left: 12px;
   z-index: 5;
   width: min(460px, calc(100% - 24px));

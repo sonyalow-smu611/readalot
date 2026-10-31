@@ -7,15 +7,17 @@ import { computed, ref } from 'vue'
 import { useProgressStore } from '@/stores/progress.js'
 import { useBookshelfStore } from '@/stores/bookshelf.js'
 import { MAX_FREEZES, WEEK, dayKey, freshState, loadState, rewardFor, saveState, settle, tasksFor } from '@/town/daily.js'
+import { useNearbyStore } from '@/town/nearbyStore.js'
 
 export const useDailyStore = defineStore('daily', () => {
+  const nearby = useNearbyStore()
   const readerId = ref('')
   const state = ref(null)
   let listening = false
 
   const today = computed(() => state.value?.day ?? dayKey())
   const tasks = computed(() =>
-    tasksFor(today.value).map((task) => ({ ...task, done: Boolean(state.value?.done.includes(task.id)) })),
+    tasksFor(today.value, nearby.houses[0]?.id ?? null).map((task) => ({ ...task, done: Boolean(state.value?.done.includes(task.id)) })),
   )
   const doneCount = computed(() => tasks.value.filter((task) => task.done).length)
   const claimed = computed(() => Boolean(state.value && state.value.lastClaim === today.value))

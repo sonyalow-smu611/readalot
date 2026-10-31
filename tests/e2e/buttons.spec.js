@@ -510,7 +510,7 @@ test.describe("the salon", () => {
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
 
     await page.getByRole("button", { name: "Edit location" }).click();
-    await expect(page.getByLabel("Location")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Location" })).toBeVisible();
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
     await page.getByRole("button", { name: "Save" }).click();
 

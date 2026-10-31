@@ -33,6 +33,7 @@ import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 import { saveProfile, signOut } from '@/services/auth.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { useProgressStore } from '@/stores/progress.js'
+import { useNearbyStore } from '@/town/nearbyStore.js'
 import '@/buildings/salon/pixel.css'
 import { useUserStore } from '@/stores/user'
 import { PLACES } from '@/town/places.js'
@@ -75,6 +76,7 @@ const confetti = ref(0)
 // phones: whether the dock's sheet is pulled up over the reader
 const sheetOpen = ref(false)
 const progress = useProgressStore()
+const nearby = useNearbyStore()
 // a level-up while in the salon is worth confetti too
 watch(() => progress.levelUps, () => (confetti.value += 1))
 let leaveAnswer = null
@@ -190,21 +192,20 @@ async function saveAbout(details) {
   confetti.value += 1
 }
 
+// The same setting as the town's chip: going public also shares your last rough area.
 async function toggleDiscoverable() {
   const next = !user.profile.discoverable
   privacyError.value = ''
   privacyBusy.value = true
-  user.mergeProfile({ discoverable: next })
-  showPrivacyAlert(next ? 'public' : 'private')
-  const result = await saveProfile({ discoverable: next })
-  privacyBusy.value = false
-  if (result.error) {
-    user.mergeProfile({ discoverable: !next })
-    hidePrivacyAlert()
-    privacyError.value = result.error.message
-    return
+  try {
+    await nearby.setPublic(next)
+    showPrivacyAlert(next ? 'public' : 'private')
+    confetti.value += 1
+  } catch (err) {
+    privacyError.value = err.message
+  } finally {
+    privacyBusy.value = false
   }
-  confetti.value += 1
 }
 
 function showPrivacyAlert(mode) {
@@ -267,7 +268,7 @@ async function logout() {
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <div class="salon">
       <SalonBackdrop class="salon__room" :src="art.backdrop" />
 
@@ -346,6 +347,7 @@ async function logout() {
                 <PrivacySetting
                   :discoverable="user.profile.discoverable"
                   :busy="privacyBusy"
+                  :locked="nearby.minor"
                   :error="privacyError"
                   :status="PRIVACY_ALERTS[privacyAlert]?.title ?? ''"
                   @toggle="toggleDiscoverable"

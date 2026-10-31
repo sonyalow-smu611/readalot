@@ -7,7 +7,7 @@ import StartPanel from './StartPanel.vue'
 const QUESTIONS = [
   { q: 'Is IKDA free?', a: 'Yes. Sign up with your email and start reading. Coins are earned in the app, never bought.' },
   { q: 'Do I need to download anything?', a: 'No. IKDA runs in your browser and is made for your phone, so it works on any device.' },
-  { q: 'Who can see my profile?', a: 'No other reader can find you until you switch on “Show me on the People map” in the Hair Salon. You can switch it off any time.' },
+  { q: 'Who can see my profile?', a: 'No other reader can find you until you go public, on the map or in the Hair Salon. You can go private any time.' },
   { q: 'What does IKDA mean?', a: 'It comes from 읽다 (ikda), the Korean word for “to read”.' },
   { q: 'Where do the books come from?', a: 'Search and scanning use Google Books, so almost any book you can think of is there.' },
   { q: 'I only read a few books a year. Is it for me?', a: 'Yes. Adding a book, starting it and visiting a friend all earn XP, so every bit of reading counts.' },

@@ -4,16 +4,17 @@
 // together; each building opens one teammate's page (see src/buildings/), and each friend's
 // house opens that reader's room. The sky follows the live weather unless a preview is chosen.
 // Going in, your character walks to the door first, and the page zooms through it. The day's
-// tasks open by themselves on the first visit each day (not during the first tour).
+// tasks open by themselves on the first visit each day (not during the first tour). After the
+// tour the reader chooses public or private once, and the town refreshes who is near them.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { FRIEND_HOUSES, PLACES, nameFriendHouses } from '@/town/places.js'
-import { getFriends, presence } from '@/town/friends.js'
+import { FRIEND_HOUSES, PLACES } from '@/town/places.js'
+import { presence } from '@/town/friends.js'
 import { useUserStore } from '@/stores/user'
-import { usePeopleStore } from '@/stores/people.js'
 import { useProgressStore } from '@/stores/progress.js'
 import { useDailyStore } from '@/town/dailyStore.js'
+import { useNearbyStore } from '@/town/nearbyStore.js'
 import { MAX_FREEZES } from '@/town/daily.js'
 import { fetchWeather } from '@/services/weather.js'
 import TownMap from '@/components/town/TownMap.vue'
@@ -28,15 +29,19 @@ import ChatDock from '@/components/town/ChatDock.vue'
 import DailyButton from '@/components/town/DailyButton.vue'
 import DailyPanel from '@/components/town/DailyPanel.vue'
 import DailyReward from '@/components/town/DailyReward.vue'
+import LocationChip from '@/components/town/LocationChip.vue'
+import LocationPrompt from '@/components/town/LocationPrompt.vue'
 
 const WEATHER_EVERY = 10 * 60 * 1000
+const NEARBY_EVERY = 30 * 1000
+const NOTICE_FOR = 5000
 const PREVIEW_DAYS = import.meta.env.DEV
 
 const router = useRouter()
 const user = useUserStore()
 const progress = useProgressStore()
 const daily = useDailyStore()
-const people = usePeopleStore()
+const nearby = useNearbyStore()
 const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
@@ -55,10 +60,14 @@ const dailyChip = computed(() => ({
   ready: daily.canClaim,
   claimed: daily.claimed,
 }))
-const friends = ref([])
 // every place you can go, the friends' houses named after whoever lives there
-const friendHouses = computed(() => nameFriendHouses(people.readers))
-const allPlaces = computed(() => [...PLACES, ...friendHouses.value])
+const allPlaces = computed(() => [...PLACES, ...nearby.houses])
+// going public or private: in progress, and why it didn't work
+const privacyBusy = ref(false)
+const promptError = ref('')
+// a short message over the map, e.g. a friend request that didn't send
+const notice = ref('')
+let noticeTimer = null
 // the friend out walking whose card is open, and the request to glide to one
 const friendId = ref(null)
 const friendFocus = ref(null)
@@ -74,6 +83,7 @@ const hint = ref(true)
 const weather = ref(null)
 const skyMode = ref('live')
 let weatherTimer = null
+let nearbyTimer = null
 
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 const walkingTo = computed(() => {
@@ -94,27 +104,82 @@ const sky = computed(() => {
 // Each friend with whether they are online, how kept their house is, and which house is theirs.
 const friendsInTown = computed(() => {
   const now = Date.now()
-  return friends.value.map((friend) => ({
+  return nearby.friends.map((friend) => ({
     ...friend,
     ...presence(friend.lastSeenAt, now),
-    house: FRIEND_HOUSES.find((place) => place.reader === friend.id)?.id ?? null,
+    house: FRIEND_HOUSES[friend.spot]?.id ?? null,
   }))
+})
+const nearbyInTown = computed(() => {
+  const now = Date.now()
+  return nearby.nearby.map((reader) => ({ ...reader, ...presence(reader.lastSeenAt, now) }))
 })
 const onlineCount = computed(() => friendsInTown.value.filter((friend) => friend.online).length)
 const chats = computed(() => chatIds.value.map((id) => friendsInTown.value.find((friend) => friend.id === id)).filter(Boolean))
 const selectedFriend = computed(() => friendsInTown.value.find((friend) => friend.id === friendId.value) ?? null)
-const selectedFriendHouse = computed(() => friendHouses.value.find((place) => place.id === selectedFriend.value?.house) ?? null)
+const selectedNearby = computed(() => nearbyInTown.value.find((reader) => reader.id === friendId.value) ?? null)
+const selectedFriendHouse = computed(() => nearby.houses.find((place) => place.id === selectedFriend.value?.house) ?? null)
 const selectedPresence = computed(() => {
   const reader = selected.value?.reader
   return reader ? (friendsInTown.value.find((friend) => friend.id === reader) ?? null) : null
 })
+// the one-time question: not during the tour, and never for an under-18
+const askPublic = computed(
+  () => ready.value && !guide.value && user.profileComplete && !user.tourPending && !profile.value.locationAsked && !nearby.minor,
+)
 
-async function loadFriends() {
+function showNotice(message) {
+  clearTimeout(noticeTimer)
+  notice.value = message
+  noticeTimer = setTimeout(() => (notice.value = ''), NOTICE_FOR)
+}
+
+// Runs every NEARBY_EVERY while this page is open, and pauses while the tab is hidden.
+async function refreshNearby() {
+  if (document.hidden) return
   try {
-    friends.value = await getFriends()
+    await nearby.refresh()
   } catch {
-    // the houses still work without presence: no dots, no aged looks
-    friends.value = []
+    // the town still works without it: everyone stays as they were until the next refresh
+  }
+}
+
+async function choosePublic(on) {
+  privacyBusy.value = true
+  promptError.value = ''
+  try {
+    await nearby.setPublic(on)
+  } catch (err) {
+    promptError.value = err.message
+    if (!askPublic.value) showNotice(err.message)
+  } finally {
+    privacyBusy.value = false
+  }
+}
+
+async function addFriend(reader) {
+  try {
+    await nearby.addFriend(reader.id)
+  } catch (err) {
+    showNotice(err.message)
+  }
+}
+
+async function answerRequest(requestId, accept) {
+  try {
+    await nearby.answer(requestId, accept)
+  } catch (err) {
+    showNotice(err.message)
+  }
+}
+
+async function removeFriend(friend) {
+  friendId.value = null
+  closeChat(friend.id)
+  try {
+    await nearby.removeFriend(friend.id)
+  } catch (err) {
+    showNotice(err.message)
   }
 }
 
@@ -127,12 +192,17 @@ async function loadWeather() {
 }
 
 onMounted(() => {
-  loadFriends()
+  refreshNearby()
   loadWeather()
   weatherTimer = setInterval(loadWeather, WEATHER_EVERY)
+  nearbyTimer = setInterval(refreshNearby, NEARBY_EVERY)
 })
 
-onBeforeUnmount(() => clearInterval(weatherTimer))
+onBeforeUnmount(() => {
+  clearInterval(weatherTimer)
+  clearInterval(nearbyTimer)
+  clearTimeout(noticeTimer)
+})
 
 // Being in town ticks off today's check-in (and moves the day on if midnight has passed).
 watch(
@@ -144,9 +214,10 @@ watch(
   { immediate: true },
 )
 
-// The first visit each day opens the tasks, once the map is up and any tour is over.
+// The first visit each day opens the tasks, once the map is up and any tour and the public or
+// private question are over.
 watch(
-  () => ready.value && !guide.value && daily.shouldShow,
+  () => ready.value && !guide.value && !askPublic.value && daily.shouldShow,
   (show) => {
     if (!show) return
     daily.markShown()
@@ -286,14 +357,16 @@ function enter(place) {
 // The town zooms in through the door and the building's page zooms out to meet you, where the
 // browser can animate between pages; elsewhere the page just opens.
 function goInside(place) {
+  // the map hands over the bare place; a friend's house gets its route from who lives there
+  const { route } = allPlaces.value.find((named) => named.id === place.id) ?? place
   const root = document.documentElement
   if (reducedMotion || !document.startViewTransition) {
-    router.push(place.route)
+    router.push(route)
     return
   }
   root.classList.add('town-entering')
   const transition = document.startViewTransition(async () => {
-    await router.push(place.route)
+    await router.push(route)
     await nextTick()
   })
   transition.finished.finally(() => root.classList.remove('town-entering'))
@@ -308,6 +381,7 @@ function goInside(place) {
       :enter="walk"
       :character="profile.character"
       :friends="friendsInTown"
+      :nearby="nearbyInTown"
       :focus-friend="friendFocus"
       :friend-id="friendId"
       :selected-id="selected?.id ?? null"
@@ -320,14 +394,30 @@ function goInside(place) {
     <TownHud
       :places-open="placesOpen"
       :friends-online="onlineCount"
+      :friend-requests="nearby.incoming.length"
       :friends-open="friendsOpen"
       @toggle-places="togglePlaces"
       @toggle-friends="toggleFriends"
     />
     <!-- today's tasks and the streak, on the left under the weather chip -->
     <DailyButton class="town__daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
+    <LocationChip
+      class="town__location"
+      :on="profile.discoverable"
+      :busy="privacyBusy"
+      :locked="nearby.minor"
+      @toggle="choosePublic(!profile.discoverable)"
+    />
     <PlacesMenu :places="allPlaces" :open="placesOpen" @go="go" />
-    <FriendsList :friends="friendsInTown" :open="friendsOpen" @go="findFriend" />
+    <FriendsList
+      :friends="friendsInTown"
+      :requests="nearby.incoming"
+      :nearby="nearbyInTown"
+      :open="friendsOpen"
+      @go="findFriend"
+      @go-nearby="friendFocus = { id: $event.id, key: Date.now() }"
+      @answer="answerRequest"
+    />
     <Transition name="town-fade">
       <DailyPanel
         v-if="dailyOpen"
@@ -366,6 +456,9 @@ function goInside(place) {
     <Transition name="town-fade">
       <p v-if="entering" class="town__hint" role="status">{{ walkingTo }}</p>
     </Transition>
+    <Transition name="town-fade">
+      <p v-if="notice" class="town__hint town__notice" role="status">{{ notice }}</p>
+    </Transition>
 
     <Transition name="town-card">
       <PlaceCard
@@ -386,6 +479,20 @@ function goInside(place) {
         :house="selectedFriendHouse"
         @talk="sayHi"
         @visit="visitFriend"
+        @remove="removeFriend"
+        @close="friendId = null"
+      />
+    </Transition>
+
+    <Transition name="town-card">
+      <FriendCard
+        v-if="selectedNearby"
+        :key="selectedNearby.id"
+        :friend="selectedNearby"
+        :requested="selectedNearby.requested"
+        nearby
+        @add="addFriend"
+        @profile="router.push({ name: 'reader-room', params: { id: $event.id } })"
         @close="friendId = null"
       />
     </Transition>
@@ -393,6 +500,8 @@ function goInside(place) {
     <ChatDock v-if="ready && chats.length" :chats="chats" :open="openChat" @toggle="toggleChat" @close="closeChat" />
 
     <DailyReward v-if="gift" :reward="gift" @close="closeGift" />
+
+    <LocationPrompt v-if="askPublic" :busy="privacyBusy" :error="promptError" @choose="choosePublic" />
   </section>
 </template>
 
@@ -410,6 +519,14 @@ function goInside(place) {
   position: absolute;
   left: 14px;
   top: 72px;
+  z-index: 10;
+}
+
+/* public or private, under Daily */
+.town .town__location {
+  position: absolute;
+  left: 14px;
+  top: 128px;
   z-index: 10;
 }
 
@@ -436,6 +553,16 @@ function goInside(place) {
   white-space: nowrap;
   transform: translateX(-50%);
   pointer-events: none;
+}
+
+/* long enough to need wrapping, under the top bar */
+.town__notice {
+  top: 118px;
+  z-index: 12;
+  width: min(320px, calc(100% - 28px));
+  border-radius: 12px;
+  text-align: center;
+  white-space: normal;
 }
 
 .town-card-enter-active,

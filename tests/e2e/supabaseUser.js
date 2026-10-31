@@ -69,6 +69,8 @@ async function signInReader({ id, email, password, profile, tourSeen }) {
 export async function resetProfile(id, profile) {
   await admin.from("profile_private").delete().eq("id", id);
   await admin.from("xp_events").delete().eq("reader", id);
+  await admin.from("friendships").delete().or(`requester.eq.${id},addressee.eq.${id}`);
+  await admin.from("reader_areas").delete().eq("reader", id);
   if (!profile) {
     await admin.from("profiles").delete().eq("id", id);
     return;
@@ -81,10 +83,52 @@ export async function resetProfile(id, profile) {
     character: profile.character ?? null,
     location_name: null,
     discoverable: false,
+    location_asked_at: new Date().toISOString(),
     tour_seen_at: new Date().toISOString(),
     coins: 480,
   });
   if (saved.error) throw saved.error;
+}
+
+// Makes demo readers (by username) a reader's friends, each online if `online` lists them.
+export async function befriend(id, usernames, online = []) {
+  const { data, error } = await admin.from("profiles").select("id, username").in("username", usernames);
+  if (error) throw error;
+  const friends = usernames.map((username) => data.find((row) => row.username === username));
+  const saved = await admin.from("friendships").insert(
+    friends.map((friend, spot) => ({
+      requester: id,
+      addressee: friend.id,
+      status: "accepted",
+      requester_spot: spot,
+      accepted_at: new Date(Date.now() + spot).toISOString(),
+    }))
+  );
+  if (saved.error) throw saved.error;
+  await admin.from("profiles").update({ last_active_at: new Date().toISOString() }).in("username", online);
+}
+
+// The prompt after the tour hasn't been answered yet.
+export async function notAskedYet(id) {
+  const saved = await admin.from("profiles").update({ location_asked_at: null }).eq("id", id);
+  if (saved.error) throw saved.error;
+}
+
+export async function setAge(id, age) {
+  const saved = await admin.from("profile_private").upsert({ id, age });
+  if (saved.error) throw saved.error;
+}
+
+export async function setDiscoverable(id, discoverable) {
+  const saved = await admin.from("profiles").update({ discoverable }).eq("id", id).select("discoverable").single();
+  if (saved.error) throw saved.error;
+  return saved.data.discoverable;
+}
+
+export async function storedArea(id) {
+  const { data, error } = await admin.from("reader_areas").select("*").eq("reader", id).maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 // A code like the one in the sign-up or log-in email, made without sending an email.

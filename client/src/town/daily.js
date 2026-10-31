@@ -7,8 +7,6 @@
 // Front end only for now: the state is kept in this browser (localStorage) until the backend
 // (daily_claims and claim_daily() in the database) is written. Only loadState/saveState and the
 // claim's coins change then.
-import { FRIEND_HOUSES } from '@/town/places.js'
-
 const DAY = 24 * 60 * 60 * 1000
 const STORAGE_KEY = 'readalot-daily'
 
@@ -29,8 +27,6 @@ const REWARDS = [
   { coins: 300, xp: 75 },
 ]
 
-const FRIEND_HOUSE = FRIEND_HOUSES[0]?.id ?? 'house'
-
 // Each task: what to do, a hint, the place Go flies to, and the actions that tick it off (the
 // progress store's earn() actions, plus 'progress' for the reading slider and 'check-in').
 const CHECK_IN = { id: 'check-in', title: 'Check in at town', hint: 'Open the map', place: null, actions: ['check-in'] }
@@ -41,12 +37,13 @@ const READING = {
   place: 'house',
   actions: ['progress', 'start_book', 'finish_book'],
 }
-// the third task, one a day in turn
+// the third task, one a day in turn; `friend` tasks go to a friend's house, and are skipped by a
+// reader with no friends yet
 const PICKS = [
-  { id: 'visit-room', title: 'Visit a friend’s room', hint: 'Tap one of the small houses', place: FRIEND_HOUSE, actions: ['visit_room'] },
+  { id: 'visit-room', title: 'Visit a friend’s room', hint: 'Tap one of the small houses', friend: true, actions: ['visit_room'] },
   { id: 'send-message', title: 'Say hi to a reader', hint: 'Find someone at the cafe', place: 'cafe', actions: ['send_message'] },
   { id: 'add-book', title: 'Add a book to your shelf', hint: 'Browse the library', place: 'library', actions: ['add_book'] },
-  { id: 'leave-note', title: 'Leave a note for a friend', hint: 'Pin it on the board in their room', place: FRIEND_HOUSE, actions: ['leave_note'] },
+  { id: 'leave-note', title: 'Leave a note for a friend', hint: 'Pin it on the board in their room', friend: true, actions: ['leave_note'] },
 ]
 
 // The date in Singapore as 'YYYY-MM-DD', moved on by `offset` days (the preview's Next day).
@@ -68,8 +65,11 @@ export function untilReset(now = Date.now()) {
   return DAY - (sg % DAY)
 }
 
-export function tasksFor(day) {
-  return [CHECK_IN, READING, PICKS[((dayNumber(day) % PICKS.length) + PICKS.length) % PICKS.length]]
+// friendHouse: the place id of a friend's house, or null when you have none
+export function tasksFor(day, friendHouse = null) {
+  const picks = friendHouse ? PICKS : PICKS.filter((pick) => !pick.friend)
+  const pick = picks[((dayNumber(day) % picks.length) + picks.length) % picks.length]
+  return [CHECK_IN, READING, pick.friend ? { ...pick, place: friendHouse } : pick]
 }
 
 // { coins, xp, chest } for day n of a streak (1 = the first day)
