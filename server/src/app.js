@@ -13,7 +13,6 @@ import scanBookRouter from "./routes/scanBook.js";
 import storesRouter from "./routes/stores.js";
 import timeRouter from "./routes/time.js";
 import userBooksRouter from "./routes/userBooks.js";
-import usersRouter from "./routes/users.js";
 import weatherRouter from "./routes/weather.js";
 
 export const app = express();
@@ -26,7 +25,6 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/books", booksRouter);
-app.use("/api/users", usersRouter);
 app.use("/api/user-books", userBooksRouter);
 app.use("/api/quote", quoteRouter);
 app.use("/api/weather", weatherRouter);

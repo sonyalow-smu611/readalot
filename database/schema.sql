@@ -38,21 +38,23 @@ create table user_books (
   book_id text not null,
   status text check (status in ('want_to_read', 'reading', 'read')),
   progress integer default 0,
-  rating integer,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique (user_id, book_id)
 );
 
+-- one per reader per book; the only home for ratings (see reviews.sql)
 create table reviews (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
   book_id text not null,
-  rating integer,
-  review_text text,
-  created_at timestamptz default now(),
+  rating integer not null constraint reviews_rating_range check (rating between 1 and 5),
+  review_text text constraint reviews_text_length check (review_text is null or char_length(review_text) <= 500),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (user_id, book_id)
 );
+create index reviews_book_idx on reviews (book_id, created_at desc);
 
 create table quotes (
   id uuid primary key default gen_random_uuid(),

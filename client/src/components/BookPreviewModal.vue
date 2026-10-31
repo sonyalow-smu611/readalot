@@ -21,10 +21,11 @@
             <p v-if="tab" class="preview__tab">{{ tab }}</p>
             <h2 class="preview__title">{{ book.title }}</h2>
             <p class="preview__author">{{ book.authors?.join(", ") || "Unknown author" }}</p>
-            <span v-if="book.averageRating" class="preview__rating">
-              {{ Number(book.averageRating).toFixed(1) }} <span aria-hidden="true">★</span>
+            <p v-if="rating" class="preview__rating">
+              {{ rating.toFixed(1) }} <span aria-hidden="true">★</span>
               <span class="visually-hidden">out of 5</span>
-            </span>
+              <span class="preview__rating-source">{{ ratingSource }}</span>
+            </p>
           </div>
         </div>
         <BookSynopsis class="preview__synopsis" :text="book.description" />
@@ -47,6 +48,19 @@
         <!-- what the page opening it adds, e.g. My Shelf's progress and Remove from shelf -->
         <slot />
 
+        <BookReviews
+          class="preview__reviews"
+          :reviews="reviews"
+          :loading="reviewsLoading"
+          :error="reviewsError"
+          :saving="reviewSaving"
+          :save-error="reviewSaveError"
+          :my-character="user.profile.character"
+          @retry="loadReviews"
+          @save="saveReview"
+          @delete="removeReview"
+        />
+
         <RouterLink v-if="linksToPage" class="btn btn-primary preview__open" :to="`/books/${book.id}`">
           Open full book page
         </RouterLink>
@@ -62,7 +76,10 @@
 import { nextTick, ref, watch } from "vue";
 import { STATUSES } from "../services/shelves.js";
 import BookCover from "./BookCover.vue";
+import BookReviews from "./book/BookReviews.vue";
 import BookSynopsis from "./book/BookSynopsis.vue";
+import { useBookReviews } from "../composables/useBookReviews.js";
+import { useUserStore } from "../stores/user.js";
 
 const props = defineProps({
   // Book shape; `status` (want_to_read | reading | read) highlights the current shelf
@@ -80,6 +97,19 @@ const props = defineProps({
 defineEmits(["close", "status"]);
 
 const dialog = ref(null);
+const {
+  reviews,
+  loading: reviewsLoading,
+  error: reviewsError,
+  load: loadReviews,
+  rating,
+  ratingSource,
+  saving: reviewSaving,
+  saveError: reviewSaveError,
+  save: saveReview,
+  remove: removeReview
+} = useBookReviews(() => props.book);
+const user = useUserStore();
 
 watch(
   () => props.book?.id,
@@ -146,6 +176,16 @@ watch(
   background: var(--rl-secondary);
   font-size: 13px;
   font-weight: 700;
+}
+
+.preview__rating-source {
+  margin-left: 4px;
+  font-weight: 400;
+  color: var(--rl-muted);
+}
+
+.preview__reviews {
+  margin: 14px 0;
 }
 
 .preview__synopsis {

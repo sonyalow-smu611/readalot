@@ -308,14 +308,14 @@ test.describe("the house", () => {
     await expect(card.getByRole("button", { name: "Remove from shelf" })).toBeVisible();
     await expect.poll(() => offLook(card)).toEqual([]);
 
-    await page.goto("/people/reader-sofia/room/shelf");
+    await page.goto("/people/sofia.shelves/room/shelf");
     await page.getByRole("button", { name: /Pride and Prejudice/ }).click();
     await expect(card.getByRole("button", { name: "Close book" })).toBeVisible();
     await expect.poll(() => offLook(card)).toEqual([]);
   });
 
   test("a visited room, its note card and its notice board have pixel buttons", async ({ page }) => {
-    await page.goto("/people/reader-emma/room");
+    await page.goto("/people/emma.reads/room");
     await roomReady(page);
     expect(await offLook(page.locator("body"))).toEqual([]);
 
@@ -474,9 +474,14 @@ test.describe("the cafe and its readers", () => {
   });
 
   test("a reader's page and its chat have pixel buttons", async ({ page }) => {
-    await page.goto("/people/reader-emma");
+    await page.goto("/people/emma.reads");
     await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+
+    await page.getByRole("button", { name: "Message", exact: true }).click();
+    const chat = page.getByRole("dialog", { name: "Message Emma" });
+    await expect(chat).toBeVisible();
+    await expect.poll(() => offLook(chat)).toEqual([]);
   });
 });
 

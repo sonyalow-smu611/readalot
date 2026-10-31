@@ -3,6 +3,7 @@ import { requireUser } from "../middleware/auth.js";
 import { getGoogleBook } from "../services/books.js";
 import { getDemoShelf } from "../services/demoShelf.js";
 import { env } from "../services/env.js";
+import { myReviews } from "../services/reviews.js";
 import { supabase } from "../services/supabase.js";
 
 const router = Router();
@@ -13,8 +14,15 @@ const UNKNOWN_BOOK = { title: "Unavailable book", authors: [], coverUrl: "", des
 // The current user's shelf: Book shape plus status, progress and updatedAt.
 router.get("/", requireUser, async (req, res, next) => {
   try {
+    // the reviews table is the only home for ratings; a stars-only review has no text
+    const mine = await myReviews(req.user.id);
+    const ratingOf = (bookId) => ({
+      myRating: mine.get(bookId)?.rating ?? null,
+      reviewed: Boolean(mine.get(bookId)?.text)
+    });
+
     if (!env.HAS_SUPABASE) {
-      return res.json({ books: await getDemoShelf() });
+      return res.json({ books: (await getDemoShelf()).map((book) => ({ ...book, ...ratingOf(book.id) })) });
     }
 
     const { data: rows, error } = await supabase
@@ -32,14 +40,6 @@ router.get("/", requireUser, async (req, res, next) => {
 
     if (booksError) throw booksError;
 
-    const { data: reviews, error: reviewsError } = await supabase
-      .from("reviews")
-      .select("book_id")
-      .eq("user_id", req.user.id);
-
-    if (reviewsError) throw reviewsError;
-
-    const reviewedIds = new Set(reviews.map((review) => review.book_id));
     const byId = new Map(saved.map((book) => [book.id, toBook(book)]));
     const books = await Promise.all(
       rows.map(async (row) => ({
@@ -49,8 +49,7 @@ router.get("/", requireUser, async (req, res, next) => {
         status: row.status,
         progress: row.progress || 0,
         // the reader's own rating (1-5) and whether they have written a review
-        myRating: row.rating ?? null,
-        reviewed: reviewedIds.has(row.book_id),
+        ...ratingOf(row.book_id),
         updatedAt: row.updated_at
       }))
     );
@@ -91,9 +90,8 @@ router.post("/", requireUser, async (req, res, next) => {
         book_id: req.body.bookId,
         status: req.body.status,
         progress: req.body.progress || 0,
-        rating: req.body.rating || null,
         updated_at: new Date().toISOString()
-      })
+      }, { onConflict: "user_id,book_id" })
       .select()
       .single();
 
@@ -128,7 +126,6 @@ router.patch("/:bookId", requireUser, async (req, res, next) => {
       .update({
         status: req.body.status,
         progress: req.body.progress,
-        rating: req.body.rating,
         updated_at: new Date().toISOString()
       })
       .eq("user_id", req.user.id)

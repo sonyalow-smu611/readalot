@@ -108,43 +108,36 @@
           </template>
           <template v-else>Not rated yet</template>
         </p>
-        <p v-if="ratingsCount" class="details__rating-count">
-          from {{ ratingsCount }} {{ ratingsCount === 1 ? "rating" : "ratings" }}
-        </p>
+        <p v-if="ratingSource" class="details__rating-count">{{ ratingSource }}</p>
       </div>
     </section>
 
-    <section class="details__section" aria-labelledby="details-reviews">
-      <h3 id="details-reviews" class="details__heading">Reviews</h3>
-      <p v-if="reviewsLoading" class="details__note">
-        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Loading reviews…
-      </p>
-      <p v-else-if="reviewsError" class="details__note">
-        Couldn't load reviews.
-        <button type="button" class="btn btn-link details__retry" @click="loadReviews">Retry</button>
-      </p>
-      <p v-else-if="!reviews.length" class="details__note">No reviews yet. Finish the book to write the first one.</p>
-      <ul v-else class="list-unstyled details__reviews">
-        <li v-for="review in reviews" :key="review.id" class="details__review">
-          <div class="details__review-top">
-            <StarMeter v-if="review.rating" :value="review.rating" />
-            <time v-if="review.created_at" :datetime="review.created_at">{{ formatDate(review.created_at) }}</time>
-          </div>
-          <p class="details__review-text">{{ review.review_text || "Rated without a review." }}</p>
-        </li>
-      </ul>
-    </section>
+    <BookReviews
+      class="details__section"
+      :reviews="reviews"
+      :loading="reviewsLoading"
+      :error="reviewsError"
+      :saving="reviewSaving"
+      :save-error="reviewSaveError"
+      :my-character="user.profile.character"
+      @retry="loadReviews"
+      @save="saveReview"
+      @delete="removeReview"
+    />
   </article>
 </template>
 
 <script setup>
-import { computed, defineComponent, h, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { primaryAuthor } from '@/lib/book'
 import BookSynopsis from '@/components/book/BookSynopsis.vue'
 import ReadingProgress from '@/components/book/ReadingProgress.vue'
+import BookReviews from '@/components/book/BookReviews.vue'
+import StarMeter from '@/components/book/StarMeter.vue'
 import { shelfName, spineLook } from '@/services/shelves.js'
-import { getReviews } from '@/services/api.js'
+import { useBookReviews } from '@/composables/useBookReviews'
 import { useBookshelfStore } from '@/stores/bookshelf'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps({
   book: { type: Object, default: null },
@@ -164,26 +157,11 @@ const STATUS_OPTIONS = [
   { value: 'read', label: 'Finished reading' },
 ]
 
-// Five stars filled to a fraction (3.6 fills three and most of the fourth).
-const StarMeter = defineComponent({
-  props: { value: { type: Number, default: 0 }, big: Boolean },
-  setup(p) {
-    return () =>
-      h('span', { class: ['stars', { 'stars--big': p.big }], 'aria-hidden': 'true' }, [
-        h('span', { class: 'stars__back' }, '★★★★★'),
-        h('span', { class: 'stars__fill', style: { width: `${(Math.min(5, p.value) / 5) * 100}%` } }, '★★★★★'),
-      ])
-  },
-})
-
 const bookshelf = useBookshelfStore()
 
 const author = computed(() => (props.book ? primaryAuthor(props.book) : ''))
 const coverUrl = computed(() => props.book?.cover || props.book?.coverUrl || '')
 const look = computed(() => spineLook({ id: props.book?.id || props.book?.title || '' }))
-const rating = computed(() => Number(props.book?.rating ?? props.book?.averageRating) || 0)
-const ratingText = computed(() => rating.value.toFixed(1).replace(/\.0$/, ''))
-const ratingsCount = computed(() => Number(props.book?.ratingsCount) || 0)
 // publisher, year and length, leaving out whatever is not known
 const facts = computed(() => {
   const book = props.book
@@ -225,40 +203,20 @@ async function choose(next) {
 }
 
 // --- Reviews ------------------------------------------------------------------------------
-const reviews = ref([])
-const reviewsLoading = ref(false)
-const reviewsError = ref(false)
-
-async function loadReviews() {
-  const id = props.book?.id
-  if (!id) return
-  reviewsLoading.value = true
-  reviewsError.value = false
-  try {
-    const data = await getReviews(id)
-    // a quicker reader may have opened another book meanwhile
-    if (props.book?.id === id) reviews.value = data?.reviews ?? []
-  } catch {
-    if (props.book?.id === id) reviewsError.value = true
-  } finally {
-    if (props.book?.id === id) reviewsLoading.value = false
-  }
-}
-
-watch(
-  () => props.book?.id,
-  () => {
-    reviews.value = []
-    loadReviews()
-  },
-  { immediate: true },
-)
-
-const dateFormat = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-function formatDate(value) {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '' : dateFormat.format(date)
-}
+const {
+  reviews,
+  loading: reviewsLoading,
+  error: reviewsError,
+  load: loadReviews,
+  rating,
+  ratingText,
+  ratingSource,
+  saving: reviewSaving,
+  saveError: reviewSaveError,
+  save: saveReview,
+  remove: removeReview,
+} = useBookReviews(() => props.book)
+const user = useUserStore()
 </script>
 
 <style scoped>
@@ -460,32 +418,6 @@ function formatDate(value) {
   color: var(--rl-text);
 }
 
-/* --- Stars ------------------------------------------------------------------------------ */
-.details :deep(.stars) {
-  position: relative;
-  display: inline-block;
-  font-size: 16px;
-  line-height: 1;
-  letter-spacing: 2px;
-  white-space: nowrap;
-}
-
-.details :deep(.stars--big) {
-  font-size: 36px;
-  letter-spacing: 6px;
-}
-
-.details :deep(.stars__back) {
-  color: var(--rl-placeholder);
-}
-
-.details :deep(.stars__fill) {
-  position: absolute;
-  inset: 0 auto 0 0;
-  overflow: hidden;
-  color: #e0b65e;
-}
-
 /* --- Status: the town's chips, the chosen one filled in the building's colour ------------ */
 .details__status {
   gap: 6px;
@@ -576,48 +508,5 @@ function formatDate(value) {
   margin: 0;
   font-size: 12px;
   color: var(--rl-muted);
-}
-
-.details__note {
-  margin: 0;
-  font-size: 13px;
-  color: var(--rl-muted);
-}
-
-.details__retry {
-  padding: 0 0 0 4px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
-  vertical-align: baseline;
-}
-
-.details__reviews {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-}
-
-/* each review, the cafe's reader card */
-.details__review {
-  padding: 12px 14px;
-  border: 1px solid #e9dece;
-  border-radius: 16px;
-  background: var(--rl-surface);
-}
-
-.details__review-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-  font-size: 12px;
-  color: var(--rl-muted);
-}
-
-.details__review-text {
-  margin: 0;
-  white-space: pre-line;
 }
 </style>
