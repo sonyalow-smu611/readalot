@@ -106,7 +106,7 @@ test("the profile's cards still work in the salon", async ({ page }) => {
 
   // About you: edit one card in place
   await page.getByRole("button", { name: "Edit location" }).click();
-  await page.getByLabel("Location").fill("Tampines");
+  await page.getByRole("textbox", { name: "Location" }).fill("Tampines");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Tampines")).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit location" })).toBeFocused();
