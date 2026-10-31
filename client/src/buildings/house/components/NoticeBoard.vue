@@ -1,9 +1,11 @@
 <!--
   Scaffolded with AI assistance — see AI_USAGE.md
   Someone's notice board, opened from the corkboard in their room: the Quote of the Day at the
-  top, then the notes left there, newest first, each signed and dated. The visitor's own notes have
-  a Take down button. Leave a note emits `write`; the page opens the Leave a note card over the
-  board. Emits `remove` with a note's id, and `close` (also on Esc or a tap outside).
+  top, then the notes left there, newest first, each signed and dated. A visitor's own notes have
+  a Take down button; on the reader's own board (`mine`) every note has one, and there's no Leave a
+  note. Leave a note emits `write`; the page opens the Leave a note card over the
+  board. Emits `remove` with a note's id, `retry` when the notes couldn't load, and `close` (also
+  on Esc or a tap outside).
 -->
 <template>
   <div
@@ -18,7 +20,7 @@
   >
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content p-4">
-        <p class="board__eyebrow">{{ owner }}'s notice board</p>
+        <p class="board__eyebrow">{{ mine ? 'Your notice board' : `${owner}'s notice board` }}</p>
 
         <section class="board__quote" aria-label="Quote of the Day">
           <StateView :loading="loading" :error="error" @retry="load">
@@ -31,18 +33,21 @@
         </section>
 
         <h2 class="board__heading">Notes</h2>
-        <p v-if="!notes.length" class="board__empty">No notes yet. Be the first to leave one.</p>
+        <StateView :loading="notesLoading" :error="notesError" @retry="$emit('retry')">
+        <p v-if="!notes.length" class="board__empty">
+          {{ mine ? 'No notes yet. When readers visit, their notes show up here.' : 'No notes yet. Be the first to leave one.' }}
+        </p>
         <ul v-else class="board__notes">
           <li v-for="note in notes" :key="note.id" class="board__note">
             <p class="board__note-text">{{ note.text }}</p>
             <p class="board__note-by">From {{ note.author }} · {{ dateOf(note.createdAt) }}</p>
-            <button v-if="note.authorId === me" type="button" class="btn btn-danger btn-sm board__take-down" @click="$emit('remove', note.id)">Take down</button>
+            <button v-if="mine || note.authorId === me" type="button" class="btn btn-danger btn-sm board__take-down" @click="$emit('remove', note.id)">Take down</button>
           </li>
         </ul>
-        <p class="board__demo">Saved on this browser only, like the Cafe's follows and chat.</p>
+        </StateView>
 
         <div class="board__actions">
-          <button class="btn btn-primary" type="button" @click="$emit('write')">Leave a note</button>
+          <button v-if="!mine" class="btn btn-primary" type="button" @click="$emit('write')">Leave a note</button>
           <button class="btn btn-outline-secondary" type="button" @click="$emit('close')">Close</button>
         </div>
       </div>
@@ -57,14 +62,19 @@ import { useAsync } from '@/composables/useAsync.js'
 import { getTodayQuote } from '@/services/api.js'
 
 defineProps({
-  // the first name of the reader whose board it is
-  owner: { type: String, required: true },
+  // the first name of the reader whose board it is, when it isn't the reader's own
+  owner: { type: String, default: '' },
+  // the reader's own board, in their own room
+  mine: { type: Boolean, default: false },
   // [{ id, authorId, author, text, createdAt }], newest first
   notes: { type: Array, default: () => [] },
+  // the notes are on their way, or couldn't be fetched (the message to show)
+  notesLoading: { type: Boolean, default: false },
+  notesError: { type: String, default: '' },
   // the visitor's reader id: their own notes can be taken down
   me: { type: String, default: '' },
 })
-defineEmits(['close', 'remove', 'write'])
+defineEmits(['close', 'remove', 'retry', 'write'])
 
 const dialog = ref(null)
 const { data, error, loading, run } = useAsync(getTodayQuote)
@@ -169,11 +179,5 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   margin-top: 16px;
-}
-
-.board__demo {
-  margin: 14px 0 0;
-  font-size: 11px;
-  color: var(--rl-muted);
 }
 </style>

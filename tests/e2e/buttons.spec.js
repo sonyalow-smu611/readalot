@@ -100,16 +100,16 @@ test.describe("shared pop-ups", () => {
     expect(await offLook(result)).toEqual([]);
   });
 
-  test("the quote of the day's buttons are pixel buttons", async ({ page }) => {
+  test("my notice board's buttons are pixel buttons", async ({ page }) => {
     await skipMoodCheckIn(page);
     await mockWeather(page);
     await mockQuote(page);
     await page.goto("/house");
     await roomReady(page);
-    await page.getByRole("button", { name: "Quote of the day" }).click();
-    const quote = page.getByRole("dialog", { name: /quote/i });
-    await expect(quote.getByText("So many books, so little time.")).toBeVisible();
-    expect(await offLook(quote)).toEqual([]);
+    await page.getByRole("button", { name: "Notice board" }).click();
+    const board = page.getByRole("dialog", { name: "Notice board" });
+    await expect(board.getByText("So many books, so little time.")).toBeVisible();
+    expect(await offLook(board)).toEqual([]);
   });
 
   test("the remove-book question's buttons are pixel buttons", async ({ page }) => {
@@ -329,8 +329,11 @@ test.describe("the house", () => {
     await goToPlace(page, "Corkboard");
     await page.getByRole("button", { name: "Notice board" }).click();
     const board = page.getByRole("dialog", { name: "Notice board" });
-    await expect(board.getByText("Loved your shelf!")).toBeVisible();
+    const note = board.getByRole("listitem").filter({ hasText: "Loved your shelf!" });
+    await expect(note.first()).toBeVisible();
     await expect.poll(() => offLook(board)).toEqual([]);
+    // notes stay on the test server: take it down again, so other tests find Emma's board empty
+    await note.getByRole("button", { name: "Take down" }).first().click();
   });
 
   test("the Currently reading card has pixel buttons", async ({ page }) => {
