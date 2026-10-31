@@ -165,3 +165,20 @@ export function addQuote(bookId, data) {
 export function getTodayQuote() {
   return request("/quote/today");
 }
+
+// The notes on a reader's notice board (readerId: their username, or account id), newest first
+export function getRoomNotes(readerId) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/notes`);
+}
+
+// { text, author }: author is the writer's name, which the server only reads without Supabase
+export function postRoomNote(readerId, data) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/notes`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export function deleteRoomNote(readerId, noteId) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/notes/${encodeURIComponent(noteId)}`, { method: "DELETE" });
+}

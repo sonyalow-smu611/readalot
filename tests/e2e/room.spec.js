@@ -210,16 +210,17 @@ test.describe("tapping the room", () => {
     await expect(card).toBeHidden();
   });
 
-  test("the corkboard opens the Quote of the Day", async ({ page }) => {
+  test("the corkboard opens my notice board, with the Quote of the Day on top", async ({ page }) => {
     await mockQuote(page);
     await goToPlace(page, "Corkboard");
-    await page.getByRole("button", { name: "Quote of the day" }).click();
+    await page.getByRole("button", { name: "Notice board" }).click();
 
-    const quote = page.getByRole("dialog", { name: "Quote of the Day" });
+    const board = page.getByRole("dialog", { name: "Notice board" });
+    const quote = board.getByRole("region", { name: "Quote of the Day" });
     await expect(quote.getByText("“So many books, so little time.”")).toBeVisible();
     await expect(quote.getByText("On books")).toBeVisible();
-    await quote.getByRole("button", { name: "Close" }).click();
-    await expect(quote).toBeHidden();
+    await board.getByRole("button", { name: "Close" }).click();
+    await expect(board).toBeHidden();
   });
 });
 
