@@ -1,54 +1,46 @@
 <script setup>
-// AI-assisted view scaffold; receives data via props and reports actions via events.
+// AI-assisted presentation component — review and record in AI_USAGE.md.
 defineProps({
   reader: { type: Object, required: true },
-  score: { type: Number, required: true },
-  sharedBooks: { type: Array, default: () => [] },
-  currentlyReading: { type: Object, default: null },
-  following: { type: Boolean, default: false },
-  error: { type: String, default: '' },
 })
-const emit = defineEmits(['close', 'visit', 'follow'])
+const emit = defineEmits(['close', 'visit'])
 </script>
 
 <template>
-  <aside class="cafe-card" role="dialog" aria-modal="false" :aria-label="`Meet ${reader.displayName}`">
-    <button type="button" class="btn btn-secondary btn-icon cafe-card__close" aria-label="Close reader card" @click="emit('close')">×</button>
-    <p class="cafe-card__overline">☕ A FELLOW BOOKWORM</p>
-    <div class="cafe-card__identity">
-      <span class="cafe-card__avatar" aria-hidden="true">{{ reader.initials }}</span>
-      <div>
-        <h2>{{ reader.displayName }}</h2>
-        <span class="cafe-card__match">{{ score }}% reading match</span>
+  <aside class="cafe-detail" aria-label="Selected reader">
+    <button type="button" class="cafe-detail__close" aria-label="Close reader details" @click="emit('close')">×</button>
+    <div class="cafe-detail__intro">
+      <div class="cafe-detail__initials" aria-hidden="true">{{ reader.displayName.charAt(0).toUpperCase() }}</div>
+      <div class="cafe-detail__who">
+        <strong>{{ reader.displayName }}</strong>
+        <span v-if="reader.username">@{{ reader.username }}</span>
+        <small v-if="reader.isDemo" class="cafe-detail__demo">Demo profile · not a database account</small>
       </div>
+      <span class="cafe-detail__match">
+        {{ reader.compatibility == null ? 'Match unavailable' : `${reader.compatibility}% match` }}
+      </span>
     </div>
-    <p class="cafe-card__tagline">“{{ reader.tagline }}”</p>
-    <p class="cafe-card__small"><strong>Favourite genres:</strong> {{ reader.favoriteGenres.join(' · ') }}</p>
-    <p class="cafe-card__small"><strong>Currently reading:</strong> {{ currentlyReading?.title || 'Picking the next book!' }}</p>
-    <p class="cafe-card__small"><strong>Shared books:</strong> {{ sharedBooks.length ? sharedBooks.map((book) => book.title).join(', ') : 'None yet' }}</p>
-    <p v-if="error" class="cafe-card__error" role="alert">{{ error }}</p>
-    <div class="cafe-card__actions">
-      <button type="button" class="btn btn-primary cafe-card__visit" @click="emit('visit')">Visit Room →</button>
-      <button type="button" class="btn btn-secondary cafe-card__follow" @click="emit('follow')">
-        {{ following ? '✓ Following' : '+ Follow' }}
-      </button>
+    <p class="cafe-detail__title">Favourite genres</p>
+    <div class="cafe-detail__genres">
+      <span v-for="genre in reader.favoriteGenres" :key="genre">{{ genre }}</span>
+      <span v-if="!reader.favoriteGenres.length">Not shared yet</span>
     </div>
-    <p class="cafe-card__note">Demo readers only · Following is saved in this browser</p>
+    <button type="button" class="cafe-detail__visit" @click="emit('visit')">View Room →</button>
   </aside>
 </template>
 
 <style scoped>
-.cafe-card { position:absolute; z-index:20; top:clamp(8px, 12%, 90px); left:50%; transform:translateX(-50%); width:min(305px, calc(100% - 30px)); max-height:calc(100% - 28px); overflow:auto; padding:14px; background:#fffaf0; border:3px solid #513a2c; border-radius:12px; box-shadow:5px 5px 0 #513a2c, 0 15px 35px #23150e52; color:#35291f; }
-.cafe-card__overline { margin:0 52px 10px 0; font:bold 10px monospace; letter-spacing:1px; color:#9a6a45; }
-.cafe-card__close { position:absolute; top:8px; right:9px; font-size:23px; line-height:1; }
-.cafe-card__identity { display:flex; align-items:center; gap:12px; }
-.cafe-card__avatar { flex:none; display:grid; place-items:center; width:46px; height:46px; border:2px solid #35694d; border-radius:9px; background:#c9dfc4; color:#26573e; font:bold 17px monospace; }
-.cafe-card__identity h2 { margin:0 0 5px; font-family:var(--rl-font-title, Georgia, serif); font-size:19px; line-height:1.1; }
-.cafe-card__match { display:inline-block; padding:4px 7px; background:#2b7855; color:white; border-radius:4px; font-size:11px; font-weight:800; }
-.cafe-card__tagline { margin:13px 0; font-size:12px; color:#765d4a; font-style:italic; }
-.cafe-card__small { margin:7px 0; font-size:11px; line-height:1.5; }
-.cafe-card__actions { display:flex; gap:10px; margin-top:14px; }
-.cafe-card__actions button { flex:1; }
-.cafe-card__note { margin:10px 0 0; font-size:9px; color:#8c7968; }
-.cafe-card__error { color:#ad3f38; font-size:11px; }
+.cafe-detail{position:relative;background:#fffbf1;color:#392c25;border:3px solid #5d4537;border-radius:14px;box-shadow:6px 8px 0 #35262166;padding:18px;min-width:0;font-family:var(--rl-font-body,system-ui,sans-serif)}
+.cafe-detail__close{position:absolute;right:8px;top:4px;border:0;background:transparent;font-size:25px;color:#624635;cursor:pointer;line-height:1.3}
+.cafe-detail__intro{display:flex;align-items:center;gap:9px;padding-right:20px;flex-wrap:wrap}
+.cafe-detail__initials{width:42px;height:42px;flex:none;display:grid;place-items:center;background:#d5e6d9;border:2px solid #5f8972;border-radius:7px;color:#33553f;font-weight:800}
+.cafe-detail__who{min-width:70px;flex:1}.cafe-detail__who strong{display:block;font-size:15px}.cafe-detail__who span{display:block;font-size:11px;color:#836e5d}
+.cafe-detail__demo{display:block;font-size:10px;color:#8c7562;margin-top:3px}
+.cafe-detail__match{background:#2e7154;color:white;border-radius:15px;font-size:11px;font-weight:700;padding:5px 8px;white-space:nowrap}
+.cafe-detail__title{font-size:11px;font-weight:800;margin:12px 0 6px}
+.cafe-detail__genres{display:flex;flex-wrap:wrap;gap:5px}
+.cafe-detail__genres span{background:#f0e2ce;padding:5px 8px;border-radius:14px;font-size:11px}
+.cafe-detail__visit{display:block;width:100%;margin-top:13px;border:0;border-radius:9px;background:#5d4537;color:#fff;padding:10px 16px;font-weight:750;cursor:pointer;font-size:13px}
+.cafe-detail__visit:hover{background:#3c2d26}
+@media (max-width:640px){.cafe-detail{border-radius:16px 16px 0 0;padding:13px 15px;box-shadow:0 -4px 22px #25181355}.cafe-detail__initials{width:35px;height:35px}.cafe-detail__visit{margin-top:8px}.cafe-detail__genres span{padding:3px 7px}}
 </style>
