@@ -1,263 +1,323 @@
-// AI-assisted café art scaffold; review with the team and document in AI_USAGE.md.
-// Uses the same low-resolution canvas helpers as the town and hair salon.
-// Existing live weather is supplied by CafeView; this module makes no requests.
+// AI-assisted pixel-art layout — review/credit under PROJECT.md and AI_USAGE.md.
+// Drawn entirely with Readalot's existing town/salon pixel helpers (no image assets).
+// Single 1200 × 600 scene: never rearrange or remove furniture for a narrow viewport.
 import { E, P, R, mk } from '@/lib/avatar/draw.js'
 
-export const CAFE_DESKTOP = { width: 1200, height: 820 }
-export const CAFE_MOBILE = { width: 420, height: 900 }
-
+export const CAFE_DESKTOP = Object.freeze({ width: 1200, height: 600 })
+const W = CAFE_DESKTOP.width
+const H = CAFE_DESKTOP.height
 const C = {
-  ink: '#30262a', cream: '#fff2d7', wall: '#eed9b8', line: '#ddbd97',
-  floor: '#c99667', floorLine: '#a97650', wood: '#ad764c', woodLight: '#d7a677',
-  darkWood: '#644432', green: '#39735d', greenDark: '#24513f', greenLight: '#79a18a',
-  leaf: '#669b55', gold: '#f5d083', copper: '#a56948', white: '#fcf8ea',
+  ink: '#33282a', border: '#5a4032', wall: '#e9c9a2', wallLight: '#f4ddbb',
+  wood: '#a76e46', woodDark: '#714b35', woodLight: '#d6a06e', floor: '#ca9465',
+  cream: '#fff4d9', darkGreen: '#235541', green: '#36755c', greenLight: '#67977a',
+  leaf: '#689d59', leafLight: '#94b76b', gold: '#f5d18c', pink: '#d99286',
 }
-
-function rect(x, a, b, w, h, color, edge = C.ink) {
-  R(x, a - 2, b - 2, w + 4, h + 4, edge)
-  R(x, a, b, w, h, color)
+const rect = (x, a, b, w, h, col, edge=C.border) => {
+  R(x,a-2,b-2,w+4,h+4,edge)
+  R(x,a,b,w,h,col)
 }
-function line(x, a, b, w, h, color) { R(x, a, b, w, h, color) }
-function oval(x, a, b, rx, ry, color) { E(x, a, b, rx, ry, color) }
-function text(x, txt, a, b, px = 12, color = C.cream) {
+const oval = (x,a,b,rx,ry,c) => E(x,a,b,rx,ry,c)
+const line = (x,a,b,w,h,c) => R(x,a,b,w,h,c)
+function label(x,txt,cx,cy,size=11,color=C.cream) {
+  x.font = `bold ${size}px monospace`
   x.fillStyle = color
-  x.font = `bold ${px}px monospace`
   x.textAlign = 'center'
-  x.fillText(txt, a, b)
+  x.fillText(txt,cx,cy)
 }
-function plant(x, a, b, scale = 1) {
-  rect(x, a - 8*scale, b - 16*scale, 16*scale, 17*scale, '#b37757', C.darkWood)
-  line(x, a - 2*scale, b - 38*scale, 4*scale, 23*scale, '#3e6b43')
-  for (const [dx, dy] of [[-12, -34],[13,-38],[-4,-48],[7,-49]]) {
-    oval(x, a + dx*scale, b + dy*scale, 10*scale, 7*scale, C.greenDark)
-    oval(x, a + (dx-2)*scale, b + (dy-2)*scale, 8*scale, 5*scale, C.leaf)
+function plant(x,cx,by,scale=1) {
+  rect(x,cx-8*scale,by-17*scale,16*scale,17*scale,'#a76c50')
+  line(x,cx-2*scale,by-38*scale,4*scale,25*scale,'#3c7448')
+  for(const [dx,dy,r] of [[-13,-36,12],[12,-40,12],[0,-47,13],[-5,-25,9],[12,-27,8]]) {
+    oval(x,cx+dx*scale,by+dy*scale,r*scale,7*scale,C.darkGreen)
+    oval(x,cx+(dx-2)*scale,by+(dy-2)*scale,(r-2)*scale,5*scale,C.leaf)
+    P(x,cx+(dx-3)*scale,by+(dy-4)*scale,C.leafLight)
   }
 }
-function hangingPlant(x, a, b, scale=1) {
-  line(x,a,b,2,24*scale,C.darkWood)
-  rect(x,a-10*scale,b+24*scale,22*scale,12*scale,C.copper,C.darkWood)
-  for (const [dx,dy] of [[-16,14],[0,10],[15,18]]) {
-    oval(x,a+dx*scale,b+(dy+25)*scale,8*scale,5*scale,C.greenDark)
-    oval(x,a+dx*scale,b+(dy+23)*scale,6*scale,4*scale,C.leaf)
+function hangingPlant(x,cx,top,scale=1) {
+  line(x,cx,top,2,20*scale,C.border)
+  rect(x,cx-10*scale,top+19*scale,22*scale,11*scale,'#ac7652')
+  for(const [dx,dy] of [[-10,26],[10,33],[0,37],[-16,39]]) {
+    oval(x,cx+dx*scale,top+dy*scale,8*scale,5*scale,C.darkGreen)
+    oval(x,cx+(dx-2)*scale,top+(dy-2)*scale,6*scale,4*scale,C.leaf)
   }
 }
-function window(x, a, b, w, h, state) {
-  const { scene, night } = state
-  rect(x,a,b,w,h,C.darkWood)
+function light(x,cx,top) {
+  line(x,cx,top,3,30,C.ink)
+  oval(x,cx+2,top+31,15,8,C.ink)
+  oval(x,cx+2,top+29,13,6,C.green)
+  line(x,cx-8,top+35,21,3,C.gold)
+  for(const dx of [-9,-3,4,10]) P(x,cx+dx,top+39,'#fff1c0')
+}
+function windowPane(x,a,b,w,h,{scene,night}) {
+  rect(x,a,b,w,h,'#674935',C.ink)
   const ix=a+7, iy=b+7, iw=w-14, ih=h-15
-  line(x,ix,iy,iw,ih,night?'#223653':scene==='rain'?'#91aebb':'#95d8e2')
+  line(x,ix,iy,iw,ih,night?'#283b57':scene==='rain'?'#91adbb':'#8bcada')
   x.save()
-  x.beginPath()
-  x.rect(ix,iy,iw,ih)
-  x.clip()
-  if (night) {
-    for (let i=0;i<20;i++) P(x,ix+7+(i*37)%(iw-14),iy+7+(i*19)%Math.max(10,ih-60),'#ffefb5')
-    oval(x,ix+iw*0.78,iy+ih*0.24,14,14,'#ffe7a4')
-  } else if (scene==='sunny') {
-    oval(x,ix+iw*0.75,iy+ih*0.25,18,18,'#efc657')
-    oval(x,ix+iw*0.73,iy+ih*0.22,13,13,'#ffed9b')
+  x.beginPath();x.rect(ix,iy,iw,ih);x.clip()
+  if(night) {
+    oval(x,ix+iw*.72,iy+ih*.2,13,13,'#fff0b2')
+    for(let i=0;i<17;i++) P(x,ix+6+i*31%(iw-9),iy+7+i*23%Math.max(8,ih-45),'#ffe9aa')
+  } else if(scene==='sunny') {
+    oval(x,ix+iw*.77,iy+ih*.21,18,18,'#f8d17d')
+    oval(x,ix+iw*.75,iy+ih*.18,12,12,'#fff0b1')
   }
-  if (scene!=='sunny' || night) {
-    const color = night?'#6e7e95':scene==='rain'?'#c4d2da':'#f9faf1'
-    for (const t of [0.26,0.69]) {
-      const cx=ix+iw*t, cy=iy+ih*(t===0.26?0.32:0.42)
-      oval(x,cx,cy,22,7,color); oval(x,cx-9,cy-5,11,9,color); oval(x,cx+8,cy-8,14,9,color)
-    }
+  if(scene!=='sunny'||night) for(const frac of [.25,.68]) {
+    const cx=ix+iw*frac,cy=iy+ih*(frac<.5?.23:.34)
+    const cloud=night?'#8296ac':scene==='rain'?'#cbd9dd':'#fff4ed'
+    oval(x,cx,cy,24,7,cloud);oval(x,cx-10,cy-4,12,9,cloud);oval(x,cx+11,cy-6,14,9,cloud)
   }
-  // The skyline and nearby trees stay behind the window frame.
-  for (let i=0;i<10;i++) {
-    const px=ix+i*iw/10
-    line(x,px,iy+ih-43-(i%3)*6,iw/12,45+(i%3)*6,night?'#415669':'#8caeb4')
-    for(let yy=iy+ih-34;yy<iy+ih-9;yy+=10) P(x,px+4,yy,night?'#f3d486':'#dbebe6')
+  for(let i=0;i<11;i++) {
+    const sx=ix+i*iw/11, sh=39+(i*7)%19
+    line(x,sx,iy+ih-sh-7,Math.ceil(iw/12),sh+9,night?'#48617d':'#80a2ae')
+    for(let row=0;row<3;row++) P(x,sx+3,iy+ih-sh+row*10,night?'#f6da91':'#d8e7eb')
   }
-  oval(x,ix+iw*0.25,iy+ih+8,iw*.47,ih*.19,night?'#244b3f':'#6fa273')
-  oval(x,ix+iw*0.87,iy+ih+5,iw*.42,ih*.16,night?'#254d40':'#5b9668')
-  if (scene==='rain') for(let i=0;i<36;i++) {
-    const rx=ix+6+(i*29)%(iw-11), ry=iy+9+(i*43)%(ih-19)
-    line(x,rx,ry,2,9,'#dfedf4')
+  oval(x,ix+iw*.21,iy+ih+4,iw*.50,ih*.22,night?'#305749':'#72aa72')
+  oval(x,ix+iw*.88,iy+ih+3,iw*.45,ih*.24,night?'#285441':'#65a069')
+  if(scene==='rain') for(let i=0;i<49;i++) {
+    const rx=ix+5+(i*31)%(iw-10), ry=iy+4+(i*47)%(ih-11)
+    line(x,rx,ry,2,8,'#e7eff2')
   }
   x.restore()
-  line(x,a+w/2-3,b+4,6,h-8,C.cream)
-  line(x,a+4,b+h/2-2,w-8,5,C.cream)
-  line(x,a+10,b+10,4,23,'#f2f8ef')
-  line(x,a-5,b+h-8,w+10,11,C.woodLight)
-  line(x,a-5,b+h-9,w+10,3,C.darkWood)
+  line(x,a+w/2-3,b+5,6,h-8,C.cream)
+  line(x,a+5,b+h*.55,w-10,5,C.cream)
+  line(x,a+9,b+8,4,18,'#fff9ec')
+  line(x,a-6,b+h-9,w+12,9,C.woodLight)
+  line(x,a-6,b+h-10,w+12,3,C.woodDark)
 }
 function bookcase(x,a,b,w,h) {
-  rect(x,a,b,w,h,C.darkWood)
-  line(x,a+5,b+5,w-10,h-10,'#5b4334')
-  const palette=['#d47767','#8da79b','#e5c475','#9183af','#76a775','#cd936b']
-  const rows = Math.max(1,Math.floor((h-10)/30))
-  for(let row=0;row<rows;row++) {
-    const baseline=b+28+row*30
-    for(let col=0;col<Math.floor((w-16)/11);col++) {
-      const bh=13+(col*3+row)%10, px=a+8+col*11
-      rect(x,px,baseline-bh,7,bh,palette[(col+row*2)%palette.length],C.ink)
+  rect(x,a,b,w,h,C.woodDark,C.ink)
+  line(x,a+5,b+5,w-10,h-10,'#503b2d')
+  const colors=['#c87869','#8db29e','#e7c577','#9e8cb1','#79ae7b','#c88e66']
+  for(let row=0;row<Math.floor((h-8)/29);row++) {
+    const baseline=b+28+row*29
+    for(let col=0;col<Math.floor((w-12)/10);col++) {
+      const bh=12+(col*3+row*5)%10, bx=a+7+col*10
+      line(x,bx-1,baseline-bh,8,bh+1,C.ink)
+      line(x,bx,baseline-bh+1,6,bh-1,colors[(col+row)%colors.length])
+      if(col%3===0) P(x,bx+2,baseline-bh+3,C.cream)
     }
-    line(x,a+4,baseline+2,w-8,4,C.woodLight)
+    line(x,a+4,baseline+1,w-8,4,C.woodLight)
   }
 }
-function mug(x,a,b) {
-  oval(x,a,b+8,10,4,C.darkWood)
-  rect(x,a-6,b-7,13,14,'#fff5db')
-  oval(x,a,b-6,5,2,'#8a5a39')
-  line(x,a+8,b-5,5,3,C.darkWood)
-  line(x,a+10,b-2,3,7,'#fff5db')
+function mug(x,cx,cy) {
+  oval(x,cx,cy+7,10,4,'#4b342b')
+  rect(x,cx-7,cy-6,13,12,'#fff5e2')
+  oval(x,cx,cy-5,5,2,'#8a5941')
+  line(x,cx+7,cy-4,5,3,C.border)
+  line(x,cx+10,cy-2,2,6,'#fff5e2')
 }
-function book(x,a,b,color='#7fa1b0') {
-  rect(x,a,b,22,14,color)
-  line(x,a+4,b+5,13,2,'#fff5db')
-  line(x,a+4,b+10,11,2,'#fff5db')
+function smallBook(x,cx,cy,color='#88a6b1') {
+  rect(x,cx-11,cy-7,23,14,color,C.ink)
+  line(x,cx-7,cy-3,13,2,C.cream)
+  line(x,cx-7,cy+2,12,2,C.cream)
 }
-function table(x,cx,cy,r=42) {
-  oval(x,cx,cy+13,r+12,18,'#a87554')
-  oval(x,cx,cy+7,r+4,15,C.darkWood)
-  oval(x,cx,cy,r,14,C.ink)
-  oval(x,cx,cy-3,r-3,12,C.woodLight)
-  mug(x,cx+r*.4,cy-14)
-  book(x,cx-r*.60,cy-15,'#849da5')
+function pastry(x,cx,cy) {
+  oval(x,cx,cy+3,12,4,'#fbebcc')
+  oval(x,cx,cy,10,4,'#b5723d')
+  oval(x,cx-3,cy-2,6,3,'#ecc084')
 }
-function stool(x,a,b) {
-  rect(x,a,b,24,36,'#a87755',C.darkWood)
-  line(x,a+4,b+5,16,25,'#d9b28b')
-}
-function booth(x,a,b,w) {
-  rect(x,a,b,w,82,C.greenDark)
-  line(x,a+5,b+6,w-10,40,C.green)
-  for(let xx=a+17;xx<a+w-9;xx+=27) line(x,xx,b+10,2,35,'#27523e')
-  line(x,a+5,b+50,w-10,24,'#578c73')
-  line(x,a+10,b+55,w-20,5,'#7fac8e')
-  line(x,a+13,b+82,12,9,C.darkWood)
-  line(x,a+w-26,b+82,12,9,C.darkWood)
-  table(x,a+w/2,b+103,Math.min(69,w*.30))
-}
-function roundTable(x,cx,cy,rx=48) {
-  oval(x,cx,cy+20,rx+25,31,'#b68465')
-  stool(x,cx-rx-25,cy-15)
-  stool(x,cx+rx+3,cy-15)
-  table(x,cx,cy+13,rx)
-}
-function coffeeBar(x,a,b,w) {
-  rect(x,a,b,w,70,'#805b41',C.darkWood)
-  line(x,a+3,b+2,w-6,9,C.woodLight)
-  // espresso machine
-  rect(x,a+19,b-44,67,40,'#a8bbb1')
-  rect(x,a+31,b-36,42,18,'#363c3a')
-  line(x,a+35,b-18,4,15,'#4b4b45')
-  line(x,a+66,b-18,4,15,'#4b4b45')
-  oval(x,a+53,b-1,17,5,C.white)
-  // glass pastry case
-  const displayX=a+Math.min(112,w*.38)
-  rect(x,displayX,b+15,w-(displayX-a)-14,44,'#b3d0c6')
-  for(let i=0;i<Math.floor((w-(displayX-a)-30)/36);i++) {
-    const px=displayX+20+i*36
-    oval(x,px,b+39,13,6,'#c47c44')
-    oval(x,px-4,b+36,7,3,'#f4c77d')
+function carpet(x,cx,cy,rx,ry,color) {
+  // Handwoven circular rugs leave a recognisable patterned edge around table tops.
+  oval(x,cx,cy+7,rx+5,ry+5,'#936343')
+  oval(x,cx,cy+4,rx+1,ry+1,'#e4c38b')
+  oval(x,cx,cy+4,rx-5,ry-5,color)
+  oval(x,cx,cy+4,rx-15,ry-11,'#d6a980')
+  for (let i=0; i<14; i++) {
+    const a=2*Math.PI*i/14
+    const dx=Math.cos(a)*(rx-9),dy=Math.sin(a)*(ry-9)
+    oval(x,cx+dx,cy+4+dy,3,2,i%2?C.cream:C.gold)
+  }
+  for (const shift of [-24,0,24]) {
+    const z=cx+shift
+    line(x,z-4,cy-4,8,2,'#6c9a81')
+    line(x,z,cy-8,2,10,'#6c9a81')
   }
 }
-function hangingLamp(x,cx,cy) {
-  line(x,cx,0,3,cy,'#4c443e')
-  oval(x,cx,cy+2,17,8,C.ink)
-  oval(x,cx,cy+1,15,6,C.greenDark)
-  line(x,cx-12,cy+7,24,3,C.gold)
+function runner(x) {
+  // A flat decorative runner across the open aisle: does not affect walkability.
+  rect(x,330,357,537,66,'#456f62','#d6b784')
+  rect(x,341,366,515,48,'#d6ad79','#f1d29a')
+  rect(x,353,374,490,32,'#527e69','#e8c68d')
+  for(let cx=374;cx<820;cx+=55) {
+    // small symmetrical diamonds read clearly at sprite scale
+    for(let k=0;k<9;k++) {
+      const off=4-Math.abs(k-4)
+      line(x,cx-off*3,386+k*2,off*6+1,2,k%2?'#d4bb7d':'#eacb8e')
+    }
+  }
+  for(let px=334;px<865;px+=14){line(x,px,354,2,7,C.cream);line(x,px,420,2,7,C.cream)}
 }
-function sign(x,a,b,w,h,title) {
-  rect(x,a,b,w,h,C.greenDark)
-  line(x,a+10,b+10,w-20,2,'#799786')
-  text(x,title,a+w/2,b+h/2+5,Math.min(18,Math.round(w/12)))
-  text(x,'COFFEE  •  STORIES  •  PEOPLE',a+w/2,b+h-9,Math.min(10,Math.round(w/20)),'#ffdf9b')
-}
-function chalkboard(x,a,b,w=120,h=120) {
-  rect(x,a,b,w,h,C.darkWood)
-  rect(x,a+7,b+7,w-14,h-14,'#314a3e',C.darkWood)
-  text(x,'MENU',a+w/2,b+24,13)
-  for(let i=0;i<4;i++) {
-    line(x,a+14,b+37+i*17,w-32,2,'#d3c6a1')
-    line(x,a+w-30,b+33+i*17,13,2,'#d3c6a1')
+function framedPrint(x,cx,cy,kind) {
+  rect(x,cx-25,cy-24,50,48,'#a97352',C.ink)
+  rect(x,cx-19,cy-19,38,37,kind==='landscape'?'#cce1cf':'#f3dfb8')
+  if(kind==='landscape'){
+    oval(x,cx+7,cy-8,6,6,'#f3ca77')
+    oval(x,cx-8,cy+12,14,9,'#6b9a81')
+    oval(x,cx+12,cy+14,14,10,'#5b846f')
+  }else{
+    line(x,cx-13,cy-11,26,4,'#a77a63')
+    line(x,cx-15,cy+1,30,3,'#c59f72')
+    line(x,cx-10,cy+10,20,3,'#ad886a')
   }
 }
-function lampGlow(x,a,b,night) {
-  if(!night) return
-  const g=x.createRadialGradient(a,b,0,a,b,110)
-  g.addColorStop(0,'rgba(255,218,138,0.30)')
-  g.addColorStop(1,'rgba(255,218,138,0)')
-  x.fillStyle=g
-  x.fillRect(a-110,b-110,220,220)
-}
-function base(x,w,h,wallHeight,night) {
-  line(x,0,0,w,h,C.ink)
-  line(x,5,5,w-10,wallHeight-5,C.wall)
-  for(let y=9;y<wallHeight-8;y+=17) {
-    line(x,5,y,w-10,1,C.line)
-    for(let xx=5+((Math.floor(y/17)%2)*22);xx<w-5;xx+=45) line(x,xx,y+1,1,15,'#e6caa7')
+function stackBooks(x,cx,cy) {
+  for(const [i,color] of ['#6b8f84','#c98e76','#e4c68b'].entries()) {
+    rect(x,cx-13+i*2,cy-7-i*6,27,6,color,C.border)
+    line(x,cx-10+i*2,cy-5-i*6,16,1,C.cream)
   }
-  line(x,5,wallHeight,w-10,7,C.darkWood)
-  line(x,5,wallHeight+7,w-10,h-wallHeight-13,C.floor)
-  for(let y=wallHeight+8;y<h-6;y+=19) {
-    line(x,5,y,w-10,1,C.floorLine)
-    for(let xx=5+((Math.floor(y/19)%2)*30);xx<w-5;xx+=61) {
-      line(x,xx,y+1,1,17,'#b9845c')
-      P(x,xx+8,y+10,'#dfae7e')
+}
+function plantCluster(x,cx,cy) {
+  plant(x,cx-16,cy,.67)
+  plant(x,cx+14,cy+2,.55)
+  oval(x,cx,cy-24,12,10,C.darkGreen)
+  oval(x,cx+2,cy-28,10,7,C.leafLight)
+}
+function booth(x,a) {
+  rect(x,a,216,200,82,C.darkGreen,C.ink)
+  line(x,a+5,222,190,44,C.green)
+  for(let px=a+17;px<a+193;px+=28) line(x,px,226,3,36,'#286148')
+  line(x,a+5,269,190,24,'#54896b')
+  line(x,a+10,274,180,5,'#85ae8c')
+  line(x,a+15,295,18,7,C.woodDark)
+  line(x,a+170,295,18,7,C.woodDark)
+}
+function roundChair(x,cx,cy,side) {
+  const a=cx+side*80
+  rect(x,a-10,cy-36,23,49,'#8a5a42',C.ink)
+  rect(x,a-7,cy-31,17,32,'#ca9d74',C.border)
+}
+function tablePedestal(x,cx,cy) {
+  // Booth table: thick oval wood top with leg and shadow for unmistakable depth.
+  oval(x,cx+2,cy+19,82,23,'#72513b')
+  rect(x,cx-9,cy+10,18,24,'#76503a')
+  oval(x,cx,cy+40,27,7,'#70503c')
+  oval(x,cx,cy+13,78,22,C.ink)
+  oval(x,cx,cy+8,73,20,'#8d5d3f')
+  oval(x,cx,cy,71,19,'#bf8a5a')
+  oval(x,cx-2,cy-4,63,15,'#dcaa72')
+  oval(x,cx-19,cy-10,29,4,'#eec391')
+  smallBook(x,cx-34,cy-7,'#82a9a2')
+  mug(x,cx+39,cy-7)
+  pastry(x,cx+6,cy-7)
+}
+function ovalTable(x,cx,cy) {
+  // Clearly circular tabletop and left/right chairs, even when scaled down.
+  roundChair(x,cx,cy+3,-1)
+  roundChair(x,cx,cy+3,1)
+  oval(x,cx+3,cy+28,72,21,'#715039')
+  rect(x,cx-9,cy+10,18,26,'#77513e')
+  oval(x,cx,cy+39,26,7,'#70503c')
+  oval(x,cx,cy+14,76,31,C.ink)
+  oval(x,cx,cy+10,72,28,'#9d6844')
+  oval(x,cx,cy+5,69,27,'#d3a16a')
+  oval(x,cx-4,cy,62,22,'#e0b582')
+  oval(x,cx-23,cy-9,30,5,'#eec692')
+  smallBook(x,cx-34,cy-7,'#7da99c')
+  mug(x,cx+37,cy-6)
+  pastry(x,cx+4,cy-4)
+}
+function floorLamp(x,cx,cy) {
+  line(x,cx,cy-46,4,46,'#6f513d')
+  oval(x,cx,cy+3,17,5,'#6d4d38')
+  rect(x,cx-13,cy-70,26,15,'#d8c8a5')
+  line(x,cx-9,cy-55,18,2,'#f3e7c8')
+}
+function littleSign(x,cx,cy,text) {
+  rect(x,cx-26,cy-8,52,16,'#fff3da',C.ink)
+  label(x,text,cx,cy+4,7,'#694a38')
+}
+function base(x,night) {
+  line(x,0,0,W,H,C.ink)
+  line(x,5,5,W-10,204,C.wall)
+  for(let yy=8;yy<203;yy+=15) {
+    line(x,5,yy,W-10,1,'#d3ab80')
+    for(let xx=5+(Math.floor(yy/15)%2)*21;xx<W-5;xx+=43) line(x,xx,yy+1,1,13,'#e1be99')
+  }
+  line(x,5,205,W-10,6,C.woodDark)
+  line(x,5,211,W-10,H-218,C.floor)
+  for(let yy=212;yy<H;yy+=17) {
+    line(x,5,yy,W-10,1,'#ab7850')
+    for(let xx=5+((Math.floor(yy/17)%2)*26);xx<W-5;xx+=52) {
+      line(x,xx,yy+2,1,15,'#b98458');P(x,xx+7,yy+8,'#dab18a')
     }
   }
   if(night) {
-    x.fillStyle='rgba(20,26,51,0.17)'
-    x.fillRect(5,wallHeight+6,w-10,h-wallHeight-12)
+    x.fillStyle='rgba(34,39,52,0.15)'
+    x.fillRect(5,6,W-10,H-12)
   }
+  line(x,3,2,3,H,C.ink)
+  line(x,W-6,2,3,H,C.ink)
+  line(x,4,H-6,W-8,4,C.woodDark)
 }
-function desktop(x,state) {
-  const w=CAFE_DESKTOP.width,h=CAFE_DESKTOP.height
-  base(x,w,h,278,state.night)
-  window(x,52,45,292,200,state)
-  hangingPlant(x,32,9,1.1)
-  hangingPlant(x,366,6,1.0)
-  hangingPlant(x,1162,4,1.2)
-  bookcase(x,389,41,112,199)
-  sign(x,530,48,259,80,'BREW & BOOKS')
-  chalkboard(x,810,51,108,138)
-  hangingLamp(x,369,85); hangingLamp(x,972,84)
-  coffeeBar(x,921,201,248)
-  plant(x,27,287,1.1)
-  plant(x,1173,294,1.1)
-  for(const [bx,bw] of [[45,250],[331,250],[617,250],[903,250]]) booth(x,bx,316,bw)
-  for(const cx of [150,450,750,1050]) roundTable(x,cx,638,45)
-  plant(x,298,750,1.2);plant(x,897,752,1.2)
-  bookcase(x,18,743,106,65);bookcase(x,1075,743,104,65)
-  // Window-side reading stools & wall details make the scene feel lived-in when empty.
-  rect(x,365,256,90,9,C.woodLight,C.darkWood)
-  rect(x,471,256,91,9,C.woodLight,C.darkWood)
-  for (const p of [[330,110],[511,120],[867,96]]) oval(x,p[0],p[1],3,3,'#ead8b8')
-  lampGlow(x,615,102,state.night);lampGlow(x,972,106,state.night)
-  line(x,5,h-8,w-10,5,C.darkWood)
+function drawCounter(x,night) {
+  rect(x,971,128,218,122,'#956746',C.ink)
+  line(x,972,126,215,8,C.woodLight)
+  rect(x,988,99,84,47,'#69706b',C.border)
+  line(x,995,105,70,16,'#b4c5bf')
+  line(x,1005,123,4,19,C.ink);line(x,1047,123,4,19,C.ink)
+  oval(x,1028,140,20,4,'#e7e5d8')
+  for(let i=0;i<4;i++) {
+    rect(x,1082+i*21,106,14,19,'#f5e9d2',C.border)
+    oval(x,1089+i*21,105,7,3,'#77523f')
+  }
+  rect(x,983,166,197,51,'#a6bdb0',C.border)
+  for(const px of [1010,1050,1090,1130,1167]) pastry(x,px,188)
+  line(x,986,219,195,29,'#86593d')
+  for(const px of [1008,1084,1152]) line(x,px,222,3,23,'#b78358')
+  rect(x,867,24,213,68,C.darkGreen,C.ink)
+  label(x,'BREW & BOOKS',973,52,22)
+  label(x,'coffee  -  stories  -  people',973,74,8)
+  rect(x,1087,29,97,61,'#283d34',C.ink)
+  label(x,'MENU',1136,47,12)
+  for(const [i,txt] of ['Coffee','Tea','Mocha','Cake'].entries()) label(x,txt,1137,58+i*9,7,'#f3e1bd')
+  if(night) oval(x,1048,160,114,35,'rgba(255,211,142,0.08)')
 }
-function mobile(x,state) {
-  const w=CAFE_MOBILE.width,h=CAFE_MOBILE.height
-  base(x,w,h,245,state.night)
-  window(x,21,22,178,171,state)
-  hangingPlant(x,4,5,0.7);hangingPlant(x,406,5,0.7)
-  sign(x,217,24,181,66,'BREW & BOOKS')
-  chalkboard(x,232,112,79,91)
-  coffeeBar(x,212,211,195)
-  bookcase(x,18,210,72,31)
-  hangingLamp(x,166,112)
-  plant(x,15,288,0.8);plant(x,407,292,0.8)
-  booth(x,12,284,187);booth(x,222,284,187)
-  booth(x,12,458,187);booth(x,222,458,187)
-  roundTable(x,109,758,42); roundTable(x,313,758,42)
-  bookcase(x,12,834,62,54);bookcase(x,344,834,64,54)
-  plant(x,206,885,0.8)
-  lampGlow(x,166,135,state.night)
-  line(x,5,h-8,w-10,5,C.darkWood)
+function drawBackdrop(x,state) {
+  base(x,state.night)
+  windowPane(x,60,21,220,165,state)
+  windowPane(x,318,21,220,165,state)
+  windowPane(x,592,21,192,165,state)
+  bookcase(x,286,33,28,153)
+  bookcase(x,552,33,34,153)
+  bookcase(x,790,17,42,175)
+  rect(x,13,64,40,90,'#5c3e30',C.ink)
+  for(const [i,t] of ['GOOD','BOOKS','BETTER','COMPANY'].entries()) label(x,t,33,84+i*15,7)
+  light(x,194,1);light(x,448,2);light(x,708,1);light(x,915,1);light(x,1080,1)
+  hangingPlant(x,58,0,1);hangingPlant(x,806,0,1);hangingPlant(x,1140,0,.92)
+  plant(x,30,199,1);plant(x,805,207,.9);plant(x,936,215,.8)
+  drawCounter(x,state.night)
+  // Aisle and rugs under the furniture; keep the collision map unchanged.
+  runner(x)
+  for(const a of [40, 272, 504, 736]) booth(x,a)
+  for(const px of [258,491,726,953]) plant(x,px,303,.70)
+  for(const [cx,cc] of [[150,'#6d8b83'],[420,'#c59581'],[700,'#6d8b83'],[980,'#c59581']]) carpet(x,cx,494,89,55,cc)
+  // Greenery, reading nooks, wall art, and small tableside objects.
+  plantCluster(x,305,545)
+  plantCluster(x,856,545)
+  plant(x,595,435,.72);plant(x,1134,465,.82);plant(x,54,461,.72)
+  plant(x,1102,300,.68);plant(x,1032,349,.55)
+  floorLamp(x,247,547);floorLamp(x,1097,550)
+  bookcase(x,8,530,90,62)
+  bookcase(x,1106,530,85,62)
+  stackBooks(x,142,443);stackBooks(x,923,426)
+  framedPrint(x,942,113,'landscape')
+  framedPrint(x,864,114,'books')
+  rect(x,558,558,84,31,'#547e63',C.darkGreen)
+  line(x,569,569,62,3,C.gold)
+  label(x,'WELCOME',600,583,9)
+  // Draw furniture into the base as well, so a missing foreground never leaves a rug-only scene.
+  drawForeground(x)
+}
+function drawForeground(x) {
+  for(const cx of [140,372,604,836]) tablePedestal(x,cx,314)
+  for(const cx of [150,420,700,980]) ovalTable(x,cx,504)
 }
 
-export function drawCafeWeatherArt({ scene='cloudy', night=false }={}) {
+export function drawCafeWeatherArt({scene='cloudy',night=false}={}) {
   const state={scene:['sunny','cloudy','rain'].includes(scene)?scene:'cloudy',night:Boolean(night)}
-  function render(layout) {
-    const d=layout==='mobile'?CAFE_MOBILE:CAFE_DESKTOP
-    const [canvas,x]=mk(d.width,d.height)
-    if(layout==='mobile') mobile(x,state)
-    else desktop(x,state)
-    return canvas.toDataURL('image/png')
-  }
-  return {desktop:render('desktop'),mobile:render('mobile')}
+  const [bg,bx]=mk(W,H)
+  drawBackdrop(bx,state)
+  const [fg,fx]=mk(W,H)
+  drawForeground(fx)
+  return {desktop:bg.toDataURL('image/png'),foreground:fg.toDataURL('image/png')}
 }

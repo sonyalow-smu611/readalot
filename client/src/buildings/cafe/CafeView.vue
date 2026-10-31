@@ -33,7 +33,9 @@ const movementError = ref('')
 const selectedReader = computed(() => guests.value.find((r) => r.id === activeId.value) ?? null)
 const scene = computed(() => ['sunny', 'cloudy', 'rain'].includes(weather.value?.scene) ? weather.value.scene : 'cloudy')
 const night = computed(() => weather.value?.isDay === false)
-const image = computed(() => drawCafeWeatherArt({ scene: scene.value, night: night.value }).desktop)
+const artwork = computed(() => drawCafeWeatherArt({ scene: scene.value, night: night.value }))
+const image = computed(() => artwork.value.desktop)
+const foreground = computed(() => artwork.value.foreground)
 const weatherLabel = computed(() => night.value ? 'Night' : ({ sunny: 'Sunny', cloudy: 'Cloudy', rain: 'Rainy' })[scene.value])
 const temperatureLabel = computed(() => Number.isFinite(weather.value?.temperature) ? ` · ${Math.round(weather.value.temperature)}°C` : '')
 
@@ -137,7 +139,7 @@ onBeforeUnmount(() => {
 <template>
   <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
     <main class="cafe" aria-label="Readalot cafe" data-tour="people-map">
-      <CafeViewport :image="image" :readers="guests" :player-image="selfImage" :selected-id="activeId"
+      <CafeViewport :image="image" :foreground="foreground" :readers="guests" :player-image="selfImage" :selected-id="activeId"
         @walking="startWalking" @arrive="arrived" @route-error="movementError = $event" />
 
       <p class="cafe__weather" role="status" aria-live="polite">
