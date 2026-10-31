@@ -76,6 +76,7 @@ const confetti = ref(0)
 // phones: whether the dock's sheet is pulled up over the reader
 const sheetOpen = ref(false)
 const progress = useProgressStore()
+const nearby = useNearbyStore()
 // a level-up while in the salon is worth confetti too
 watch(() => progress.levelUps, () => (confetti.value += 1))
 let leaveAnswer = null

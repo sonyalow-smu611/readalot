@@ -79,5 +79,5 @@ export const useNearbyStore = defineStore('nearby', () => {
     nearby.value = []
   }
 
-  return { friends, incoming, outgoing, nearby, houses, minor, refresh, setPublic, addFriend, answer, removeFriend, reset }
+  return { friends, incoming, outgoing, nearby, houses, minor, loadFriends, refresh, setPublic, addFriend, answer, removeFriend, reset }
 })

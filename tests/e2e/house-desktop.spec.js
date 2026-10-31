@@ -36,13 +36,11 @@ test("My Shelf fills the window too, its search kept to a comfortable width", as
   expect(Math.abs(search.x + search.width / 2 - 720)).toBeLessThan(2);
 });
 
-test("the other buildings still open in the phone column", async ({ page }) => {
-  // the library fills the window too now (team review), so the cafe stands in for the rest
-  await page.goto("/cafe");
-  const back = page.getByRole("link", { name: /Back to town/ });
-  await expect(back).toBeVisible();
-  const column = await page.getByRole("main").first().boundingBox();
-  expect(column.width).toBeLessThanOrEqual(480);
+test("pages that aren't buildings still open in the phone column", async ({ page }) => {
+  await page.goto("/search");
+  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+  // the frame fills the window while the app loads, then settles into the column
+  await expect.poll(async () => (await page.getByRole("main").first().boundingBox()).width).toBeLessThanOrEqual(480);
 });
 
 // a card over the room stays a size that reads well, in the middle of the window

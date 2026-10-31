@@ -113,6 +113,8 @@ export default class TownScene extends Phaser.Scene {
     const cam = this.cameras.main
     cam.setBounds(0, 0, MAP_W, MAP_H)
     cam.setBackgroundColor('#6fb14b')
+    // whole-pixel drawing makes slow movement (the signs' bob) jump a pixel at a time
+    cam.setRoundPixels(false)
     this.fitZoom()
     const first = this.start && ALL_PLACES.find((p) => p.id === this.start)
     if (first) {
@@ -144,6 +146,7 @@ export default class TownScene extends Phaser.Scene {
 
   update(time, delta) {
     this.sky?.update(delta)
+    for (const sign of Object.values(this.signs)) sign.setZoom(this.cameras.main.zoom)
     this.water?.update(delta)
     this.you?.sync()
     for (const walker of Object.values(this.walkers)) walker.sync()

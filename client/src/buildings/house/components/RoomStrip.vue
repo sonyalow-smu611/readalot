@@ -1426,7 +1426,8 @@ defineExpose({ dropAt, putBack })
   position: absolute;
   top: calc(var(--building-back-space, 0px) + 10px);
   left: 12px;
-  z-index: 7;
+  /* its list opens over the Daily task tab (36), under the room's dialogs (40 and up) */
+  z-index: 37;
 }
 
 @media (prefers-reduced-motion: reduce) {

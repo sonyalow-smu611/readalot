@@ -1,11 +1,13 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The big signs over the four main buildings: a bronze frame round a plate in the building's
-// accent colour, its name and app section written on the plate, and a motif of its own on top
-// (an open book, a coffee cup, a roof, scissors and a comb). The art is pixel art drawn here from
-// places.js, so a new accent or name needs no redrawing; the words are live text in Fredoka
-// (public/town/signs, SIL Open Font License). Each sign bobs, its plate sparkles, its motif moves
-// a little, and after dark the plate glows like a lantern.
+// The big signs over the four main buildings: a chunky pixel plate in the building's accent colour
+// (dark outline with stepped corners, a thick base, one bright line low down with a white glint)
+// with a box set into it, its name and app section in white pixel letters on a dark backing in
+// that box, and a motif of its own on top
+// (an open book, a coffee cup, a roof, scissors and a comb). All of it is pixel art drawn here from
+// places.js, so a new accent or name needs no redrawing. Each sign bobs, its plate sparkles, its
+// motif moves a little, and after dark the plate glows like a lantern.
 import Phaser from 'phaser'
+import { LARGE, SMALL, measure, write } from './pixelFont.js'
 import { SKY_DEPTH } from './sky.js'
 
 // One sign's size in map pixels, and how many of them make one block of the art. It opens at
@@ -15,14 +17,19 @@ const H = 200
 const BLOCK = 4
 const GRID_W = W / BLOCK
 const GRID_H = H / BLOCK
-const FONT = 'Fredoka'
+// the app section's letters are a little smaller than a block, and sit this far below the middle
+const SECTION_BLOCK = 3
+const SECTION_Y = 38
+// The fewest screen pixels a block may cover. Below two, drawing without blending drops rows and
+// columns of blocks and the letters clog up, so a zoomed-out sign stops shrinking here.
+const MIN_BLOCK = 2
+// how far below the sign's middle its bottom edge is, in map pixels: it grows up from there
+const FOOT = 96
 // how long the night glow takes to come and go, like the sky's
 const FADE = 1200
 
-const OUTLINE = '#2f1d10'
-const BRONZE = '#9b6a3c'
+const OUTLINE = '#2b2133'
 const BRONZE_LIGHT = '#d9a466'
-const BRONZE_DARK = '#5e3a1e'
 const PAGE = '#fff8ea'
 const CREAM = '#fff4e2'
 const COFFEE = '#5a3218'
@@ -45,9 +52,9 @@ const MOTIFS = {
 
 // Where the plate's sparkles sit on the grid: clear of the words.
 const SPARKLES = [
-  [76, 23],
-  [13, 37],
-  [74, 37],
+  [84, 24],
+  [6, 35],
+  [84, 35],
 ]
 
 export function hasSign(place) {
@@ -67,6 +74,7 @@ function colours(accent) {
     gem: accent,
     light: mix(accent, '#ffffff', 0.3),
     pale: mix(accent, '#ffffff', 0.55),
+    recess: mix(accent, '#000000', 0.22),
     dark: mix(accent, '#000000', 0.35),
     deep: mix(accent, '#000000', 0.6),
   }
@@ -94,57 +102,72 @@ function both(x, left, top, w, h, colour) {
 }
 
 // Draws a sheet, then runs a dark outline round whatever is on it, as the characters have.
-function inked(draw) {
+function inked(draw, corners = false) {
   const canvas = sheet(draw)
   const x = canvas.getContext('2d')
   const { data } = x.getImageData(0, 0, GRID_W, GRID_H)
   const solid = (left, top) => left >= 0 && top >= 0 && left < GRID_W && top < GRID_H && data[(top * GRID_W + left) * 4 + 3] > 0
+  const diagonal = (left, top) => solid(left - 1, top - 1) || solid(left + 1, top - 1) || solid(left - 1, top + 1) || solid(left + 1, top + 1)
   for (let top = 0; top < GRID_H; top++) {
     for (let left = 0; left < GRID_W; left++) {
       if (solid(left, top)) continue
-      if (solid(left - 1, top) || solid(left + 1, top) || solid(left, top - 1) || solid(left, top + 1)) fill(x, left, top, 1, 1, OUTLINE)
+      if (solid(left - 1, top) || solid(left + 1, top) || solid(left, top - 1) || solid(left, top + 1) || (corners && diagonal(left, top))) fill(x, left, top, 1, 1, OUTLINE)
     }
   }
   return canvas
 }
 
 // --- Art -------------------------------------------------------------------------------------
-// A bronze scroll along the top of the plate, out to both sides from the motif.
-function curls(x) {
-  both(x, 54, 14, 6, 2, BRONZE)
-  both(x, 60, 13, 6, 2, BRONZE)
-  both(x, 66, 12, 5, 2, BRONZE)
-  both(x, 71, 10, 2, 3, BRONZE)
-  both(x, 68, 9, 4, 2, BRONZE)
-  both(x, 67, 10, 2, 1, BRONZE)
-  both(x, 54, 14, 6, 1, BRONZE_LIGHT)
-  both(x, 60, 13, 6, 1, BRONZE_LIGHT)
-  both(x, 66, 12, 5, 1, BRONZE_LIGHT)
-  both(x, 68, 9, 4, 1, BRONZE_LIGHT)
+// A scroll along the top of the plate, out to both sides from the motif.
+function curls(x, c) {
+  both(x, 54, 14, 6, 2, c.gem)
+  both(x, 60, 13, 6, 2, c.gem)
+  both(x, 66, 12, 5, 2, c.gem)
+  both(x, 71, 10, 2, 3, c.gem)
+  both(x, 68, 9, 4, 2, c.gem)
+  both(x, 67, 10, 2, 1, c.gem)
+  both(x, 54, 14, 6, 1, c.pale)
+  both(x, 60, 13, 6, 1, c.pale)
+  both(x, 66, 12, 5, 1, c.pale)
+  both(x, 68, 9, 4, 1, c.pale)
 }
 
+// A block with its corners stepped in, two blocks along and two down.
+function pill(x, left, top, w, h, colour) {
+  fill(x, left + 2, top, w - 4, h, colour)
+  fill(x, left + 1, top + 1, w - 2, h - 2, colour)
+  fill(x, left, top + 2, w, h - 4, colour)
+}
+
+// The dark outline, thicker along the bottom so the plate stands up off the sign.
 function frame(x) {
-  fill(x, 6, 16, 78, 28, OUTLINE)
-  fill(x, 5, 17, 80, 26, OUTLINE)
-  fill(x, 6, 17, 78, 26, BRONZE)
-  fill(x, 7, 17, 76, 1, BRONZE_LIGHT)
-  fill(x, 6, 18, 1, 24, BRONZE_LIGHT)
-  fill(x, 7, 42, 76, 1, BRONZE_DARK)
-  fill(x, 83, 18, 1, 24, BRONZE_DARK)
-  fill(x, 8, 19, 74, 22, OUTLINE)
+  pill(x, 2, 16, 86, 33, OUTLINE)
 }
 
-// The plate: flat bands from light at the top to deep at the bottom, with a bevel down each side.
+// The plate: one flat colour, a dark band along the bottom with a bright line above it, and a box
+// set into it, lit from the top left: a thick shadow inside its top and left edges, a light lip
+// along its bottom and right, and a darker floor.
 function plate(x, c) {
-  fill(x, 9, 20, 72, 2, c.pale)
-  fill(x, 9, 22, 72, 5, c.light)
-  fill(x, 9, 27, 72, 8, c.gem)
-  fill(x, 9, 35, 72, 3, c.dark)
-  fill(x, 9, 38, 72, 2, c.deep)
-  fill(x, 9, 22, 2, 16, c.dark)
-  fill(x, 79, 22, 2, 16, c.deep)
-  fill(x, 13, 23, 7, 1, c.pale)
-  fill(x, 21, 23, 2, 1, c.pale)
+  pill(x, 3, 17, 84, 29, c.dark)
+  pill(x, 3, 17, 84, 26, c.gem)
+  fill(x, 6, 41, 78, 1, c.pale)
+  fill(x, 7, 41, 4, 1, '#ffffff')
+  fill(x, 13, 41, 2, 1, '#ffffff')
+  pill(x, 6, 19, 78, 21, c.light)
+  pill(x, 6, 19, 77, 20, c.deep)
+  pill(x, 8, 21, 75, 18, c.recess)
+}
+
+// The building's name in white pixel letters on a dark backing. A long name drops to plain letters
+// to stay on the plate.
+function nameplate(x, place) {
+  const fits = measure(LARGE, place.name, true, 1) <= 74
+  write(x, LARGE, place.name, GRID_W / 2, 22, '#ffffff', fits)
+}
+
+// The app section, in the middle of its own sheet: it's drawn at SECTION_BLOCK.
+function sectionplate(x, place) {
+  write(x, SMALL, place.tab, GRID_W / 2, 23, '#fff6dc')
 }
 
 // A small four-pointed sparkle, three blocks across.
@@ -155,7 +178,7 @@ function sparkle(x) {
 
 // Library: an open book standing on the sign.
 function book(x, c) {
-  curls(x)
+  curls(x, c)
   both(x, 27, 8, 18, 8, c.dark)
   both(x, 29, 6, 10, 8, PAGE)
   both(x, 39, 7, 4, 8, PAGE)
@@ -174,7 +197,7 @@ function ribbon(x) {
 
 // Cafe: a cup of coffee on its saucer, and coffee beans for studs in the corners.
 function cup(x, c) {
-  curls(x)
+  curls(x, c)
   fill(x, 35, 14, 20, 2, CREAM)
   fill(x, 38, 6, 14, 6, CREAM)
   fill(x, 39, 12, 12, 1, CREAM)
@@ -185,9 +208,9 @@ function cup(x, c) {
   fill(x, 52, 7, 3, 1, CREAM)
   fill(x, 55, 8, 1, 3, CREAM)
   fill(x, 52, 11, 3, 1, CREAM)
-  for (const top of [17, 41]) {
-    both(x, 6, top, 3, 2, '#6b3f22')
-    both(x, 6, top + 1, 2, 1, '#2f1a0d')
+  for (const top of [24, 34]) {
+    both(x, 4, top, 2, 2, '#6b3f22')
+    both(x, 4, top + 1, 1, 1, '#2f1a0d')
   }
 }
 
@@ -200,7 +223,7 @@ function roof(x, c) {
   for (let top = 3; top < 19; top++) {
     const half = Math.round(((top - 2) / 17) * 43)
     fill(x, 45 - half, top, half * 2, 1, c.gem)
-    both(x, 45 - half, top, Math.min(3, half), 1, BRONZE)
+    both(x, 45 - half, top, Math.min(3, half), 1, c.light)
     if (top % 4 === 3 && top > 5) fill(x, 45 - half + 5, top, half * 2 - 10, 1, c.dark)
   }
   fill(x, 42, 8, 2, 1, '#ffd27a')
@@ -213,7 +236,7 @@ function roof(x, c) {
 
 // Hair Salon: a comb lying behind the scissors.
 function comb(x, c) {
-  curls(x)
+  curls(x, c)
   fill(x, 32, 8, 26, 4, c.light)
   fill(x, 33, 8, 24, 1, c.pale)
   for (let tooth = 33; tooth < 57; tooth += 2) fill(x, tooth, 12, 1, 3, c.pale)
@@ -241,9 +264,8 @@ function blade(x, c, flip) {
 }
 
 // --- Loading ---------------------------------------------------------------------------------
-// Queues the font and draws every sign's pictures; call from the scene's preload.
+// Draws every sign's pictures; call from the scene's preload.
 export function loadSigns(scene, places) {
-  scene.load.font(FONT, '/town/signs/fredoka-bold.woff2', 'woff2', { weight: '700' })
   const add = (key, canvas) => {
     if (!scene.textures.exists(key)) scene.textures.addCanvas(key, canvas)
   }
@@ -259,6 +281,8 @@ export function loadSigns(scene, places) {
     })
     add(`sign-${place.id}`, board)
     add(`sign-${place.id}-gem`, sheet((x) => plate(x, c)))
+    add(`sign-${place.id}-name`, inked((x) => nameplate(x, place), true))
+    add(`sign-${place.id}-section`, inked((x) => sectionplate(x, place), true))
     for (const part of motif.parts ?? []) add(`sign-${place.id}-${part.name}`, inked((x) => part.art(x, c)))
   }
 }
@@ -270,6 +294,10 @@ export class Sign {
   constructor(scene, place, { reducedMotion, listen, index = 0 }) {
     this.scene = scene
     this.reducedMotion = reducedMotion
+    this.home = place.y - 34
+    this.lift = 0
+    this.growth = 1
+    this.fit = 1
     const c = colours(place.accent)
     const motif = MOTIFS[place.id]
     const local = ([x, y]) => [x - W / 2, y - H / 2]
@@ -290,23 +318,16 @@ export class Sign {
     // brief glints on the plate, in place of a smooth shine that would not suit the blocks
     this.sparkles = SPARKLES.map(([x, y]) => scene.add.image(...local([x * BLOCK, y * BLOCK]), 'sign-sparkle').setScale(BLOCK))
 
-    const style = { fontFamily: `"${FONT}", system-ui, sans-serif`, fontStyle: '700', color: '#ffffff', stroke: c.deep, align: 'center' }
-    const name = scene.add.text(0, 8, place.name.toUpperCase(), { ...style, fontSize: '36px', strokeThickness: 7 })
-    const section = scene.add.text(0, 40, place.tab, { ...style, fontSize: '20px', color: '#fff6dc', strokeThickness: 5 })
-    for (const text of [name, section]) {
-      text.setOrigin(0.5).setResolution(2).setShadow(0, 2, 'rgba(0,0,0,0.35)', 0, true, false)
-      text.texture.setFilter(Phaser.Textures.FilterMode.LINEAR)
-    }
-    // a long name shrinks to fit the plate
-    if (name.width > 250) name.setScale(250 / name.width)
+    const name = picture(`sign-${place.id}-name`)
+    this.section = picture(`sign-${place.id}-section`).setScale(SECTION_BLOCK).setPosition(0, SECTION_Y)
 
-    const children = [this.glow, board, this.gem, this.lamp, ...this.parts.map((p) => p.image), ...this.sparkles, name, section]
+    const children = [this.glow, board, this.gem, this.lamp, ...this.parts.map((p) => p.image), ...this.sparkles, name, this.section]
     // the plate sits on the roof; the motif rises above the building
-    this.box = scene.add.container(place.x + place.w / 2, place.y - 34, children).setDepth(SKY_DEPTH + 30)
+    this.box = scene.add.container(place.x + place.w / 2, this.home, children).setDepth(SKY_DEPTH + 30)
 
     // tapping the sign is tapping the building
     board.setInteractive({
-      hitArea: new Phaser.Geom.Rectangle(16 / BLOCK, 0, (W - 32) / BLOCK, 178 / BLOCK),
+      hitArea: new Phaser.Geom.Rectangle(8 / BLOCK, 0, (W - 16) / BLOCK, 196 / BLOCK),
       hitAreaCallback: Phaser.Geom.Rectangle.Contains,
       useHandCursor: true,
     })
@@ -332,8 +353,8 @@ export class Sign {
       })
     })
 
-    const bob = 1400 + index * 170
-    scene.tweens.add({ targets: this.box, y: this.box.y - 8, duration: bob, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
+    const bob = 1900 + index * 170
+    scene.tweens.add({ targets: this, lift: -8, duration: bob, ease: 'Sine.easeInOut', yoyo: true, repeat: -1, onUpdate: () => this.place() })
     if (motif.puffs) this.puff(local(motif.puffs), motif.puffs[2])
     for (const part of this.parts) {
       if (part.swing) {
@@ -393,6 +414,22 @@ export class Sign {
 
   // Grows with its building when the building pops.
   setGrowth(scale) {
-    this.box.setScale(scale)
+    this.growth = scale
+    this.place()
+  }
+
+  // Keeps the blocks at least MIN_BLOCK on screen as the camera zooms out. The section's smaller
+  // letters reach that first, so they grow back towards full size before the sign does.
+  setZoom(zoom) {
+    const fit = Math.max(1, MIN_BLOCK / (BLOCK * zoom))
+    this.section.setScale(Math.max(SECTION_BLOCK, MIN_BLOCK / (zoom * fit)))
+    if (fit === this.fit) return
+    this.fit = fit
+    this.place()
+  }
+
+  place() {
+    this.box.setScale(this.growth * this.fit)
+    this.box.y = this.home + this.lift - (this.fit - 1) * FOOT
   }
 }

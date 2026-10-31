@@ -622,3 +622,25 @@ building moved a little (the house, library and cafe each had something in the t
 | Buildings | `client/src/buildings/house/` (`HouseView.vue`, `VisitView.vue`, `ShelfView.vue`, `components/RoomStrip.vue`), `client/src/buildings/library/` (`LibraryView.vue`, `components/LibraryHall.vue`), `client/src/buildings/cafe/CafeView.vue`, `client/src/buildings/salon/SalonView.vue` | `accent` no longer passed. Places, the library's search bar and weather chip, and the cafe's reader count sit below the back button |
 | Docs | `AGENTS.md`, `client/src/buildings/README.md` | The shell's new contract |
 | Tests | `tests/e2e/back-button.spec.js`, `house-desktop.spec.js` | No bar and the back button in the corner, clear of the page's controls, on a phone and a laptop; the width checks read the page instead of the old header |
+
+### Pixel plates for the four signs, and the words kept clear (AI-generated)
+
+Written by Claude Code at Dylan's request, from a reference picture of pixel buttons.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The bronze frame and colour bands replaced by one chunky plate in each building's accent colour: stepped dark outline, thick base, a bright line with a white glint, and a box set into it. The motifs and their movement are kept. `setZoom` stops a sign shrinking once a block would be under 2 screen pixels, growing up from its base, and the section's letters grow back first |
+| Letters | `client/src/town/pixelFont.js` | Two blocky alphabets, in place of live Fredoka text. The name is white on a dark backing, the app section a little smaller below it. `client/public/town/signs/fredoka-bold.woff2` removed, nothing else used it |
+| Camera | `client/src/town/TownScene.js` | Whole-pixel drawing off for the town camera, so the signs bob smoothly, and each frame gives the signs the zoom |
+
+### Daily tasks on every page (AI-generated)
+
+Written by Claude Code at Dylan's request. This is interactive code in a shared part of the app:
+the team needs to agree to it and record that here. Team to review: `App.vue` and `nearbyStore.js`
+are shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Tab | `client/src/components/town/DailyDock.vue`, `DailyButton.vue`, `client/src/App.vue` | A Daily task tab, with the flame, on the left edge of every signed-in page but the town, opening the town's own panel. Go goes to the task's building, or the town for a friend's house. Closes with Escape, a tap outside or the tab. Claim works there too. Hidden during the guide tour, and kept under each page's dialogs |
+| Friends | `client/src/town/nearbyStore.js` | `loadFriends` shared, so a page opened directly lists the same third task as the town |
+| Tests | `tests/e2e/daily.spec.js`, `house-desktop.spec.js`, `town.spec.js`, `room.spec.js` | Opening, closing, Go and Claim from other pages, and only one Daily button in town; Places now sits under the back button, the mood check-in skipped where it isn't the point, and the phone column checked on Search |
