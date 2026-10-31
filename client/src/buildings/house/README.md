@@ -14,11 +14,11 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `themes.js` | **Each house's look:** wall and floor colours, and its own curtains, bedding, lamps and rug |
 | `lamps.js` | The lamps, on or off, for the visit (My Room and each room visited keep their own) |
 | `components/PlacesMenu.vue` | The Places button in the room's top left corner and its list of places |
-| `notes.js` | Notes left on readers' notice boards, kept per reader in this browser |
+| `notes.js` | Notes left on readers' notice boards, through the API (`/api/rooms/:id/notes`) |
 | `components/RoomStrip.vue` | The room itself: scrolling, the tappable spots, the shelf's name plates, books, furniture, cats. Takes the furniture and whether it can be edited from the page |
 | `components/VisitorBookDialog.vue` | A book off someone else's shelf in their room: what it is and which shelf, with nothing to change |
 | `components/NoteComposer.vue` | The Leave a note card |
-| `components/NoticeBoard.vue` | A visited reader's notice board: the Quote of the Day, then the notes left there |
+| `components/NoticeBoard.vue` | A notice board, a visited reader's or your own: the Quote of the Day, then the notes left there |
 | `components/ShelfRow.vue` | One shelf on My Shelf, drawn as the genre page's shelf tier (header card, covers, plank): a sideways row of covers that scrolls by swipe, wheel, drag, buttons or arrow keys |
 | `components/DecorArt.vue` | A decoration's picture in the Shop and inventory: a furniture piece's own sprite, kept crisp |
 | `components/BookDialog.vue` | A book's card over the room (remove with Undo included) |
@@ -201,10 +201,16 @@ Where My Room has its menu, a visitor gets **Leave a note**. A note (up to 140 c
 signed with the visitor's name) goes on that reader's notice board, and up to three are drawn on
 the corkboard as small paper notes (`paintNotes` in `strip/paint.js`). Tapping the corkboard
 opens the notice board, which has its own **Leave a note** button. A visitor can take down only the
-notes they left (each note keeps its author's id). Notes stay in this browser only (`notes.js`),
-like the Cafe's chat, for now.
-`database/room_notes.sql` is the table for keeping them on the server, so a room's owner can read
-them too.
+notes they left (each note keeps its author's id).
+
+In your own room the corkboard is your notice board too: the Quote of the Day, then the notes
+readers left you, each of which you can take down. There's no Leave a note on your own board.
+
+Notes are kept on the server (`notes.js` → `/api/rooms/:id/notes`), in the `room_notes` table
+(`database/room_notes.sql`; run it in the Supabase SQL editor), so the owner and every visitor
+see them on any device. Without Supabase (local dev, the e2e tests) the server keeps them in
+memory until it restarts, and takes the account id from the sign-in token without checking it,
+because it can't.
 
 To furnish a reader's room differently, change their list in `FURNISHINGS` in `visitors.js`.
 Each piece is `{ id, zone, x }`, and stands on the spot in its zone nearest `x`.

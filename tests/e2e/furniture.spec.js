@@ -134,7 +134,7 @@ test.describe("wall art", () => {
     const boxes = (locator) => locator.evaluateAll((buttons) => buttons.map((b) => ({ name: b.getAttribute("aria-label"), ...b.getBoundingClientRect().toJSON() })));
     const posters = await boxes(placed(page, "Mountain poster"));
     expect(posters).toHaveLength(5);
-    const parts = await boxes(page.getByRole("button", { name: /^(Quote of the day|Bookshelf, \d+ books)/ }));
+    const parts = await boxes(page.getByRole("button", { name: /^(Notice board|Bookshelf, \d+ books)/ }));
     parts.push(...(await boxes(page.getByRole("img", { name: /^(Window view|Singapore time)/ }))));
     expect(parts.length).toBeGreaterThanOrEqual(4);
     for (const poster of posters) {
