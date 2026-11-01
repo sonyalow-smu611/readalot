@@ -204,7 +204,7 @@ test.describe("from the room", () => {
     expect(Math.abs((await bottom("The Hobbit by J.R.R. Tolkien")) - reading)).toBeGreaterThan(40);
 
     await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
-    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Reading", exact: true }).click();
+    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Currently reading", exact: true }).click();
     await page.getByRole("button", { name: "Close book" }).click();
 
     await expect
@@ -289,7 +289,7 @@ test.describe("from the room", () => {
     await expect(page).toHaveURL(/\/books\/demo-shelf-2$/);
     // the page is the same card: the book, and which shelf it is on
     await expect(page.getByRole("heading", { level: 1, name: "The Hobbit" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Want to read" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "To be read", exact: true })).toHaveAttribute("aria-pressed", "true");
 
     // and its close button goes back to the room
     await page.getByRole("button", { name: "Back" }).click();
@@ -315,12 +315,12 @@ test.describe("from the room", () => {
 
   test("a To read book can be started, which makes it a Reading book", async ({ page }) => {
     await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
-    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Reading", exact: true }).click();
+    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Currently reading", exact: true }).click();
 
     await expect.poll(() => saves).toEqual([{ id: "demo-shelf-2", status: "reading" }]);
     // Reading is now the chosen shelf, and the progress slider pops up under it
     await expect(
-      page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Reading", exact: true })
+      page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Currently reading", exact: true })
     ).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("slider")).toHaveValue("0");
   });
@@ -397,7 +397,7 @@ test.describe("without the room's pictures", () => {
 
     const details = page.getByRole("dialog", { name: "Book details" });
     await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
-    await details.getByRole("button", { name: "Reading", exact: true }).click();
+    await details.getByRole("button", { name: "Currently reading", exact: true }).click();
     await expect.poll(() => saves).toEqual([{ id: "demo-shelf-2", status: "reading" }]);
 
     await page.getByRole("button", { name: "Close book" }).click();

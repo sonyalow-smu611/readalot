@@ -644,3 +644,37 @@ are shared.
 | Tab | `client/src/components/town/DailyDock.vue`, `DailyButton.vue`, `client/src/App.vue` | A Daily task tab, with the flame, on the left edge of every signed-in page but the town, opening the town's own panel. Go goes to the task's building, or the town for a friend's house. Closes with Escape, a tap outside or the tab. Claim works there too. Hidden during the guide tour, and kept under each page's dialogs |
 | Friends | `client/src/town/nearbyStore.js` | `loadFriends` shared, so a page opened directly lists the same third task as the town |
 | Tests | `tests/e2e/daily.spec.js`, `house-desktop.spec.js`, `town.spec.js`, `room.spec.js` | Opening, closing, Go and Claim from other pages, and only one Daily button in town; Places now sits under the back button, the mood check-in skipped where it isn't the point, and the phone column checked on Search. `reader-profile.spec.js`, `salon.spec.js` and `buttons.spec.js` search for an exact button or a text box, now that the Daily tab's label and the privacy switch use the same words |
+
+### Library redesign after peer feedback (AI-generated)
+
+Written by Claude Code at Aasim's request, from the peers' feedback on the library: off-theme
+emoji, small shelf text, plain bookcases, confusing book options and a search page that didn't
+fill the screen. Aasim asked the assistant to write all of it, the interactive parts included
+(the Places menu, opening a bookcase and sliding a book out, Add to To be read): that is
+critical frontend interactivity under the AI use rules in `PROJECT.md`, so the team needs to
+agree to it and record that here. Team to review: the second group of files is shared.
+
+The library (Aasim's folder):
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Top line | `client/src/buildings/library/LibraryView.vue`, `components/LibraryHall.vue` | Back to town, the search bar centred and the weather on the right, on one line; on a phone the search rests as a magnifier and grows into a bar below. The search bar and weather chip in the pixel look, with pixel icons |
+| Places menu | `components/PlacesMenu.vue`, `components/LibraryHall.vue`, `hall/layout.js` | My Room's Places menu copied into the library, grouped (Around the library, Shelves), in the bottom right, in place of the bar of places |
+| Opening view and signs | `components/LibraryHall.vue` | The hall always opens at its left end with the help desk and scanner in view (on a phone, the whole desk), instead of where the reader last left it; the first sizing no longer scrolls it along. Signs on the desk ("Search for any book here") and the scanner ("Scan a book to find it") |
+| Genres | `categories.js` | Ten genres from Goodreads' and Circana's 2025 lists (sources in the library README), each with its search, colours, wood, sign, wall art and props; `HALL_CASE` for search |
+| Hall art | `hall/icons.js`, `hall/murals.js`, `hall/sprites.js`, `hall/layout.js`, `fonts.js` | Pixel icons as bitmaps (no emoji anywhere in the library); each bookcase in its genre's wood; the genre's art on the wall behind it; signs hung over the bookcases in a Google Fonts pixel font for each genre, at 16 px or more |
+| Opened bookcase | `components/GenreBookcase.vue`, `components/BookShelves.vue`, `shelves.js` | A full-screen bookcase on the genre's wall: 24 books as spines with readable titles, on uneven shelves, with stacks, a leaning book, props and a ladder; Spines / Covers; a book slides out before its preview. Replaces `components/ShelfSheet.vue` and its "See all" |
+| Search | `SearchView.vue` (moved from `client/src/views/`) | Full screen on the hall's wall, the library's search bar, results in a bookcase (covers by default), the librarian's card for before a search, no results and offline; Back to where the reader came from |
+| Docs | `client/src/buildings/library/README.md` | The README brought up to date |
+
+Shared (for a teammate to review):
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Found book's preview | `client/src/components/book/FoundBookPreview.vue`, `WhereToGet.vue`, `client/src/services/bookShops.js`, `client/src/composables/useBookPreview.js` | For a book found in the library, the scanner, search and the genre page: Add to To be read (then "On your To be read shelf", with See it in My Room) and Where to get, links to fourteen shops' and the NLB's own searches by ISBN or title, in a new tab. The preview stays open once a book is added |
+| Preview | `client/src/components/BookPreviewModal.vue` | `collapseReviews`: the reviews behind a Read reviews button. Off by default, so My Shelf is unchanged |
+| Book page | `client/src/components/book/BookDetailsContent.vue`, `client/src/views/BookDetailsView.vue` | A book not on the shelf offers Add to To be read; one on it shows its shelves by My Room's names (To be read, Currently reading, Finished reading); the book's page adds Where to get |
+| Shelf names | `client/src/services/shelves.js` | The status buttons named and ordered as My Room's shelves, so "Want to read" is gone. This changes My Shelf's preview buttons too (Sonya's) |
+| Pages | `client/src/views/GenreShelfView.vue`, `client/src/router/index.js` | The genre page uses the found book's preview; `/search` opens the library's search, full screen |
+| Docs | `AGENTS.md` | Search is listed with the library |
+| Tests | `tests/e2e/library.spec.js`, `find-book.spec.js`, `search.spec.js` (new), `library-wide.spec.js`, `scan-book.spec.js`, `fixtures.js` (`openPlaces`), `buttons.spec.js`, `back-button.spec.js`, `smoke.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `reviews.spec.js`, `daily.spec.js`, `house-desktop.spec.js` | The top line on a phone and a laptop; the Places menu; ten bookcases with signs, icons and fonts, and no emoji; an opened bookcase (24 books, uneven shelves, Covers, a book's preview, a phone); Add to To be read and Where to get, in the preview and on the book's page; search full screen, its cards, Back. Other tests updated for the new names and for search filling the window |

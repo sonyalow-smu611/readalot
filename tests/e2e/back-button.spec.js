@@ -36,7 +36,7 @@ for (const [label, viewport] of [
       expect(overlaps(back, places)).toBe(false);
     });
 
-    test("the library's search bar sits below the back button", async ({ page }) => {
+    test("the library's search sits beside the back button, clear of it", async ({ page }) => {
       await page.goto("/library");
       const back = await backInTheCorner(page);
       const search = await page.getByRole("search").boundingBox();

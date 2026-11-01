@@ -8,11 +8,14 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import BookCover from '@/components/BookCover.vue'
 import { scanBook } from '@/services/api.js'
+import { iconUrl } from '../hall/icons.js'
 
 const emit = defineEmits(['close', 'found', 'search'])
 
 // Longest side of the photo sent to the server: enough for Vision, small enough to upload fast.
 const MAX_SIDE = 1280
+
+const cameraIcon = iconUrl('camera')
 
 const panel = ref(null)
 const video = ref(null)
@@ -136,7 +139,7 @@ async function scan(imageBase64) {
       tabindex="-1"
     >
       <header class="scanner__head">
-        <h2 id="scanner-title" class="scanner__title"><span aria-hidden="true">📷</span> Book scanner</h2>
+        <h2 id="scanner-title" class="scanner__title"><img v-if="cameraIcon" class="scanner__icon" :src="cameraIcon" alt="" /> Book scanner</h2>
         <button type="button" class="btn btn-secondary btn-icon scanner__close" aria-label="Close" @click="$emit('close')">✕</button>
       </header>
       <p class="scanner__lead">Hold a book's cover up to the camera, with its title in view.</p>
@@ -237,6 +240,13 @@ async function scan(imageBase64) {
   justify-content: space-between;
   gap: 12px;
   margin-top: 4px;
+}
+
+.scanner__icon {
+  width: 22px;
+  height: auto;
+  vertical-align: -2px;
+  image-rendering: pixelated;
 }
 
 .scanner__title {
