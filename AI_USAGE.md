@@ -678,3 +678,14 @@ Shared (for a teammate to review):
 | Pages | `client/src/views/GenreShelfView.vue`, `client/src/router/index.js` | The genre page uses the found book's preview; `/search` opens the library's search, full screen |
 | Docs | `AGENTS.md` | Search is listed with the library |
 | Tests | `tests/e2e/library.spec.js`, `find-book.spec.js`, `search.spec.js` (new), `library-wide.spec.js`, `scan-book.spec.js`, `fixtures.js` (`openPlaces`), `buttons.spec.js`, `back-button.spec.js`, `smoke.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `reviews.spec.js`, `daily.spec.js`, `house-desktop.spec.js` | The top line on a phone and a laptop; the Places menu; ten bookcases with signs, icons and fonts, and no emoji; an opened bookcase (24 books, uneven shelves, Covers, a book's preview, a phone); Add to To be read and Where to get, in the preview and on the book's page; search full screen, its cards, Back. Other tests updated for the new names and for search filling the window |
+
+### A roomier book preview (AI-generated)
+
+Written by Claude Code at Aasim's request, after the team asked for the book preview to be bigger.
+Team to review: `BookPreviewModal.vue` is shared, so My Shelf's and a friend's shelf's book card
+change too.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Preview | `client/src/components/BookPreviewModal.vue` | Its own width (520px on a phone, 620px on a tablet, 880px on a laptop) instead of the 360px of the app's other pop-ups. On a laptop, two columns: a 240px cover on the left, the title, synopsis and buttons beside it, in bigger type. A phone keeps the cover beside the title and the rest below |
+| Tests | `tests/e2e/find-book.spec.js` | On a laptop the preview is over 800px wide, with the cover on the left of the title and the buttons |
