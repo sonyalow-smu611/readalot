@@ -678,3 +678,88 @@ Shared (for a teammate to review):
 | Pages | `client/src/views/GenreShelfView.vue`, `client/src/router/index.js` | The genre page uses the found book's preview; `/search` opens the library's search, full screen |
 | Docs | `AGENTS.md` | Search is listed with the library |
 | Tests | `tests/e2e/library.spec.js`, `find-book.spec.js`, `search.spec.js` (new), `library-wide.spec.js`, `scan-book.spec.js`, `fixtures.js` (`openPlaces`), `buttons.spec.js`, `back-button.spec.js`, `smoke.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `reviews.spec.js`, `daily.spec.js`, `house-desktop.spec.js` | The top line on a phone and a laptop; the Places menu; ten bookcases with signs, icons and fonts, and no emoji; an opened bookcase (24 books, uneven shelves, Covers, a book's preview, a phone); Add to To be read and Where to get, in the preview and on the book's page; search full screen, its cards, Back. Other tests updated for the new names and for search filling the window |
+
+## Save mood quotes to the salon (AI-assisted)
+
+Built by an AI coding assistant (Claude Code) for Sonya, from
+`docs/specs/saved-mood-quotes-and-synced-room-notes.md`, which the team agreed to, new Express
+endpoints included. Touches the salon (Aalric's) and the server: for a teammate to review.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/saved_mood_quotes.sql` | A table holding a copy of each saved quote, one per reader, book and line; RLS on, server only |
+| Server | `server/src/routes/savedQuotes.js`, `server/src/services/savedQuotes.js`, `server/src/app.js` | `GET/POST/DELETE /api/saved-quotes` behind `requireUser`; saving twice returns the first; kept in memory without Supabase |
+| Client | `client/src/services/api.js`, `client/src/components/modals/MoodResultModal.vue` | `getSavedQuotes`, `saveQuote`, `unsaveQuote`; Save quote / Saved toggle and See saved quotes link on the mood result |
+| Salon | `client/src/buildings/salon/components/SavedQuotes.vue`, `SavedQuoteItem.vue`, `SalonView.vue` | The card lists saved quotes with loading, error and empty states and Remove; `/salon#saved-quotes` opens it |
+| Tests | `tests/e2e/mood-result.spec.js` | Save, unsave, Saved on return, See saved quotes, Remove |
+
+## My Shelf as a Library bookcase (AI-assisted)
+
+Built by an AI coding assistant (Claude Code) for Sonya, from
+`docs/specs/my-shelf-library-bookcase.md`. House building only (Sonya's); nothing shared changed.
+The bookcase is a copy of the Library's (Aasim's `BookShelves.vue` and `shelves.js`), changed in
+the house's folder: the Library's files are untouched.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Bookcase | `client/src/buildings/house/components/ShelfBookcase.vue`, `BookcaseShelf.vue`, `client/src/buildings/house/bookcase.js` | Three fixed shelves (To be read, Currently reading, Finished reading) as spines or covers, each with a plate on its plank; sideways scrolling moved from the old `ShelfRow.vue` (removed); colours from the room's theme |
+| Page | `client/src/buildings/house/ShelfView.vue` | The Library's bookcase header (Back to room, sign, Spines / Covers); search and chips kept above the bookcase; the room's wall behind |
+| Docs | `client/src/buildings/house/README.md`, `docs/specs/my-shelf-library-bookcase.md` | The new files; the spec |
+| Tests | `tests/e2e/my-shelf.spec.js`, `visit-room.spec.js` | Three shelves with plates, upright spines, the header on a laptop and a phone, Spines / Covers, the room's wall and wood; the arrow-key test counts books (two lying flat share a place) |
+
+
+## Put pieces anywhere in My Room, no glowing spots (AI-assisted)
+
+Built test-first by an AI coding assistant (Claude Code) for Sonya, from the tickets in
+`.scratch/room-place-anywhere/issues/`. House building only (Sonya's); the shared test fixtures
+gained helpers for tapping the room.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Room | `client/src/buildings/house/components/RoomStrip.vue` | No glowing spots while dragging or placing; a tap anywhere in the room puts the picked piece there ("Place in the middle" for the keyboard); a chair, curtains or bedding swaps in when let go on or near the armchair, window or bed, and says where it goes otherwise; a cat starts on the floor below where it's let go |
+| Room view, dock | `client/src/buildings/house/RoomView.vue`, `components/RoomDock.vue` | Shows the room's own message when a piece doesn't go anywhere; the inventory's hint |
+| Docs | `client/src/buildings/house/README.md`, `strip/layout.js` comments | No spots; how each kind of piece lands |
+| Tests | `tests/e2e/furniture.spec.js`, `fixtures.js`, `room.spec.js`, `room-themes.spec.js`, `buttons.spec.js`, `visit-room.spec.js` | No spots while dragging; tap to place, a miss, and the keyboard; chair swap and miss; cats anywhere on the floor; the old "Put … on a spot" steps now tap the room (`tapRoomAt`, `placeAt`, `SPOTS` in the fixtures) |
+
+## Drag books between shelves on My Shelf (AI-assisted)
+
+Built by an AI coding assistant (Claude Code) for Sonya, from
+`docs/specs/my-shelf-drag-between-shelves.md`. House building only (Sonya's); the move itself is
+the shared bookshelf store's existing `setStatus`, unchanged.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Bookcase | `client/src/buildings/house/components/BookcaseShelf.vue`, `ShelfBookcase.vue` | Picking a book up (a mouse pulled up or down out of the shelf; a finger held for 400 ms), carrying a copy of it under the pointer, lighting the shelf under it, scrolling the page near its edges, Escape to put it back; a friend's shelf can't be dragged |
+| Page | `client/src/buildings/house/ShelfView.vue` | A drop moves the book with `setStatus`; a failed save shows an alert, a move is read out |
+| Docs | `client/src/buildings/house/README.md`, `docs/specs/my-shelf-drag-between-shelves.md` | The new behaviour; the spec |
+| Tests | `tests/e2e/my-shelf.spec.js` | Mouse drags between all three shelves (Finished reading saves 100%), let go off a shelf or on its own, Escape, a failed save, the read-out, a book lying flat, Covers, a search that empties a shelf, a friend's shelf; on a phone, press and hold, a quick swipe that only scrolls, and the edge scroll down to Finished reading |
+
+
+## Your own book's card, laid out like the library's (AI-assisted)
+
+Built test-first by an AI coding assistant (Claude Code) for Sonya, from
+`docs/specs/house-book-card-like-library.md` and the tickets in
+`.scratch/house-book-card-like-library/issues/`. House building only (Sonya's); the shared
+`BookPreviewModal` and the library's preview are untouched.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Card | `client/src/buildings/house/components/OwnBookPreview.vue` (new) | The shared preview with no shelf line, the reviews behind Read reviews, one next-step button (Start reading, Mark as finished) instead of the three statuses, Where to get for To be read books, the progress slider and Remove from shelf |
+| Card, wired | `client/src/buildings/house/components/BookDialog.vue` | Rewritten around `OwnBookPreview`: saves the move (off while saving, an alert if it fails), the progress and Remove from shelf with Undo |
+| Pages | `client/src/buildings/house/ShelfView.vue`, `RoomView.vue` | Both open your own book in `BookDialog`; the room's card no longer takes the house's accent colour |
+| Docs | `client/src/buildings/house/README.md`, `docs/specs/house-book-card-like-library.md` | The new card; the spec |
+| Tests | `tests/e2e/my-shelf.spec.js`, `bookshelf.spec.js`, `reviews.spec.js`, `house-desktop.spec.js` | The library's layout on My Shelf and in the room; Start reading and Mark as finished, a move that fails; Where to get only for To be read; rating behind Read reviews; the old status-button and Review / Rate link steps replaced |
+
+## My Room's furniture kept in the reader's account (AI-generated, team-agreed)
+
+Built test-first by an AI coding assistant (Claude Code) for Sonya, from
+`docs/specs/room-furniture-saved.md` and the tickets in `.scratch/room-furniture-saved/issues/`.
+The team agreed to the AI writing the new Express endpoints, as it did for room notes.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/room_furniture.sql` | One row per reader with their pieces; RLS on, server-only access |
+| Server | `server/src/services/roomFurniture.js`, `server/src/routes/roomFurniture.js`, `server/src/app.js`, `server/src/routes/roomNotes.js` (exports its sign-in check and reader lookup) | `GET` / `PUT /api/rooms/:readerId/furniture`; only the owner writes; malformed lists refused; in memory without Supabase |
+| Client | `client/src/services/api.js`, `client/src/composables/useDecor.js`, `client/src/buildings/house/RoomView.vue`, `components/RoomDock.vue`, `components/RoomStrip.vue`, `visitors.js` | Load once per reader, save after each change (one save at a time), unique piece ids; Shop and Inventory wait for the load; Try again; save-failure message; visited rooms show the reader's saved furniture |
+| Docs | `client/src/buildings/house/README.md`, the spec | How the furniture is saved |
+| Tests | `tests/e2e/room-furniture.spec.js`, `tests/e2e/fixtures.js` | Reload and another device for buy, place, move, remove, swap and cats; load failure and Try again; Shop waits; failed and slow saves; visiting; every test starts with an empty room |

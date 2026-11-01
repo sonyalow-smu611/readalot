@@ -9,7 +9,9 @@ import peopleRouter from "./routes/people.js";
 import messagesRouter from "./routes/messages.js";
 import quoteRouter from "./routes/quote.js";
 import recommendationsRouter from "./routes/recommendations.js";
+import roomFurnitureRouter from "./routes/roomFurniture.js";
 import roomNotesRouter from "./routes/roomNotes.js";
+import savedQuotesRouter from "./routes/savedQuotes.js";
 import scanBookRouter from "./routes/scanBook.js";
 import storesRouter from "./routes/stores.js";
 import timeRouter from "./routes/time.js";
@@ -38,6 +40,8 @@ app.use("/api/messages", messagesRouter);
 app.use("/api/stores", storesRouter);
 app.use("/api/recommendations", recommendationsRouter);
 app.use("/api/rooms/:readerId/notes", roomNotesRouter);
+app.use("/api/rooms/:readerId/furniture", roomFurnitureRouter);
+app.use("/api/saved-quotes", savedQuotesRouter);
 app.use("/api/scan-book", scanBookRouter);
 
 app.use((err, req, res, next) => {

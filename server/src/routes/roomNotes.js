@@ -24,7 +24,7 @@ function subjectOf(token) {
 // Notes are signed by who's asking, so there's no demo-user fallback here: only a sign-in counts.
 // With Supabase the token is checked. Without it (local dev, the e2e tests) the server can't check
 // one, so it takes the account id the token carries.
-async function requireReader(req, res, next) {
+export async function requireReader(req, res, next) {
   const match = /^Bearer (\S+)$/i.exec(req.headers.authorization || "");
   if (!match) return res.status(401).json({ error: "Sign in to see notes" });
   try {
@@ -48,7 +48,7 @@ const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 // The account whose board it is, or null when there's no such reader: the reader asking (their own
 // board, discoverable or not), or a discoverable reader. Without Supabase there are no profiles
 // to look an account up in, so any account id names a board.
-async function ownerOf(handle, readerId) {
+export async function ownerOf(handle, readerId) {
   if (handle === readerId) return readerId;
   const reader = await findReader(handle);
   if (reader) return reader.userId;

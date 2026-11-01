@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { FURNITURE } from '@/buildings/house/furniture.js'
+import { getRoomFurniture, saveRoomFurniture } from '@/services/api.js'
 import { useProgressStore } from '@/stores/progress.js'
 
 // everything the Shop sells: the house's furniture library, drawn in the room's own pixel style
@@ -25,12 +26,66 @@ const drag = ref(null)
 const notice = ref(null)
 const sparkle = ref(null)
 
-let nextUid = 1
 let noticeTimer = 0
 let sparkleTimer = 0
+// whose furniture is held here (their account id), loaded from and saved to the server
+let owner = null
+// '' before it's asked for, then 'loading', 'ready' or 'error'
+const roomStatus = ref('')
+
+// a piece's id, unique across devices so pieces bought on two never clash
+function newUid() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
 
 export function decorMeta(id) {
   return DECOR_CATALOG.find((item) => item.id === id)
+}
+
+// Loads a reader's furniture when their room opens: once per reader, so it stays as it is while
+// they look around the app. Another reader signing in starts from their own.
+async function loadRoom(readerId) {
+  if (!readerId || owner === readerId) return
+  owner = readerId
+  inventory.value = []
+  placed.value = []
+  roomStatus.value = 'loading'
+  try {
+    const { pieces } = await getRoomFurniture(readerId)
+    if (owner !== readerId) return
+    inventory.value = pieces.filter((piece) => !piece.zone).map(({ uid, id }) => ({ uid, id }))
+    placed.value = pieces.filter((piece) => piece.zone)
+    roomStatus.value = 'ready'
+  } catch {
+    // asking again tries again
+    owner = null
+    roomStatus.value = 'error'
+  }
+}
+
+// Saves the whole room after a change: the inventory, then the placed pieces. One save at a time,
+// so a slow one can't land after a newer one: a change made while one runs is saved right after.
+let saving = false
+let saveAgain = false
+async function saveRoom() {
+  if (!owner) return
+  if (saving) {
+    saveAgain = true
+    return
+  }
+  saving = true
+  try {
+    do {
+      saveAgain = false
+      try {
+        await saveRoomFurniture(owner, [...inventory.value, ...placed.value])
+      } catch {
+        flash("Couldn't save your room. Your next change will try again.", 'bad')
+      }
+    } while (saveAgain && owner)
+  } finally {
+    saving = false
+  }
 }
 
 function askBuy(item) {
@@ -47,8 +102,9 @@ async function confirmBuy() {
     flash(`Couldn't buy the ${item.name}. Try again.`, 'bad')
     return
   }
-  inventory.value = [...inventory.value, { uid: nextUid++, id: item.id }]
+  inventory.value = [...inventory.value, { uid: newUid(), id: item.id }]
   inventoryOpen.value = true
+  saveRoom()
 }
 
 function cancelBuy() {
@@ -134,10 +190,12 @@ function placeOn(zone, spot, entry = placing.value) {
   placed.value = [...placed.value, { uid: entry.uid, id: entry.id, zone, x: spot.x, ...(spot.at && { at: spot.at }) }]
   inventory.value = inventory.value.filter((item) => item.uid !== entry.uid)
   placing.value = null
+  saveRoom()
   return true
 }
 
-// Moves a placed piece to `at` in `zone` (somewhere it fits).
+// Moves a placed piece to `at` in `zone` (somewhere it fits). A move shows as it goes, so the room
+// saves when the move ends (saveRoom), not here.
 function moveTo(uid, zone, at) {
   placed.value = placed.value.map((item) => (item.uid === uid ? { ...item, zone, at } : item))
 }
@@ -153,6 +211,7 @@ function unplace(uid) {
   placed.value = placed.value.filter((entry) => entry.uid !== uid)
   inventory.value = [...inventory.value, { uid: item.uid, id: item.id }]
   selected.value = null
+  saveRoom()
   const meta = decorMeta(item.id)
   flash(`${meta?.name || 'Piece'} ${meta?.plural ? 'are' : 'is'} back in your inventory`, 'ok')
 }
@@ -179,6 +238,9 @@ export function useDecor() {
     notice,
     sparkle,
     canAfford,
+    roomStatus,
+    loadRoom,
+    saveRoom,
     askBuy,
     confirmBuy,
     cancelBuy,

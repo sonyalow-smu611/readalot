@@ -1,6 +1,6 @@
 import {
-  artColour, buy, expect, goToPlace, mockQuote, mockTime, mockWeather, pickFromInventory, roomCanvas, roomReady,
-  roomRegion, scrollSettled, skipMoodCheckIn, test,
+  SPOTS, artColour, buy, expect, goToPlace, mockQuote, mockTime, mockWeather, pickFromInventory, roomCanvas, roomReady,
+  roomRegion, scrollSettled, skipMoodCheckIn, tapRoomAt, test,
 } from "./fixtures.js";
 
 // My Room on a phone: the room is one wide picture, wider than the screen, that the reader looks
@@ -230,11 +230,11 @@ test.describe("decorating", () => {
     await buy(page, "Succulent trio");
     await expect(page.getByText("450").first()).toBeVisible();
 
-    // pick the succulents, then tap one of the glowing spots they can stand on
+    // pick the succulents, then tap the window seat
     await pickFromInventory(page, "Succulent trio");
-    await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Succulent trio");
+    await expect(page.getByRole("status")).toContainText("Tap where the Succulent trio should go");
     await goToPlace(page, "Window");
-    await page.getByRole("button", { name: /^Put Succulent trio on the window seat/ }).locator("visible=true").first().click();
+    await tapRoomAt(page, SPOTS["on the window seat"].x, SPOTS["on the window seat"].y);
 
     await expect(page.getByRole("status")).toHaveText(/^Succulent trio is on the window seat/);
     await expect(page.getByRole("button", { name: "Succulent trio", exact: true })).toHaveCount(1);

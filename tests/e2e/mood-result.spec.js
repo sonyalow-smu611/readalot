@@ -86,3 +86,46 @@ test("skipping keeps the check-in away for the day, and the room menu can reopen
   await page.getByRole("button", { name: "Mood check-in" }).click();
   await expect(checkIn).toBeVisible();
 });
+
+test("saving the mood quote keeps it in the salon's Saved quotes, where it can be removed", async ({ page }) => {
+  await page.goto("/house");
+  await page.getByRole("button", { name: /^Calm/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  const result = page.getByRole("dialog", { name: "A book for your mood" });
+  await result.getByRole("button", { name: "Save quote" }).click();
+  await expect(result.getByRole("button", { name: "Saved" })).toBeVisible();
+  // saving the quote leaves the book alone
+  await expect(result.getByRole("button", { name: "Add to To Be Read" })).toBeEnabled();
+
+  // tapping Saved again undoes it, and saving again works
+  await result.getByRole("button", { name: "Saved" }).click();
+  await expect(result.getByRole("button", { name: "Save quote" })).toBeVisible();
+  await result.getByRole("button", { name: "Save quote" }).click();
+  await expect(result.getByRole("button", { name: "Saved" })).toBeVisible();
+
+  // another recommendation starts unsaved
+  await result.getByRole("button", { name: "Show another recommendation" }).click();
+  await expect(result.getByRole("heading", { name: "The Wind in the Willows" })).toBeVisible();
+  await expect(result.getByRole("button", { name: "Save quote" })).toBeVisible();
+
+  await page.goto("/house");
+  await page.getByRole("button", { name: "Room menu" }).click();
+  await page.getByRole("button", { name: "Mood check-in" }).click();
+  await page.getByRole("button", { name: /^Calm/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  // a quote saved before comes up as Saved
+  await expect(result.getByRole("button", { name: "Saved" })).toBeVisible();
+  await result.getByRole("link", { name: "See saved quotes" }).click();
+
+  await expect(page).toHaveURL(/\/salon#saved-quotes$/);
+  const saved = page.getByRole("list", { name: "Your saved quotes" });
+  await expect(saved.getByText("“I went to the woods because I wished to live deliberately.”")).toBeVisible();
+  await expect(saved.getByRole("link", { name: "Walden" })).toHaveAttribute("href", "/books/work-walden");
+
+  await saved.getByRole("button", { name: "Remove quote from Walden" }).click();
+  await expect(page.getByText("No saved quotes yet")).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "Profile" }).click();
+  await expect(page.getByText("No saved quotes yet")).toBeVisible();
+});

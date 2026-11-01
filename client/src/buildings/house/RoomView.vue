@@ -76,7 +76,7 @@ const room = ref(null)
 const strip = ref(null)
 let listening = false
 
-const { placed, shopOpen, inventoryOpen, drag, notice, sparkle, moveDrag, endDrag, flash, burst } = useDecor()
+const { placed, shopOpen, inventoryOpen, drag, notice, sparkle, roomStatus, loadRoom, moveDrag, endDrag, flash, burst } = useDecor()
 // the furniture in the room: the reader's own placed pieces, or the visited reader's
 const furniture = computed(() => props.visiting?.furniture ?? placed.value)
 
@@ -95,10 +95,9 @@ function release(entry, clientX, clientY) {
 
   // it goes where it was let go, or as near as it fits
   const spot = strip.value?.dropAt(entry, clientX, clientY)
-  if (!spot) {
-    // wall art, plants and the succulents go anywhere they fit; the rest on a glowing spot
-    if (!meta.pet && ['wall', 'floor', 'shelf'].includes(meta.surface)) flash('Not enough room there', 'bad')
-    else flash(`Drop ${meta.name} on a glowing spot.`, 'bad')
+  if (!spot) return
+  if (spot.miss) {
+    flash(spot.miss, 'bad')
     return
   }
   mark(clientX, clientY)
@@ -316,6 +315,7 @@ onMounted(() => {
   if (!props.visiting) {
     if (!moodDoneToday()) moodStep.value = 'checkin'
     bookshelf.load()
+    loadRoom(user.profile.id)
   }
   loadNotes()
   loadWeather()
@@ -357,6 +357,10 @@ onBeforeUnmount(() => {
       />
 
       <CreditChip v-if="!visiting" data-tour="credits" class="home__credits" />
+      <p v-if="!visiting && roomStatus === 'error'" class="home__furniture-error" role="alert">
+        Couldn't load your furniture.
+        <button type="button" class="btn btn-secondary btn-sm" @click="loadRoom(user.profile.id)">Try again</button>
+      </p>
     </div>
 
     <!-- Opened from the book on the chair -->
@@ -390,7 +394,7 @@ onBeforeUnmount(() => {
          chair, a drag to look around) can be reached -->
     <template v-if="openedBook">
       <VisitorBookDialog v-if="visiting" :book="openedBook" :owner="visiting.firstName" :accent="accent" @close="closeBook" />
-      <BookDialog v-else :book="openedBook" :accent="accent" @close="closeBook" @leave="openedBook = null" />
+      <BookDialog v-else :book="openedBook" @close="closeBook" />
     </template>
 
     <div v-if="drag?.moved" class="drag-ghost" :style="{ left: `${drag.x}px`, top: `${drag.y}px` }">
@@ -453,6 +457,24 @@ onBeforeUnmount(() => {
   top: 10px;
   right: 12px;
   z-index: 4;
+}
+
+/* the room's furniture didn't load: under the coins, over the room */
+.home__furniture-error {
+  position: absolute;
+  top: 56px;
+  right: 12px;
+  left: 12px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 6px 6px 12px;
+  border-radius: 12px;
+  background: var(--rl-surface);
+  font-size: 12px;
 }
 
 /* across the bottom of the room on a phone; the same width, centred, on a wide window */

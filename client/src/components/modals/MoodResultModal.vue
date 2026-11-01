@@ -1,6 +1,6 @@
 <!--
   Mood recommendation (reference screen 03): a book for the mood, with a quote from it.
-  The reader can add it to To Be Read, open its page, or ask for another.
+  The reader can save the quote, add the book to To Be Read, open its page, or ask for another.
 -->
 <template>
   <div
@@ -48,6 +48,20 @@
               </figcaption>
             </figure>
 
+            <div class="result__keep">
+              <button
+                class="btn btn-secondary btn-sm"
+                type="button"
+                :aria-pressed="Boolean(savedId)"
+                :disabled="saving"
+                @click="toggleSave"
+              >
+                {{ saving ? "Saving…" : savedId ? "Saved" : "Save quote" }}
+              </button>
+              <RouterLink v-if="savedId" class="result__keep-link" to="/salon#saved-quotes">See saved quotes</RouterLink>
+            </div>
+            <p v-if="saveError" class="result__error" role="alert">{{ saveError }}</p>
+
             <p v-if="addError" class="result__error" role="alert">{{ addError }}</p>
             <button
               class="btn btn-primary result__action"
@@ -77,7 +91,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useAsync } from "../../composables/useAsync.js";
-import { getRecommendations } from "../../services/api.js";
+import { getRecommendations, getSavedQuotes, saveQuote, unsaveQuote } from "../../services/api.js";
 import { useBookshelfStore } from "../../stores/bookshelf.js";
 import BookCover from "../BookCover.vue";
 import StateView from "../StateView.vue";
@@ -94,14 +108,59 @@ const dialog = ref(null);
 const adding = ref(false);
 const added = ref(false);
 const addError = ref("");
+// the saved quote's id while the quote on screen is saved
+const savedId = ref(null);
+const saving = ref(false);
+const saveError = ref("");
 
 // asking again leaves out the work on screen, so "another" is always a different book
 const { data, error, loading, run } = useAsync(() => getRecommendations(props.mood, data.value?.workId));
 
-function load() {
+async function load() {
   added.value = false;
   addError.value = "";
-  return run().catch(() => {});
+  savedId.value = null;
+  saveError.value = "";
+  await run().catch(() => {});
+  if (data.value) findSaved(data.value);
+}
+
+// a quote saved before shows as Saved; if the list can't load, the button just offers to save
+async function findSaved(shown) {
+  try {
+    const { quotes } = await getSavedQuotes();
+    if (data.value !== shown) return;
+    const match = quotes.find((q) => q.quoteText === shown.quote.quoteText && (q.bookId || "") === shown.book.id);
+    savedId.value = match?.id ?? null;
+  } catch {
+    // leave the button as Save quote
+  }
+}
+
+async function toggleSave() {
+  saving.value = true;
+  saveError.value = "";
+  try {
+    if (savedId.value) {
+      await unsaveQuote(savedId.value);
+      savedId.value = null;
+    } else {
+      const { quote, book, mood } = data.value;
+      const saved = await saveQuote({
+        quoteText: quote.quoteText,
+        author: quote.author,
+        work: quote.work || book.title,
+        bookId: book.id,
+        sourceUrl: quote.sourceUrl || null,
+        mood
+      });
+      savedId.value = saved.id;
+    }
+  } catch {
+    saveError.value = savedId.value ? "Couldn't remove this quote. Try again." : "Couldn't save this quote. Try again.";
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function add() {
@@ -195,6 +254,18 @@ onMounted(() => {
 .result__quote figcaption {
   font-size: 12px;
   color: var(--rl-muted);
+}
+
+.result__keep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -6px 0 16px;
+}
+
+.result__keep-link {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .result__action {

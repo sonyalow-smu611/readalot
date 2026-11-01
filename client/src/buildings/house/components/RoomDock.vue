@@ -18,6 +18,7 @@ const {
   pending,
   placing,
   canAfford,
+  roomStatus,
   askBuy,
   confirmBuy,
   cancelBuy,
@@ -135,7 +136,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </header>
         <p v-if="!inventory.length" class="panel__empty">Buy something in the shop, then place it in the room.</p>
         <template v-else>
-          <p class="panel__note">Tap a piece, then a glowing spot in the room. Or drag it onto one.</p>
+          <p class="panel__note">Tap a piece, then where it should go in the room. Or drag it there.</p>
           <div class="panel__row">
             <button
               v-for="entry in inventory"
@@ -187,7 +188,9 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         </span>
         Mood check-in
       </button>
-      <button type="button" class="btn btn-secondary dock__item" @click="showInventory">
+      <!-- nothing is bought or placed until the room's furniture has loaded, or the load would
+           replace it -->
+      <button type="button" class="btn btn-secondary dock__item" :disabled="roomStatus !== 'ready'" @click="showInventory">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path
@@ -200,7 +203,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         </span>
         Inventory
       </button>
-      <button type="button" class="btn btn-accent dock__item" @click="showShop">
+      <button type="button" class="btn btn-accent dock__item" :disabled="roomStatus !== 'ready'" @click="showShop">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path

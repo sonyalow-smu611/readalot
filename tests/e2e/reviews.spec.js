@@ -69,6 +69,8 @@ test.describe("everyone's reviews", () => {
     await page.goto("/house/shelf");
     await page.getByRole("region", { name: /^Finished reading/ }).getByRole("button", { name: /^Pride and Prejudice/ }).click();
     const shelfCard = page.getByRole("dialog", { name: "Book details" });
+    // My Shelf's card is laid out like the library's: the reviews wait behind their button too
+    await shelfCard.getByRole("button", { name: /^Read reviews/ }).click();
     await expect(shelfCard.getByRole("region", { name: "Reviews" })).toContainText("Emma Tan");
     await expect(shelfCard).toContainText("from 3 Readalot readers");
 
@@ -76,7 +78,9 @@ test.describe("everyone's reviews", () => {
     await roomReady(page);
     await goToPlace(page, "Bookshelf");
     await page.getByRole("button", { name: "Pride and Prejudice by Jane Austen" }).click();
-    await expect(page.getByRole("dialog", { name: "Book details" }).getByRole("region", { name: "Reviews" })).toContainText("Emma Tan");
+    const roomCard = page.getByRole("dialog", { name: "Book details" });
+    await roomCard.getByRole("button", { name: /^Read reviews/ }).click();
+    await expect(roomCard.getByRole("region", { name: "Reviews" })).toContainText("Emma Tan");
   });
 });
 
@@ -136,28 +140,31 @@ test.describe("your own review", () => {
     expect(tooLong.status()).toBe(400);
   });
 
-  test("your shelf takes your rating from your review", async ({ page }) => {
+  test("a review saved from the room's card is kept, and can be deleted", async ({ page }) => {
+    // the room's card keeps the reviews behind Read reviews, as the library's does
     const openGoneGirl = async () => {
       await roomReady(page);
       await goToPlace(page, "Bookshelf");
       await page.getByRole("button", { name: "Gone Girl by Gillian Flynn" }).click();
-      return page.getByRole("dialog", { name: "Book details" });
+      const card = page.getByRole("dialog", { name: "Book details" });
+      await card.getByRole("button", { name: /^Read reviews/ }).click();
+      return card;
     };
     await page.goto("/house");
     let card = await openGoneGirl();
-    await expect(card.getByRole("link", { name: "Rate" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Delete your review" })).toHaveCount(0);
 
     await card.getByRole("radio", { name: "5 stars" }).check();
     await card.getByRole("textbox", { name: "Your review (optional)" }).fill("Gripping.");
     await card.getByRole("button", { name: "Save review" }).click();
-    await expect(card.getByRole("link", { name: "View review and rating" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Delete your review" })).toBeVisible();
 
-    // saved: the shelf reads it back from the reviews
+    // saved: it's still there after a reload
     await page.reload();
     card = await openGoneGirl();
-    await expect(card.getByRole("link", { name: "View review and rating" })).toBeVisible();
+    await expect(card.getByText("Gripping.")).toBeVisible();
 
     await card.getByRole("button", { name: "Delete your review" }).click();
-    await expect(card.getByRole("link", { name: "Rate" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Delete your review" })).toHaveCount(0);
   });
 });
