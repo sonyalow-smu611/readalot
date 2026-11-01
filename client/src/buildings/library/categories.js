@@ -1,12 +1,14 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The library's bookcases: one per genre, left to right in the hall. These are the most read
-// genres of 2025 (Goodreads' Reading Challenge lists and Circana's US print sales; see the
-// library README), so the shelves match what readers look for.
+// The library's bookcases, left to right in the hall: this week's bestsellers first, then one per
+// genre. The genres are the most read of 2025 (Goodreads' Reading Challenge lists and Circana's
+// US print sales; see the library README), so the shelves match what readers look for.
 //   key     id, also seeds the bookcase's spines so it looks the same every visit
 //   label   the sign over the bookcase and the place in the Places menu
 //   title   the heading when the bookcase is opened, and its button's name
 //   icon    its pixel icon (hall/icons.js), on the sign and the heading
 //   query   the Google Books search that fills it (plain words work better than `subject:`)
+//   source  'bestsellers' fills it from this week's bestseller lists (the server's
+//           /api/books/bestsellers: the NYT, or Open Library) instead of a search
 //   spines  the colours its books are drawn in
 //   wood    the bookcase's colours: its frame, the frame's light and dark edges, and the back
 //   sign    the sign's look: its board, its lettering, a pixel font with the genre's feel
@@ -16,6 +18,20 @@
 //   backdrop  the colour of that wall, behind the art and behind the opened bookcase
 //   props     pixel icons (hall/icons.js) that stand among its books when it is opened
 export const CATEGORIES = [
+  {
+    key: 'bestsellers',
+    label: 'Bestsellers',
+    title: 'Bestsellers',
+    icon: 'trophy',
+    source: 'bestsellers',
+    query: '',
+    spines: ['#e53b3b', '#f2c94c', '#2f6fd6', '#1e1a24', '#f3eee0', '#2d8a5a'],
+    wood: { frame: '#b8323a', light: '#d9545a', dark: '#8a2229', back: '#2a1418' },
+    sign: { board: '#f2c94c', ink: '#7a1a20', font: "'Silkscreen'", size: 1, shadow: '2px 2px 0 #fff4c7' },
+    wall: 'bestsellers',
+    backdrop: '#fdf0d5',
+    props: ['trophy', 'star', 'crown'],
+  },
   {
     key: 'romance',
     label: 'Romance',

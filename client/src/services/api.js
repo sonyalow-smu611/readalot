@@ -37,6 +37,11 @@ export function searchBooks(query, limit) {
   return request(`/books/search?${params}`);
 }
 
+// The library's Bestsellers bookcase: { books, source: "nyt" | "openlibrary", updatedAt }
+export function getBestsellers() {
+  return request("/books/bestsellers");
+}
+
 export function getBook(id) {
   return request(`/books/${id}`);
 }

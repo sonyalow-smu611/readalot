@@ -12,6 +12,7 @@ const FAMILIES = [
   'Press Start 2P',
   'Handjet:wght@500',
   'Jersey 15',
+  'Silkscreen',
 ]
 
 const ID = 'library-genre-fonts'

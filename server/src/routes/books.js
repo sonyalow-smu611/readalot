@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireUser } from "../middleware/auth.js";
+import { getBestsellers } from "../services/bestsellers.js";
 import { MAX_SEARCH_RESULTS, fallbackBooks, getGoogleBook, searchGoogleBooks } from "../services/books.js";
 import { demoBookDetails, findDemoBook } from "../services/demoShelf.js";
 import { deleteReview, listReviews, saveReview } from "../services/reviews.js";
@@ -18,6 +19,18 @@ router.get("/search", async (req, res) => {
   } catch {
     // quota or outage: a placeholder keeps Discover from going blank
     res.json({ books: fallbackBooks });
+  }
+});
+
+// The library's Bestsellers bookcase: this week's bestsellers as Google Books books, and where
+// the list came from ("nyt" or "openlibrary"). 502 when no list can be had, so the bookcase
+// offers Retry rather than showing made-up books.
+router.get("/bestsellers", async (req, res) => {
+  try {
+    const { books, source, updatedAt } = await getBestsellers();
+    res.json({ books, source, updatedAt });
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
   }
 });
 
