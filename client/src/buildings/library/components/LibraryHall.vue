@@ -46,7 +46,10 @@
             :style="boxStyle(desk)"
             @click="$emit('desk')"
           >
-            <span class="hall__plate hall__plate--desk" aria-hidden="true">Help desk</span>
+            <span class="hall__plate hall__plate--desk" aria-hidden="true">
+              <span class="hall__plate-name"><img v-if="icons.bell" class="hall__plate-icon" :src="icons.bell" alt="" />Help desk</span>
+              <span class="hall__plate-hint">Search for any book here</span>
+            </span>
           </button>
 
           <button
@@ -60,7 +63,10 @@
             :style="boxStyle(scanner)"
             @click="$emit('scan')"
           >
-            <span class="hall__plate" aria-hidden="true"><span class="hall__plate-emoji">📷</span>Scanner</span>
+            <span class="hall__plate hall__plate--scanner" aria-hidden="true">
+              <span class="hall__plate-name"><img v-if="icons.camera" class="hall__plate-icon" :src="icons.camera" alt="" />Scanner</span>
+              <span class="hall__plate-hint">Scan a book to find it</span>
+            </span>
           </button>
 
           <button
@@ -76,8 +82,10 @@
             :style="boxStyle(box)"
             @click="$emit('open-shelf', box.category)"
           >
-            <span class="hall__plate" aria-hidden="true">
-              <span class="hall__plate-emoji">{{ box.meta.emoji }}</span>{{ box.meta.label }}
+            <!-- the genre's sign, hung from the picture rail: its colours, its font, its icon -->
+            <span class="hall__sign" :style="signStyle(box.meta)" aria-hidden="true">
+              <img v-if="icons[box.meta.icon]" class="hall__sign-icon" :src="icons[box.meta.icon]" alt="" />
+              <span class="hall__sign-text">{{ box.meta.label }}</span>
             </span>
           </button>
 
@@ -107,26 +115,18 @@
       </div>
     </div>
 
-    <nav class="hall__places" aria-label="Places in the library">
-      <button v-for="part in PARTS" :key="part.id" type="button" class="btn btn-secondary btn-sm hall__place" @click="goTo(part)">
-        {{ part.label }}
-      </button>
-    </nav>
+    <PlacesMenu class="hall__places" :groups="placeGroups" @go="goTo" />
   </div>
 </template>
-
-<script>
-// How far along the hall the reader was when they left (art x at the left of the view), so
-// coming back from a book's page finds the hall where it was. Kept for this visit only.
-let lastLeft = 0
-</script>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { categoryByKey } from '../categories.js'
 import { HALL, LAMPS, PARTS, bookcases, deskBox, scannerBox, windowGlass } from '../hall/layout.js'
 import { paintHall } from '../hall/paint.js'
+import { iconUrl } from '../hall/icons.js'
 import { createScroll } from '../hall/scroll.js'
+import PlacesMenu from './PlacesMenu.vue'
 
 const props = defineProps({
   // the key of the bookcase that is open, if any
@@ -144,7 +144,7 @@ const props = defineProps({
 // scan: the book scanner was tapped; toggle-lamp: a lamp was tapped (with its id)
 defineEmits(['open-shelf', 'desk', 'scan', 'toggle-lamp'])
 
-// px kept clear along the bottom for the bar of places: spare height goes to floor there first
+// px kept clear along the bottom for the Places menu: spare height goes to floor there first
 const BAR = 64
 
 const root = ref(null)
@@ -155,6 +155,20 @@ const drawable = canDraw()
 const cases = bookcases().map((box) => ({ ...box, meta: categoryByKey(box.category) }))
 const desk = deskBox()
 const scanner = scannerBox()
+
+// the pixel icons on the signs and plates, as pictures (none where the device can't draw)
+const icons = Object.fromEntries(['bell', 'camera', ...cases.map((box) => box.meta.icon)].map((name) => [name, drawable ? iconUrl(name) : '']))
+
+// a genre's sign: its board and lettering colours, its pixel font and how big that font runs
+function signStyle({ sign }) {
+  return {
+    '--sign-board': sign.board,
+    '--sign-ink': sign.ink,
+    '--sign-size': sign.size ?? 1,
+    '--sign-shadow': sign.shadow ?? 'none',
+    fontFamily: `${sign.font}, var(--rl-font-title)`,
+  }
+}
 
 const SCENE_LABELS = { sunny: 'Sunny', cloudy: 'Cloudy', rain: 'Rain' }
 const RAIN_LABELS = { light: 'Light rain', steady: 'Rain', heavy: 'Heavy rain' }
@@ -175,6 +189,8 @@ const weatherIcon = computed(() => {
 // `rows` art pixels tall (the hall, plus more floor below and more wall above), `above` the rows
 // of wall above the hall as designed.
 const size = ref({ scale: 1, unit: 1, rows: HALL.height, above: 0 })
+// whether the hall has been sized yet
+let measured = false
 
 const stageStyle = computed(() => ({ width: `${HALL.width * size.value.unit}px` }))
 const roomStyle = computed(() => ({
@@ -240,14 +256,27 @@ function measure() {
   const below = Math.min(spare, Math.ceil(BAR / unit))
   const next = { scale, unit, rows, above: spare - below }
   const before = size.value
-  if (next.unit === before.unit && next.rows === before.rows && next.above === before.above) return
-  // keep the same part of the hall in the middle of the view
+  if (measured && next.unit === before.unit && next.rows === before.rows && next.above === before.above) return
+  // on a resize, keep the same part of the hall in the middle of the view; the first time, it
+  // stays at its left end
   const middle = (scroller.value.scrollLeft + scroller.value.clientWidth / 2) / before.unit
+  const first = !measured
+  measured = true
   size.value = next
   nextTick(() => {
-    scroll?.glideTo(middle * next.unit - scroller.value.clientWidth / 2, { instant: true })
+    scroll?.glideTo(first ? startLeft() : middle * next.unit - scroller.value.clientWidth / 2, { instant: true })
     paint()
   })
+}
+
+// Where the hall opens (px scrolled): its left end, unless the screen is too narrow for the help
+// desk and the scanner both; then just far enough along that the whole desk is in view, with
+// the scanner beside it.
+const MARGIN = 8
+function startLeft() {
+  const { unit } = size.value
+  const toScanner = (scanner.x + scanner.w + MARGIN) * unit - scroller.value.clientWidth
+  return Math.max(0, Math.min(toScanner, (desk.x - MARGIN) * unit))
 }
 
 function paint() {
@@ -272,8 +301,17 @@ function canDraw() {
 // --- Moving along the hall ----------------------------------------------------------------------
 let scroll = null
 
-// the bar of places slides so that part of the hall is in the middle of the view
-function goTo(part) {
+// The Places menu, in two groups: the rest of the hall, then the bookcases.
+const isShelf = (part) => cases.some((box) => box.category === part.id)
+const placeGroups = [
+  { label: 'Around the library', places: PARTS.filter((part) => !isShelf(part)) },
+  { label: 'Shelves', places: PARTS.filter(isShelf) },
+]
+
+// picking a place in the menu slides that part of the hall into the middle of the view
+function goTo(id) {
+  const part = PARTS.find((one) => one.id === id)
+  if (!part) return
   scroll.glideTo(part.at * size.value.unit - scroller.value.clientWidth / 2)
   scroller.value.focus({ preventScroll: true })
 }
@@ -285,12 +323,11 @@ onMounted(async () => {
   resize = new ResizeObserver(measure)
   resize.observe(root.value)
   await nextTick()
+  // the hall always opens at its left end, with the help desk and the scanner in view
   paint()
-  if (lastLeft) scroll.glideTo(lastLeft * size.value.unit, { instant: true })
 })
 
 onBeforeUnmount(() => {
-  if (scroller.value) lastLeft = scroller.value.scrollLeft / size.value.unit
   resize?.disconnect()
   scroll?.dispose()
 })
@@ -367,33 +404,116 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-/* a bookcase's name plate, hung on its crown: a cream plate with the town's dark outline */
+/* the scanner's and the help desk's signs: a cream plate with the town's dark outline, its name
+   and, under it, what it's for */
 .hall__plate {
   position: absolute;
   top: 0;
   left: 50%;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   transform: translate(-50%, -60%);
-  padding: 1px 6px;
-  border: max(1px, var(--unit)) solid #1e1a24;
+  padding: 2px 8px;
+  border: max(2px, var(--unit)) solid #1e1a24;
   background: #f9f3e6;
   box-shadow: inset 0 calc(-1 * max(1px, var(--unit))) 0 #e6dccb;
   font-family: var(--rl-font-body);
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 800;
-  line-height: 13px;
-  letter-spacing: 0.06em;
+  line-height: 18px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
   color: #3b342a;
   pointer-events: none;
 }
 
-.hall__plate-emoji {
-  font-size: 11px;
+.hall__plate-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hall__plate-hint {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 15px;
   letter-spacing: 0;
+  text-transform: none;
+}
+
+/* the scanner's two lines stand above its top, clear of its screen */
+.hall__plate--scanner {
+  transform: translate(-50%, -100%);
+}
+
+.hall__plate-icon {
+  width: 18px;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+/* A genre's sign: a board in the genre's colours, hung on two strings from the picture rail
+   (50 art px above the bookcase) to just above the bookcase, 11 art px tall. Its lettering is
+   the genre's pixel font, at least 16 px (14 px on a phone), scaled by how big that font runs. */
+.hall__sign {
+  --sign-tall: calc(var(--unit) * 11);
+  position: absolute;
+  bottom: calc(100% + var(--unit) * 3);
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--sign-tall);
+  min-height: 30px;
+  transform: translateX(-50%);
+  padding: 0 10px;
+  border: 2px solid #1e1a24;
+  background: var(--sign-board);
+  box-shadow: 3px 3px 0 #1e1a24;
+  color: var(--sign-ink);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* the two strings, up to the picture rail */
+.hall__sign::before,
+.hall__sign::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  width: 2px;
+  height: calc(var(--unit) * 36);
+  background: #4f2f1d;
+}
+
+.hall__sign::before {
+  left: 14%;
+}
+
+.hall__sign::after {
+  right: 14%;
+}
+
+.hall__sign-icon {
+  width: 20px;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.hall__sign-text {
+  font-size: calc(18px * var(--sign-size));
+  font-weight: 400;
+  line-height: 1;
+  text-shadow: var(--sign-shadow);
+}
+
+@media (max-width: 575.98px) {
+  .hall__sign-text {
+    font-size: calc(15px * var(--sign-size));
+  }
 }
 
 .hall__plate--desk {
@@ -438,31 +558,29 @@ onBeforeUnmount(() => {
   }
 }
 
-/* the weather chip, under the search bar */
+/* the weather, top right: on the same line as the back button and the search bar */
 .hall__chips {
   position: absolute;
-  top: calc(var(--building-back-space, 0px) + 60px);
-  left: 12px;
+  top: 10px;
+  right: 12px;
   z-index: 3;
   display: flex;
   gap: 8px;
 }
 
-/* the weather chip: the town's chips (TownHud) */
+/* the weather chip: a pixel tag, as tall as the back button beside it */
 .hall__weather {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 0 12px 0 8px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-  font-family: var(--font-serif);
+  min-height: 44px;
+  padding: 0 12px 0 10px;
+  border: var(--px-border);
+  background: var(--px-paper);
+  box-shadow: var(--px-shadow);
   font-size: 14px;
-  font-weight: 700;
-  color: var(--rl-text);
+  font-weight: 800;
+  color: var(--px-outline);
 }
 
 /* a lamp's button: a round glow round the lamp when aimed at */
@@ -501,28 +619,12 @@ onBeforeUnmount(() => {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cpath fill='%235a5a68' d='M3 0h3v1h1v1h1v1h1v2h-9v-2h1v-1h1v-1h1z'/%3E%3Cpath fill='%237fb6d9' d='M1 6h1v2h-1zM4 6h1v2h-1zM7 6h1v2h-1z'/%3E%3C/svg%3E");
 }
 
-/* the bar of places: Secondary pixel buttons */
+/* the Places menu, bottom right, as in My Room */
 .hall__places {
   position: absolute;
-  bottom: 18px;
-  left: 10px;
-  right: 10px;
-  z-index: 3;
-  display: flex;
-  gap: 6px;
-  margin-bottom: -14px;
-  /* room below and to the right for the buttons' pixel shadow, which the scroll would clip */
-  padding: 2px 3px 14px 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.hall__places::-webkit-scrollbar {
-  display: none;
-}
-
-.hall__place {
-  flex: none;
+  right: 15px;
+  bottom: 15px;
+  z-index: 6;
 }
 
 @media (prefers-reduced-motion: reduce) {

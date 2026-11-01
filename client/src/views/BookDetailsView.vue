@@ -7,7 +7,7 @@
 <template>
   <section class="book-page">
     <BookCard class="book-page__card" close-label="Back" @close="goBack">
-      <BookDetailsContent v-if="book" :book="book" title-tag="h1" :links-to-page="false" />
+      <BookDetailsContent v-if="book" :book="book" title-tag="h1" :links-to-page="false" where-to-get />
       <div v-else-if="loading || (!data && !error)" class="book-page__state" role="status">
         <span class="spinner-border" aria-hidden="true"></span>
         Opening the book…

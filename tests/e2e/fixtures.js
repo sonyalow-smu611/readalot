@@ -113,6 +113,14 @@ export async function goToPlace(page, place) {
   if (await room.count()) await scrollSettled(room);
 }
 
+// Opens the library's Places menu (unless it's open) and returns its list.
+export async function openPlaces(page) {
+  const list = page.getByRole("navigation", { name: "Places in the library" });
+  if (!(await list.isVisible())) await page.getByRole("button", { name: "Places", exact: true }).click();
+  await expect(list).toBeVisible();
+  return list;
+}
+
 // The colour of the room's picture at an art pixel (x, y), as "r,g,b". Art x is the canvas's own
 // column; the clock, whose top is at art y 166, finds the row (the room grows wall above it on
 // taller screens).

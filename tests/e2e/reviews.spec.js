@@ -61,6 +61,8 @@ test.describe("everyone's reviews", () => {
     await page.goto("/discover/classics");
     await page.getByRole("button", { name: /^Pride and Prejudice/ }).click();
     const genreCard = page.getByRole("dialog", { name: "Quick preview: Pride and Prejudice" });
+    // a found book's card keeps its reviews behind their own button
+    await genreCard.getByRole("button", { name: /^Read reviews/ }).click();
     await expect(genreCard.getByRole("region", { name: "Reviews" })).toContainText("Emma Tan");
     await expect(genreCard).toContainText("from 3 Readalot readers");
 

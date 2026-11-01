@@ -1,6 +1,8 @@
-<!-- Quick Book Preview (reference screen 07). Opens whenever `book` is set. The genre page, Discover
-     and search open it; My Shelf and a friend's shelf open it too, naming it "Book details",
-     with the shelf it's on, and their own extras (progress, Remove) in the slot. -->
+<!-- Quick Book Preview (reference screen 07). Opens whenever `book` is set. My Shelf and a friend's
+     shelf open it, naming it "Book details", with the shelf it's on, and their own extras
+     (progress, Remove) in the slot. The library, search and the genre page open it through
+     book/FoundBookPreview.vue, with Add to To be read and Where to get in the slot instead of the
+     statuses, and the reviews behind a button (collapseReviews). -->
 <template>
   <div
     v-if="book"
@@ -48,7 +50,19 @@
         <!-- what the page opening it adds, e.g. My Shelf's progress and Remove from shelf -->
         <slot />
 
+        <button
+          v-if="collapseReviews"
+          type="button"
+          class="btn btn-secondary preview__reviews-toggle"
+          :aria-expanded="reviewsShown"
+          :aria-controls="reviewsId"
+          @click="reviewsShown = !reviewsShown"
+        >
+          {{ reviewsShown ? "Hide reviews" : reviewsLoading ? "Read reviews" : `Read reviews (${reviews.length})` }}
+        </button>
         <BookReviews
+          v-show="!collapseReviews || reviewsShown"
+          :id="reviewsId"
           class="preview__reviews"
           :reviews="reviews"
           :loading="reviewsLoading"
@@ -73,7 +87,7 @@
 </template>
 
 <script setup>
-import { nextTick, ref, watch } from "vue";
+import { nextTick, ref, useId, watch } from "vue";
 import { STATUSES } from "../services/shelves.js";
 import BookCover from "./BookCover.vue";
 import BookReviews from "./book/BookReviews.vue";
@@ -92,7 +106,9 @@ const props = defineProps({
   // the Reading status buttons; off for someone else's book
   statuses: { type: Boolean, default: true },
   // Open full book page; off for books that have no page (the demo readers')
-  linksToPage: { type: Boolean, default: true }
+  linksToPage: { type: Boolean, default: true },
+  // the reviews wait behind a "Read reviews" button, so what the page put in the slot comes first
+  collapseReviews: { type: Boolean, default: false }
 });
 defineEmits(["close", "status"]);
 
@@ -110,11 +126,14 @@ const {
   remove: removeReview
 } = useBookReviews(() => props.book);
 const user = useUserStore();
+const reviewsId = useId();
+const reviewsShown = ref(false);
 
 watch(
   () => props.book?.id,
   async (id) => {
     if (!id) return;
+    reviewsShown.value = false;
     await nextTick();
     dialog.value?.focus();
   },
@@ -186,6 +205,10 @@ watch(
 
 .preview__reviews {
   margin: 14px 0;
+}
+
+.preview__reviews-toggle {
+  margin-top: 10px;
 }
 
 .preview__synopsis {
