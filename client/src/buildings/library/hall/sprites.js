@@ -1,10 +1,12 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Every piece of the library hall, drawn at 1x (one canvas pixel per art pixel) with the helpers
 // in pixel.js, each with the town's 1 px outline. Sprites are drawn once, the first time the hall
-// asks for them. A bookcase is `bookcase:<category key>`, filled with that category's colours.
+// asks for them. A bookcase is `bookcase:<category key>`, built in that genre's wood and filled
+// with its colours; `mural:<category key>` is the art on the wall behind it (murals.js).
 import { CATEGORIES } from '../categories.js'
 import { BOOKCASE, DESK, SCANNER, WINDOWS } from './layout.js'
 import { PAL as C } from './palette.js'
+import { mural } from './murals.js'
 import { E, P, R, canvas, leaf, panel, seeded, shade, sprite } from './pixel.js'
 
 // --- Bookcase ----------------------------------------------------------------------------------
@@ -16,17 +18,18 @@ const TOP = 10
 function bookcase(category) {
   const { w: W, h: H } = BOOKCASE
   const { rnd, ri, pick } = seeded(category.key)
+  const wood = category.wood
   return sprite(W, H, (x) => {
-    panel(x, 0, 0, W, H, C.wood, 1.08, 0.82)
-    R(x, SIDE, TOP, W - 2 * SIDE, H - TOP - 10, C.woodDeep)
+    panel(x, 0, 0, W, H, wood.frame, 1.08, 0.82)
+    R(x, SIDE, TOP, W - 2 * SIDE, H - TOP - 10, wood.back)
     // crown and plinth
-    panel(x, 0, 0, W, 8, C.woodLight, 1.12, 0.85)
-    R(x, 2, 8, W - 4, 1, C.woodDark)
-    panel(x, 0, H - 10, W, 10, C.woodLight, 1.12, 0.8)
+    panel(x, 0, 0, W, 8, wood.light, 1.12, 0.85)
+    R(x, 2, 8, W - 4, 1, wood.dark)
+    panel(x, 0, H - 10, W, 10, wood.light, 1.12, 0.8)
     for (let row = 0; row < 5; row++) {
       const top = TOP + row * (ROW + BOARD)
       const base = top + ROW
-      if (row < 4) panel(x, SIDE, base, W - 2 * SIDE, BOARD, C.woodLight, 1.14, 0.82)
+      if (row < 4) panel(x, SIDE, base, W - 2 * SIDE, BOARD, wood.light, 1.14, 0.82)
       fillRow(x, top, base)
     }
   })
@@ -322,7 +325,10 @@ const MAKERS = {
   window: (look) => windowArched(WINDOWS.window.w, WINDOWS.window.h, look),
   'window-tall': (look) => windowArched(WINDOWS['window-tall'].w, WINDOWS['window-tall'].h, look),
 }
-for (const category of CATEGORIES) MAKERS[`bookcase:${category.key}`] = () => bookcase(category)
+for (const category of CATEGORIES) {
+  MAKERS[`bookcase:${category.key}`] = () => bookcase(category)
+  MAKERS[`mural:${category.key}`] = () => mural(category)
+}
 
 const cache = new Map()
 

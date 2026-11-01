@@ -1,5 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, test } from "./fixtures.js";
+import { expect, openPlaces, test } from "./fixtures.js";
 
 // The bookcases fill from a book search; answer it here so the tests never wait on Google Books.
 const BOOKS = [
@@ -16,21 +16,33 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/library");
 });
 
-test("the library hall has a bookcase for each category", async ({ page }) => {
-  for (const name of ["Popular right now", "Fantasy", "Romance", "Mystery", "Science fiction", "History", "Classics", "Prize winners"]) {
+const GENRES = [
+  "Romance",
+  "Romantasy",
+  "Fantasy",
+  "Mystery & Thriller",
+  "Horror",
+  "Science Fiction",
+  "Historical Fiction",
+  "Young Adult",
+  "Memoir & Biography",
+  "Graphic Novels & Manga",
+];
+
+test("the library hall has a bookcase for each of the ten most read genres", async ({ page }) => {
+  for (const name of GENRES) {
     await expect(page.getByRole("button", { name: `${name} bookcase` })).toBeAttached();
   }
-  await expect(page.getByRole("navigation", { name: "Places in the library" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Places", exact: true })).toBeVisible();
 });
 
 test("a bookcase opens its books, and a book opens its preview", async ({ page }) => {
-  await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Fantasy" }).click();
+  await (await openPlaces(page)).getByRole("button", { name: "Fantasy" }).click();
   await page.getByRole("button", { name: "Fantasy bookcase" }).click();
 
   const sheet = page.getByRole("dialog", { name: "Fantasy" });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("button", { name: /The Dragon's Library/ })).toBeVisible();
-  await expect(sheet.getByRole("link", { name: "See all Fantasy" })).toBeVisible();
 
   await sheet.getByRole("button", { name: /The Dragon's Library/ }).click();
   const preview = page.getByRole("dialog", { name: "Quick preview: The Dragon's Library" });
@@ -38,13 +50,13 @@ test("a bookcase opens its books, and a book opens its preview", async ({ page }
   await preview.getByRole("button", { name: "Close", exact: true }).click();
   await expect(preview).toBeHidden();
 
-  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+  await sheet.getByRole("button", { name: "Back to the hall" }).click();
   await expect(sheet).toBeHidden();
   await expect(page.getByRole("button", { name: "Fantasy bookcase" })).toBeFocused();
 });
 
 test("the help desk puts the reader in the search bar", async ({ page }) => {
-  await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Help desk" }).click();
+  await (await openPlaces(page)).getByRole("button", { name: "Help desk" }).click();
   await page.getByRole("button", { name: "Help desk: search for any book" }).click();
 
   const search = page.getByRole("searchbox", { name: "Search books or authors" });
@@ -117,4 +129,171 @@ test("the library shows the live weather, and follows it after dark", async ({ p
   // ?scene= previews a sky without waiting for that weather
   await page.goto("/library?scene=cloudy");
   await expect(page.getByRole("img", { name: /Weather outside: Cloudy, 25 degrees/ })).toBeVisible();
+});
+
+test("the Places menu in the bottom right lists the hall, then the shelves, and goes to a bookcase", async ({ page }) => {
+  const toggle = page.getByRole("button", { name: "Places", exact: true });
+  const view = page.viewportSize();
+  const box = await toggle.boundingBox();
+  expect(box.x + box.width).toBeGreaterThan(view.width - 40);
+  expect(box.y + box.height).toBeGreaterThan(view.height - 40);
+
+  const list = await openPlaces(page);
+  await expect(list.getByRole("region", { name: "Around the library" }).getByRole("button", { name: "Scanner" })).toBeVisible();
+  await expect(list.getByRole("region", { name: "Shelves" }).getByRole("button", { name: "Fantasy" })).toBeVisible();
+
+  await list.getByRole("button", { name: "Fantasy" }).click();
+  await expect(list).toBeHidden();
+  await expect(page.getByRole("button", { name: "Fantasy bookcase" })).toBeInViewport();
+
+  await openPlaces(page);
+  await page.keyboard.press("Escape");
+  await expect(list).toBeHidden();
+  await expect(toggle).toBeFocused();
+});
+
+for (const [label, viewport] of [
+  ["a laptop", { width: 1440, height: 900 }],
+  ["a phone", { width: 390, height: 844 }],
+]) {
+  test(`on ${label}, the back button, search and weather share the top line`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const back = await page.getByRole("link", { name: "Back to town" }).boundingBox();
+    const search = await page.getByRole("search").boundingBox();
+    const weather = await page.getByRole("img", { name: /Weather outside/ }).boundingBox();
+
+    // one line: the three start at the same height, left, middle, right, without touching
+    for (const box of [search, weather]) expect(Math.abs(box.y - back.y)).toBeLessThan(4);
+    expect(back.x + back.width).toBeLessThan(search.x);
+    expect(search.x + search.width).toBeLessThan(weather.x);
+    expect(Math.abs(search.x + search.width / 2 - viewport.width / 2)).toBeLessThan(4);
+    expect(weather.x + weather.width).toBeGreaterThan(viewport.width - 30);
+  });
+}
+
+test("on a phone, the search rests as a magnifier and grows into a bar when tapped", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const box = page.getByRole("searchbox", { name: "Search books or authors" });
+  await expect(box).toBeHidden();
+
+  await page.getByRole("button", { name: "Search books or authors" }).click();
+  await expect(box).toBeFocused();
+  await expect(page.getByText("The librarian is listening", { exact: false })).toBeVisible();
+  expect((await page.getByRole("search").boundingBox()).width).toBeGreaterThan(340);
+
+  await box.fill("dune");
+  await box.press("Enter");
+  await expect(page).toHaveURL(/\/search\?q=dune$/);
+});
+
+test("each bookcase has a sign with its genre's name and pixel icon, in its own font", async ({ page }) => {
+  const horror = page.locator('[data-place="horror"] .hall__sign');
+  await expect(horror).toHaveText("Horror");
+  await expect(horror.locator("img")).toHaveAttribute("src", /^data:image\/png/);
+  await expect(horror).toHaveCSS("font-family", /Jacquard 24/);
+  await expect(page.locator('[data-place="scifi"] .hall__sign')).toHaveCSS("font-family", /Workbench/);
+  // big enough to read
+  const size = await page.locator('[data-place="romance"] .hall__sign-text').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  expect(size).toBeGreaterThanOrEqual(16);
+});
+
+test("the library has no emoji anywhere, only pixel icons", async ({ page }) => {
+  const emoji = /\p{Extended_Pictographic}/u;
+  await expect(page.getByRole("button", { name: "Places", exact: true })).toBeVisible();
+  expect(await page.locator("body").innerText()).not.toMatch(emoji);
+
+  await page.getByRole("button", { name: "Horror bookcase" }).click();
+  const sheet = page.getByRole("dialog", { name: "Horror" });
+  await expect(sheet.getByRole("button", { name: /The Dragon's Library/ })).toBeVisible();
+  expect(await sheet.innerText()).not.toMatch(emoji);
+  await sheet.getByRole("button", { name: "Back to the hall" }).click();
+
+  await page.getByRole("button", { name: "Book scanner: scan a book cover" }).click();
+  const scanner = page.getByRole("dialog", { name: "Book scanner" });
+  await expect(scanner).toBeVisible();
+  expect(await scanner.innerText()).not.toMatch(emoji);
+});
+
+// 24 books, so the opened bookcase fills several shelves
+const MANY = Array.from({ length: 24 }, (_, i) => ({
+  id: `many-${i}`,
+  title: i === 0 ? "The Haunting of Hill House" : `Night Book ${i + 1}`,
+  authors: ["C. Writer"],
+  coverUrl: "",
+}));
+
+test.describe("an opened bookcase", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/books/search**", (route) => route.fulfill({ json: { books: MANY } }));
+  });
+
+  test("fills the library with a real bookcase: spines with readable titles on several uneven shelves", async ({ page }) => {
+    const asked = page.waitForRequest((request) => request.url().includes("/api/books/search"));
+    await page.getByRole("button", { name: "Horror bookcase" }).click();
+    expect(new URL((await asked).url()).searchParams.get("limit")).toBe("24");
+
+    const bookcase = page.getByRole("dialog", { name: "Horror" });
+    await expect(bookcase).toBeVisible();
+    // it covers the whole hall, once it has grown in
+    const view = page.viewportSize();
+    await expect.poll(async () => (await bookcase.boundingBox()).width).toBeGreaterThanOrEqual(view.width - 1);
+    expect((await bookcase.boundingBox()).height).toBeGreaterThan(view.height - 10);
+
+    const spine = bookcase.getByRole("button", { name: "The Haunting of Hill House by C. Writer" });
+    await expect(spine).toBeVisible();
+    await expect(spine).toContainText("The Haunting of Hill House");
+    const size = await spine.locator("span").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(size).toBeGreaterThanOrEqual(14);
+
+    // all 24 books, on more than one shelf, and the shelves aren't all the same height
+    await expect(bookcase.getByRole("button", { name: /by C\. Writer$/ })).toHaveCount(24);
+    const heights = await bookcase.locator(".case__shelf").evaluateAll((shelves) => shelves.map((shelf) => shelf.offsetHeight));
+    expect(heights.length).toBeGreaterThan(1);
+    expect(new Set(heights).size).toBeGreaterThan(1);
+  });
+
+  test("turns its books face out with Covers, and back with Spines", async ({ page }) => {
+    await page.getByRole("button", { name: "Fantasy bookcase" }).click();
+    const bookcase = page.getByRole("dialog", { name: "Fantasy" });
+    const spines = bookcase.getByRole("button", { name: "Spines" });
+    const covers = bookcase.getByRole("button", { name: "Covers" });
+    await expect(spines).toHaveAttribute("aria-pressed", "true");
+    await expect(bookcase.locator(".case__spine").first()).toBeVisible();
+
+    await covers.click();
+    await expect(covers).toHaveAttribute("aria-pressed", "true");
+    await expect(spines).toHaveAttribute("aria-pressed", "false");
+    await expect(bookcase.locator(".case__spine")).toHaveCount(0);
+    await expect(bookcase.locator(".case__cover")).toHaveCount(24);
+
+    await spines.click();
+    await expect(bookcase.locator(".case__cover")).toHaveCount(0);
+  });
+
+  test("a book slides out and opens its preview; Esc goes back to the hall", async ({ page }) => {
+    await page.getByRole("button", { name: "Romance bookcase" }).click();
+    const bookcase = page.getByRole("dialog", { name: "Romance" });
+    await bookcase.getByRole("button", { name: "The Haunting of Hill House by C. Writer" }).click();
+    const preview = page.getByRole("dialog", { name: "Quick preview: The Haunting of Hill House" });
+    await expect(preview).toBeVisible();
+    await preview.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(preview).toBeHidden();
+
+    await bookcase.focus();
+    await page.keyboard.press("Escape");
+    await expect(bookcase).toBeHidden();
+    await expect(page.getByRole("button", { name: "Romance bookcase" })).toBeFocused();
+  });
+
+  test("works on a phone too", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await (await openPlaces(page)).getByRole("button", { name: "Sci-Fi" }).click();
+    await page.getByRole("button", { name: "Science Fiction bookcase" }).click();
+    const bookcase = page.getByRole("dialog", { name: "Science Fiction" });
+    await expect(bookcase.getByRole("button", { name: "Back to the hall" })).toBeVisible();
+    await expect(bookcase.getByRole("button", { name: "Covers" })).toBeVisible();
+    await expect(bookcase.getByRole("button", { name: "The Haunting of Hill House by C. Writer" })).toBeVisible();
+    // nothing runs off the side of the screen
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  });
 });
