@@ -9,7 +9,7 @@ import { useRoute } from 'vue-router'
 import ShelfTier from '@/components/ShelfTier.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import SkeletonBlock from '@/components/SkeletonBlock.vue'
-import BookPreviewModal from '@/components/BookPreviewModal.vue'
+import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
 import { useBookPreview } from '@/composables/useBookPreview'
 import { genreInfo } from '@/services/discover.js'
 import { searchBooks } from '@/services/api.js'
@@ -30,7 +30,7 @@ const SORTS = [
 ]
 
 const route = useRoute()
-const { previewBook, openPreview, closePreview, saveStatus } = useBookPreview()
+const { previewBook, saving, openPreview, closePreview, saveStatus } = useBookPreview()
 
 const genre = computed(() => genreInfo(route.params.genre))
 const books = ref([])
@@ -144,7 +144,7 @@ const tiers = computed(() => {
       />
     </template>
 
-    <BookPreviewModal :book="previewBook" @close="closePreview" @status="saveStatus" />
+    <FoundBookPreview :book="previewBook" :adding="saving" @add="saveStatus('want_to_read')" @close="closePreview" />
   </section>
 </template>
 

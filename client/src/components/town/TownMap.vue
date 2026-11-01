@@ -17,8 +17,10 @@ const props = defineProps({
   enter: { type: Object, default: null },
   // the reader's saved character (see lib/avatar/catalogue.js)
   character: { type: Object, default: null },
-  // friends' presence, [{ id: reader id, online, upkeep, character }] (see town/friends.js)
+  // friends' presence, [{ id: reader id, online, upkeep, character, house }] (see town/friends.js)
   friends: { type: Array, default: () => [] },
+  // readers near you, [{ id: reader id, displayName, character, online }]
+  nearby: { type: Array, default: () => [] },
   // { id, key }: glide to that friend out walking. A new key repeats the same friend.
   focusFriend: { type: Object, default: null },
   // the friend whose card is open; null lets them walk on
@@ -91,6 +93,11 @@ watch(
 )
 
 watch(
+  () => props.nearby,
+  (readers) => scene?.setNearby(readers),
+)
+
+watch(
   () => props.character,
   (character) => scene?.setCharacter(character),
 )
@@ -131,6 +138,7 @@ onMounted(() => {
   })
   scene.setSky(props.sky)
   scene.setFriends(props.friends)
+  scene.setNearby(props.nearby)
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: host.value,

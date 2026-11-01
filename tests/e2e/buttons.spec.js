@@ -1,5 +1,5 @@
 import { test as signedOut } from "@playwright/test";
-import { buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openShop, roomReady, skipMoodCheckIn, test } from "./fixtures.js";
+import { buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, test } from "./fixtures.js";
 import { createReader, hasSupabase, NEEDS_SUPABASE, signInPage } from "./supabaseUser.js";
 
 // a brand-new reader, who hasn't filled in Welcome yet
@@ -362,7 +362,8 @@ const tourReader = signedOut.extend({
 test.describe("shared components", () => {
   test("the app header has pixel buttons", async ({ page }) => {
     await page.route("**/api/books/search**", (route) => route.fulfill({ json: { books: [] } }));
-    await page.goto("/search");
+    // a page with the header and its Back (search fills the window now, with its own)
+    await page.goto("/discover/fantasy");
     const header = page.getByRole("banner");
     await expect(header.getByRole("button", { name: "Back" })).toBeVisible();
     expect(await offLook(header)).toEqual([]);
@@ -436,24 +437,26 @@ test.describe("the library", () => {
   });
 
   test("the hall, its places and the help desk's search have pixel buttons", async ({ page }) => {
-    await expect(page.getByRole("navigation", { name: "Places in the library" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Places", exact: true })).toBeVisible();
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
-    await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Help desk" }).click();
+    await openPlaces(page);
+    await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
+    await (await openPlaces(page)).getByRole("button", { name: "Help desk" }).click();
     await page.getByRole("button", { name: "Help desk: search for any book" }).click();
     await expect(page.getByRole("searchbox", { name: "Search books or authors" })).toBeVisible();
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
   });
 
-  test("a bookcase's shelf sheet has pixel buttons", async ({ page }) => {
-    await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Fantasy" }).click();
+  test("an opened bookcase has pixel buttons", async ({ page }) => {
+    await (await openPlaces(page)).getByRole("button", { name: "Fantasy" }).click();
     await page.getByRole("button", { name: "Fantasy bookcase" }).click();
     const sheet = page.getByRole("dialog", { name: "Fantasy" });
-    await expect(sheet.getByRole("link", { name: "See all Fantasy" })).toBeVisible();
+    await expect(sheet.getByRole("button", { name: /The Dragon's Library/ })).toBeVisible();
     await expect.poll(() => offLook(sheet)).toEqual([]);
   });
 
   test("the scan machine has pixel buttons", async ({ page }) => {
-    await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Scanner" }).click();
+    await (await openPlaces(page)).getByRole("button", { name: "Scanner" }).click();
     await page.getByRole("button", { name: "Book scanner: scan a book cover" }).click();
     const scanner = page.getByRole("dialog", { name: "Book scanner" });
     await expect(scanner).toBeVisible();
@@ -510,7 +513,7 @@ test.describe("the salon", () => {
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
 
     await page.getByRole("button", { name: "Edit location" }).click();
-    await expect(page.getByLabel("Location")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Location" })).toBeVisible();
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
     await page.getByRole("button", { name: "Save" }).click();
 

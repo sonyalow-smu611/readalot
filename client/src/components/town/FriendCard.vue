@@ -1,7 +1,8 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The card that slides up when you stop a friend out walking: who they are, what they're up to,
-// and two ways on: talk to them, or visit their house.
+// The card that slides up when you stop a reader out walking. A friend: what they're up to, and
+// the ways on (talk to them, visit their house, remove them). A reader nearby: add them as a
+// friend, or see their profile.
 import { onMounted, ref } from 'vue'
 
 const props = defineProps({
@@ -9,11 +10,17 @@ const props = defineProps({
   friend: { type: Object, required: true },
   // their house (an entry of FRIEND_HOUSES in town/places.js), or null if they have none
   house: { type: Object, default: null },
+  // a reader near you, not a friend yet
+  nearby: { type: Boolean, default: false },
+  // you've already asked this reader
+  requested: { type: Boolean, default: false },
 })
-const emit = defineEmits(['talk', 'visit', 'close'])
+const emit = defineEmits(['talk', 'visit', 'add', 'profile', 'remove', 'close'])
 
 const card = ref(null)
 const first = props.friend.displayName.split(' ')[0]
+// Remove friend asks once more before it happens
+const confirmingRemove = ref(false)
 
 // keyboard and screen reader users land on the card
 onMounted(() => card.value?.focus())
@@ -29,7 +36,7 @@ onMounted(() => card.value?.focus())
     @keydown.esc="emit('close')"
   >
     <div class="friend-card__top">
-      <span class="friend-card__tab">Friend</span>
+      <span class="friend-card__tab" :class="{ 'is-nearby': nearby }">{{ nearby ? 'Reader nearby' : 'Friend' }}</span>
       <button type="button" class="btn btn-secondary btn-icon friend-card__close" aria-label="Close" @click="emit('close')">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
@@ -37,15 +44,31 @@ onMounted(() => card.value?.focus())
     <h2 class="friend-card__title">{{ friend.displayName }}</h2>
     <p class="friend-card__presence">
       <span class="friend-card__dot" :class="{ 'is-online': friend.online }" aria-hidden="true"></span>
-      {{ friend.online ? 'Online now, out for a walk' : `Last seen ${friend.lastSeen}` }}
+      <template v-if="nearby">{{ friend.online ? 'Online now, somewhere near you' : `Last seen around here ${friend.lastSeen}` }}</template>
+      <template v-else>{{ friend.online ? 'Online now, out for a walk' : `Last seen ${friend.lastSeen}` }}</template>
     </p>
     <p v-if="house" class="friend-card__blurb">{{ house.blurb }}</p>
-    <div class="friend-card__actions">
-      <button type="button" class="btn btn-primary friend-card__talk" @click="emit('talk', friend)">Say hi</button>
-      <button v-if="house" type="button" class="btn btn-secondary friend-card__visit" @click="emit('visit', house)">
-        Visit {{ first }}'s house
+    <div v-if="nearby" class="friend-card__actions">
+      <button type="button" class="btn btn-primary friend-card__talk" :disabled="requested" @click="emit('add', friend)">
+        {{ requested ? 'Requested' : 'Add friend' }}
       </button>
+      <button type="button" class="btn btn-secondary friend-card__visit" @click="emit('profile', friend)">View profile</button>
     </div>
+    <template v-else>
+      <div class="friend-card__actions">
+        <button type="button" class="btn btn-primary friend-card__talk" @click="emit('talk', friend)">Say hi</button>
+        <button v-if="house" type="button" class="btn btn-secondary friend-card__visit" @click="emit('visit', house)">
+          Visit {{ first }}'s house
+        </button>
+      </div>
+      <button
+        type="button"
+        class="btn btn-link btn-sm friend-card__remove"
+        @click="confirmingRemove ? emit('remove', friend) : (confirmingRemove = true)"
+      >
+        {{ confirmingRemove ? `Yes, remove ${first}` : 'Remove friend' }}
+      </button>
+    </template>
   </div>
 </template>
 
@@ -89,6 +112,15 @@ onMounted(() => card.value?.focus())
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.3px;
+}
+
+.friend-card__tab.is-nearby {
+  background: #2f6fa8;
+}
+
+.friend-card__remove {
+  display: block;
+  margin: 8px auto 0;
 }
 
 .friend-card__close {

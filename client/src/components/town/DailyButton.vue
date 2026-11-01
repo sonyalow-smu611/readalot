@@ -12,6 +12,8 @@ const props = defineProps({
   ready: { type: Boolean, default: false },
   claimed: { type: Boolean, default: false },
   open: { type: Boolean, default: false },
+  // "Daily task" and the flame, for the tab on the edge of a page
+  compact: { type: Boolean, default: false },
 })
 const emit = defineEmits(['toggle'])
 
@@ -35,14 +37,15 @@ const label = computed(() => {
     aria-controls="town-daily"
     @click="emit('toggle')"
   >
+    <span v-if="compact" class="daily-button__word" aria-hidden="true">Daily task</span>
     <span class="daily-button__fire" aria-hidden="true">
       <svg viewBox="0 0 24 24">
         <path d="M12 2.5c.6 3.2-1.4 4.7-2.9 6.6-1.3 1.6-2.4 3.2-2.4 5.6a5.3 5.3 0 0 0 10.6 0c0-2.1-.9-3.7-1.9-5-.3 1.4-1 2.4-2 2.8.5-3.6-.3-7.4-1.4-10z" />
       </svg>
       {{ streak }}
     </span>
-    <span class="daily-button__word" aria-hidden="true">Daily</span>
-    <svg class="daily-button__ring" viewBox="0 0 24 24" aria-hidden="true">
+    <span v-if="!compact" class="daily-button__word" aria-hidden="true">Daily</span>
+    <svg v-if="!compact" class="daily-button__ring" viewBox="0 0 24 24" aria-hidden="true">
       <circle class="daily-button__track" cx="12" cy="12" :r="RADIUS" />
       <circle class="daily-button__fill" cx="12" cy="12" :r="RADIUS" :stroke-dasharray="RING" :stroke-dashoffset="filled" />
       <path v-if="claimed" class="daily-button__tick" d="m8 12.2 2.6 2.6L16 9.4" />

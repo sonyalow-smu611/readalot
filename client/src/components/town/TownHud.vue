@@ -7,6 +7,7 @@ import FriendsButton from './FriendsButton.vue'
 defineProps({
   placesOpen: { type: Boolean, default: false },
   friendsOnline: { type: Number, default: 0 },
+  friendRequests: { type: Number, default: 0 },
   friendsOpen: { type: Boolean, default: false },
 })
 const emit = defineEmits(['toggle-places', 'toggle-friends'])
@@ -25,7 +26,7 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14" /></svg>
       Places
     </button>
-    <FriendsButton :online="friendsOnline" :open="friendsOpen" @toggle="emit('toggle-friends')" />
+    <FriendsButton :online="friendsOnline" :requests="friendRequests" :open="friendsOpen" @toggle="emit('toggle-friends')" />
   </header>
 </template>
 

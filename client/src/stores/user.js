@@ -6,6 +6,7 @@ import { currentSession, loadProfile, markTourSeen, watchAuth } from '@/services
 import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 import { useProgressStore } from '@/stores/progress.js'
 import { usePeopleStore } from '@/stores/people.js'
+import { useNearbyStore } from '@/town/nearbyStore.js'
 
 // A new reader's first tour, played once in the town after Welcome: Next zooms the camera out and
 // back in on each building in turn (focus: a place id from town/places.js, which TownView glides
@@ -55,10 +56,10 @@ const GUIDE_STEPS = [
   {
     id: 'town-friend',
     to: '/',
-    target: '[data-tour-spot="friend-emma.reads"]',
-    focus: 'friend-emma.reads',
+    target: '[data-tour-spot="friend-spot-0"]',
+    focus: 'friend-spot-0',
     title: 'Friends’ houses',
-    copy: 'The small houses belong to readers you know. Tap one to visit their room and see their shelves.',
+    copy: 'This lawn is waiting for a friend. When you add a reader, their house appears in town, and you can tap it to visit their room.',
   },
 ]
 
@@ -76,6 +77,8 @@ function emptyProfile() {
     favouriteGenres: [],
     location: '',
     discoverable: false,
+    // when they answered the public or private question, '' until then
+    locationAsked: '',
   }
 }
 
@@ -121,6 +124,7 @@ export const useUserStore = defineStore('user', () => {
       profileError.value = ''
       useProgressStore().reset()
       usePeopleStore().reset()
+      useNearbyStore().reset()
       return Promise.resolve()
     }
     if (user.id === loadingId && loading) return loading

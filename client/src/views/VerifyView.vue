@@ -59,7 +59,6 @@ function writeDigits(raw, start) {
   })
   digits.value = next
   focusAt(Math.min(5, start + chars.length))
-  if (next.join('').length === 6) submit()
 }
 
 function onDigit(index, event) {
@@ -72,7 +71,6 @@ function onDigit(index, event) {
   next[index] = value.slice(-1)
   digits.value = next
   if (value && index < 5) focusAt(index + 1)
-  if (next.join('').length === 6) submit()
 }
 
 function onKey(index, event) {

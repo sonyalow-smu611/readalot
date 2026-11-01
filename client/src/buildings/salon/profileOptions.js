@@ -42,10 +42,10 @@ export const ABOUT_FIELDS = [
   { key: 'location', label: 'Location', kind: 'text' },
 ]
 
-// What the pop-up says after the People map switch is flipped.
+// What the pop-up says after the public or private switch is flipped.
 export const PRIVACY_ALERTS = {
-  public: { title: 'You can now be discovered by people!', note: 'Nearby readers can find your room.' },
-  private: { title: 'You are now in private mode!', note: 'You are hidden from the People map.' },
+  public: { title: 'You can now be discovered by people!', note: 'Readers near you can see you in their town.' },
+  private: { title: 'You are now in private mode!', note: 'You are hidden, and your last location is deleted.' },
 }
 
 export function validAge(value) {

@@ -43,11 +43,12 @@ the person asks, through a pull request a teammate reviews. Details: [client/src
 Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /library | /cafe | /salon
                                                                  │
                          buildings/<name>/<Name>View.vue ────────┘
-                           └─ <BuildingShell title owner accent>   ← same header + "Back to town"
+                           └─ <BuildingShell title owner>   ← same "Back to town" button, no header bar
                                 └─ your page (today: the old page from views/, e.g. DiscoverBooksView)
 ```
 
-- Each building's entry view wraps everything in `components/shared/BuildingShell.vue`. Use its
+- Each building's entry view wraps everything in `components/shared/BuildingShell.vue`: the back
+  button, with no bar, so the page runs to the top. Use its
   `flush` prop only for a page that fills the screen itself (the 3D room).
 - `components/shared/WipPanel.vue` marks anything not built yet.
 - Put a building's own components in `buildings/<name>/components/`. To take over an old page,
@@ -66,6 +67,9 @@ Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /l
   `client/public/town/avatars/<id>.png`) or `<PixelCharacter>` (the same sprite, alive: it
   breathes, blinks and hops). Both live in `components/shared/`. Welcome and the salon set it.
 - `stores/bookshelf.js` → the reader's books and reading status, used by the room and book pages.
+- `town/nearbyStore.js` → friends, friend requests and readers nearby, and `setPublic()`: public
+  and sharing your last rough area are one setting (`profiles.discoverable`), shared by the map
+  chip and the salon. Spec: [docs/specs/nearby-readers-and-friend-houses.md](docs/specs/nearby-readers-and-friend-houses.md).
 
 ## Map
 
@@ -77,9 +81,9 @@ client/
     town/                 places.js (layout), TownScene.js (Phaser)
     components/town/      TownMap, TownHud, PlacesMenu, PlaceCard
     components/shared/    BuildingShell, WipPanel
-    buildings/            house/, library/, cafe/, salon/ — one per teammate
+    buildings/            house/, library/ (with search), cafe/, salon/ — one per teammate
     views/                TownView, the old pages (Room, DiscoverBooks, People), and
-                          pages opened from inside buildings (search, book details, scan…)
+                          pages opened from inside buildings (book details, genre shelf…)
     components/           room/, book/, people/, modals/ and other existing parts
     stores/ services/ router/ lib/
 server/                   Express API (routes/), Supabase, seed data

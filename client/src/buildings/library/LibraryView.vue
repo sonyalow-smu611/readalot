@@ -7,7 +7,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
-import BookPreviewModal from '@/components/BookPreviewModal.vue'
+import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
 import { useBookPreview } from '@/composables/useBookPreview'
 import { searchBooks } from '@/services/api.js'
 import { fetchWeather } from '@/services/weather.js'
@@ -15,14 +15,15 @@ import { useBookshelfStore } from '@/stores/bookshelf'
 import { PLACES } from '@/town/places.js'
 import LibraryHall from './components/LibraryHall.vue'
 import ScanMachine from './components/ScanMachine.vue'
-import ShelfSheet from './components/ShelfSheet.vue'
+import GenreBookcase from './components/GenreBookcase.vue'
 import { categoryByKey } from './categories.js'
+import { loadGenreFonts } from './fonts.js'
 
 const place = PLACES.find((p) => p.id === 'library')
 const route = useRoute()
 const router = useRouter()
 const bookshelf = useBookshelfStore()
-const { previewBook, openPreview, closePreview, saveStatus } = useBookPreview()
+const { previewBook, saving, openPreview, closePreview, saveStatus } = useBookPreview()
 
 // --- Weather -----------------------------------------------------------------------------------
 // The live weather, as My Room has it: it shows through the hall's windows and lights the hall.
@@ -93,10 +94,19 @@ function onSearch() {
 
 // The search bar grows, glows and asks what you're looking for whenever it's in use: tapped
 // directly, or from the help desk ("ask the librarian"). It settles back once you click away.
+// On a phone it rests as a magnifier button between the back button and the weather.
 const asking = ref(false)
 
-function askDesk() {
+async function askDesk() {
+  asking.value = true
+  await nextTick()
   searchInput.value?.focus()
+}
+
+// only the text box opens it: the phone's magnifier button opens it on click, and hiding that
+// button the moment it is focused would swallow its click
+function onFocusIn(event) {
+  if (event.target === searchInput.value) asking.value = true
 }
 
 function settle(event) {
@@ -105,7 +115,8 @@ function settle(event) {
 
 // --- Bookcases ---------------------------------------------------------------------------------
 // Each bookcase's books, loaded the first time it is opened and kept for the visit:
-// key -> { books, loading, error }
+// key -> { books, loading, error }. 24 fill about four shelves on a phone from one search.
+const BOOKS_PER_CASE = 24
 const shelves = reactive({})
 const openKey = ref(null)
 let trigger = null
@@ -115,7 +126,7 @@ async function loadShelf(key) {
   if (!category) return
   shelves[key] = { books: [], loading: true, error: '' }
   try {
-    const result = await searchBooks(category.query)
+    const result = await searchBooks(category.query, BOOKS_PER_CASE)
     shelves[key].books = result.books || []
   } catch {
     shelves[key].error = "Couldn't load these books. Check your connection and try again."
@@ -130,7 +141,7 @@ function openShelf(key) {
   if (!shelves[key] || shelves[key].error) loadShelf(key)
 }
 
-// the sheet goes away and focus goes back to the bookcase that opened it
+// the bookcase closes and focus goes back to the bookcase in the hall that opened it
 async function closeShelf() {
   openKey.value = null
   await nextTick()
@@ -169,6 +180,7 @@ watch(
 )
 
 onMounted(() => {
+  loadGenreFonts()
   // the reader's shelf, so the preview knows which books are already on it
   bookshelf.load()
   if (route.query.scan) openScanner()
@@ -180,7 +192,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <section class="library" :style="{ '--library-accent': place.accent }">
       <LibraryHall
         :active="openKey"
@@ -198,11 +210,14 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
         :class="{ 'is-asking': asking }"
         role="search"
         @submit.prevent="onSearch"
-        @focusin="asking = true"
+        @focusin="onFocusIn"
         @focusout="settle"
       >
+        <button type="button" class="btn btn-secondary btn-icon library__open" aria-label="Search books or authors" @click="askDesk">
+          <span class="library__icon is-glass" aria-hidden="true" />
+        </button>
         <div class="library__bar">
-          <span aria-hidden="true">{{ asking ? '🛎️' : '🔍' }}</span>
+          <span class="library__icon" :class="asking ? 'is-bell' : 'is-glass'" aria-hidden="true" />
           <input
             ref="searchInput"
             v-model="query"
@@ -221,13 +236,14 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
         </p>
       </form>
 
-      <ShelfSheet
+      <GenreBookcase
         v-if="openKey"
         :key="openKey"
         :category="categoryByKey(openKey)"
         :books="shelves[openKey]?.books"
         :loading="shelves[openKey]?.loading"
         :error="shelves[openKey]?.error"
+        :open-book="previewBook?.id ?? null"
         @select="openPreview"
         @close="closeShelf"
         @retry="loadShelf(openKey)"
@@ -235,7 +251,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 
       <ScanMachine v-if="scannerOpen" @close="closeScanner" @found="openPreview" @search="searchInstead" />
 
-      <BookPreviewModal :book="previewBook" @close="closePreview" @status="saveStatus" />
+      <FoundBookPreview :book="previewBook" :adding="saving" @add="saveStatus('want_to_read')" @close="closePreview" />
     </section>
   </BuildingShell>
 </template>
@@ -248,42 +264,91 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
   overflow: hidden;
 }
 
-/* the search bar floats at the top of the hall, above the bookcases' name plates; on a wide
-   screen it keeps to a comfortable width */
+/* The search bar sits in the middle of the top line, between the back button (left) and the
+   weather (right), clear of both: 370px is their widths and gaps together. It is a pixel text
+   box: square, a dark outline and a hard shadow, like the buttons beside it. */
 .library__search {
   position: absolute;
   top: 10px;
-  left: 12px;
+  left: 50%;
   z-index: 5;
-  width: min(460px, calc(100% - 24px));
-  border: 1px solid var(--rl-line);
-  border-radius: 24px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.12);
-  transition: width 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  width: min(460px, calc(100% - 370px));
+  transform: translateX(-50%);
+  border: var(--px-border);
+  background: var(--px-paper);
+  box-shadow: var(--px-shadow);
+  transition: width 0.25s ease, box-shadow 0.25s ease;
 }
 
 .library__search:focus-within {
-  border-color: var(--library-accent);
-  box-shadow: 0 0 0 3px rgba(63, 107, 120, 0.25), 0 4px 14px rgba(63, 46, 36, 0.12);
+  box-shadow: 0 0 0 3px rgba(63, 107, 120, 0.35), var(--px-shadow);
 }
 
-/* asked at the help desk: wider, a thicker teal ring that pulses, and a prompt underneath */
+/* in use, or asked at the help desk: wider, a teal ring that pulses, and a prompt underneath */
 .library__search.is-asking {
-  width: min(640px, calc(100% - 24px));
-  border: 2px solid var(--library-accent);
+  width: min(640px, calc(100% - 370px));
+  border-color: var(--library-accent);
   animation: library-ask 1.4s ease-out 2;
+}
+
+.library__open {
+  display: none;
 }
 
 .library__bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 14px;
+  min-height: 40px;
+  padding: 4px 6px 4px 12px;
 }
 
 .library__search.is-asking .library__bar {
-  padding: 12px 10px 12px 16px;
+  padding: 8px 8px 8px 14px;
+}
+
+/* the magnifier, and the help desk's bell while the librarian listens: pixel icons */
+.library__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.library__icon.is-glass {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cpath fill='%231e1a24' d='M1 0h4v1h-4zM0 1h1v4h-1zM5 1h1v4h-1zM1 5h4v1h-4zM5 5h2v2h-2zM7 7h2v2h-2z'/%3E%3Cpath fill='%237fb6d9' d='M1 1h4v4h-4z'/%3E%3Cpath fill='%23fdf7ec' d='M2 2h1v1h-1z'/%3E%3C/svg%3E");
+}
+
+.library__icon.is-bell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cpath fill='%23b08a3c' d='M4 0h1v1h-1zM3 1h3v1h-3zM2 2h5v3h-5zM1 5h7v1h-7zM0 6h9v1h-9zM4 7h1v1h-1z'/%3E%3Cpath fill='%23f0d48a' d='M3 2h1v2h-1z'/%3E%3C/svg%3E");
+}
+
+/* A phone has no room for the whole bar on the top line: it rests as a magnifier button in the
+   middle, and when used it grows into a full-width bar just below the top line. */
+@media (max-width: 719.98px) {
+  .library__search:not(.is-asking) {
+    width: auto;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .library__search:not(.is-asking) .library__open {
+    display: inline-flex;
+  }
+
+  .library__search:not(.is-asking) .library__bar {
+    display: none;
+  }
+
+  .library__search.is-asking {
+    top: 66px;
+    left: 12px;
+    width: calc(100% - 24px);
+    transform: none;
+  }
 }
 
 .library__input {
@@ -313,10 +378,10 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 
 @keyframes library-ask {
   0% {
-    box-shadow: 0 0 0 0 rgba(63, 107, 120, 0.55), 0 4px 14px rgba(63, 46, 36, 0.12);
+    box-shadow: 0 0 0 0 rgba(63, 107, 120, 0.55), var(--px-shadow);
   }
   100% {
-    box-shadow: 0 0 0 14px rgba(63, 107, 120, 0), 0 4px 14px rgba(63, 46, 36, 0.12);
+    box-shadow: 0 0 0 14px rgba(63, 107, 120, 0), var(--px-shadow);
   }
 }
 

@@ -14,6 +14,7 @@ const PUBLIC_FIELDS = {
   favouriteGenres: 'favorite_genres',
   location: 'location_name',
   discoverable: 'discoverable',
+  locationAsked: 'location_asked_at',
 }
 const PRIVATE_FIELDS = ['gender', 'age', 'religion']
 
@@ -121,6 +122,7 @@ export async function loadProfile(userId) {
       favouriteGenres: Array.isArray(row.favorite_genres) ? row.favorite_genres : [],
       location: row.location_name || '',
       discoverable: row.discoverable === true,
+      locationAsked: row.location_asked_at || '',
       gender: details.gender || '',
       age: details.age ?? '',
       religion: details.religion || '',

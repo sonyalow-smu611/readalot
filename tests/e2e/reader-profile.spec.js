@@ -175,7 +175,7 @@ test.describe("books you both have", () => {
     await page.goto("/people/emma.reads");
     await expect(card(page, "Books You Both Have")).toBeVisible();
     await expect(page.getByText("One more chapter, always.")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Finished" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Finished", exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Emma Tan's Bookshelf" })).toHaveCount(0);
     await expect(page.getByText(/sample readers/)).toBeVisible();
   });

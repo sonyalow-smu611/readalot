@@ -721,8 +721,10 @@
       }
     }
     const X = o.x - (o.overhang ?? 10) - pad
-    groundShadow(o.x + o.w + 4, o.base_y - o.wallH * 0.6, 14, o.wallH * 0.6)
-    const art = place(s, X, o.base_y + (o.porch ? 12 : 0))
+    const baseY = o.base_y + (o.porch ? 12 : 0)
+    // a friend's cottage stays off the picture: the app shows it once the plot has a friend
+    if (!o.ages) groundShadow(o.x + o.w + 4, o.base_y - o.wallH * 0.6, 14, o.wallH * 0.6)
+    const art = o.ages ? { spr: s, X: Math.round(X), Y: Math.round(baseY - s.height + 1), base: baseY } : place(s, X, baseY)
     // sprite() adds a 1 px outline, so the drawing sits 1 px in from the sprite's corner
     for (const [wx, wy, ww, wh] of lit) windows.push([art.X + 1 + wx, art.Y + 1 + wy, ww, wh])
     return {

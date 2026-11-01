@@ -2,13 +2,11 @@
 // Vue Router — maps URLs to views so every building is deep-linkable and the back button works.
 import { createRouter, createWebHistory } from 'vue-router'
 import BookDetailsView from '@/views/BookDetailsView.vue'
-import DiscoverPeopleView from '@/views/DiscoverPeopleView.vue'
 import GenreShelfView from '@/views/GenreShelfView.vue'
 import MoodView from '@/views/MoodView.vue'
 import PlaygroundView from '@/views/PlaygroundView.vue'
 import ReaderRoomView from '@/views/ReaderRoomView.vue'
 import ReaderShelfView from '@/views/ReaderShelfView.vue'
-import SearchView from '@/views/SearchView.vue'
 import LoginView from '@/views/LoginView.vue'
 import StartView from '@/views/StartView.vue'
 import VerifyView from '@/views/VerifyView.vue'
@@ -34,7 +32,8 @@ const routes = [
   { path: '/profile', name: 'profile', redirect: { name: 'salon' } },
   // Pages opened from inside a building
   { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, wide: true, order: 2 } },
-  { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 2 } },
+  // the library's catalogue: full screen, in the library's look
+  { path: '/search', name: 'search', component: () => import('@/buildings/library/SearchView.vue'), meta: { title: 'Search', fullBleed: true, wide: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
   // another reader's room, visited from their profile: the house's room in visiting mode
   { path: '/people/:id/room', name: 'reader-house', component: () => import('@/buildings/house/VisitView.vue'), meta: { title: 'Visiting', fullBleed: true, wide: true, order: 3 } },

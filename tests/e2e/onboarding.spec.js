@@ -119,6 +119,7 @@ for (const purpose of ["signup", "login"]) {
       for (const [index, digit] of [...sent.code].entries()) {
         await page.getByLabel(`Digit ${index + 1}`).fill(digit);
       }
+      await page.getByRole("button", { name: "Confirm code" }).click();
       // signed in, with no profile yet, so Welcome comes next, with no error shown
       await expect(page.getByRole("heading", { name: "Your name" })).toBeVisible();
       await expect(page.getByText(/expired|invalid/i)).toHaveCount(0);

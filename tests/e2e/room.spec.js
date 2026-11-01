@@ -63,11 +63,11 @@ test.describe("looking around the room", () => {
     const list = page.getByRole("navigation", { name: "Places in the room" });
     await expect(menu).toHaveAttribute("aria-expanded", "false");
     await expect(list).toBeHidden();
-    // the top left corner of the room
+    // the top left corner of the room, just under the back button
     const box = await menu.boundingBox();
     const area = await roomRegion(page).boundingBox();
     expect(box.x - area.x).toBeLessThan(30);
-    expect(box.y - area.y).toBeLessThan(30);
+    expect(box.y - area.y).toBeLessThan(80);
 
     await menu.click();
     await expect(menu).toHaveAttribute("aria-expanded", "true");

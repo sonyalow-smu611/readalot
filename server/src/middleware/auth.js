@@ -31,3 +31,12 @@ export async function requireUser(req, res, next) {
   req.user = data.user;
   next();
 }
+
+// For location and friends: never the demo-user fallback, so a request with no sign-in can't act
+// as anyone. Without Supabase there's only the in-memory demo user.
+export function requireSignedIn(req, res, next) {
+  if (env.HAS_SUPABASE && !req.headers.authorization) {
+    return res.status(401).json({ error: "Missing access token" });
+  }
+  return requireUser(req, res, next);
+}
