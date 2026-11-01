@@ -1,6 +1,7 @@
 <script setup>
 // AI-assisted café viewport scaffold. Review camera and interaction logic with your team.
-// Desktop: full world fits edge-to-edge. Mobile: same world, draggable camera.
+// Wide desktop: show the whole world. Narrow windows: NEVER shrink the world;
+// instead show a clipped viewport that can be dragged or followed.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { SPAWN, SEATS, WALK_SPEED, WORLD, findCafePath } from '../cafeNavigation.js'
 
@@ -19,7 +20,7 @@ const camera = ref({ x: 0, y: 0, scaleX: 1, scaleY: 1 })
 const walkingName = ref('')
 const walking = ref(false)
 const facingLeft = ref(false)
-const isMobile = ref(false)
+const canPan = ref(false)
 const worldStyle = computed(() => ({
   width: `${WORLD.width}px`,
   height: `${WORLD.height}px`,
@@ -49,7 +50,7 @@ function clampOffset(x, y) {
   }
 }
 function followPlayer(seconds = 1) {
-  if (!isMobile.value || drag) return
+  if (!canPan.value || drag) return
   const target = clampOffset(
     vw * .5 - player.value.x * camera.value.scaleX,
     vh * .68 - player.value.y * camera.value.scaleY,
@@ -66,16 +67,28 @@ function measure() {
   vw = viewport.value.clientWidth
   vh = viewport.value.clientHeight
   if (!vw || !vh) return
-  isMobile.value = vw < 850
 
-  if (!isMobile.value) {
-    // Fit the ENTIRE room, including the wall and its windows, in the laptop viewport.
-    // Slightly independent x/y scaling ensures there are no side margins or cropped edges.
-    camera.value = { x: 0, y: 0, scaleX: vw / WORLD.width, scaleY: vh / WORLD.height }
+  // Once the browser becomes narrower than the scene, preserve the 1200px
+  // world at its normal 1:1 size. Resize the *viewport*, not the furniture.
+  // This prevents horizontal squashing on small laptops and phones.
+  const fitsAtNativeSize = vw >= WORLD.width && vh >= WORLD.height
+  if (fitsAtNativeSize) {
+    // Only enlarge when the entire world can remain visible.
+    // Use one uniform scale for both axes so sprites stay proportional.
+    const scale = Math.min(vw / WORLD.width, vh / WORLD.height)
+    camera.value = {
+      x: (vw - WORLD.width * scale) / 2,
+      y: (vh - WORLD.height * scale) / 2,
+      scaleX: scale,
+      scaleY: scale,
+    }
+    canPan.value = false
   } else {
-    // Do not switch to another artwork or remove seats: pan the identical 1200x600 world.
-    const scale = clamp(vh / WORLD.height, .85, 1.05)
+    // Any smaller viewport is simply a window into the SAME unscaled world.
+    // On resize, keep the avatar in view rather than zooming the room.
+    const scale = 1
     camera.value = { ...camera.value, scaleX: scale, scaleY: scale }
+    canPan.value = true
     const offset = clampOffset(
       vw * .5 - player.value.x * scale,
       vh * .68 - player.value.y * scale,
@@ -145,8 +158,8 @@ function animationFrame(now) {
 }
 function startPan(event) {
   if (event.button !== 0 || event.target.closest('button')) return
-  // Mouse/touch drag pans on narrow screens. Desktop already displays the whole world.
-  if (!isMobile.value) return
+  // Pan whenever the world extends past the viewport, regardless of device.
+  if (!canPan.value) return
   drag = { id: event.pointerId, x: event.clientX, y: event.clientY }
   viewport.value?.setPointerCapture(event.pointerId)
 }
@@ -205,7 +218,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <p v-if="walkingName" class="cafe-viewport__status" role="status">Walking to {{ walkingName }}…</p>
-    <p v-else-if="isMobile" class="cafe-viewport__status">Drag to explore · Tap a reader</p>
+    <p v-else-if="canPan" class="cafe-viewport__status">Drag to explore · Tap a reader</p>
     <p v-else class="cafe-viewport__status">Click a reader to walk over</p>
   </section>
 </template>
