@@ -91,9 +91,10 @@ test.describe("the shelf in the room and My Shelf", () => {
     await row(page, "To be read").getByRole("button", { name: /^The Hobbit/ }).click();
 
     const details = page.getByRole("dialog", { name: "Book details" });
-    await expect(details.getByText("To be read", { exact: true })).toBeVisible();
-    await details.getByRole("button", { name: "Reading", exact: true }).click();
-    await expect(details.getByText("Currently reading", { exact: true })).toBeVisible();
+    // the buttons are named as the shelves are, and the one it's on is pressed
+    await expect(details.getByRole("button", { name: "To be read", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await details.getByRole("button", { name: "Currently reading", exact: true }).click();
+    await expect(details.getByRole("button", { name: "Currently reading", exact: true })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Close book" }).click();
 
     await expect(row(page, "Currently reading").getByRole("button", { name: /^The Hobbit/ })).toBeVisible();
@@ -206,7 +207,7 @@ test.describe("a book's card on My Shelf", () => {
     const { id } = (await shelfBooks(page)).find((book) => book.title === "The Hobbit");
     await expect(card(page).getByRole("heading", { name: "The Hobbit" })).toBeVisible();
     await expect(card(page).getByText("Reading status")).toBeVisible();
-    await expect(card(page).getByRole("button", { name: "Want to Read" })).toHaveAttribute("aria-pressed", "true");
+    await expect(card(page).getByRole("button", { name: "To be read", exact: true })).toHaveAttribute("aria-pressed", "true");
     await expect(card(page).getByRole("link", { name: "Open full book page" })).toHaveAttribute("href", `/books/${id}`);
 
     await card(page).getByRole("button", { name: "Close book" }).click();
@@ -216,8 +217,8 @@ test.describe("a book's card on My Shelf", () => {
 
   test("Reading shows a progress slider, and moving it saves", async ({ page }) => {
     await expect(card(page).getByRole("slider")).toHaveCount(0);
-    await card(page).getByRole("button", { name: "Reading", exact: true }).click();
-    await expect(card(page).getByRole("button", { name: "Reading", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await card(page).getByRole("button", { name: "Currently reading", exact: true }).click();
+    await expect(card(page).getByRole("button", { name: "Currently reading", exact: true })).toHaveAttribute("aria-pressed", "true");
 
     const saved = page.waitForRequest((request) => request.method() === "PATCH" && request.postDataJSON()?.progress === 40);
     await card(page).getByRole("slider").fill("40");

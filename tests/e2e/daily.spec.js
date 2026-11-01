@@ -99,7 +99,8 @@ test.describe("on other pages", () => {
 
   test("it closes with Escape or a tap outside, even beside the phone column", async ({ page, reader }) => {
     await setDaily(page, reader.id, { done: ["check-in"], shown: dayKey() });
-    await page.goto("/search");
+    // a page in the phone column (search now fills the window, in the library's look)
+    await page.goto("/mood");
     const panel = page.getByRole("region", { name: "Daily tasks" });
 
     await tab(page).click();

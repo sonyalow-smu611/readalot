@@ -2,6 +2,9 @@
   What a reader sees about a book once it is open, top to bottom: the cover (a made-up cloth
   book with the title on it when there is no picture), the title, author, stars and genres,
   which shelf it is on (Reading shows a progress slider), then Synopsis, Rating and Reviews.
+  A book on the reader's shelf shows its three shelves (named as in My Room) to move it between;
+  a book that isn't offers one choice, Add to To be read, as the book previews do. The book's own
+  page adds Where to get (whereToGet).
   Shown in the Book details card (in My Room, on My Shelf and on the book's own page) and in the
   book overlay's open spread, in the town's design system.
   Written with AI assistance: see AI_USAGE.md.
@@ -48,8 +51,18 @@
       </ul>
     </header>
 
-    <!-- shelf status -->
-    <div class="d-flex w-100 details__status" role="group" aria-label="Reading status">
+    <!-- shelf status: on the shelf, which one (and move it); not yet, one way on. Nothing while
+         the shelf loads, so a book already on it never flashes "Add" first -->
+    <button
+      v-if="!shelved && !bookshelf.loading"
+      type="button"
+      class="btn btn-primary w-100 details__add"
+      :disabled="saving"
+      @click="choose('want_to_read')"
+    >
+      {{ saving ? "Adding…" : "Add to To be read" }}
+    </button>
+    <div v-else-if="shelved" class="d-flex w-100 details__status" role="group" aria-label="Reading status">
       <button
         v-for="option in STATUS_OPTIONS"
         :key="option.value"
@@ -93,6 +106,8 @@
       </div>
     </Transition>
 
+    <WhereToGet v-if="whereToGet && book" :book="book" />
+
     <section class="details__section" aria-labelledby="details-synopsis">
       <h3 id="details-synopsis" class="details__heading">Synopsis</h3>
       <BookSynopsis class="details__synopsis" :text="book?.description" />
@@ -134,7 +149,8 @@ import BookSynopsis from '@/components/book/BookSynopsis.vue'
 import ReadingProgress from '@/components/book/ReadingProgress.vue'
 import BookReviews from '@/components/book/BookReviews.vue'
 import StarMeter from '@/components/book/StarMeter.vue'
-import { shelfName, spineLook } from '@/services/shelves.js'
+import WhereToGet from '@/components/book/WhereToGet.vue'
+import { SHELVES, shelfName, spineLook } from '@/services/shelves.js'
 import { useBookReviews } from '@/composables/useBookReviews'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { useUserStore } from '@/stores/user'
@@ -147,15 +163,14 @@ const props = defineProps({
   titleTag: { type: String, default: 'h2' },
   // a Finished book offers to review and rate it on the book's page; not on that page itself
   linksToPage: { type: Boolean, default: true },
+  // the shops and the library to get it from (the book's own page)
+  whereToGet: { type: Boolean, default: false },
 })
 // "leave": a link to the book's page was followed, so whatever is showing this can close
 defineEmits(['leave'])
 
-const STATUS_OPTIONS = [
-  { value: 'want_to_read', label: 'Want to read' },
-  { value: 'reading', label: 'Reading' },
-  { value: 'read', label: 'Finished reading' },
-]
+// the shelves by the names My Room gives them
+const STATUS_OPTIONS = SHELVES.map((shelf) => ({ value: shelf.status, label: shelf.label }))
 
 const bookshelf = useBookshelfStore()
 

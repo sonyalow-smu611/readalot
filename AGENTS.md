@@ -81,9 +81,9 @@ client/
     town/                 places.js (layout), TownScene.js (Phaser)
     components/town/      TownMap, TownHud, PlacesMenu, PlaceCard
     components/shared/    BuildingShell, WipPanel
-    buildings/            house/, library/, cafe/, salon/ — one per teammate
+    buildings/            house/, library/ (with search), cafe/, salon/ — one per teammate
     views/                TownView, the old pages (Room, DiscoverBooks, People), and
-                          pages opened from inside buildings (search, book details, scan…)
+                          pages opened from inside buildings (book details, genre shelf…)
     components/           room/, book/, people/, modals/ and other existing parts
     stores/ services/ router/ lib/
 server/                   Express API (routes/), Supabase, seed data

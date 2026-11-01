@@ -1,6 +1,7 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The Quick Book Preview for pages that list books (Discover, genre shelf, search): which book
-// is open, and saving the reading status picked in it to the reader's shelf.
+// The Quick Book Preview for pages that list books (the library, genre shelf, search): which
+// book is open, and putting it on the reader's shelf. The preview stays open once the book is
+// added, and says which shelf it is on now.
 import { ref } from 'vue'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { useToast } from '@/composables/useToast'
@@ -30,7 +31,7 @@ export function useBookPreview() {
       await bookshelf.addBook(book.id, status)
       const shelf = STATUSES.find((option) => option.value === status)?.label ?? 'your shelf'
       toast.show(`Added "${book.title}" to ${shelf}`)
-      closePreview()
+      if (previewBook.value?.id === book.id) previewBook.value = { ...previewBook.value, status }
     } catch {
       toast.show(`Couldn't save "${book.title}". Try again.`)
     } finally {
@@ -38,5 +39,5 @@ export function useBookPreview() {
     }
   }
 
-  return { previewBook, openPreview, closePreview, saveStatus }
+  return { previewBook, saving, openPreview, closePreview, saveStatus }
 }

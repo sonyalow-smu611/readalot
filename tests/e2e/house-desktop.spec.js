@@ -37,8 +37,9 @@ test("My Shelf fills the window too, its search kept to a comfortable width", as
 });
 
 test("pages that aren't buildings still open in the phone column", async ({ page }) => {
-  await page.goto("/search");
-  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+  // (search is the library's now, and fills the window like it)
+  await page.goto("/mood");
+  await expect(page.getByRole("banner")).toBeVisible();
   // the frame fills the window while the app loads, then settles into the column
   await expect.poll(async () => (await page.getByRole("main").first().boundingBox()).width).toBeLessThanOrEqual(480);
 });
