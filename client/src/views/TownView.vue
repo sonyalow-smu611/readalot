@@ -6,8 +6,10 @@
 // Going in, your character walks to the door first, and the page zooms through it. The day's
 // tasks open by themselves on the first visit each day (not during the first tour). After the
 // tour the reader chooses public or private once, and the town refreshes who is near them.
+// Coming back out of a place, your character stands outside its door. Each refresh also looks for
+// anything new for the bell (town/notificationsStore.js), which pops up once.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { FRIEND_HOUSES, PLACES } from '@/town/places.js'
 import { presence } from '@/town/friends.js'
@@ -15,7 +17,11 @@ import { useUserStore } from '@/stores/user'
 import { useProgressStore } from '@/stores/progress.js'
 import { useDailyStore } from '@/town/dailyStore.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
+import { useNotificationsStore } from '@/town/notificationsStore.js'
+import { lastPlace, rememberPlace } from '@/town/lastPlace.js'
+import { yourUsername } from '@/town/username.js'
 import { MAX_FREEZES } from '@/town/daily.js'
+import { useToast } from '@/composables/useToast'
 import { fetchWeather } from '@/services/weather.js'
 import TownMap from '@/components/town/TownMap.vue'
 import TownHud from '@/components/town/TownHud.vue'
@@ -31,10 +37,12 @@ import DailyPanel from '@/components/town/DailyPanel.vue'
 import DailyReward from '@/components/town/DailyReward.vue'
 import LocationChip from '@/components/town/LocationChip.vue'
 import LocationPrompt from '@/components/town/LocationPrompt.vue'
+import NotificationsPanel from '@/components/town/NotificationsPanel.vue'
 
 const WEATHER_EVERY = 10 * 60 * 1000
 const NEARBY_EVERY = 30 * 1000
 const NOTICE_FOR = 5000
+const POP_UP_FOR = 5000
 const PREVIEW_DAYS = import.meta.env.DEV
 
 const router = useRouter()
@@ -42,15 +50,22 @@ const user = useUserStore()
 const progress = useProgressStore()
 const daily = useDailyStore()
 const nearby = useNearbyStore()
+const notifications = useNotificationsStore()
+const toast = useToast()
 const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
 // a new reader straight from Welcome: the map opens on their house, where the tour begins
 const arrivingForTour = user.tourPending
+// the place you've just come back out of, if any
+const comingFrom = lastPlace()
 const selected = ref(null)
 const placesOpen = ref(false)
 const friendsOpen = ref(false)
 const dailyOpen = ref(false)
+const notificationsOpen = ref(false)
+// how the last Add friend went, { busy, ok, message }
+const addStatus = ref(null)
 // the reward just claimed, shown over the town until "Nice!"
 const gift = ref(null)
 const dailyChip = computed(() => ({
@@ -139,9 +154,17 @@ async function refreshNearby() {
   if (document.hidden) return
   try {
     await nearby.refresh()
+    popUp(await notifications.check())
   } catch {
     // the town still works without it: everyone stays as they were until the next refresh
   }
+}
+
+// New notifications show for a moment; they wait in the bell during the tour or on the way in.
+function popUp(fresh) {
+  if (!fresh.length || guide.value || entering.value) return
+  const message = fresh.length === 1 ? fresh[0].text : `${fresh.length} new notifications`
+  toast.show(message, POP_UP_FOR, { label: 'View', run: openNotifications })
 }
 
 async function choosePublic(on) {
@@ -165,6 +188,25 @@ async function addFriend(reader) {
   }
 }
 
+// Add friend, by username: says how it went in the form.
+async function addByUsername(username) {
+  addStatus.value = { busy: true, ok: false, message: '' }
+  try {
+    const outcome = await nearby.addByUsername(username)
+    const said = {
+      you: ["That's your own username.", false],
+      'already-friends': [`You're already friends with ${username}.`, false],
+      'already-asked': [`You've already asked ${username}.`, false],
+      friends: [`You and ${username} are now friends.`, true],
+      asked: [`Friend request sent to ${username}.`, true],
+    }[outcome]
+    addStatus.value = { busy: false, ok: said[1], message: said[0] }
+  } catch (err) {
+    const message = err.message === 'Reader not found' ? `Couldn't find ${username}. Check the spelling.` : err.message
+    addStatus.value = { busy: false, ok: false, message }
+  }
+}
+
 async function answerRequest(requestId, accept) {
   try {
     await nearby.answer(requestId, accept)
@@ -178,6 +220,15 @@ async function removeFriend(friend) {
   closeChat(friend.id)
   try {
     await nearby.removeFriend(friend.id)
+  } catch (err) {
+    showNotice(err.message)
+  }
+}
+
+async function removeFriends(friends) {
+  for (const { id } of friends) closeChat(id)
+  try {
+    await nearby.removeFriends(friends.map(({ id }) => id))
   } catch (err) {
     showNotice(err.message)
   }
@@ -198,6 +249,13 @@ onMounted(() => {
   nearbyTimer = setInterval(refreshNearby, NEARBY_EVERY)
 })
 
+// Where you're off to, so you come back out of the same door. Listening here rather than when you
+// walk in catches every way out of the town, like your badge's way into the salon.
+onBeforeRouteLeave((to) => {
+  const place = allPlaces.value.find(({ route }) => route.name === to.name && (!route.params || route.params.id === to.params.id))
+  rememberPlace(place?.id ?? '')
+})
+
 onBeforeUnmount(() => {
   clearInterval(weatherTimer)
   clearInterval(nearbyTimer)
@@ -210,6 +268,7 @@ watch(
   (id) => {
     daily.start(id)
     daily.checkIn()
+    notifications.start(id)
   },
   { immediate: true },
 )
@@ -235,29 +294,70 @@ watch(
   { immediate: true },
 )
 
+// Whatever is open over the map.
+function closePanels() {
+  placesOpen.value = friendsOpen.value = dailyOpen.value = notificationsOpen.value = false
+  hint.value = false
+}
+
+// Leaving the list is when what was in it counts as seen; the Add friend form starts afresh.
+watch(notificationsOpen, (open) => {
+  if (!open) notifications.markRead()
+})
+watch(friendsOpen, (open) => {
+  if (!open) addStatus.value = null
+})
+
 function select(place) {
   // during the tour the camera's glide outlines the building; its card would cover the tour's
   if (guide.value || entering.value) return
   friendId.value = null
   // the map hands over the bare place; the card wants it named
   selected.value = allPlaces.value.find((named) => named.id === place.id) ?? place
-  placesOpen.value = false
-  friendsOpen.value = false
-  dailyOpen.value = false
-  hint.value = false
+  closePanels()
 }
 
-// one panel open at a time: Daily, Places or Friends
+// A tap on the ground: you set off, and whatever was open is out of the way.
+function walked() {
+  selected.value = null
+  friendId.value = null
+  closePanels()
+}
+
+// one panel open at a time: Daily, Places, Friends or Notifications
 function togglePlaces() {
-  placesOpen.value = !placesOpen.value
-  if (placesOpen.value) friendsOpen.value = dailyOpen.value = false
-  hint.value = false
+  const open = !placesOpen.value
+  closePanels()
+  placesOpen.value = open
 }
 
 function toggleFriends() {
-  friendsOpen.value = !friendsOpen.value
-  if (friendsOpen.value) placesOpen.value = dailyOpen.value = false
-  hint.value = false
+  const open = !friendsOpen.value
+  closePanels()
+  friendsOpen.value = open
+}
+
+function toggleNotifications() {
+  if (notificationsOpen.value) notificationsOpen.value = false
+  else openNotifications()
+}
+
+function openNotifications() {
+  closePanels()
+  selected.value = null
+  friendId.value = null
+  notificationsOpen.value = true
+}
+
+// Goes to what the notification is about.
+function openNotification(item) {
+  notificationsOpen.value = false
+  if (item.kind === 'request') toggleFriends()
+  else if (item.kind === 'visit') router.push({ name: 'reader-room', params: { id: item.visitorId } })
+  else {
+    const friend = friendsInTown.value.find(({ id }) => id === item.friendId)
+    if (friend) findFriend(friend)
+  }
 }
 
 function toggleDaily() {
@@ -267,11 +367,10 @@ function toggleDaily() {
 
 function openDaily() {
   daily.start(profile.value.id)
+  closePanels()
   dailyOpen.value = true
-  placesOpen.value = friendsOpen.value = false
   selected.value = null
   friendId.value = null
-  hint.value = false
 }
 
 // A task's Go: the map glides to the building and its card opens.
@@ -301,10 +400,7 @@ function go(id, { tour = false } = {}) {
 function selectFriend(id) {
   if (guide.value || entering.value) return
   selected.value = null
-  placesOpen.value = false
-  friendsOpen.value = false
-  dailyOpen.value = false
-  hint.value = false
+  closePanels()
   friendId.value = id
 }
 
@@ -318,6 +414,7 @@ function findFriend(friend) {
 // Say hi: their box joins the dock and the chat opens, with everything you've said before.
 function sayHi(friend) {
   friendId.value = null
+  friendsOpen.value = false
   chatIds.value = [friend.id, ...chatIds.value.filter((id) => id !== friend.id)]
   openChat.value = friend.id
 }
@@ -346,10 +443,7 @@ function enter(place) {
   selected.value = null
   friendId.value = null
   openChat.value = null
-  placesOpen.value = false
-  friendsOpen.value = false
-  dailyOpen.value = false
-  hint.value = false
+  closePanels()
   entering.value = place
   walk.value = { id: place.id, key: Date.now() }
 }
@@ -378,6 +472,8 @@ function goInside(place) {
     <TownMap
       :focus="focus"
       :start="arrivingForTour ? 'house' : ''"
+      :coming-from="comingFrom"
+      :can-walk="!guide && !entering"
       :enter="walk"
       :character="profile.character"
       :friends="friendsInTown"
@@ -389,6 +485,7 @@ function goInside(place) {
       @select="select"
       @select-friend="selectFriend"
       @inside="goInside"
+      @walk="walked"
       @ready="ready = true"
     />
     <TownHud
@@ -396,8 +493,11 @@ function goInside(place) {
       :friends-online="onlineCount"
       :friend-requests="nearby.incoming.length"
       :friends-open="friendsOpen"
+      :unread="notificationsOpen ? 0 : notifications.unread"
+      :notifications-open="notificationsOpen"
       @toggle-places="togglePlaces"
       @toggle-friends="toggleFriends"
+      @toggle-notifications="toggleNotifications"
     />
     <!-- today's tasks and the streak, on the left under the weather chip -->
     <DailyButton class="town__daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
@@ -414,9 +514,20 @@ function goInside(place) {
       :requests="nearby.incoming"
       :nearby="nearbyInTown"
       :open="friendsOpen"
+      :add-status="addStatus"
+      :username="yourUsername(profile)"
       @go="findFriend"
       @go-nearby="friendFocus = { id: $event.id, key: Date.now() }"
       @answer="answerRequest"
+      @chat="sayHi"
+      @add="addByUsername"
+      @remove="removeFriends"
+    />
+    <NotificationsPanel
+      :items="notifications.items"
+      :open="notificationsOpen"
+      @open-item="openNotification"
+      @clear="notifications.clear"
     />
     <Transition name="town-fade">
       <DailyPanel
@@ -451,7 +562,7 @@ function goInside(place) {
     />
 
     <Transition name="town-fade">
-      <p v-if="hint && ready && !selected && !friendId && !entering && !guide" class="town__hint">Drag to look around. Tap a building to go in.</p>
+      <p v-if="hint && ready && !selected && !friendId && !entering && !guide" class="town__hint">Tap the map to walk. Tap a building to go in.</p>
     </Transition>
     <Transition name="town-fade">
       <p v-if="entering" class="town__hint" role="status">{{ walkingTo }}</p>

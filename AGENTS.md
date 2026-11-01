@@ -70,6 +70,9 @@ Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /l
 - `town/nearbyStore.js` → friends, friend requests and readers nearby, and `setPublic()`: public
   and sharing your last rough area are one setting (`profiles.discoverable`), shared by the map
   chip and the salon. Spec: [docs/specs/nearby-readers-and-friend-houses.md](docs/specs/nearby-readers-and-friend-houses.md).
+- `town/notificationsStore.js` → the bell: friend requests, friends coming online and visits to
+  your room. The town checks after each refresh. Visits come from `GET /api/notifications/visits`.
+- `town/username.js` → adding a friend by username. It lists what the salon's username needs to do.
 
 ## Map
 
@@ -78,7 +81,7 @@ client/
   public/town/            map.png (3584 x 2560) and avatars/ — generated, don't edit by hand
   scripts/draw-town-map.mjs + scripts/town-art/   draws them: npm --workspace client run draw-map
   src/
-    town/                 places.js (layout), TownScene.js (Phaser)
+    town/                 places.js (layout), TownScene.js (Phaser), ground.js (where a tap can walk to)
     components/town/      TownMap, TownHud, PlacesMenu, PlaceCard
     components/shared/    BuildingShell, WipPanel
     buildings/            house/, library/ (with search), cafe/, salon/ — one per teammate

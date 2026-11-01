@@ -1,21 +1,26 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The bar across the top of the town: Places, and Friends with how many of them are online.
+// The bar across the top of the town: the notifications bell, Places, and Friends with how many of
+// them are online.
 // (Your badge sits in the bottom-left corner: PlayerBadge, placed by TownView.)
 import FriendsButton from './FriendsButton.vue'
+import NotificationsButton from './NotificationsButton.vue'
 
 defineProps({
   placesOpen: { type: Boolean, default: false },
   friendsOnline: { type: Number, default: 0 },
   friendRequests: { type: Number, default: 0 },
   friendsOpen: { type: Boolean, default: false },
+  unread: { type: Number, default: 0 },
+  notificationsOpen: { type: Boolean, default: false },
 })
-const emit = defineEmits(['toggle-places', 'toggle-friends'])
+const emit = defineEmits(['toggle-places', 'toggle-friends', 'toggle-notifications'])
 </script>
 
 <template>
   <header class="town-hud">
     <span class="town-hud__spacer"></span>
+    <NotificationsButton :unread="unread" :open="notificationsOpen" @toggle="emit('toggle-notifications')" />
     <button
       type="button"
       class="btn btn-secondary px-sign town-hud__places"

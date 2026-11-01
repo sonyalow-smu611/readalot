@@ -130,7 +130,7 @@ for (const [a, b] of WALK_ROADS) {
   ;(WALK_NEIGHBOURS[b] ??= []).push(a)
 }
 
-const keepInside = ([x, y]) => [Math.min(Math.max(x, 30), MAP_W - 30), Math.min(Math.max(y, 140), MAP_H - 12)]
+export const keepInside = ([x, y]) => [Math.min(Math.max(x, 30), MAP_W - 30), Math.min(Math.max(y, 140), MAP_H - 12)]
 const gap = ([ax, ay], [bx, by]) => Math.hypot(bx - ax, by - ay)
 
 // The point on a road's centre line nearest to `point`, and the road it is on.

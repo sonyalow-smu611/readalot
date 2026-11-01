@@ -678,3 +678,21 @@ Shared (for a teammate to review):
 | Pages | `client/src/views/GenreShelfView.vue`, `client/src/router/index.js` | The genre page uses the found book's preview; `/search` opens the library's search, full screen |
 | Docs | `AGENTS.md` | Search is listed with the library |
 | Tests | `tests/e2e/library.spec.js`, `find-book.spec.js`, `search.spec.js` (new), `library-wide.spec.js`, `scan-book.spec.js`, `fixtures.js` (`openPlaces`), `buttons.spec.js`, `back-button.spec.js`, `smoke.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `reviews.spec.js`, `daily.spec.js`, `house-desktop.spec.js` | The top line on a phone and a laptop; the Places menu; ten bookcases with signs, icons and fonts, and no emoji; an opened bookcase (24 books, uneven shelves, Covers, a book's preview, a phone); Add to To be read and Where to get, in the preview and on the book's page; search full screen, its cards, Back. Other tests updated for the new names and for search filling the window |
+
+### Town notifications, tap to walk and the fuller friends list (AI-generated, team to agree)
+
+Written by Claude Code at Dylan's request. Most of this is the town, which is Dylan's part.
+**The team has not agreed this yet:** tapping to walk is interactivity, and
+`GET /api/notifications/visits` is a backend endpoint, so both need the team's agreement recorded
+here before they merge. Team to review: `server/` and `services/api.js` are shared. Aalric's
+username work connects at `client/src/town/username.js`, which lists the two things it needs.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Server | `server/src/services/notifications.js`, `server/src/routes/notifications.js`, `server/src/app.js` | Who visited your room since a date, read from the XP table's `visit_room` rows. A visitor is named only if they're a friend or public |
+| Notifications | `client/src/town/notificationsStore.js`, `client/src/services/api.js`, `client/src/components/town/NotificationsButton.vue`, `NotificationsPanel.vue`, `TownHud.vue` | Friend requests, friends coming online and room visits: one pop-up each (the shared toast), kept in a bell list in the browser, per reader |
+| Friends list | `client/src/components/town/FriendsList.vue`, `FriendRow.vue`, `AddFriendForm.vue`, `client/src/town/nearbyStore.js`, `username.js` | Each friend's head, book and chat button; Add friend by username (a skeleton until usernames can be chosen); choosing several friends to remove |
+| Map | `client/src/town/ground.js`, `TownScene.js`, `you.js`, `traffic.js`, `roads.js`, `client/src/components/town/TownMap.vue` | Tap the ground to walk there, stopping short of water and buildings; tap a townsperson to make them jiggle; a dev-only `window.__townScene` for the tests |
+| Leaving a place | `client/src/town/lastPlace.js`, `client/src/views/TownView.vue` | You come back out of the door you went in by, until the page is refreshed |
+| Daily button | `client/src/components/town/DailyButton.vue` | Shut to the flame and streak; "Daily task" slides out on hover or keyboard focus, in town and on the tab on other pages |
+| Tests | `tests/e2e/town-map.spec.js`, `friends-list.spec.js`, `notifications.spec.js`, `townFriends.js`, `daily.spec.js`, `friends.spec.js` | The new journeys, with friends answered in the test so they pass without the server's Supabase keys |

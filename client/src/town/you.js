@@ -1,8 +1,9 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The reader's own character in town: a TownReader (reader.js) with a white glow and a green
 // diamond floating over its head, so you can always tell which one is you, starting outside
-// your front door. It wanders the pavements until the reader picks a building, then
-// walks to the door, which swings open (door.js), and steps inside.
+// your front door, or outside the place you just left. It wanders the pavements until the reader
+// tells it where to be (tap the map, or come back out of a building), then stays there. Picking a
+// building walks it to the door, which swings open (door.js), and it steps inside.
 import { SPAWN } from './places.js'
 import { walkingRoute } from './roads.js'
 import { DOOR_OPENS, doorstep, openDoor } from './door.js'
@@ -33,8 +34,10 @@ function drawDiamond(scene) {
 }
 
 export class You extends TownReader {
-  constructor(scene, { character, reducedMotion }) {
-    super(scene, { character, reducedMotion, at: [SPAWN.x, SPAWN.y] })
+  // at: where to stand, [x, y], when it isn't your front door; you stay put there
+  constructor(scene, { character, reducedMotion, at = null }) {
+    super(scene, { character, reducedMotion, at: at ?? [SPAWN.x, SPAWN.y] })
+    this.stayPut = Boolean(at)
     this.float = { y: 0 }
     this.diamond = drawDiamond(scene)
     this.sync()
@@ -51,6 +54,36 @@ export class You extends TownReader {
     this.diamond
       ?.setPosition(this.body.x, this.body.y - DIAMOND_ABOVE * this.body.scaleY + this.float.y)
       .setAlpha(this.body.alpha)
+  }
+
+  rest() {
+    if (!this.stayPut) super.rest()
+  }
+
+  // Hurries along the route, so anywhere in town is only a few seconds away, then calls done().
+  trip(route, done) {
+    let length = 0
+    route.reduce((from, to) => {
+      length += Math.hypot(to[0] - from[0], to[1] - from[1])
+      return to
+    }, [this.body.x, this.body.y])
+    this.step.timeScale = 1.8
+    this.walk(route, Math.max(TRIP_SPEED, length / MAX_TRIP), done)
+  }
+
+  // Walks the route (from the map's tap, see ground.js) and stays where it ends.
+  goTo(route) {
+    this.stop()
+    this.stayPut = true
+    if (this.reducedMotion) {
+      this.body.setPosition(...route[route.length - 1])
+      return
+    }
+    this.trip(route, () => {
+      this.step.pause()
+      this.step.timeScale = 1
+      this.body.setScale(1)
+    })
   }
 
   // From here on you show only inside the doorway (and on the step below it), so you vanish
@@ -76,15 +109,7 @@ export class You extends TownReader {
     }
     this.stop()
     const { front, beside } = doorstep(place)
-    const route = walkingRoute([this.body.x, this.body.y], beside)
-    let length = 0
-    route.reduce((from, to) => {
-      length += Math.hypot(to[0] - from[0], to[1] - from[1])
-      return to
-    }, [this.body.x, this.body.y])
-    // hurry, so a far building is still only a few seconds away
-    this.step.timeScale = 1.8
-    this.walk(route, Math.max(TRIP_SPEED, length / MAX_TRIP), () => {
+    this.trip(walkingRoute([this.body.x, this.body.y], beside), () => {
       this.step.pause()
       this.body.setScale(1)
       const doorway = openDoor(this.scene, place)

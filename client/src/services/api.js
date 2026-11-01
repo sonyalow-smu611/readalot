@@ -91,6 +91,11 @@ export function removeFriendship(readerId) {
   return request(`/friends/${encodeURIComponent(readerId)}`, { method: "DELETE" });
 }
 
+// { visits: [{ id, at, visitor: { id, displayName } or null }] } since the date, newest first
+export function getRoomVisits(since) {
+  return request(`/notifications/visits?since=${encodeURIComponent(since)}`);
+}
+
 // Other readers with their shelves (see stores/people.js); `id` is the reader's username.
 export function getReaders() {
   return request("/people");

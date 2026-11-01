@@ -48,7 +48,7 @@ test("the friends list shows who is online and finds their house", async ({ page
   await expect(list.getByRole("button", { name: /Emma Tan.*Online now/ })).toBeVisible();
   await expect(list.getByRole("button", { name: /Ayaan Rahman.*Online now/ })).toBeVisible();
 
-  await list.getByRole("button", { name: /Noah/ }).click();
+  await list.getByRole("button", { name: /^Noah/ }).click();
   const card = page.getByRole("dialog", { name: "Noah's house" });
   await expect(card).toContainText("Last seen");
   await expect(card.getByRole("button", { name: "Visit Noah" })).toBeVisible();

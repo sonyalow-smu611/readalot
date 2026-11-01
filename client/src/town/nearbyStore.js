@@ -14,6 +14,7 @@ import { saveProfile } from '@/services/auth.js'
 import { currentPosition } from '@/services/location.js'
 import { useUserStore } from '@/stores/user'
 import { nameFriendHouses } from '@/town/places.js'
+import { yourUsername } from '@/town/username.js'
 
 export const useNearbyStore = defineStore('nearby', () => {
   const friends = ref([])
@@ -61,6 +62,18 @@ export const useNearbyStore = defineStore('nearby', () => {
     await refresh()
   }
 
+  // Asks a reader by username (town/username.js says what's left to wire up). Returns how it went:
+  // 'you', 'already-friends', 'already-asked', 'friends' (they had asked you, or are a demo reader
+  // who accepts straight away) or 'asked'. Throws when nobody has that username.
+  async function addByUsername(username) {
+    const isFriend = () => friends.value.some((reader) => reader.username === username || reader.id === username)
+    if (username === yourUsername(user.profile)) return 'you'
+    if (isFriend()) return 'already-friends'
+    if (outgoing.value.includes(username)) return 'already-asked'
+    await addFriend(username)
+    return isFriend() ? 'friends' : 'asked'
+  }
+
   async function answer(requestId, accept) {
     await answerFriendRequest(requestId, accept)
     await refresh()
@@ -71,6 +84,14 @@ export const useNearbyStore = defineStore('nearby', () => {
     await refresh()
   }
 
+  // Removes several at once. Throws saying how many didn't go; the rest are still removed.
+  async function removeFriends(readerIds) {
+    const results = await Promise.allSettled(readerIds.map((id) => removeFriendship(id)))
+    await refresh()
+    const failed = results.filter((result) => result.status === 'rejected').length
+    if (failed) throw new Error(`${failed} of ${readerIds.length} couldn't be removed. Try again.`)
+  }
+
   // signed out: the next reader fetches their own
   function reset() {
     friends.value = []
@@ -79,5 +100,5 @@ export const useNearbyStore = defineStore('nearby', () => {
     nearby.value = []
   }
 
-  return { friends, incoming, outgoing, nearby, houses, minor, loadFriends, refresh, setPublic, addFriend, answer, removeFriend, reset }
+  return { friends, incoming, outgoing, nearby, houses, minor, loadFriends, refresh, setPublic, addFriend, addByUsername, answer, removeFriend, removeFriends, reset }
 })

@@ -2,7 +2,8 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The Phaser canvas with the town on it, plus its follow-me and zoom buttons and loading / error
 // states. It says which building was tapped (select), which friend out walking was tapped
-// (select-friend) and when your character has walked inside one (inside); the parent says which one to glide to (focus), which one to walk into (enter),
+// (select-friend), when your character has walked inside one (inside) and when a tap on the ground
+// has sent them walking (walk); the parent says which one to glide to (focus), which one to walk into (enter),
 // what you look like (character) and what the weather is (sky).
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Phaser from 'phaser'
@@ -13,6 +14,10 @@ const props = defineProps({
   focus: { type: Object, default: null },
   // a place id to open on, framed as the first tour frames it (a new reader arriving)
   start: { type: String, default: '' },
+  // the id of the place you just left: you start outside its door
+  comingFrom: { type: String, default: '' },
+  // whether a tap on the ground walks your character there
+  canWalk: { type: Boolean, default: true },
   // { id, key }: walk your character to that building and in through its door
   enter: { type: Object, default: null },
   // the reader's saved character (see lib/avatar/catalogue.js)
@@ -30,7 +35,7 @@ const props = defineProps({
   // how the town looks: { night, rain }
   sky: { type: Object, default: () => ({ night: false, rain: false }) },
 })
-const emit = defineEmits(['select', 'select-friend', 'ready', 'inside'])
+const emit = defineEmits(['select', 'select-friend', 'ready', 'inside', 'walk'])
 
 const host = ref(null)
 const state = ref('loading') // loading | ready | error
@@ -114,11 +119,18 @@ watch(
   (sky) => scene?.setSky(sky),
 )
 
+watch(
+  () => props.canWalk,
+  (on) => scene?.setCanWalk(on),
+)
+
 onMounted(() => {
   scene = new TownScene({
     reducedMotion,
     character: props.character,
     start: props.start,
+    comingFrom: props.comingFrom,
+    onWalk: () => emit('walk'),
     onTourSpot: (box) => {
       spot.value = box
     },
@@ -136,6 +148,9 @@ onMounted(() => {
       state.value = 'error'
     },
   })
+  // the map is a canvas with nothing to label, so the e2e tests read where everyone is from here
+  if (import.meta.env.DEV) window.__townScene = scene
+  scene.setCanWalk(props.canWalk)
   scene.setSky(props.sky)
   scene.setFriends(props.friends)
   scene.setNearby(props.nearby)
@@ -151,6 +166,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (import.meta.env.DEV) delete window.__townScene
   game?.destroy(true)
   game = null
   scene = null

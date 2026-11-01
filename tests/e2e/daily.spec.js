@@ -150,3 +150,17 @@ test.describe("on other pages", () => {
     await expect(page.getByRole("button", { name: /Daily tasks, / })).toHaveCount(1);
   });
 });
+
+// The button is a small flame; pointing at it opens out "Daily task".
+test("the Daily button stays small until you point at it", async ({ page, reader }) => {
+  await setDaily(page, reader.id, { shown: dayKey() });
+  await page.goto("/");
+  await expect(page.getByText("Loading the town…")).toBeHidden({ timeout: 20_000 });
+  const button = page.getByRole("button", { name: /^Daily tasks/ });
+  const shut = (await button.boundingBox()).width;
+  expect(shut).toBeLessThan(90);
+  await button.hover();
+  await expect.poll(async () => (await button.boundingBox()).width).toBeGreaterThan(shut + 40);
+  await page.mouse.move(600, 500);
+  await expect.poll(async () => (await button.boundingBox()).width).toBeLessThan(90);
+});

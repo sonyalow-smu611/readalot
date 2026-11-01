@@ -6,7 +6,8 @@
 // only once they're your friend; it shows whether they are online (a green dot on the name tag)
 // and, if they have been away a while, looks dusty or neglected (see friends.js). Friends who are
 // online walk the streets with an orange glow and readers nearby with a blue one (friend.js); tap
-// one to talk. Everything you press besides the map itself is HTML (components/town).
+// one to talk. Tap the ground and your character walks there (ground.js); tap a townsperson and
+// they jiggle (traffic.js). Everything you press besides the map itself is HTML (components/town).
 import Phaser from 'phaser'
 import mapData from './map-data.json'
 import { ALL_PLACES, AVATARS, FRIEND_HOUSES, MAP_W, MAP_H, PLACES, SPAWN, TOWNSFOLK } from './places.js'
@@ -16,6 +17,7 @@ import { Traffic } from './traffic.js'
 import { Water } from './water.js'
 import { Campfire } from './fire.js'
 import { You } from './you.js'
+import { routeTo } from './ground.js'
 import { doorstep } from './door.js'
 import { Friend } from './friend.js'
 import { Sign, hasSign, loadSigns } from './signs.js'
@@ -54,10 +56,16 @@ export default class TownScene extends Phaser.Scene {
   // start: a place id to open on, framed as the tour frames it (a new reader's first look).
   // onTourSpot({ id, x, y, w, h }) says where a tour stop's building is on screen once the
   // camera has settled on it.
-  constructor({ character, start, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, onTourSpot, reducedMotion }) {
+  // comingFrom: the id of the place you just left: you start outside its door, the camera on you.
+  // onWalk() says a tap on the ground has sent you walking.
+  constructor({ character, start, comingFrom, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, onTourSpot, onWalk, reducedMotion }) {
     super('town')
     this.character = character
     this.start = start
+    this.comingFrom = comingFrom
+    this.onWalk = onWalk
+    // the first tour keeps your character where it is
+    this.canWalk = true
     this.onTourSpot = onTourSpot
     this.onSelect = onSelect
     this.onReady = onReady
@@ -117,11 +125,16 @@ export default class TownScene extends Phaser.Scene {
     cam.setRoundPixels(false)
     this.fitZoom()
     const first = this.start && ALL_PLACES.find((p) => p.id === this.start)
+    const left = !first && ALL_PLACES.find((p) => p.id === this.comingFrom)
+    const outside = left ? doorstep(left).front : null
     if (first) {
       // already where the tour begins, so arriving from Welcome is one move, not three
       const frame = this.tourFrame(first)
       cam.setZoom(frame.zoom)
       cam.centerOn(frame.x, frame.y)
+    } else if (outside) {
+      cam.setZoom(Math.max(FOLLOW_ZOOM, this.minZoom))
+      cam.centerOn(outside[0], outside[1] - 60)
     } else {
       cam.setZoom(Math.max(START_ZOOM, this.minZoom))
       cam.centerOn(SPAWN.x, SPAWN.y - 200)
@@ -132,10 +145,10 @@ export default class TownScene extends Phaser.Scene {
     this.sky.set(this.skyState, false)
     this.water = new Water(this, motion)
     this.campfire = new Campfire(this, { ...motion, glow: (x, y, options) => this.sky.glow(x, y, options) })
-    this.traffic = new Traffic(this, { ...motion, lights: this.sky.lights })
+    this.traffic = new Traffic(this, { ...motion, lights: this.sky.lights, isTap: (pointer) => this.isTap(pointer) })
     this.addPlaces()
     this.showFriends()
-    this.you = new You(this, { ...motion, character: this.character })
+    this.you = new You(this, { ...motion, character: this.character, at: outside })
     this.addCameraControls()
     this.scale.on('resize', () => {
       this.fitZoom()
@@ -227,8 +240,7 @@ export default class TownScene extends Phaser.Scene {
         at: house ? doorstep(house).front : somewhereToWalk(),
         reducedMotion: this.reducedMotion,
         onTap: (pointer) => {
-          const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
-          if (onMap && !this.dragged && !this.pinch) this.selectFriend(reader.id)
+          if (this.isTap(pointer)) this.selectFriend(reader.id)
         },
       })
     }
@@ -297,13 +309,17 @@ export default class TownScene extends Phaser.Scene {
     }
   }
 
+  // Whether a pointer-up was a tap on the map. Phaser hears pointer-ups on the whole window: a
+  // click on an HTML button over the map must not also tap what's underneath it.
+  isTap(pointer) {
+    const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
+    return onMap && !this.dragged && !this.pinch
+  }
+
   // Taps on a building, or on its sign, choose it; pointing at either pops it.
   listen(target, place) {
     target.on('pointerup', (pointer) => {
-      // Phaser hears pointer-ups on the whole window: a click on an HTML button over the
-      // map must not also tap the building underneath it
-      const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
-      if (onMap && !this.dragged && !this.pinch) this.select(place)
+      if (this.isTap(pointer)) this.select(place)
     })
     target.on('pointerover', () => {
       this.hovered = place.id
@@ -553,6 +569,36 @@ export default class TownScene extends Phaser.Scene {
     this.onFollow?.(false)
   }
 
+  setCanWalk(on) {
+    this.canWalk = on
+  }
+
+  // A tap on bare ground: you walk as near it as you can get, and a ring marks where you're going.
+  walkTo(pointer) {
+    if (this.busy || !this.canWalk) return
+    const { x, y } = this.cameras.main.getWorldPoint(pointer.x, pointer.y)
+    const emptyPlots = FRIEND_HOUSES.filter((place) => !this.friends.some((f) => f.house === place.id)).map((place) => place.art)
+    const route = routeTo([this.you.body.x, this.you.body.y], [x, y], emptyPlots)
+    this.you.goTo(route)
+    this.markSpot(route[route.length - 1])
+    this.onWalk?.()
+  }
+
+  markSpot([x, y]) {
+    const ring = this.add.circle(x, y, 14).setStrokeStyle(4, 0xffffff).setScale(1, 0.5).setDepth(SKY_DEPTH + 1)
+    this.tweens.add({
+      targets: ring,
+      scaleX: 2,
+      scaleY: 1,
+      alpha: 0,
+      // reduced motion only fades it
+      ...(this.reducedMotion ? { scaleX: 1, scaleY: 0.5 } : {}),
+      duration: 600,
+      ease: 'Sine.easeOut',
+      onComplete: () => ring.destroy(),
+    })
+  }
+
   // Walks you to the building; as its door opens the camera leans in, and once you are through
   // it says you are inside.
   goInto(id) {
@@ -603,7 +649,9 @@ export default class TownScene extends Phaser.Scene {
       cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom
     })
 
-    this.input.on('pointerup', () => {
+    this.input.on('pointerup', (pointer, over) => {
+      // nothing tappable under it: the ground
+      if (!over.length && this.isTap(pointer)) this.walkTo(pointer)
       if (this.activePointers().length < 2) {
         // let the zone's own pointerup see the pinch before it is cleared
         this.time.delayedCall(0, () => {
