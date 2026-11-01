@@ -15,7 +15,7 @@ const emit = defineEmits(['toggle'])
   <button
     type="button"
     role="switch"
-    class="btn btn-chip location-chip"
+    class="btn btn-chip px-sign location-chip"
     :class="{ 'is-on': on }"
     aria-label="Public profile and location"
     :aria-checked="on"

@@ -41,7 +41,7 @@ function next() {
 <template>
   <button
     type="button"
-    class="btn btn-secondary weather-button"
+    class="btn btn-secondary px-sign weather-button"
     :aria-label="`Weather: ${shown.text}${mode === 'live' ? ', live' : ', preview'}. Change the sky`"
     @click="next"
   >
@@ -57,23 +57,24 @@ function next() {
 .weather-button {
   position: absolute;
   top: 14px;
-  left: 14px;
+  left: 17px;
   z-index: 11;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: transform 0.12s ease;
-  --bs-btn-padding-x: 10px;
+  --bs-btn-padding-x: 8px;
+  letter-spacing: 0;
 }
 
 .weather-button__icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
   background: var(--rl-secondary);
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .weather-button__words {
@@ -83,15 +84,15 @@ function next() {
 }
 
 .weather-button__kind {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--rl-muted);
 }
 
 .weather-button__text {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
 }
 

@@ -517,16 +517,16 @@ function goInside(place) {
 /* Daily, under the weather chip */
 .town .town__daily {
   position: absolute;
-  left: 14px;
-  top: 72px;
+  left: 17px;
+  top: 76px;
   z-index: 10;
 }
 
 /* public or private, under Daily */
 .town .town__location {
   position: absolute;
-  left: 14px;
-  top: 128px;
+  left: 17px;
+  top: 138px;
   z-index: 10;
 }
 

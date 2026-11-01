@@ -15,6 +15,7 @@ import './styles/transitions.css'
 // every button's pixel look, in My Room's colours
 import './styles/pixel-buttons.css'
 import './styles/pixel-surfaces.css'
+import './styles/pixel-sign.css'
 import { applyRoomPalette } from './lib/roomPalette'
 
 import App from './App.vue'

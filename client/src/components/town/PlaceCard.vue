@@ -20,42 +20,43 @@ onMounted(() => card.value?.focus())
 <template>
   <div
     ref="card"
-    class="place-card"
+    class="place-card px-sign-box"
+    :style="{ '--accent': place.accent }"
     role="dialog"
     :aria-label="place.name"
     tabindex="-1"
     @keydown.esc="emit('close')"
   >
-    <div class="place-card__top">
-      <span class="place-card__tab" :style="{ background: place.accent }">{{ place.tab }}</span>
-      <button type="button" class="btn btn-secondary btn-icon place-card__close" aria-label="Close" @click="emit('close')">
+    <!-- the plate: the building's sign, in its colour -->
+    <div class="place-card__plate">
+      <div class="place-card__words">
+        <h2 class="place-card__title">{{ place.name }}</h2>
+        <span class="place-card__tab">{{ place.tab }}</span>
+      </div>
+      <button type="button" class="btn btn-secondary btn-icon px-sign place-card__close" aria-label="Close" @click="emit('close')">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     </div>
-    <h2 class="place-card__title">{{ place.name }}</h2>
-    <p v-if="presence" class="place-card__presence">
-      <span class="place-card__dot" :class="{ 'is-online': presence.online }" aria-hidden="true"></span>
-      {{ presence.online ? 'Online now' : `Last seen ${presence.lastSeen}` }}
-    </p>
-    <p class="place-card__blurb">{{ place.blurb }}</p>
-    <button type="button" class="btn btn-primary w-100 place-card__enter" @click="emit('enter', place)">
-      {{ place.enter }}
-    </button>
+    <div class="place-card__body">
+      <p v-if="presence" class="place-card__presence">
+        <span class="place-card__dot" :class="{ 'is-online': presence.online }" aria-hidden="true"></span>
+        {{ presence.online ? 'Online now' : `Last seen ${presence.lastSeen}` }}
+      </p>
+      <p class="place-card__blurb">{{ place.blurb }}</p>
+      <button type="button" class="btn w-100 px-sign place-card__enter" @click="emit('enter', place)">
+        {{ place.enter }}
+      </button>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .place-card {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 18px;
+  left: 17px;
+  right: 17px;
+  bottom: 24px;
   z-index: 20;
-  padding: 16px 18px 18px;
-  border: 1px solid var(--rl-line);
-  border-radius: var(--rl-radius-modal, 22px);
-  background: var(--rl-surface);
-  box-shadow: 0 14px 36px rgba(63, 46, 36, 0.25);
   outline: none;
 }
 
@@ -66,27 +67,51 @@ onMounted(() => card.value?.focus())
     right: auto;
     width: 420px;
     margin-left: -210px;
-    bottom: 28px;
+    bottom: 32px;
   }
 }
 
-.place-card__top {
+/* the sign's plate: its colour, a light line on top, a dark band along the bottom */
+.place-card__plate {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 18px 16px;
+  background: var(--accent);
+  box-shadow:
+    inset 0 3px 0 color-mix(in srgb, var(--accent) 65%, white),
+    inset 0 -6px 0 color-mix(in srgb, var(--accent) 62%, black);
+}
+
+.place-card__words {
+  min-width: 0;
+}
+
+.place-card__title {
+  margin: 0;
+  font-family: var(--sign-font);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 var(--sign-outline);
 }
 
 .place-card__tab {
-  padding: 4px 10px;
-  border-radius: 999px;
-  color: var(--rl-surface);
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--accent) 55%, black);
+  font-family: var(--sign-font);
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  color: #fff6dc;
+  letter-spacing: 0.5px;
 }
 
 .place-card__close {
   flex: none;
+  margin: 3px;
 }
 
 .place-card__close svg {
@@ -94,16 +119,12 @@ onMounted(() => card.value?.focus())
   height: 20px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
+  stroke-width: 3;
+  stroke-linecap: square;
 }
 
-.place-card__title {
-  margin: 6px 0 4px;
-  font-family: var(--rl-font-title);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--rl-text);
+.place-card__body {
+  padding: 14px 16px 18px;
 }
 
 .place-card__presence {
@@ -119,7 +140,6 @@ onMounted(() => card.value?.focus())
 .place-card__dot {
   width: 9px;
   height: 9px;
-  border-radius: 50%;
   background: var(--rl-line);
 }
 
@@ -128,10 +148,19 @@ onMounted(() => card.value?.focus())
 }
 
 .place-card__blurb {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   font-size: 14px;
   line-height: 1.45;
-  color: var(--rl-muted);
+  color: var(--rl-text);
 }
 
+/* Enter, in the building's colour */
+.place-card__enter {
+  --px-fill: var(--accent);
+  --px-light: color-mix(in srgb, var(--accent) 65%, white);
+  --px-dark: color-mix(in srgb, var(--accent) 62%, black);
+  --px-label: #ffffff;
+  --px-hover: color-mix(in srgb, var(--accent) 82%, black);
+  font-size: 15px;
+}
 </style>

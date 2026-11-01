@@ -18,7 +18,7 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
     <span class="town-hud__spacer"></span>
     <button
       type="button"
-      class="btn btn-secondary town-hud__places"
+      class="btn btn-secondary px-sign town-hud__places"
       :aria-expanded="placesOpen"
       aria-controls="town-places"
       @click="emit('toggle-places')"
@@ -34,12 +34,12 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
 .town-hud {
   position: absolute;
   top: 14px;
-  left: 14px;
-  right: 14px;
+  left: 17px;
+  right: 17px;
   z-index: 10;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 12px;
   pointer-events: none;
 }
 
@@ -67,7 +67,9 @@ const emit = defineEmits(['toggle-places', 'toggle-friends'])
 .town-hud__places {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  --bs-btn-padding-x: 10px;
+  font-size: 13px;
   pointer-events: auto;
 }
 

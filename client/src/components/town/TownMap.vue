@@ -168,7 +168,7 @@ onBeforeUnmount(() => {
     <div v-if="state === 'ready'" class="town-map__zoom">
       <button
         type="button"
-        class="btn btn-chip btn-icon town-map__follow"
+        class="btn btn-chip btn-icon px-sign town-map__follow"
         :class="{ 'is-on': following }"
         aria-label="Follow my character"
         :aria-pressed="following"
@@ -180,10 +180,10 @@ onBeforeUnmount(() => {
           <circle class="town-map__follow-dot" cx="12" cy="12" r="1.6" />
         </svg>
       </button>
-      <button type="button" class="btn btn-secondary btn-icon town-map__round" aria-label="Zoom in" @click="zoom(1.25)">
+      <button type="button" class="btn btn-secondary btn-icon px-sign town-map__round" aria-label="Zoom in" @click="zoom(1.25)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
-      <button type="button" class="btn btn-secondary btn-icon town-map__round" aria-label="Zoom out" @click="zoom(0.8)">
+      <button type="button" class="btn btn-secondary btn-icon px-sign town-map__round" aria-label="Zoom out" @click="zoom(0.8)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /></svg>
       </button>
     </div>
@@ -216,12 +216,12 @@ onBeforeUnmount(() => {
 
 .town-map__zoom {
   position: absolute;
-  right: 14px;
-  bottom: 24px;
+  right: 17px;
+  bottom: 30px;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
 }
 
 .town-map__round svg,

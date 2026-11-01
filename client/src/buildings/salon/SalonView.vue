@@ -364,6 +364,7 @@ async function logout() {
                 :error="editError"
                 @save="saveEdit"
                 @cancel="editing = false"
+                @change-look="editing = false; panel = 'studio'"
               />
             </div>
           </div>

@@ -165,7 +165,7 @@ async function resend() {
         </div>
       </div>
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
-      <button class="btn btn-primary w-100" type="submit" :disabled="busy || sealed || code.length < 6">
+      <button class="btn btn-success w-100" type="submit" :disabled="busy || sealed || code.length < 6">
         {{ busy ? 'Checking…' : 'Confirm code' }}
       </button>
     </form>
@@ -224,7 +224,6 @@ async function resend() {
   outline: none;
   border-color: var(--rl-accent);
   background: #fffdf9;
-  transform: translateY(-8px);
 }
 
 .slot__mark {
@@ -261,10 +260,6 @@ async function resend() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slot__input:focus {
-    transform: none;
-  }
-
   .hand.is-done .slot {
     animation: none;
     opacity: 0;
