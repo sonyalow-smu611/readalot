@@ -47,7 +47,8 @@
             @click="$emit('desk')"
           >
             <span class="hall__plate hall__plate--desk" aria-hidden="true">
-              <img v-if="icons.bell" class="hall__plate-icon" :src="icons.bell" alt="" />Help desk
+              <span class="hall__plate-name"><img v-if="icons.bell" class="hall__plate-icon" :src="icons.bell" alt="" />Help desk</span>
+              <span class="hall__plate-hint">Search for any book here</span>
             </span>
           </button>
 
@@ -62,8 +63,9 @@
             :style="boxStyle(scanner)"
             @click="$emit('scan')"
           >
-            <span class="hall__plate" aria-hidden="true">
-              <img v-if="icons.camera" class="hall__plate-icon" :src="icons.camera" alt="" />Scanner
+            <span class="hall__plate hall__plate--scanner" aria-hidden="true">
+              <span class="hall__plate-name"><img v-if="icons.camera" class="hall__plate-icon" :src="icons.camera" alt="" />Scanner</span>
+              <span class="hall__plate-hint">Scan a book to find it</span>
             </span>
           </button>
 
@@ -116,12 +118,6 @@
     <PlacesMenu class="hall__places" :groups="placeGroups" @go="goTo" />
   </div>
 </template>
-
-<script>
-// How far along the hall the reader was when they left (art x at the left of the view), so
-// coming back from a book's page finds the hall where it was. Kept for this visit only.
-let lastLeft = 0
-</script>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -193,6 +189,8 @@ const weatherIcon = computed(() => {
 // `rows` art pixels tall (the hall, plus more floor below and more wall above), `above` the rows
 // of wall above the hall as designed.
 const size = ref({ scale: 1, unit: 1, rows: HALL.height, above: 0 })
+// whether the hall has been sized yet
+let measured = false
 
 const stageStyle = computed(() => ({ width: `${HALL.width * size.value.unit}px` }))
 const roomStyle = computed(() => ({
@@ -258,14 +256,27 @@ function measure() {
   const below = Math.min(spare, Math.ceil(BAR / unit))
   const next = { scale, unit, rows, above: spare - below }
   const before = size.value
-  if (next.unit === before.unit && next.rows === before.rows && next.above === before.above) return
-  // keep the same part of the hall in the middle of the view
+  if (measured && next.unit === before.unit && next.rows === before.rows && next.above === before.above) return
+  // on a resize, keep the same part of the hall in the middle of the view; the first time, it
+  // stays at its left end
   const middle = (scroller.value.scrollLeft + scroller.value.clientWidth / 2) / before.unit
+  const first = !measured
+  measured = true
   size.value = next
   nextTick(() => {
-    scroll?.glideTo(middle * next.unit - scroller.value.clientWidth / 2, { instant: true })
+    scroll?.glideTo(first ? startLeft() : middle * next.unit - scroller.value.clientWidth / 2, { instant: true })
     paint()
   })
+}
+
+// Where the hall opens (px scrolled): its left end, unless the screen is too narrow for the help
+// desk and the scanner both; then just far enough along that the whole desk is in view, with
+// the scanner beside it.
+const MARGIN = 8
+function startLeft() {
+  const { unit } = size.value
+  const toScanner = (scanner.x + scanner.w + MARGIN) * unit - scroller.value.clientWidth
+  return Math.max(0, Math.min(toScanner, (desk.x - MARGIN) * unit))
 }
 
 function paint() {
@@ -312,12 +323,11 @@ onMounted(async () => {
   resize = new ResizeObserver(measure)
   resize.observe(root.value)
   await nextTick()
+  // the hall always opens at its left end, with the help desk and the scanner in view
   paint()
-  if (lastLeft) scroll.glideTo(lastLeft * size.value.unit, { instant: true })
 })
 
 onBeforeUnmount(() => {
-  if (scroller.value) lastLeft = scroller.value.scrollLeft / size.value.unit
   resize?.disconnect()
   scroll?.dispose()
 })
@@ -394,14 +404,16 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-/* the scanner's and the help desk's name plates: a cream plate with the town's dark outline */
+/* the scanner's and the help desk's signs: a cream plate with the town's dark outline, its name
+   and, under it, what it's for */
 .hall__plate {
   position: absolute;
   top: 0;
   left: 50%;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 2px;
   transform: translate(-50%, -60%);
   padding: 2px 8px;
   border: max(2px, var(--unit)) solid #1e1a24;
@@ -416,6 +428,25 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   color: #3b342a;
   pointer-events: none;
+}
+
+.hall__plate-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hall__plate-hint {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 15px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* the scanner's two lines stand above its top, clear of its screen */
+.hall__plate--scanner {
+  transform: translate(-50%, -100%);
 }
 
 .hall__plate-icon {

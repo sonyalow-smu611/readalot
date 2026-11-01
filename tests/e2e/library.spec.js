@@ -297,3 +297,36 @@ test.describe("an opened bookcase", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 });
+
+test("the library always opens at its left end, with the help desk and the scanner in view", async ({ page }) => {
+  const hall = page.getByRole("region", { name: /The library hall/ });
+  await (await openPlaces(page)).getByRole("button", { name: "Graphic Novels" }).click();
+  await expect(page.getByRole("button", { name: "Graphic Novels & Manga bookcase" })).toBeInViewport();
+  await expect.poll(() => hall.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+
+  // away to search and back, inside the app: the hall starts from the left again
+  const search = page.getByRole("searchbox", { name: "Search books or authors" });
+  await search.fill("dune");
+  await search.press("Enter");
+  await expect(page).toHaveURL(/\/search\?q=dune$/);
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page).toHaveURL(/\/library$/);
+  await expect(page.getByRole("button", { name: "Help desk: search for any book" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Book scanner: scan a book cover" })).toBeInViewport();
+  expect(await hall.evaluate((el) => el.scrollLeft)).toBe(0);
+});
+
+test("the help desk and the scanner say what they're for", async ({ page }) => {
+  await expect(page.getByRole("button", { name: "Help desk: search for any book" })).toContainText("Search for any book here");
+  await expect(page.getByRole("button", { name: "Book scanner: scan a book cover" })).toContainText("Scan a book to find it");
+  await expect(page.getByText("Search for any book here")).toBeVisible();
+  await expect(page.getByText("Scan a book to find it")).toBeVisible();
+});
+
+test("on a phone, the library opens with the whole help desk in view, and its sign", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const desk = page.getByRole("button", { name: "Help desk: search for any book" });
+  await expect(desk).toBeInViewport({ ratio: 1 });
+  await expect(page.getByText("Search for any book here")).toBeInViewport({ ratio: 1 });
+});

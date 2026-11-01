@@ -9,7 +9,10 @@ scanner opens the camera to scan a book's cover.
 Across the top: Back to town on the left, the search bar in the middle, the live weather on the
 right (on a phone the search bar rests as a magnifier and grows into a bar when used). The
 **Places** menu in the bottom right, like My Room's, slides the hall to the help desk, the
-scanner, the reading nook or a genre's bookcase.
+scanner, the reading nook or a genre's bookcase. The hall always opens at its left end, with
+the help desk and the scanner in view (on a phone, with the whole help desk in view and the
+scanner beside it); their signs say what they're for: "Search for any book here" and "Scan a
+book to find it".
 
 There are no emoji in the library: every icon is a pixel icon drawn in the hall's style
 (`hall/icons.js`).
