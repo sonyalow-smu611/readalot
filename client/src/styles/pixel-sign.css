@@ -1,0 +1,96 @@
+/* Scaffolded with AI assistance — see AI_USAGE.md
+   The look of the big signs over the town's buildings (town/signs.js), for the town's own boxes
+   and buttons: a thick outline in the signs' near-black with stepped (pixel-rounded) corners, a
+   light line along the top, a dark band along the bottom, a hard shadow straight down, and labels
+   in a pixel font (Silkscreen, loaded in index.html).
+
+     .px-sign       on a .btn: a button in the signs' look (its colours stay the .btn kind's)
+     .px-sign-box   a box (card, menu) in the signs' look; set --sign-fill for its colour
+     .px-sign-font  pixel letters only
+
+   The outline is a 2 px border, thickened by four shadows, one per side, which leave each
+   corner's square empty: that is the step. */
+
+:root {
+  --sign-font: 'Silkscreen', var(--rl-font-title);
+  --sign-outline: #2b2133;
+  --sign-edge:
+    0 -2px 0 var(--sign-outline),
+    0 2px 0 var(--sign-outline),
+    -2px 0 0 var(--sign-outline),
+    2px 0 0 var(--sign-outline);
+  --sign-drop: 0 7px 0 rgba(43, 33, 51, 0.35);
+}
+
+.px-sign-font {
+  font-family: var(--sign-font);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* --- Buttons -------------------------------------------------------------------------------- */
+
+.btn.px-sign {
+  --bs-btn-border-width: 2px;
+  --bs-btn-border-color: var(--sign-outline);
+  --bs-btn-hover-border-color: var(--sign-outline);
+  --bs-btn-active-border-color: var(--sign-outline);
+  --bs-btn-disabled-border-color: var(--sign-outline);
+  border: 2px solid var(--sign-outline);
+  border-radius: 0;
+  font-family: var(--sign-font);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  box-shadow:
+    inset 0 3px 0 var(--px-light),
+    inset 0 -4px 0 var(--px-dark),
+    var(--sign-edge),
+    var(--sign-drop);
+}
+
+/* pressed: it sinks into its shadow */
+.btn.px-sign:active:not(:disabled),
+.btn.px-sign.active:not(.btn-chip):not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 3px 0 var(--px-light),
+    inset 0 -4px 0 var(--px-dark),
+    var(--sign-edge),
+    0 3px 0 rgba(43, 33, 51, 0.35);
+}
+
+.btn.px-sign:focus-visible {
+  outline: 3px solid var(--sign-outline);
+  outline-offset: 5px;
+  box-shadow:
+    inset 0 3px 0 var(--px-light),
+    inset 0 -4px 0 var(--px-dark),
+    var(--sign-edge),
+    var(--sign-drop);
+}
+
+.btn.px-sign:disabled,
+.btn.px-sign.disabled {
+  box-shadow: var(--sign-edge);
+}
+
+/* --- Boxes ---------------------------------------------------------------------------------- */
+
+.px-sign-box {
+  --sign-fill: var(--px-paper, #f9f3e6);
+  border: 2px solid var(--sign-outline);
+  border-radius: 0;
+  background: var(--sign-fill);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -5px 0 rgba(43, 33, 51, 0.12),
+    var(--sign-edge),
+    var(--sign-drop);
+}
+
+@media (forced-colors: active) {
+  .btn.px-sign,
+  .px-sign-box {
+    border-color: CanvasText;
+  }
+}
