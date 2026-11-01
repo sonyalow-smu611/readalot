@@ -2,7 +2,8 @@
      shelf open it, naming it "Book details", with the shelf it's on, and their own extras
      (progress, Remove) in the slot. The library, search and the genre page open it through
      book/FoundBookPreview.vue, with Add to To be read and Where to get in the slot instead of the
-     statuses, and the reviews behind a button (collapseReviews). -->
+     statuses, and the reviews behind a button (collapseReviews). Roomier than the app's other
+     pop-ups: on a laptop it is two columns, a tall cover on the left and the rest beside it. -->
 <template>
   <div
     v-if="book"
@@ -15,72 +16,73 @@
     @click.self="$emit('close')"
     @keydown.esc="$emit('close')"
   >
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered preview-dialog">
       <div class="modal-content preview">
-        <div class="preview__top">
-          <BookCover class="preview__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
-          <div class="preview__meta">
-            <p v-if="tab" class="preview__tab">{{ tab }}</p>
-            <h2 class="preview__title">{{ book.title }}</h2>
-            <p class="preview__author">{{ book.authors?.join(", ") || "Unknown author" }}</p>
-            <p v-if="rating" class="preview__rating">
-              {{ rating.toFixed(1) }} <span aria-hidden="true">★</span>
-              <span class="visually-hidden">out of 5</span>
-              <span class="preview__rating-source">{{ ratingSource }}</span>
-            </p>
-          </div>
+        <BookCover class="preview__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
+        <div class="preview__meta">
+          <p v-if="tab" class="preview__tab">{{ tab }}</p>
+          <h2 class="preview__title">{{ book.title }}</h2>
+          <p class="preview__author">{{ book.authors?.join(", ") || "Unknown author" }}</p>
+          <p v-if="rating" class="preview__rating">
+            {{ rating.toFixed(1) }} <span aria-hidden="true">★</span>
+            <span class="visually-hidden">out of 5</span>
+            <span class="preview__rating-source">{{ ratingSource }}</span>
+          </p>
         </div>
-        <BookSynopsis class="preview__synopsis" :text="book.description" />
 
-        <p v-if="statuses" class="preview__eyebrow">Reading status</p>
-        <div v-if="statuses" class="preview__statuses">
+        <div class="preview__body">
+          <BookSynopsis class="preview__synopsis" :text="book.description" />
+
+          <p v-if="statuses" class="preview__eyebrow">Reading status</p>
+          <div v-if="statuses" class="preview__statuses">
+            <button
+              v-for="option in STATUSES"
+              :key="option.value"
+              class="btn btn-outline-primary"
+              :class="{ active: book.status === option.value }"
+              type="button"
+              :aria-pressed="book.status === option.value"
+              @click="$emit('status', option.value)"
+            >
+              {{ option.short }}
+            </button>
+          </div>
+
+          <!-- what the page opening it adds, e.g. My Shelf's progress and Remove from shelf -->
+          <slot />
+
           <button
-            v-for="option in STATUSES"
-            :key="option.value"
-            class="btn btn-outline-primary"
-            :class="{ active: book.status === option.value }"
+            v-if="collapseReviews"
             type="button"
-            :aria-pressed="book.status === option.value"
-            @click="$emit('status', option.value)"
+            class="btn btn-secondary preview__reviews-toggle"
+            :aria-expanded="reviewsShown"
+            :aria-controls="reviewsId"
+            @click="reviewsShown = !reviewsShown"
           >
-            {{ option.short }}
+            {{ reviewsShown ? "Hide reviews" : reviewsLoading ? "Read reviews" : `Read reviews (${reviews.length})` }}
+          </button>
+          <BookReviews
+            v-show="!collapseReviews || reviewsShown"
+            :id="reviewsId"
+            class="preview__reviews"
+            :reviews="reviews"
+            :loading="reviewsLoading"
+            :error="reviewsError"
+            :saving="reviewSaving"
+            :save-error="reviewSaveError"
+            :my-character="user.profile.character"
+            @retry="loadReviews"
+            @save="saveReview"
+            @delete="removeReview"
+          />
+
+          <RouterLink v-if="linksToPage" class="btn btn-primary preview__open" :to="`/books/${book.id}`">
+            Open full book page
+          </RouterLink>
+          <button class="btn btn-secondary preview__close" type="button" @click="$emit('close')">
+            {{ closeLabel }}
           </button>
         </div>
-
-        <!-- what the page opening it adds, e.g. My Shelf's progress and Remove from shelf -->
-        <slot />
-
-        <button
-          v-if="collapseReviews"
-          type="button"
-          class="btn btn-secondary preview__reviews-toggle"
-          :aria-expanded="reviewsShown"
-          :aria-controls="reviewsId"
-          @click="reviewsShown = !reviewsShown"
-        >
-          {{ reviewsShown ? "Hide reviews" : reviewsLoading ? "Read reviews" : `Read reviews (${reviews.length})` }}
-        </button>
-        <BookReviews
-          v-show="!collapseReviews || reviewsShown"
-          :id="reviewsId"
-          class="preview__reviews"
-          :reviews="reviews"
-          :loading="reviewsLoading"
-          :error="reviewsError"
-          :saving="reviewSaving"
-          :save-error="reviewSaveError"
-          :my-character="user.profile.character"
-          @retry="loadReviews"
-          @save="saveReview"
-          @delete="removeReview"
-        />
-
-        <RouterLink v-if="linksToPage" class="btn btn-primary preview__open" :to="`/books/${book.id}`">
-          Open full book page
-        </RouterLink>
-        <button class="btn btn-secondary preview__close" type="button" @click="$emit('close')">
-          {{ closeLabel }}
-        </button>
       </div>
     </div>
   </div>
@@ -146,22 +148,39 @@ watch(
   outline: none;
 }
 
+/* Wider than the app's other pop-ups (theme.css keeps those at 360px), so a book has room. */
+.rl-modal .modal-dialog.preview-dialog {
+  max-width: 520px;
+}
+
+/* On a phone: the cover beside the title, everything else below both. On a laptop
+   (further down): a tall cover on the left, the rest beside it. */
 .preview {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  grid-template-areas:
+    "cover meta"
+    "body body";
+  column-gap: 14px;
   padding: 22px 16px 14px;
 }
 
-.preview__top {
-  display: flex;
-  gap: 14px;
-}
-
 .preview__cover {
-  width: 110px;
-  flex: none;
+  grid-area: cover;
+  align-self: start;
+  width: 100%;
   border-radius: 10px;
 }
 
 .preview__meta {
+  grid-area: meta;
+  min-width: 0;
+}
+
+.preview__body {
+  grid-area: body;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -243,5 +262,52 @@ watch(
 
 .preview__close {
   margin-top: 8px;
+}
+
+@media (min-width: 576px) {
+  .rl-modal .modal-dialog.preview-dialog {
+    max-width: 620px;
+  }
+
+  .preview {
+    grid-template-columns: 150px minmax(0, 1fr);
+    column-gap: 20px;
+    padding: 26px 24px 18px;
+  }
+
+  .preview__title {
+    font-size: 22px;
+  }
+}
+
+/* a laptop: two columns, the cover running down the left beside everything else */
+@media (min-width: 992px) {
+  .rl-modal .modal-dialog.preview-dialog {
+    max-width: 880px;
+  }
+
+  .preview {
+    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-areas:
+      "cover meta"
+      "cover body";
+    grid-template-rows: auto 1fr;
+    column-gap: 32px;
+    padding: 32px 32px 26px;
+  }
+
+  .preview__title {
+    font-size: 28px;
+  }
+
+  .preview__author {
+    font-size: 16px;
+  }
+
+  .preview__synopsis {
+    margin-top: 6px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
 }
 </style>
