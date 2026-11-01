@@ -1,46 +1,145 @@
 <script setup>
-// AI-assisted presentation component — review and record in AI_USAGE.md.
-defineProps({
+// AI-assisted visual styling; review and document in AI_USAGE.md.
+// This card is display-only: the parent continues to own reader selection and navigation.
+import { computed } from 'vue'
+
+const props = defineProps({
   reader: { type: Object, required: true },
 })
 const emit = defineEmits(['close', 'visit'])
+
+const name = computed(() => props.reader.displayName || props.reader.username || 'Reader')
+const username = computed(() => props.reader.username || props.reader.id || '')
+const score = computed(() => {
+  const value = Number(props.reader.compatibility)
+  return props.reader.compatibility == null || !Number.isFinite(value)
+    ? null
+    : Math.max(0, Math.min(100, Math.round(value)))
+})
+const genres = computed(() => Array.isArray(props.reader.favoriteGenres) ? props.reader.favoriteGenres : [])
+const currentBook = computed(() => props.reader.currentlyReading || props.reader.books?.find(book => book.status === 'reading'))
+const initials = computed(() => props.reader.initials || name.value.split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase())
 </script>
 
 <template>
-  <aside class="cafe-detail" aria-label="Selected reader">
-    <button type="button" class="cafe-detail__close" aria-label="Close reader details" @click="emit('close')">×</button>
-    <div class="cafe-detail__intro">
-      <div class="cafe-detail__initials" aria-hidden="true">{{ reader.displayName.charAt(0).toUpperCase() }}</div>
-      <div class="cafe-detail__who">
-        <strong>{{ reader.displayName }}</strong>
-        <span v-if="reader.username">@{{ reader.username }}</span>
-        <small v-if="reader.isDemo" class="cafe-detail__demo">Demo profile · not a database account</small>
+  <aside class="reader-popup" role="dialog" :aria-label="`Meet ${name}`" aria-modal="false">
+    <button class="reader-popup__close" type="button" aria-label="Close reader profile" @click="emit('close')">×</button>
+
+    <div class="reader-popup__top">
+      <div class="reader-popup__portrait" aria-hidden="true">
+        <img v-if="reader.sprite || reader.avatarUrl" :src="reader.sprite || reader.avatarUrl" alt="" />
+        <span v-else>{{ initials }}</span>
       </div>
-      <span class="cafe-detail__match">
-        {{ reader.compatibility == null ? 'Match unavailable' : `${reader.compatibility}% match` }}
-      </span>
+      <div class="reader-popup__identity">
+        <h2>{{ name }}</h2>
+        <p class="reader-popup__handle">@{{ username }}<span v-if="reader.neighborhood"> · {{ reader.neighborhood }}</span></p>
+        <div class="reader-popup__match-row">
+          <span class="reader-popup__match-label">MATCH</span>
+          <div class="reader-popup__track" role="meter" :aria-valuenow="score ?? 0" aria-valuemin="0" aria-valuemax="100" :aria-label="`Reading compatibility with ${name}`">
+            <div class="reader-popup__fill" :style="{ width: `${score ?? 0}%` }"></div>
+          </div>
+          <strong class="reader-popup__score">{{ score === null ? '—' : `${score}%` }}</strong>
+        </div>
+      </div>
     </div>
-    <p class="cafe-detail__title">Favourite genres</p>
-    <div class="cafe-detail__genres">
-      <span v-for="genre in reader.favoriteGenres" :key="genre">{{ genre }}</span>
-      <span v-if="!reader.favoriteGenres.length">Not shared yet</span>
+
+    <div class="reader-popup__info">
+      <h3>✿ READING PREFS</h3>
+      <div v-if="genres.length" class="reader-popup__genres">
+        <span v-for="(genre, index) in genres.slice(0, 4)" :key="`${genre}-${index}`" class="reader-popup__genre">{{ genre }}</span>
+      </div>
+      <p v-else class="reader-popup__empty">No favourite genres shared yet.</p>
+      <p v-if="currentBook" class="reader-popup__reading">📖 Reading: <strong>{{ currentBook.title }}</strong></p>
     </div>
-    <button type="button" class="cafe-detail__visit" @click="emit('visit')">View Room →</button>
+
+    <button type="button" class="reader-popup__visit" @click="emit('visit')">Visit {{ name.split(' ')[0] }}'s room →</button>
   </aside>
 </template>
 
 <style scoped>
-.cafe-detail{position:relative;background:#fffbf1;color:#392c25;border:3px solid #5d4537;border-radius:14px;box-shadow:6px 8px 0 #35262166;padding:18px;min-width:0;font-family:var(--rl-font-body,system-ui,sans-serif)}
-.cafe-detail__close{position:absolute;right:8px;top:4px;border:0;background:transparent;font-size:25px;color:#624635;cursor:pointer;line-height:1.3}
-.cafe-detail__intro{display:flex;align-items:center;gap:9px;padding-right:20px;flex-wrap:wrap}
-.cafe-detail__initials{width:42px;height:42px;flex:none;display:grid;place-items:center;background:#d5e6d9;border:2px solid #5f8972;border-radius:7px;color:#33553f;font-weight:800}
-.cafe-detail__who{min-width:70px;flex:1}.cafe-detail__who strong{display:block;font-size:15px}.cafe-detail__who span{display:block;font-size:11px;color:#836e5d}
-.cafe-detail__demo{display:block;font-size:10px;color:#8c7562;margin-top:3px}
-.cafe-detail__match{background:#2e7154;color:white;border-radius:15px;font-size:11px;font-weight:700;padding:5px 8px;white-space:nowrap}
-.cafe-detail__title{font-size:11px;font-weight:800;margin:12px 0 6px}
-.cafe-detail__genres{display:flex;flex-wrap:wrap;gap:5px}
-.cafe-detail__genres span{background:#f0e2ce;padding:5px 8px;border-radius:14px;font-size:11px}
-.cafe-detail__visit{display:block;width:100%;margin-top:13px;border:0;border-radius:9px;background:#5d4537;color:#fff;padding:10px 16px;font-weight:750;cursor:pointer;font-size:13px}
-.cafe-detail__visit:hover{background:#3c2d26}
-@media (max-width:640px){.cafe-detail{border-radius:16px 16px 0 0;padding:13px 15px;box-shadow:0 -4px 22px #25181355}.cafe-detail__initials{width:35px;height:35px}.cafe-detail__visit{margin-top:8px}.cafe-detail__genres span{padding:3px 7px}}
+.reader-popup {
+  box-sizing: border-box;
+  position: absolute;
+  z-index: 20;
+  width: min(435px, calc(100% - 24px));
+  max-height: min(470px, calc(100% - 24px));
+  overflow-y: auto;
+  padding: 13px;
+  border: 4px solid #25202a;
+  border-radius: 0;
+  background: #fff1d0;
+  box-shadow: 5px 5px 0 #25202a, 0 12px 30px #241b2070;
+  color: #241e21;
+  font-family: Arial, system-ui, sans-serif;
+}
+.reader-popup__close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 1;
+  width: 29px;
+  height: 29px;
+  border: 2px solid #25202a;
+  background: #fff9ec;
+  color: #25202a;
+  font: 700 22px/1 Arial, sans-serif;
+  cursor: pointer;
+}
+.reader-popup__top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 3px solid #25202a;
+  outline: 2px solid #5a777e;
+  outline-offset: -7px;
+  background: #fffbf1;
+  padding: 12px 34px 12px 12px;
+  min-width: 0;
+}
+.reader-popup__portrait {
+  flex: 0 0 76px;
+  height: 86px;
+  border: 3px solid #25202a;
+  background: linear-gradient(#c6e3ec 65%, #94ab79 65%);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font: 700 20px/1 monospace;
+}
+.reader-popup__portrait img {
+  max-width: 100%;
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.reader-popup__identity { flex: 1; min-width: 0; }
+.reader-popup__identity h2 { font: 700 clamp(17px, 2vw, 24px)/1.15 Arial, sans-serif; margin: 0 0 5px; padding-right: 2px; overflow-wrap: anywhere; }
+.reader-popup__handle { font-size: 11px; line-height: 1.4; color: #4f4442; margin: 0 0 10px; overflow-wrap: anywhere; }
+.reader-popup__match-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.reader-popup__match-label { flex: none; border: 3px solid #25202a; background: #e9ca7a; color: #25202a; padding: 4px 5px; font: 800 10px/1 monospace; letter-spacing: .4px; }
+.reader-popup__track { flex: 1; min-width: 22px; height: 12px; border: 3px solid #25202a; background: #e2dcd5; }
+.reader-popup__fill { height: 100%; background: #527253; }
+.reader-popup__score { flex: none; font: 800 15px/1 Arial, sans-serif; }
+.reader-popup__info { margin: 12px 0; border: 3px solid #25202a; background: #fffbf1; padding: 10px; }
+.reader-popup__info h3 { display: inline-block; margin: -3px 0 10px; padding: 4px 8px; border: 3px solid #25202a; background: #e9ca7a; font: 800 11px/1.2 Arial, sans-serif; letter-spacing: 1px; }
+.reader-popup__genres { display: flex; flex-wrap: wrap; gap: 6px; }
+.reader-popup__genre { display: inline-block; border: 2px solid #25202a; background: #915b3d; color: #fff9ed; padding: 5px 7px; font: 700 11px/1.2 Arial, sans-serif; }
+.reader-popup__genre:nth-child(even) { background: #4f6541; }
+.reader-popup__empty, .reader-popup__reading { margin: 8px 0 0; font-size: 11px; line-height: 1.4; }
+.reader-popup__visit { width: 100%; min-height: 43px; border: 4px solid #25202a; border-radius: 0; background: #526c40; color: #fff8e5; font: 800 14px/1.3 Arial, sans-serif; cursor: pointer; box-shadow: 3px 3px 0 #25202a; }
+.reader-popup__visit:hover { background: #405833; }
+.reader-popup :focus-visible { outline: 3px solid #de9951; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .reader-popup { padding: 9px; max-height: min(78dvh, 405px); }
+  .reader-popup__top { gap: 8px; padding: 9px 30px 9px 9px; }
+  .reader-popup__portrait { flex-basis: 56px; height: 70px; }
+  .reader-popup__identity h2 { font-size: 16px; }
+  .reader-popup__handle { font-size: 10px; margin-bottom: 8px; }
+  .reader-popup__match-label { font-size: 9px; padding: 3px; }
+  .reader-popup__score { font-size: 12px; }
+  .reader-popup__info { margin: 8px 0; padding: 8px; }
+  .reader-popup__genre { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .reader-popup { scroll-behavior: auto; } }
 </style>

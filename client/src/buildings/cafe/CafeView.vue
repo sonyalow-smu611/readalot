@@ -1,14 +1,15 @@
 <script setup>
 // AI-assisted scaffold — team review required (AI_USAGE.md).
-// Café-only changes: display the four existing demo readers plus any discoverable API readers.
-// No new database accounts, tables or records are created.
+// Café-only changes: use the shared People store and its existing readers.
+// No database accounts, tables or records are created.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import CafeViewport from './components/CafeViewport.vue'
 import CafeReaderCard from './components/CafeReaderCard.vue'
 import { drawCafeWeatherArt } from './cafeWeatherArt.js'
-import { getDemoCafeReaders, loadCafeReaders, rotateCafeReaders } from './cafeReaders.js'
+import { rotateCafeReaders } from './cafeReaders.js'
+import { usePeopleStore } from '@/stores/people.js'
 import { drawAvatar, makeRnd } from '@/lib/avatar/draw.js'
 import { characterSeed, normaliseCharacter, presetCharacter, toDrawParams } from '@/lib/avatar/catalogue.js'
 import { fetchWeather } from '@/services/weather.js'
@@ -18,16 +19,26 @@ import { PLACES } from '@/town/places.js'
 const place = PLACES.find((p) => p.id === 'cafe')
 const user = useUserStore()
 const router = useRouter()
+const people = usePeopleStore()
 
 const weather = ref({ scene: 'cloudy', isDay: true, temperature: null })
 const weatherProblem = ref(false)
 const loading = ref(true)
 const error = ref('')
-const allReaders = ref([])
-const guests = ref([])
-const demoReaders = getDemoCafeReaders()
-const demoSeats = [0, 2, 4, 6]
-const liveSeats = [1, 3, 5, 7]
+const seatedIds = ref([])
+const guests = computed(() => seatedIds.value.flatMap((id, index) => {
+  const reader = people.find(id)
+  if (!reader) return []
+  return [{
+    ...reader,
+    id: reader.id, // Usernames are the app's reader-room route IDs.
+    displayName: reader.displayName || reader.username || 'Reader',
+    favoriteGenres: reader.favoriteGenres || [],
+    compatibility: people.compatibility(reader),
+    seatIndex: index,
+    sprite: guestImage(reader, index),
+  }]
+}))
 const activeId = ref('')
 const movementError = ref('')
 const selectedReader = computed(() => guests.value.find((r) => r.id === activeId.value) ?? null)
@@ -51,22 +62,6 @@ function guestImage(reader, index) {
   return reader.avatarUrl || avatarData(reader.character ?? presetCharacter(visualPresets[index % visualPresets.length]))
 }
 
-function displayGuests(databaseReaders = []) {
-  // All four peopleDemo readers always have a seat. Only existing API users fill the other four.
-  const real = rotateCafeReaders(databaseReaders, liveSeats.length)
-  guests.value = [
-    ...demoReaders.map((reader, index) => ({
-      ...reader,
-      seatIndex: demoSeats[index],
-      sprite: guestImage(reader, index),
-    })),
-    ...real.map((reader, index) => ({
-      ...reader,
-      seatIndex: liveSeats[index],
-      sprite: guestImage(reader, index + demoReaders.length),
-    })),
-  ]
-}
 
 let disposed = false
 let weatherTimer = null
@@ -88,24 +83,17 @@ async function updateReaders() {
   movementError.value = ''
   activeId.value = ''
   try {
-    const profile = user.profile ?? {}
-    const rawLat = profile.location_lat ?? profile.locationLat ?? profile.location?.lat
-    const rawLng = profile.location_lng ?? profile.locationLng ?? profile.location?.lng
-    const originLat = Number(rawLat), originLng = Number(rawLng)
-    const origin = rawLat != null && rawLng != null &&
-      Number.isFinite(originLat) && Number.isFinite(originLng) &&
-      Math.abs(originLat) <= 90 && Math.abs(originLng) <= 180
-      ? { lat: originLat, lng: originLng } : undefined
-    const excludeId = user.user?.id ?? user.session?.user?.id ?? profile.id ?? null
-    const results = await loadCafeReaders({ ...(origin ? { origin } : {}), excludeId })
+    // Reuse the same reader records and computed matches as the town / Reader Room.
+    // The store requests GET /api/people, not the removed /api/people/nearby endpoint.
+    await people.load(true)
     if (disposed) return
-    allReaders.value = results
-    displayGuests(results)
+    if (people.error) throw new Error(people.error)
+    const available = people.readers.filter((reader) => reader?.id && reader.id !== user.profile?.username)
+    seatedIds.value = rotateCafeReaders(available, 8).map((reader) => reader.id)
   } catch (err) {
     if (disposed) return
-    allReaders.value = []
-    displayGuests() // The sample café works even if the database API is unavailable.
-    error.value = err?.message || 'Could not load database readers.'
+    seatedIds.value = []
+    error.value = err?.message || 'Could not load readers.'
   } finally {
     if (!disposed) loading.value = false
   }
@@ -125,7 +113,6 @@ function visitRoom() {
 }
 
 onMounted(() => {
-  displayGuests()
   updateWeather()
   updateReaders()
   weatherTimer = window.setInterval(updateWeather, 10 * 60 * 1000)
@@ -147,16 +134,17 @@ onBeforeUnmount(() => {
         {{ weatherProblem ? 'Weather unavailable' : weatherLabel + temperatureLabel }}
       </p>
       <p class="cafe__count" role="status">
-        4 sample readers
-        <span v-if="loading"> · checking database…</span>
-        <span v-else-if="error"> · database unavailable</span>
-        <span v-else-if="allReaders.length"> · {{ guests.length - demoReaders.length }} live seated<span v-if="allReaders.length > liveSeats.length"> ({{ allReaders.length }} available)</span></span>
+        <span v-if="loading">Loading readers…</span>
+        <span v-else-if="error">Readers unavailable</span>
+        <span v-else>{{ guests.length }} readers in café</span>
       </p>
       <div v-if="movementError" class="cafe__notice" role="alert">{{ movementError }}</div>
       <div v-else-if="error && !loading" class="cafe__notice" role="status">
-        Showing sample readers. Database lookup is unavailable.
+        Could not load the reader list.
         <button type="button" @click="updateReaders">Retry</button>
       </div>
+
+      <div v-if="!loading && !error && guests.length === 0" class="cafe__notice" role="status">No other readers available yet.</div>
 
       <Transition name="cafe-card">
         <CafeReaderCard v-if="selectedReader" :key="selectedReader.id" class="cafe__card"
