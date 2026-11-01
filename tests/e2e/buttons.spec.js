@@ -1,5 +1,6 @@
 import { test as signedOut } from "@playwright/test";
 import { buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, test } from "./fixtures.js";
+import { EMMA, NOAH, mockFriends } from "./townFriends.js";
 import { createReader, hasSupabase, NEEDS_SUPABASE, signInPage } from "./supabaseUser.js";
 
 // a brand-new reader, who hasn't filled in Welcome yet
@@ -555,6 +556,8 @@ test.describe("the town", () => {
   });
 
   test("the friends list, a friend's card and the chat dock have pixel buttons", async ({ page }) => {
+    await mockFriends(page, { friends: [EMMA, { ...NOAH, lastSeenAt: new Date().toISOString() }] });
+    await page.reload();
     await page.getByRole("button", { name: "Friends, 2 online" }).click();
     const list = page.getByRole("navigation", { name: "Friends in town" });
     await expect(list).toBeVisible();

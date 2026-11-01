@@ -16,12 +16,12 @@ import DailyButton from './DailyButton.vue'
 import DailyPanel from './DailyPanel.vue'
 import DailyReward from './DailyReward.vue'
 
-const BACK = '.building-shell__back'
+const BACK = '.building-shell__back, .search__back'
 const TITLE_BAR_BUTTON = '.app-header__card a.app-header__icon'
 // what a scene keeps down its left side, under the back button
 const UNDER_BACK = '.strip__menu, .cafe__count'
 // pages whose content starts right under the back button
-const BESIDE_BACK = ['my-shelf', 'reader-house-shelf']
+const BESIDE_BACK = ['my-shelf', 'reader-house-shelf', 'search']
 // the town's Daily button sits this far in, for a page with nothing in its corner
 const EDGE = { top: 14, left: 17 }
 const GAP = 8

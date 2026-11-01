@@ -64,14 +64,25 @@ test("tapping a townsperson makes them jiggle, then carry on", async ({ page }) 
   // the camera brought to one of them, so they can be tapped
   await page.evaluate(() => {
     const scene = window.__townScene;
-    const walker = scene.children.list.find((one) => one.input && one.texture?.key.startsWith("avatar-"));
+    // one well in from the edges, so the camera can bring it to the middle of the screen
+    const inTown = (one) => one.x > 800 && one.x < 2800 && one.y > 500 && one.y < 2000;
+    const walker = scene.children.list.find((one) => one.input && one.texture?.key.startsWith("avatar-") && inTown(one));
     window.__walker = walker;
     scene.cameras.main.centerOn(walker.x, walker.y);
   });
   await page.waitForTimeout(100);
   const before = await you(page);
+  // the wobble is over in half a second: noted every frame so it can't be missed between looks
+  await page.evaluate(() => {
+    window.__wobble = 0;
+    const note = () => {
+      window.__wobble = Math.max(window.__wobble, Math.abs(window.__walker.angle));
+      requestAnimationFrame(note);
+    };
+    note();
+  });
   await tapMap(page, await page.evaluate(() => [window.__walker.x, window.__walker.y - 50]));
-  await expect.poll(() => page.evaluate(() => Math.abs(window.__walker.angle)), { timeout: 2000 }).toBeGreaterThan(1);
+  await expect.poll(() => page.evaluate(() => window.__wobble), { timeout: 2000 }).toBeGreaterThan(1);
   await expect.poll(() => page.evaluate(() => window.__walker.angle), { timeout: 2000 }).toBe(0);
   expect(await you(page)).toEqual(before);
 });

@@ -39,7 +39,7 @@ for (const [label, viewport] of [
     test("the cafe's reader count sits below the back button", async ({ page }) => {
       await page.goto("/cafe");
       const back = await backInTheCorner(page);
-      const count = await page.getByText("4 sample readers").boundingBox();
+      const count = await page.getByText(/\d+ readers in café/).boundingBox();
       expect(overlaps(back, count)).toBe(false);
     });
 

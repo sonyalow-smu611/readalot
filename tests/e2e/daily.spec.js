@@ -186,7 +186,8 @@ test.describe("where the Daily button sits", () => {
   }
 
   // it stays out of sight until it's in its place, so it never shows jumping there
-  test("going from page to page it only ever shows in the right spot", async ({ page }) => {
+  test("going from page to page it only ever shows in the right spot", async ({ page, reader }) => {
+    await setDaily(page, reader.id, { shown: dayKey() });
     await page.goto("/library");
     await expect(button(page)).toBeVisible({ timeout: 20_000 });
     await expect(button(page)).toHaveCSS("opacity", "1");
@@ -200,11 +201,13 @@ test.describe("where the Daily button sits", () => {
       watch();
     });
     await page.getByRole("link", { name: "Back to town" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText("Loading the town…")).toBeHidden({ timeout: 20_000 });
     await page.getByRole("button", { name: "Places" }).click();
     await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Your house/ }).click();
     await page.getByRole("dialog", { name: "Your house" }).getByRole("button", { name: "Go inside" }).click();
     await expect(page).toHaveURL(/\/house$/, { timeout: 10_000 });
-    await expect(button(page)).toHaveCSS("opacity", "1", { timeout: 5000 });
+    await expect(page.locator(".daily-dock__tab")).toHaveCSS("opacity", "1", { timeout: 5000 });
     await page.waitForTimeout(600);
     const spots = await page.evaluate(() => [...new Set(window.__dailySpots.slice(-30))]);
     expect(spots).toHaveLength(1);
@@ -234,6 +237,15 @@ test.describe("where the Daily button sits", () => {
     const beside = await box(back);
     await expect.poll(async () => (await box(button(page))).x).toBeGreaterThanOrEqual(beside.x + beside.width);
     expect((await box(button(page))).y).toBeCloseTo(beside.y, 0);
+  });
+
+  test("on search it sits beside the Back button, which can still be pressed", async ({ page }) => {
+    await page.goto("/search");
+    const back = page.getByRole("button", { name: "Back", exact: true });
+    await expect(button(page)).toBeVisible({ timeout: 20_000 });
+    await expect(back).toBeVisible();
+    await expect.poll(async () => clear(await box(button(page)), await box(back))).toBe(true);
+    await back.click({ trial: true, timeout: 5000 });
   });
 
   test("under a title bar it sits in the bar, beside the search button", async ({ page }) => {
