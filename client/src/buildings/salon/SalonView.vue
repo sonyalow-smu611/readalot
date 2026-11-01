@@ -7,8 +7,8 @@
 // Saves throw pixel confetti over the dock.
 // This view holds the state and does the saving; the parts in components/ show it and report
 // what the reader did.
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import AboutYou from '@/buildings/salon/components/AboutYou.vue'
 import CoinsCard from '@/buildings/salon/components/CoinsCard.vue'
@@ -48,6 +48,7 @@ const PANELS = [
 const place = PLACES.find((p) => p.id === 'salon')
 const art = drawSalon()
 const router = useRouter()
+const route = useRoute()
 const user = useUserStore()
 const bookshelf = useBookshelfStore()
 const { inventory, placed, shopOpen } = useDecor()
@@ -154,8 +155,15 @@ const listStat = computed(() => SHELF_STATS.find((stat) => stat.status === listS
 const listBooks = computed(() => (listStatus.value ? bookshelf.booksByStatus[listStatus.value] : []))
 const decorCount = computed(() => inventory.value.length + placed.value.length)
 
-onMounted(() => {
+onMounted(async () => {
   if (!bookshelf.books.length && !bookshelf.loading) bookshelf.load()
+  // See saved quotes (from the mood check-in) lands on the Saved quotes card in the Profile tab
+  if (route.hash === '#saved-quotes') {
+    panel.value = 'profile'
+    sheetOpen.value = true
+    await nextTick()
+    document.getElementById('saved-quotes')?.scrollIntoView({ block: 'start' })
+  }
 })
 
 onBeforeUnmount(() => {

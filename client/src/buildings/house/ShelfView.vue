@@ -1,10 +1,12 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// My Shelf: every book on the reader's shelf, opened from the bookshelf in My Room. Laid out like
-// the Library: a search box, genre chips, then one row of covers per shelf (To be read, Currently
-// reading, Finished reading), each scrolling sideways. A chip shows one genre in every row; the search narrows by title or
-// author. A cover opens the genre page's book card, with the progress slider while it's being read
-// and Remove from shelf.
+// My Shelf: every book on the reader's shelf, opened from the bookshelf in My Room. Headed like an
+// opened Library bookcase (Back to room, the My Shelf sign, the Spines / Covers switch), then a
+// search box and genre chips, then a bookcase like the Library's with three shelves (To be read, Currently
+// reading, Finished reading), each scrolling sideways. A chip shows one genre on every shelf; the
+// search narrows by title or author. A book slides out and opens its card, laid out like the
+// library's (components/OwnBookPreview.vue). A book dragged onto another
+// shelf moves there, as the card's status buttons would move it.
 // Opened from someone else's room (/people/:id/room/shelf), it's their shelf instead: their books,
 // to look through, with no search and nothing to add, and their books' cards without the status
 // buttons.
@@ -13,16 +15,20 @@ import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import StateView from '@/components/StateView.vue'
 import BookPreviewModal from '@/components/BookPreviewModal.vue'
-import ReadingProgress from '@/components/book/ReadingProgress.vue'
-import RemoveBookModal from '@/components/modals/RemoveBookModal.vue'
-import ShelfRow from '@/buildings/house/components/ShelfRow.vue'
-import { useRemoveBook } from '@/buildings/house/useRemoveBook'
+import ShelfBookcase from '@/buildings/house/components/ShelfBookcase.vue'
+import BookDialog from '@/buildings/house/components/BookDialog.vue'
 import { readerRoom } from '@/buildings/house/visitors.js'
+import { bookcaseColours } from '@/buildings/house/bookcase.js'
+import { MY_THEME, themeOf } from '@/buildings/house/themes.js'
 import { SHELVES, shelfName } from '@/services/shelves.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { PLACES } from '@/town/places.js'
 
 const ALL = 'All'
+const MODES = [
+  { value: 'spines', label: 'Spines' },
+  { value: 'covers', label: 'Covers' },
+]
 
 const route = useRoute()
 const place = PLACES.find((p) => p.id === 'house')
@@ -36,6 +42,8 @@ const visitError = ref('')
 const books = computed(() => (visitingId ? (visiting.value?.books ?? []) : bookshelf.books))
 const loading = computed(() => (visitingId ? visitLoading.value : bookshelf.loading))
 const error = computed(() => (visitingId ? visitError.value : bookshelf.error))
+// in the room's colours: the visited reader's theme, or My Room's
+const colours = computed(() => bookcaseColours(themeOf(visiting.value?.theme ?? MY_THEME)))
 // no such reader: the page says so
 const missing = computed(() => visitingId && !visiting.value && !visitLoading.value && !visitError.value)
 
@@ -44,6 +52,7 @@ const shell = computed(() => {
   if (reader) {
     return {
       title: `${reader.firstName}'s Shelf`,
+      sign: `${reader.firstName}'s Shelf`,
       subtitle: 'Visiting',
       owner: reader.name,
       back: { name: 'reader-house', params: { id: reader.id } },
@@ -51,9 +60,9 @@ const shell = computed(() => {
     }
   }
   if (visitingId) {
-    return { title: 'Shelf', subtitle: 'Visiting', owner: place.owner, back: { name: 'reader-house', params: { id: visitingId } }, backLabel: 'Back to their room' }
+    return { title: 'Shelf', sign: 'Shelf', subtitle: 'Visiting', owner: place.owner, back: { name: 'reader-house', params: { id: visitingId } }, backLabel: 'Back to their room' }
   }
-  return { title: place.name, subtitle: 'My Shelf', owner: place.owner, back: { name: 'house' }, backLabel: 'Back to room' }
+  return { title: place.name, sign: 'My Shelf', subtitle: 'My Shelf', owner: place.owner, back: { name: 'house' }, backLabel: 'Back to room' }
 })
 
 async function loadVisiting() {
@@ -70,6 +79,8 @@ async function loadVisiting() {
 
 const query = ref('')
 const genre = ref(ALL)
+// the books standing as spines or face out
+const mode = ref('spines')
 
 // the genres of the shelf's books, the most common first (ties alphabetical)
 const genres = computed(() => {
@@ -93,43 +104,41 @@ const filtering = computed(() => genre.value !== ALL || Boolean(query.value.trim
 const rows = computed(() =>
   SHELVES.map((shelf) => {
     const shown = books.value.filter((book) => book.status === shelf.status && matches(book))
-    return { ...shelf, books: shown, count: shown.length }
+    return { ...shelf, books: shown }
   }),
 )
 
 // --- A book's card ------------------------------------------------------------------------
 const openedBook = ref(null)
-// the shelf's own copy of the open book, so a move or a new percent shows in the card at once
-const shownBook = computed(() => (openedBook.value && bookshelf.findBook(openedBook.value.id)) ?? openedBook.value)
-const moveError = ref('')
 const page = ref(null)
 let trigger = null
 
-async function moveBook(status) {
-  await bookshelf.setStatus(shownBook.value.id, status)
-  moveError.value = bookshelf.moveError
-}
+// A book dragged onto another shelf: the same move as the card's next step. A failed save
+// has put it back; the page says why, or reads the move out.
+const dropError = ref('')
+const dropNews = ref('')
 
-const { removing, askRemove, confirmRemove } = useRemoveBook(() => {
-  openedBook.value = null
-})
+async function dropBook({ book, status }) {
+  dropError.value = ''
+  dropNews.value = ''
+  await bookshelf.setStatus(book.id, status)
+  if (bookshelf.moveError) dropError.value = bookshelf.moveError
+  else dropNews.value = `${book.title} moved to ${shelfName(status)}`
+}
 
 function openBook(book) {
   trigger = document.activeElement
-  moveError.value = ''
   openedBook.value = book
 }
 
-// Back to the book's cover in the row it's on now (it may have moved shelf meanwhile), or to
-// whatever opened it.
+// Back to the book on the shelf it's on now (it may have moved shelf meanwhile), or to whatever
+// opened it.
 async function closeBook() {
   const { id } = openedBook.value ?? {}
   openedBook.value = null
   await nextTick()
-  const shelf = rows.value.find((entry) => entry.books.some((book) => book.id === id))
-  const index = shelf ? shelf.books.findIndex((book) => book.id === id) : -1
-  const cover = shelf && page.value?.querySelectorAll(`[data-shelf="${shelf.status}"] .book-tile`)[index]
-  ;(cover ?? (trigger?.isConnected ? trigger : null))?.focus()
+  const spine = id && page.value?.querySelector(`[data-book-id="${CSS.escape(id)}"]`)
+  ;(spine ?? (trigger?.isConnected ? trigger : null))?.focus()
 }
 
 function retry() {
@@ -144,7 +153,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div ref="page" class="shelf-page" :style="{ '--house-accent': place.accent }">
+  <div
+    ref="page"
+    class="shelf-page"
+    :style="{ '--house-accent': place.accent, '--shelf-wall': colours.wall, '--shelf-sign': colours.sign }"
+  >
     <BuildingShell
       v-if="!missing"
       :title="shell.title"
@@ -152,68 +165,87 @@ onMounted(() => {
       :owner="shell.owner"
       :back="shell.back"
       :back-label="shell.backLabel"
+      flush
     >
-      <section class="my-shelf" :aria-label="visiting ? shell.title : 'My Shelf'">
-        <form v-if="!visitingId" class="my-shelf__search" role="search" @submit.prevent>
-          <span aria-hidden="true">🔍</span>
-          <input
-            v-model="query"
-            class="my-shelf__input"
-            type="search"
-            enterkeyhint="search"
-            placeholder="Search your books"
-            aria-label="Search your books"
-          />
-        </form>
-
-        <div class="my-shelf__chips" role="group" aria-label="Filter by genre">
-          <button
-            v-for="name in genres"
-            :key="name"
-            type="button"
-            class="btn btn-chip my-shelf__chip"
-            :aria-pressed="genre === name"
-            @click="genre = name"
-          >
-            {{ name }}
-          </button>
-        </div>
-
-        <StateView v-if="error" :error="error" @retry="retry" />
-
-        <div v-else-if="visiting && !books.length" class="my-shelf__empty">
-          <strong>No books yet</strong>
-          <p>{{ visiting.firstName }} hasn't put any books on their shelf yet.</p>
-        </div>
-
-        <div v-else-if="!loading && !books.length" class="my-shelf__empty">
-          <strong>Add your first book</strong>
-          <p>Books you save show up here, on To be read, Currently reading or Finished reading.</p>
-          <div class="my-shelf__empty-links">
-            <RouterLink to="/discover">Discover books</RouterLink>
-            <RouterLink to="/scan">Scan a cover</RouterLink>
+      <div class="my-shelf__frame">
+        <header class="my-shelf__head">
+          <!-- the shell's Back to room button floats over this cell -->
+          <span class="my-shelf__back-space" aria-hidden="true" />
+          <h2 class="my-shelf__sign">{{ shell.sign }}</h2>
+          <div class="my-shelf__modes" role="group" aria-label="Show the books by">
+            <button
+              v-for="option in MODES"
+              :key="option.value"
+              type="button"
+              class="btn btn-chip btn-sm"
+              :class="{ active: mode === option.value }"
+              :aria-pressed="mode === option.value"
+              @click="mode = option.value"
+            >
+              {{ option.label }}
+            </button>
           </div>
-        </div>
+        </header>
 
-        <template v-else>
-          <section
-            v-for="row in rows"
-            :key="row.status"
-            class="my-shelf__row"
-            :data-shelf="row.status"
-            :aria-label="`${row.label}, ${row.count} ${row.count === 1 ? 'book' : 'books'}`">
-            <ShelfRow
-              :title="`${row.label} · ${row.count}`"
-              :shelf="row.label"
-              :emoji="row.emoji"
-              :books="row.books"
+        <section class="my-shelf" :aria-label="visiting ? shell.title : 'My Shelf'">
+          <form v-if="!visitingId" class="my-shelf__search" role="search" @submit.prevent>
+            <span aria-hidden="true">🔍</span>
+            <input
+              v-model="query"
+              class="my-shelf__input"
+              type="search"
+              enterkeyhint="search"
+              placeholder="Search your books"
+              aria-label="Search your books"
+            />
+          </form>
+
+          <div class="my-shelf__chips" role="group" aria-label="Filter by genre">
+            <button
+              v-for="name in genres"
+              :key="name"
+              type="button"
+              class="btn btn-chip my-shelf__chip"
+              :aria-pressed="genre === name"
+              @click="genre = name"
+            >
+              {{ name }}
+            </button>
+          </div>
+
+          <StateView v-if="error" :error="error" @retry="retry" />
+
+          <div v-else-if="visiting && !books.length" class="my-shelf__empty">
+            <strong>No books yet</strong>
+            <p>{{ visiting.firstName }} hasn't put any books on their shelf yet.</p>
+          </div>
+
+          <div v-else-if="!loading && !books.length" class="my-shelf__empty">
+            <strong>Add your first book</strong>
+            <p>Books you save show up here, on To be read, Currently reading or Finished reading.</p>
+            <div class="my-shelf__empty-links">
+              <RouterLink to="/discover">Discover books</RouterLink>
+              <RouterLink to="/scan">Scan a cover</RouterLink>
+            </div>
+          </div>
+
+          <template v-else>
+            <p v-if="dropError" class="my-shelf__drop-error" role="alert">{{ dropError }}</p>
+            <p class="visually-hidden" role="status">{{ dropNews }}</p>
+            <ShelfBookcase
+              :shelves="rows"
+              :mode="mode"
+              :wood="colours.wood"
               :loading="loading && !books.length"
               :empty="filtering ? 'Nothing matches.' : 'No books here yet.'"
+              :open-book="openedBook?.id ?? null"
+              :draggable="!visitingId"
               @select="openBook"
+              @move="dropBook"
             />
-          </section>
-        </template>
-      </section>
+          </template>
+        </section>
+      </div>
     </BuildingShell>
 
     <BuildingShell v-else title="Shelf not found" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
@@ -234,41 +266,99 @@ onMounted(() => {
         :links-to-page="false"
         @close="closeBook"
       />
-      <BookPreviewModal
-        v-else
-        :book="shownBook"
-        label="Book details"
-        close-label="Close book"
-        :tab="shelfName(shownBook.status)"
-        @close="closeBook"
-        @status="moveBook"
-      >
-        <ReadingProgress
-          v-if="shownBook.status === 'reading'"
-          class="my-shelf__progress"
-          :progress="shownBook.progress"
-          @change="bookshelf.setProgress(shownBook.id, $event)"
-        />
-        <p v-if="moveError" class="my-shelf__error" role="alert">{{ moveError }}</p>
-        <button type="button" class="btn btn-danger btn-sm my-shelf__remove" @click="askRemove(shownBook)">
-          Remove from shelf
-        </button>
-      </BookPreviewModal>
+      <BookDialog v-else :book="openedBook" @close="closeBook" />
     </template>
-    <RemoveBookModal v-if="removing" :book="removing" @close="removing = null" @remove="confirmRemove" />
   </div>
 </template>
 
 <style scoped>
+/* a book dragged to another shelf that couldn't be saved: a small pixel note above the bookcase */
+.my-shelf__drop-error {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border: 2px solid #1e1a24;
+  background: #fff4f2;
+  box-shadow: 3px 3px 0 #1e1a24;
+  font-size: 13px;
+  color: #a23d3d;
+}
+
 .shelf-page {
   position: relative;
+  background: var(--shelf-wall);
   height: 100%;
   min-height: 0;
 }
 
+/* the header above, and the search, chips and bookcase scrolling under it */
+.my-shelf__frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* back on the left, the switch on the right, the sign in the middle; on a phone the sign drops
+   to its own line below (the Library's opened bookcase) */
+.my-shelf__head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 15px 8px 12px;
+}
+
+.my-shelf__back-space {
+  min-height: 38px;
+}
+
+.my-shelf__modes {
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+}
+
+.my-shelf__sign {
+  margin: 0;
+  padding: 6px 14px;
+  border: 2px solid #1e1a24;
+  background: var(--shelf-sign, #f3eee0);
+  box-shadow: 3px 3px 0 #1e1a24;
+  color: #1e1a24;
+  font-family: var(--rl-font-title);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  .my-shelf__head {
+    grid-template-columns: 1fr auto;
+  }
+
+  .my-shelf__sign {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    font-size: 19px;
+  }
+}
+
 .my-shelf {
+  flex: 1;
+  min-height: 0;
   overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 12px 28px;
   color: var(--rl-text);
+}
+
+/* the search, chips and bookcase in one column, the bookcase's width */
+.my-shelf > * {
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* the town's and the cafe's look: white surface, a fine line, round corners */
@@ -336,20 +426,5 @@ onMounted(() => {
 
 .my-shelf__empty-links a {
   color: var(--house-accent);
-}
-
-/* My Shelf's extras in the book's card, under its status buttons */
-.my-shelf__progress {
-  margin-top: 12px;
-}
-
-.my-shelf__error {
-  margin: 8px 0 0;
-  font-size: 13px;
-  color: #a23d3d;
-}
-
-.my-shelf__remove {
-  margin-top: 12px;
 }
 </style>

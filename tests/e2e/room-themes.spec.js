@@ -1,6 +1,6 @@
 import {
   artColour, brightness, buy, expect, fromMenu, goToPlace, inventory, mockWeather, openShop, pickFromInventory,
-  roomReady, skipMoodCheckIn, test,
+  SPOTS, placeAt, roomReady, skipMoodCheckIn, tapRoomAt, test,
 } from "./fixtures.js";
 
 // Every house has its own look: wall and floor colours, curtains, bedding, lamps and rug. The
@@ -100,19 +100,18 @@ test.describe("curtains and bedding from the Shop", () => {
       await goToPlace(page, kind.place);
       const own = await looks();
 
-      // the first set goes on its glowing spot and changes how it looks
+      // the first set goes where it's tapped in and changes how it looks
       await buy(page, kind.first);
       await pickFromInventory(page, kind.first);
-      await expect(page.getByRole("status")).toContainText(`Tap a glowing spot for the ${kind.first}`);
-      await page.getByRole("button", { name: `Put ${kind.first} ${kind.spot}` }).click();
+      await expect(page.getByRole("status")).toContainText(`Tap where the ${kind.first} should go`);
+      await tapRoomAt(page, SPOTS[kind.spot].x, SPOTS[kind.spot].y);
       await expect(page.getByRole("status")).toHaveText(new RegExp(`^${kind.first} ${kind.is} ${kind.spot}`));
       await expect.poll(looks).not.toBe(own);
       const first = await looks();
 
       // a second set takes its place, and the first goes back to the inventory
       await buy(page, kind.second);
-      await pickFromInventory(page, kind.second);
-      await page.getByRole("button", { name: `Put ${kind.second} ${kind.spot}` }).click();
+      await placeAt(page, kind.second, kind.spot);
       await expect.poll(looks).not.toBe(first);
       await fromMenu(page, "Inventory");
       await expect(inventory(page).getByRole("button", { name: new RegExp(kind.first) })).toHaveCount(1);

@@ -1,4 +1,4 @@
-import { buy, expect, goToPlace, mockQuote, mockWeather, nextPaint, pickFromInventory, roomCanvas, roomReady, roomRegion, skipMoodCheckIn, test } from "./fixtures.js";
+import { buy, expect, goToPlace, mockQuote, mockWeather, nextPaint, placeAt, roomCanvas, roomReady, roomRegion, skipMoodCheckIn, test } from "./fixtures.js";
 import { randomUUID } from "node:crypto";
 import { signInPage } from "./supabaseUser.js";
 
@@ -85,8 +85,7 @@ test.describe("their furniture", () => {
     await page.goto("/house");
     await roomReady(page);
     await buy(page, "Mountain poster");
-    await pickFromInventory(page, "Mountain poster");
-    await page.getByRole("button", { name: "Put Mountain poster on the wall by the reading chair" }).click();
+    await placeAt(page, "Mountain poster", "by the reading chair");
     await expect(piece(page, "Mountain poster")).toHaveCount(1);
 
     // over to Emma's, through the town, so My Room keeps its furniture for the visit
@@ -145,7 +144,11 @@ test.describe("their books", () => {
     await page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).click({ position: { x: 8, y: 8 } });
 
     await expect(page).toHaveURL(/\/people\/sofia\.shelves\/room\/shelf$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Sofia's Shelf" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Sofia's Shelf" })).toBeAttached();
+    // her bookcase, headed like mine: her name on the sign, and Spines / Covers
+    await expect(page.getByRole("heading", { level: 2, name: "Sofia's Shelf" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Show the books by" }).getByRole("button", { name: "Covers" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Filter by genre" })).toBeVisible();
     for (const shelf of ["To be read", "Currently reading", "Finished reading"]) {
       await expect(page.getByRole("region", { name: `${shelf}, 1 book` })).toBeVisible();
     }
