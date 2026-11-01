@@ -22,7 +22,7 @@ const label = computed(() => {
 <template>
   <button
     type="button"
-    class="btn btn-secondary friends-button"
+    class="btn btn-secondary px-sign friends-button"
     :aria-label="label"
     :aria-expanded="open"
     aria-controls="town-friends"

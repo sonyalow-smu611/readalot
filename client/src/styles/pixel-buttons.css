@@ -6,6 +6,7 @@
 
    Pick a kind with Bootstrap's classes, plus a modifier where Bootstrap has none:
      .btn-primary                       Primary: the main action
+     .btn-success                       Go: confirming or saving (Confirm code, Save)
      .btn-secondary, .btn-outline-*     Secondary: Cancel, Close, Back and the other choices
      .btn-accent                        Accent: the one fun action (Shop, Buy)
      .btn-danger                        Danger: taking something away
@@ -122,13 +123,21 @@
 /* --- The kinds ------------------------------------------------------------------------------ */
 
 /* Primary: dark wood, paper label */
-.btn-primary,
-.btn-success {
+.btn-primary {
   --px-fill: var(--room-woodDeep, #7a5d4d);
   --px-light: var(--room-woodDark, #94755c);
   --px-dark: var(--room-brown, #574f3c);
   --px-label: var(--px-paper);
   --px-hover: var(--room-brown, #574f3c);
+}
+
+/* Go: leaf green, paper label */
+.btn-success {
+  --px-fill: #3b7330;
+  --px-light: #5a9549;
+  --px-dark: #2a5323;
+  --px-label: var(--px-paper);
+  --px-hover: #2f5f27;
 }
 
 /* Secondary: paper, dark label (the default above) */
@@ -156,7 +165,7 @@
   --px-light: var(--room-red, #c0563f);
   --px-dark: var(--room-brown, #574f3c);
   --px-label: var(--px-paper);
-  --px-hover: var(--room-brown, #574f3c);
+  --px-hover: #8a3a2f;
 }
 
 /* Quiet: no fill or outline, an underlined dark label */

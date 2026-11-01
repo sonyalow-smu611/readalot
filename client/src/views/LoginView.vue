@@ -219,9 +219,16 @@ async function submit() {
   42% { transform: scaleY(0.08); }
 }
 
+/* only the eye changes colour on hover: no box behind it */
+.secret__eye,
+.secret__eye:hover,
+.secret__eye:active {
+  background: transparent;
+  box-shadow: none;
+}
+
 .secret__eye:hover {
   color: var(--rl-primary);
-  background: var(--rl-secondary);
 }
 
 .switch {

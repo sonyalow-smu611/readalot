@@ -30,7 +30,7 @@ const label = computed(() => {
 <template>
   <button
     type="button"
-    class="btn btn-secondary daily-button"
+    class="btn btn-secondary px-sign daily-button"
     :class="{ 'is-ready': ready, 'is-lit': streak > 0 }"
     :aria-label="label"
     :aria-expanded="open"

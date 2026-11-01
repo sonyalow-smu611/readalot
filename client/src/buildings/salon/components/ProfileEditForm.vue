@@ -4,7 +4,8 @@
 // to save.
 import { nextTick, ref } from 'vue'
 import RadioChips from '@/buildings/salon/components/RadioChips.vue'
-import { AVATARS, FAITHS, GENDERS, GENRES, validAge } from '@/buildings/salon/profileOptions.js'
+import CharacterSprite from '@/components/shared/CharacterSprite.vue'
+import { FAITHS, GENDERS, GENRES, validAge } from '@/buildings/salon/profileOptions.js'
 
 const props = defineProps({
   // the saved profile, to start from
@@ -14,16 +15,15 @@ const props = defineProps({
   error: { type: String, default: '' },
 })
 
-const emit = defineEmits(['save', 'cancel'])
+// change-look: open the Style studio, where the character is changed
+const emit = defineEmits(['save', 'cancel', 'change-look'])
 
 const words = (list) => list.map((value) => ({ value, text: value }))
-const avatarOptions = AVATARS.map((item) => ({ value: item.emoji, text: item.emoji, label: item.name }))
 const genderOptions = words(GENDERS)
 const faithOptions = words(FAITHS)
 
 const saved = props.profile
 const form = ref(null)
-const avatar = ref(saved.avatar || AVATARS[0].emoji)
 const name = ref(saved.name || '')
 const location = ref(saved.location || '')
 const gender = ref(saved.gender || '')
@@ -36,7 +36,7 @@ function clearError(field) {
   if (errors.value[field]) errors.value = { ...errors.value, [field]: '' }
 }
 
-const choices = { avatar, gender, religion }
+const choices = { gender, religion }
 
 function choose(field, value) {
   choices[field].value = value
@@ -66,7 +66,6 @@ async function submit() {
     return
   }
   emit('save', {
-    avatar: avatar.value,
     name: name.value.trim(),
     location: location.value.trim(),
     gender: gender.value,
@@ -81,15 +80,11 @@ async function submit() {
   <form ref="form" novalidate @submit.prevent="submit">
     <h2 class="h3 mb-3">Edit profile</h2>
 
-    <div class="field">
-      <span id="avatar-label" class="form-label">Avatar</span>
-      <RadioChips
-        :model-value="avatar"
-        :options="avatarOptions"
-        labelledby="avatar-label"
-        variant="avatar"
-        @update:model-value="choose('avatar', $event)"
-      />
+    <div class="field look">
+      <span class="look__sprite">
+        <CharacterSprite :character="profile.character" :scale="2" label="Your character" />
+      </span>
+      <button type="button" class="btn btn-secondary btn-sm" @click="emit('change-look')">Change look</button>
     </div>
 
     <div class="field">
@@ -191,7 +186,7 @@ async function submit() {
       <p v-if="error" class="field-error mb-2" role="alert">{{ error }}</p>
       <div class="d-flex gap-2">
         <button type="button" class="btn btn-outline-primary" @click="emit('cancel')">Cancel</button>
-        <button class="btn btn-primary flex-grow-1" type="submit" :disabled="busy">
+        <button class="btn btn-success flex-grow-1" type="submit" :disabled="busy">
           {{ busy ? 'Saving…' : 'Save' }}
         </button>
       </div>
@@ -212,6 +207,21 @@ form {
 
 .field {
   margin-bottom: 20px;
+}
+
+.look {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.look__sprite {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 128px;
+  border: 2px solid var(--px-outline);
+  background: var(--px-paper-shade);
 }
 
 .optional {
