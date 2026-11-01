@@ -46,16 +46,14 @@ for (const [place, button, url, owner] of [
   });
 }
 
-test("the library shows the existing Discover page", async ({ page }) => {
-  await page.goto("/library");
-  await expect(page.getByRole("search")).toBeVisible();
-});
-
 test("old addresses open the buildings", async ({ page }) => {
   await page.goto("/profile");
   await expect(page).toHaveURL(/\/salon$/);
   await page.goto("/people");
   await expect(page).toHaveURL(/\/cafe$/);
+  await page.goto("/discover");
+  await expect(page).toHaveURL(/\/library$/);
+  await expect(page.getByRole("search")).toBeVisible();
 });
 
 test("a place card closes with its close button", async ({ page }) => {

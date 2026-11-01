@@ -36,13 +36,6 @@ for (const [label, viewport] of [
       expect(overlaps(back, places)).toBe(false);
     });
 
-    test("the library's search sits beside the back button, clear of it", async ({ page }) => {
-      await page.goto("/library");
-      const back = await backInTheCorner(page);
-      const search = await page.getByRole("search").boundingBox();
-      expect(overlaps(back, search)).toBe(false);
-    });
-
     test("the cafe's reader count sits below the back button", async ({ page }) => {
       await page.goto("/cafe");
       const back = await backInTheCorner(page);

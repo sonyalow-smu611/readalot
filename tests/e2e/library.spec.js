@@ -162,7 +162,8 @@ for (const [label, viewport] of [
     const search = await page.getByRole("search").boundingBox();
     const weather = await page.getByRole("img", { name: /Weather outside/ }).boundingBox();
 
-    // one line: the three start at the same height, left, middle, right, without touching
+    // one line in the top corner: the three start at the same height, left, middle, right, without touching
+    expect(back.y).toBeLessThan(20);
     for (const box of [search, weather]) expect(Math.abs(box.y - back.y)).toBeLessThan(4);
     expect(back.x + back.width).toBeLessThan(search.x);
     expect(search.x + search.width).toBeLessThan(weather.x);

@@ -58,6 +58,14 @@ const leadsNowhere = (item) => item.kind === 'visit' && !item.visitorId
   box-shadow: 0 10px 28px rgba(63, 46, 36, 0.2);
 }
 
+/* on a phone the bell is further down (NotificationsButton): the list opens below it */
+@media (max-width: 600px) {
+  .notifications {
+    top: 130px;
+    max-height: calc(100% - 212px);
+  }
+}
+
 .notifications__top {
   display: flex;
   align-items: center;

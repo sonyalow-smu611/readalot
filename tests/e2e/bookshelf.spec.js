@@ -163,6 +163,8 @@ test.describe("from the room", () => {
     const details = page.getByRole("dialog", { name: "Book details" });
     expect(await details.count()).toBe(0);
     await expect(details).toBeVisible({ timeout: 8000 });
+    await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
+    await expect(details.getByText("A comfort-loving hobbit is swept into a quest to win back a dragon's hoard.")).toBeVisible();
   });
 
   test("a tap while the book comes out skips to it open", async ({ page }) => {
@@ -233,14 +235,6 @@ test.describe("from the room", () => {
     expect(await mostMagentaWhileOpening(page)).toBeLessThan(200);
     await expect(page.getByRole("dialog", { name: "Book details" })).toBeVisible({ timeout: 8000 });
     expect(errors).toEqual([]);
-  });
-
-  test("tapping a book on the bookcase opens its details", async ({ page }) => {
-    await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
-
-    const details = page.getByRole("dialog", { name: "Book details" });
-    await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
-    await expect(details.getByText("A comfort-loving hobbit is swept into a quest to win back a dragon's hoard.")).toBeVisible();
   });
 
   test("Close book puts the details away and goes back to that book", async ({ page }) => {

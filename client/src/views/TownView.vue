@@ -676,6 +676,13 @@ function goInside(place) {
   white-space: normal;
 }
 
+/* a phone's left-hand buttons reach across the top: it sits below them */
+@media (max-width: 600px) {
+  .town__hint:not(.town__notice) {
+    top: 196px;
+  }
+}
+
 .town-card-enter-active,
 .town-card-leave-active,
 .town-fade-enter-active,

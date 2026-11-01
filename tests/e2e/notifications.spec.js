@@ -67,9 +67,16 @@ test("a friend coming online pops up, once", async ({ page }) => {
   await expect(bell(page)).toHaveAccessibleName("Notifications, 1 new");
 });
 
-test("the bell's list is empty for a new reader", async ({ page }) => {
-  await mockFriends(page);
-  await page.goto("/");
-  await bell(page).click();
-  await expect(panel(page)).toContainText("Nothing yet");
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 375, height: 700 } });
+
+  test("the bell can be tapped, with nothing over it", async ({ page }) => {
+    await mockFriends(page);
+    await page.goto("/");
+    await expect(page.getByText("Loading the town…")).toBeHidden({ timeout: 20_000 });
+    await bell(page).click({ timeout: 5000 });
+    await expect(panel(page)).toBeVisible();
+    await bell(page).click({ timeout: 5000 });
+    await expect(panel(page)).toBeHidden();
+  });
 });

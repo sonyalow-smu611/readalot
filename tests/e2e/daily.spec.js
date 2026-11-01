@@ -1,5 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, test } from "./fixtures.js";
+import { expect, skipMoodCheckIn, test } from "./fixtures.js";
 
 // Daily tasks on the map. For now the day is kept in the browser (town/daily.js), so each test
 // sets it up in localStorage before the town loads.
@@ -163,4 +163,88 @@ test("the Daily button stays small until you point at it", async ({ page, reader
   await expect.poll(async () => (await button.boundingBox()).width).toBeGreaterThan(shut + 40);
   await page.mouse.move(600, 500);
   await expect.poll(async () => (await button.boundingBox()).width).toBeLessThan(90);
+});
+
+// On every page it lines up with the buttons already there, and covers none of them.
+test.describe("where the Daily button sits", () => {
+  const button = (page) => page.getByRole("button", { name: /^Daily tasks/ });
+  const clear = (a, b) => a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
+  const box = (locator) => locator.boundingBox();
+
+  test.beforeEach(async ({ page }) => {
+    await skipMoodCheckIn(page);
+  });
+
+  for (const path of ["/library", "/salon"]) {
+    test(`on ${path} it stacks under the back button`, async ({ page }) => {
+      await page.goto(path);
+      await expect(button(page)).toBeVisible({ timeout: 20_000 });
+      const back = await box(page.getByRole("link", { name: "Back to town" }));
+      await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(back.y + back.height);
+      expect((await box(button(page))).x).toBeCloseTo(back.x, 0);
+    });
+  }
+
+  // it stays out of sight until it's in its place, so it never shows jumping there
+  test("going from page to page it only ever shows in the right spot", async ({ page }) => {
+    await page.goto("/library");
+    await expect(button(page)).toBeVisible({ timeout: 20_000 });
+    await expect(button(page)).toHaveCSS("opacity", "1");
+    await page.evaluate(() => {
+      window.__dailySpots = [];
+      const watch = () => {
+        const tab = document.querySelector(".daily-dock__tab");
+        if (tab && getComputedStyle(tab).opacity === "1") window.__dailySpots.push(`${tab.style.top} ${tab.style.left} ${tab.style.right}`);
+        requestAnimationFrame(watch);
+      };
+      watch();
+    });
+    await page.getByRole("link", { name: "Back to town" }).click();
+    await page.getByRole("button", { name: "Places" }).click();
+    await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Your house/ }).click();
+    await page.getByRole("dialog", { name: "Your house" }).getByRole("button", { name: "Go inside" }).click();
+    await expect(page).toHaveURL(/\/house$/, { timeout: 10_000 });
+    await expect(button(page)).toHaveCSS("opacity", "1", { timeout: 5000 });
+    await page.waitForTimeout(600);
+    const spots = await page.evaluate(() => [...new Set(window.__dailySpots.slice(-30))]);
+    expect(spots).toHaveLength(1);
+  });
+
+  test("in My Room it stacks under Places, not on top of it", async ({ page }) => {
+    await page.goto("/house");
+    const places = page.getByRole("button", { name: "Places" });
+    await expect(places).toBeVisible({ timeout: 20_000 });
+    const under = await box(places);
+    await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(under.y + under.height);
+    expect((await box(button(page))).x).toBeCloseTo(under.x, 0);
+  });
+
+  test("in the cafe it stacks under the reader count", async ({ page }) => {
+    await page.goto("/cafe");
+    const count = page.locator(".cafe__count");
+    await expect(count).toBeVisible({ timeout: 20_000 });
+    const under = await box(count);
+    await expect.poll(async () => clear(await box(button(page)), under)).toBe(true);
+  });
+
+  test("on My Shelf it sits beside the back button, off the search box", async ({ page }) => {
+    await page.goto("/house/shelf");
+    const back = page.getByRole("link", { name: "Back to room" });
+    await expect(back).toBeVisible({ timeout: 20_000 });
+    const beside = await box(back);
+    await expect.poll(async () => (await box(button(page))).x).toBeGreaterThanOrEqual(beside.x + beside.width);
+    expect((await box(button(page))).y).toBeCloseTo(beside.y, 0);
+  });
+
+  test("under a title bar it sits in the bar, beside the search button", async ({ page }) => {
+    await page.goto("/discover/fantasy");
+    const search = page.getByRole("link", { name: "Search books" });
+    await expect(search).toBeVisible({ timeout: 20_000 });
+    const beside = await box(search);
+    await expect.poll(async () => {
+      const daily = await box(button(page));
+      return daily.x + daily.width <= beside.x && daily.y < beside.y + beside.height;
+    }).toBe(true);
+    expect(clear(await box(button(page)), await box(page.getByRole("button", { name: "Back" })))).toBe(true);
+  });
 });

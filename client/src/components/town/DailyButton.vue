@@ -1,10 +1,9 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The Daily button: a small flame with the streak, on the left of the town under the weather chip
-// and on the edge of every other page. Pointing at it (or tabbing to it) slides out "Daily task"
-// and, in town, a ring that fills as the day's tasks are done (a tick once the reward is claimed).
-// A touch screen has no pointing, so there a tap just opens the tasks. When the reward is ready it
-// glows gold and a dot bounces on it.
+// The Daily button: a small flame with the streak, on the left of every page. Pointing at it (or
+// tabbing to it) slides out "Daily task" and a ring that fills as the day's tasks are done (a tick
+// once the reward is claimed). A touch screen has no pointing, so there a tap just opens the tasks.
+// When the reward is ready it glows gold and a dot bounces on it.
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -14,8 +13,6 @@ const props = defineProps({
   ready: { type: Boolean, default: false },
   claimed: { type: Boolean, default: false },
   open: { type: Boolean, default: false },
-  // the tab on the edge of a page: the words slide out on the flame's left, with no ring
-  compact: { type: Boolean, default: false },
 })
 const emit = defineEmits(['toggle'])
 
@@ -45,9 +42,9 @@ const label = computed(() => {
       </svg>
       {{ streak }}
     </span>
-    <span class="daily-button__more" :class="{ 'is-before': compact }" aria-hidden="true">
+    <span class="daily-button__more" aria-hidden="true">
       <span class="daily-button__word">Daily task</span>
-      <svg v-if="!compact" class="daily-button__ring" viewBox="0 0 24 24">
+      <svg class="daily-button__ring" viewBox="0 0 24 24">
         <circle class="daily-button__track" cx="12" cy="12" :r="RADIUS" />
         <circle class="daily-button__fill" cx="12" cy="12" :r="RADIUS" :stroke-dasharray="RING" :stroke-dashoffset="filled" />
         <path v-if="claimed" class="daily-button__tick" d="m8 12.2 2.6 2.6L16 9.4" />
@@ -77,16 +74,8 @@ const label = computed(() => {
   transition: max-width 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.16s ease;
 }
 
-.daily-button__more.is-before {
-  order: -1;
-}
-
 .daily-button__word {
   padding: 0 2px 0 8px;
-}
-
-.is-before .daily-button__word {
-  padding: 0 8px 0 4px;
 }
 
 .daily-button:focus-visible .daily-button__more {

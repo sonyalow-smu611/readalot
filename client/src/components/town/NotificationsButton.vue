@@ -35,6 +35,15 @@ const label = computed(() => `Notifications, ${props.unread} new`)
   pointer-events: auto;
 }
 
+/* a phone's top bar has no room beside the weather chip: it sits next to the Daily button instead */
+@media (max-width: 600px) {
+  .notifications-button {
+    position: absolute;
+    top: 62px;
+    left: 82px;
+  }
+}
+
 .notifications-button svg {
   width: 22px;
   height: 22px;

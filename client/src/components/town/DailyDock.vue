@@ -1,9 +1,12 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The day's tasks on every page but the town, which has its own: a Daily task tab on the left edge
-// that opens the same panel. A task's Go goes to its building; a friend's house is in town.
+// The day's tasks on every page but the town, which has its own: the same button, opening the same
+// panel. It lines up with the buttons each page already has. Pages that are a scene (the room, the
+// cafe, the library, the salon) have room down the left, so it stacks under theirs as the town
+// does. Pages of content have none, so it joins their row: in the title bar beside the search
+// button, or beside the back button. A task's Go goes to its building; a friend's house is in town.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { MAX_FREEZES } from '@/town/daily.js'
 import { useDailyStore } from '@/town/dailyStore.js'
@@ -13,6 +16,21 @@ import DailyButton from './DailyButton.vue'
 import DailyPanel from './DailyPanel.vue'
 import DailyReward from './DailyReward.vue'
 
+const BACK = '.building-shell__back'
+const TITLE_BAR_BUTTON = '.app-header__card a.app-header__icon'
+// what a scene keeps down its left side, under the back button
+const UNDER_BACK = '.strip__menu, .cafe__count'
+// pages whose content starts right under the back button
+const BESIDE_BACK = ['my-shelf', 'reader-house-shelf']
+// the town's Daily button sits this far in, for a page with nothing in its corner
+const EDGE = { top: 14, left: 17 }
+const GAP = 8
+const TAB_HEIGHT = 48
+// how many frames in a row the spot must hold still, and the longest it stays hidden (ms)
+const STILL_FRAMES = 6
+const MOST_HIDDEN = 900
+
+const route = useRoute()
 const router = useRouter()
 const user = useUserStore()
 const daily = useDailyStore()
@@ -20,6 +38,14 @@ const nearby = useNearbyStore()
 
 const open = ref(false)
 const tab = ref(null)
+const spot = ref(EDGE)
+const spotStyle = computed(() => Object.fromEntries(Object.entries(spot.value).map(([side, px]) => [side, `${Math.round(px)}px`])))
+const panelTop = computed(() => ({ '--daily-panel-top': `${spot.value.top + TAB_HEIGHT + GAP}px` }))
+let observer = null
+let measuring = 0
+// hidden while a new page arrives, so it never shows in the old page's spot
+const settling = ref(true)
+let settlingFrame = 0
 // the reward just claimed, shown until "Nice!"
 const gift = ref(null)
 
@@ -39,6 +65,54 @@ watch(
     if (id) nearby.loadFriends().catch(() => {})
   },
   { immediate: true },
+)
+
+// { top, left } or { top, right } in the frame. Measured, because the buttons differ from page to
+// page and a back button's label can be long.
+function findSpot(frame) {
+  const titleBarButton = document.querySelector(TITLE_BAR_BUTTON)?.getBoundingClientRect()
+  // from the right, so the words slide out over the title and not over the search button
+  if (titleBarButton) return { top: titleBarButton.top - frame.top, right: frame.right - titleBarButton.left + GAP }
+  const back = document.querySelector(BACK)?.getBoundingClientRect()
+  if (!back) return EDGE
+  if (BESIDE_BACK.includes(route.name)) return { top: back.top - frame.top, left: back.right - frame.left + GAP }
+  const below = [...document.querySelectorAll(UNDER_BACK)].map((el) => el.getBoundingClientRect().bottom)
+  return { top: Math.max(EDGE.top, Math.max(back.bottom, ...below) - frame.top + GAP), left: back.left - frame.left }
+}
+
+function measure() {
+  measuring = 0
+  const frame = tab.value?.$el.offsetParent?.getBoundingClientRect()
+  if (frame) spot.value = findSpot(frame)
+}
+
+function measureSoon() {
+  measuring ||= requestAnimationFrame(measure)
+}
+
+// Pages fade one after the other, and the new one's buttons can only be measured once it is there
+// and has stopped moving. Waits for that, then shows the button. `leaving` is the page on its way out.
+function settle(leaving = null) {
+  const page = () => document.querySelector('.app-main')?.firstElementChild
+  const started = performance.now()
+  let last = ''
+  let still = 0
+  cancelAnimationFrame(settlingFrame)
+  settling.value = true
+  const look = () => {
+    measure()
+    const now = JSON.stringify(spot.value)
+    still = page() !== leaving && now === last ? still + 1 : 0
+    last = now
+    if (still >= STILL_FRAMES || performance.now() - started > MOST_HIDDEN) settling.value = false
+    else settlingFrame = requestAnimationFrame(look)
+  }
+  settlingFrame = requestAnimationFrame(look)
+}
+
+watch(
+  () => route.path,
+  () => settle(document.querySelector('.app-main')?.firstElementChild),
 )
 
 function close() {
@@ -67,13 +141,27 @@ function closeGift() {
   gift.value = null
 }
 
-onMounted(() => window.addEventListener('keydown', onKey))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('resize', measureSoon)
+  // a page's top corner can arrive after the page does, once its data has loaded
+  observer = new MutationObserver(measureSoon)
+  observer.observe(document.querySelector('.app-main'), { childList: true, subtree: true })
+  settle()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('resize', measureSoon)
+  observer.disconnect()
+  cancelAnimationFrame(measuring)
+  cancelAnimationFrame(settlingFrame)
+})
 </script>
 
 <template>
-  <div class="daily-dock">
-    <DailyButton ref="tab" class="daily-dock__tab" v-bind="chip" :open="open" compact @toggle="open = !open" />
+  <div class="daily-dock" :style="panelTop">
+    <DailyButton ref="tab" class="daily-dock__tab" :class="{ 'is-settling': settling }" :style="spotStyle" v-bind="chip" :open="open" @toggle="open = !open" />
     <div v-if="open" class="daily-dock__outside" aria-hidden="true" @click="close"></div>
     <Transition name="daily-dock">
       <DailyPanel
@@ -100,9 +188,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 /* above each page's own controls and back button, below its dialogs (40 and up) */
 .daily-dock__tab {
   position: absolute;
-  top: 34%;
-  left: 0;
   z-index: 36;
+  transition: opacity 0.16s ease;
+}
+
+.daily-dock__tab.is-settling {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* the whole window: a laptop's phone column has space either side of it */
@@ -113,10 +205,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 
 .daily-dock :deep(.daily-panel) {
-  top: 72px;
+  top: var(--daily-panel-top);
   left: 14px;
   z-index: 38;
-  max-height: calc(100% - 88px);
+  max-height: calc(100% - var(--daily-panel-top) - 16px);
 }
 
 .daily-dock :deep(.daily-reward) {
@@ -135,6 +227,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .daily-dock__tab {
+    transition: none;
+  }
+
   .daily-dock-enter-active,
   .daily-dock-leave-active {
     transition: none;
