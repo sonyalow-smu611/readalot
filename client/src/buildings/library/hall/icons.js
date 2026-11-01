@@ -5,6 +5,10 @@
 import { sprite } from './pixel.js'
 
 const ICONS = {
+  trophy: {
+    colours: { G: '#f2c94c', H: '#fff4c7', Y: '#b08a3c' },
+    rows: ['GGGGGGGGG', 'G.GHGGG.G', 'G.GHGGG.G', '.GGHGGGG.', '..GGGGG..', '...GGG...', '....G....', '..YYYYY..', '..YYYYY..'],
+  },
   heart: {
     colours: { R: '#e0526b', W: '#ffd6de' },
     rows: ['.RR...RR.', 'RWRR.RRRR', 'RRRRRRRRR', 'RRRRRRRRR', '.RRRRRRR.', '..RRRRR..', '...RRR...', '....R....'],

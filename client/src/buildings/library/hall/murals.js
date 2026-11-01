@@ -55,6 +55,23 @@ function cobweb(x, right, col) {
 
 // --- One painter per genre ---------------------------------------------------------------------
 const WALLS = {
+  bestsellers(x, tools) {
+    speckle(x, tools, 70, ['#e53b3b', '#2f6fd6', '#2d8a5a', '#f2c94c'])
+    // a red ribbon across the top, its ends cut in a V, with gold stitching
+    R(x, 4, 3, W - 8, 8, '#b8323a')
+    for (let i = 8; i < W - 8; i += 4) R(x, i, 4, 2, 1, '#f2c94c')
+    for (let i = 8; i < W - 8; i += 4) R(x, i, 9, 2, 1, '#f2c94c')
+    for (const [end, dir] of [[4, 1], [W - 5, -1]]) {
+      P(x, end, 7, '#fdf0d5')
+      P(x, end + dir, 7, '#fdf0d5')
+    }
+    drawIcon(x, 'trophy', W / 2 - 9, 13, 2)
+    drawIcon(x, 'star', 6, 15)
+    drawIcon(x, 'star', W - 15, 15)
+    drawIcon(x, 'crown', 4, BAND + 5)
+    drawIcon(x, 'star', W - 13, BAND + 4)
+  },
+
   romance(x) {
     // a wallpaper of little hearts
     for (let y = 6, row = 0; y < H; y += 10, row++) {

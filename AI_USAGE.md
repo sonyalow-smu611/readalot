@@ -689,3 +689,16 @@ change too.
 |------|-------|------------------|
 | Preview | `client/src/components/BookPreviewModal.vue` | Its own width (520px on a phone, 620px on a tablet, 880px on a laptop) instead of the 360px of the app's other pop-ups. On a laptop, two columns: a 240px cover on the left, the title, synopsis and buttons beside it, in bigger type. A phone keeps the cover beside the title and the rest below |
 | Tests | `tests/e2e/find-book.spec.js` | On a laptop the preview is over 800px wide, with the cover on the left of the title and the buttons |
+
+### The library's Bestsellers bookcase (AI-generated, team-agreed)
+
+Written by Claude Code at Aasim's request. It includes a backend endpoint, which `PROJECT.md`
+only allows AI to write when the team agrees: Aasim told the assistant the team agreed to it, and
+it is recorded here. Team to review: the route, the service and `services/api.js` are shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Service | `server/src/services/bestsellers.js`, `server/src/services/env.js`, `.env.example` | This week's NYT Best Sellers (the lists overview, each book once) with `NYT_BOOKS_API_KEY`, or Open Library's weekly trending list without it or when the NYT fails; each book matched to Google Books with the existing `findGoogleBook`, unmatched ones left out; kept six hours in memory and in `server/data/bestsellers.cache.json`; last time's list if both sources fail, else an error |
+| Route | `server/src/routes/books.js` | `GET /api/books/bestsellers`: `{ books, source, updatedAt }`, or 502 with an error (no placeholder books) |
+| Library | `client/src/services/api.js` (`getBestsellers`), `client/src/buildings/library/categories.js`, `LibraryView.vue`, `components/GenreBookcase.vue`, `hall/icons.js` (trophy), `hall/murals.js`, `hall/layout.js`, `fonts.js` (Silkscreen), `README.md` | A Bestsellers bookcase first in the hall: red and gold, a ribbon and trophy on the wall behind it, its sign in Silkscreen; it loads from the route instead of a search, and credits its source under the sign with a link (the NYT's attribution, or Open Library's). The ladder still leans on the Mystery bookcase |
+| Tests | `tests/e2e/library.spec.js` | It stands first, by the help desk, and first in Places; it loads from the route and not a search, with the NYT credit; Open Library's credit; a failed load offers Retry, then shows the books. The route itself was checked live against Open Library, and against a sample NYT reply |

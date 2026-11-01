@@ -23,10 +23,15 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
         Back to the hall
       </button>
-      <h2 :id="headingId" class="case__sign" :style="signStyle">
-        <img v-if="icon" class="case__sign-icon" :src="icon" alt="" />
-        <span class="case__sign-text">{{ category.title }}</span>
-      </h2>
+      <div class="case__title">
+        <h2 :id="headingId" class="case__sign" :style="signStyle">
+          <img v-if="icon" class="case__sign-icon" :src="icon" alt="" />
+          <span class="case__sign-text">{{ category.title }}</span>
+        </h2>
+        <a v-if="credit" class="case__credit" :href="credit.url" target="_blank" rel="noopener noreferrer">
+          {{ credit.text }}<span class="visually-hidden"> (opens in a new tab)</span>
+        </a>
+      </div>
       <div class="case__modes" role="group" aria-label="Show the books by">
         <button
           v-for="option in MODES"
@@ -70,6 +75,8 @@ const props = defineProps({
   error: { type: String, default: '' },
   // the id of the book whose preview is open: it stays slid out until the preview closes
   openBook: { type: String, default: null },
+  // where the books came from, credited under the sign: { text, url } (the Bestsellers bookcase)
+  credit: { type: Object, default: null },
 })
 
 defineEmits(['close', 'select', 'retry'])
@@ -167,6 +174,23 @@ onMounted(() => panel.value?.focus())
   gap: 8px;
 }
 
+.case__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* a small plate under the sign, saying where the list comes from */
+.case__credit {
+  padding: 2px 8px;
+  border: 2px solid #1e1a24;
+  background: #fffbf2;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e1a24;
+}
+
 .case__sign {
   display: inline-flex;
   align-items: center;
@@ -198,7 +222,7 @@ onMounted(() => panel.value?.focus())
     grid-template-columns: 1fr auto;
   }
 
-  .case__sign {
+  .case__title {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: center;

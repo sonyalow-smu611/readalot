@@ -91,7 +91,7 @@ export const PIECES = [
     return pieces
   }),
   // the rolling ladder leans on the mystery bookcase
-  { sprite: 'ladder', x: FIRST + 3 * STEP + 78, y: FEET + 2, layer: 'front' },
+  { sprite: 'ladder', x: FIRST + CATEGORIES.findIndex((category) => category.key === 'mystery') * STEP + 78, y: FEET + 2, layer: 'front' },
 
   // --- the reading nook, at the far end -----------------------------------------------------
   { sprite: 'window-tall', x: NOOK + 40, y: 150, layer: 'wall' },

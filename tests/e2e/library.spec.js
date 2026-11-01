@@ -17,6 +17,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 const GENRES = [
+  "Bestsellers",
   "Romance",
   "Romantasy",
   "Fantasy",
@@ -29,7 +30,7 @@ const GENRES = [
   "Graphic Novels & Manga",
 ];
 
-test("the library hall has a bookcase for each of the ten most read genres", async ({ page }) => {
+test("the library hall has a Bestsellers bookcase and one for each of the ten most read genres", async ({ page }) => {
   for (const name of GENRES) {
     await expect(page.getByRole("button", { name: `${name} bookcase` })).toBeAttached();
   }
@@ -329,4 +330,67 @@ test("on a phone, the library opens with the whole help desk in view, and its si
   const desk = page.getByRole("button", { name: "Help desk: search for any book" });
   await expect(desk).toBeInViewport({ ratio: 1 });
   await expect(page.getByText("Search for any book here")).toBeInViewport({ ratio: 1 });
+});
+
+test.describe("the Bestsellers bookcase", () => {
+  const bestsellers = (source) => ({
+    source,
+    updatedAt: Date.now(),
+    books: [
+      { id: "best-1", title: "The Women", authors: ["Kristin Hannah"], coverUrl: "" },
+      { id: "best-2", title: "Fourth Wing", authors: ["Rebecca Yarros"], coverUrl: "" },
+    ],
+  });
+
+  test("stands first, by the help desk and the scanner", async ({ page }) => {
+    const scanner = await page.getByRole("button", { name: "Book scanner: scan a book cover" }).boundingBox();
+    const best = await page.getByRole("button", { name: "Bestsellers bookcase" }).boundingBox();
+    const romance = await page.getByRole("button", { name: "Romance bookcase" }).boundingBox();
+    expect(best.x).toBeGreaterThan(scanner.x);
+    expect(best.x).toBeLessThan(romance.x);
+    await expect(page.locator('[data-place="bestsellers"] .hall__sign')).toHaveText("Bestsellers");
+    const places = await openPlaces(page);
+    await expect(places.getByRole("region", { name: "Shelves" }).getByRole("button").first()).toHaveText("Bestsellers");
+  });
+
+  test("fills from this week's bestseller lists, and credits the New York Times", async ({ page }) => {
+    let searched = false;
+    await page.route("**/api/books/search**", (route) => {
+      searched = true;
+      return route.fulfill({ json: { books: [] } });
+    });
+    await page.route("**/api/books/bestsellers", (route) => route.fulfill({ json: bestsellers("nyt") }));
+    await page.getByRole("button", { name: "Bestsellers bookcase" }).click();
+
+    const bookcase = page.getByRole("dialog", { name: "Bestsellers" });
+    await expect(bookcase.getByRole("button", { name: "The Women by Kristin Hannah" })).toBeVisible();
+    await expect(bookcase.getByRole("button", { name: "Fourth Wing by Rebecca Yarros" })).toBeVisible();
+    const credit = bookcase.getByRole("link", { name: /Data provided by The New York Times/ });
+    await expect(credit).toHaveAttribute("href", "https://www.nytimes.com/books/best-sellers/");
+    await expect(credit).toHaveAttribute("target", "_blank");
+    expect(searched).toBe(false);
+
+    await bookcase.getByRole("button", { name: "The Women by Kristin Hannah" }).click();
+    await expect(page.getByRole("dialog", { name: "Quick preview: The Women" }).getByRole("button", { name: "Add to To be read" })).toBeVisible();
+  });
+
+  test("without the NYT, credits Open Library's trending list instead", async ({ page }) => {
+    await page.route("**/api/books/bestsellers", (route) => route.fulfill({ json: bestsellers("openlibrary") }));
+    await page.getByRole("button", { name: "Bestsellers bookcase" }).click();
+    const bookcase = page.getByRole("dialog", { name: "Bestsellers" });
+    await expect(bookcase.getByRole("link", { name: /Trending this week on Open Library/ })).toBeVisible();
+  });
+
+  test("when no list can be had, it says so and offers Retry, never made-up books", async ({ page }) => {
+    let fail = true;
+    await page.route("**/api/books/bestsellers", (route) =>
+      fail ? route.fulfill({ status: 502, json: { error: "Couldn't load the bestsellers right now." } }) : route.fulfill({ json: bestsellers("nyt") })
+    );
+    await page.getByRole("button", { name: "Bestsellers bookcase" }).click();
+    const bookcase = page.getByRole("dialog", { name: "Bestsellers" });
+    await expect(bookcase.getByText("Couldn't load these books")).toBeVisible();
+    fail = false;
+    await bookcase.getByRole("button", { name: "Retry" }).click();
+    await expect(bookcase.getByRole("button", { name: "The Women by Kristin Hannah" })).toBeVisible();
+  });
 });
