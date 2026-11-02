@@ -49,6 +49,24 @@ test("a friend online with no character yet is found at their house", async ({ p
   await expect(page.getByRole("dialog", { name: "Emma's house" })).toBeVisible();
 });
 
+test("friend requests have their own section, even with none waiting", async ({ page }) => {
+  const town = await mockFriends(page, { friends: [EMMA], incoming: [{ requestId: "request-noah", reader: NOAH }] });
+  await page.route("**/api/friends/requests/request-noah/accept", (route) => {
+    town.incoming = [];
+    town.friends = [EMMA, NOAH];
+    return route.fulfill({ json: { accepted: true } });
+  });
+  await page.goto("/");
+  await openList(page);
+
+  await expect(list(page).getByRole("heading", { name: "Friend requests" })).toBeVisible();
+  await expect(list(page)).toContainText("Noah Lim wants to be friends");
+  await list(page).getByRole("button", { name: "Accept Noah Lim" }).click();
+
+  await expect(list(page)).toContainText("No requests right now.");
+  await expect(list(page).locator(".friend-row").filter({ hasText: "Noah Lim" })).toBeVisible();
+});
+
 test("adding a friend by username says how it went", async ({ page }) => {
   const town = await mockFriends(page, { friends: [EMMA], outgoing: ["sofia.stories"] });
   await page.goto("/");

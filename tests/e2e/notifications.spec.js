@@ -42,6 +42,18 @@ test("a friend request and a room visit pop up and stay in the bell", async ({ p
   await expect(panel(page)).toContainText("Nothing yet");
 });
 
+test("on a laptop the unread count sits on the bell", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockFriends(page, { friends: [EMMA], visits: [VISIT] });
+  await page.goto("/");
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 1 new");
+
+  const button = await bell(page).boundingBox();
+  const badge = await bell(page).locator(".notifications-button__badge").boundingBox();
+  expect(badge.x).toBeGreaterThan(button.x);
+  expect(badge.x).toBeLessThan(button.x + button.width);
+});
+
 test("a visitor's notification opens their profile", async ({ page }) => {
   await mockFriends(page, { friends: [EMMA], visits: [VISIT] });
   await page.goto("/");

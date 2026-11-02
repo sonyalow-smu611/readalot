@@ -731,3 +731,21 @@ Team to review: the route line in `client/src/router/index.js` is shared.
 | Route | `client/src/router/index.js` | `reader-room` gets `meta.wide`, so the profile leaves the phone column on a laptop. It keeps the Readalot header, which is where the Daily button sits |
 | Profile | `client/src/views/ReaderRoomView.vue` | From 768px: two columns up to 1100px wide, the reader card, Visit room, Follow and Message on the left (staying in view as you scroll), the Currently Reading, Reading Prefs and Books You Both Have cards on the right. A phone keeps the one column. Back to Discover is a pixel button in the Daily button's look (`btn-secondary px-sign`, with the building back buttons' chevron) |
 | Tests | `tests/e2e/reader-profile.spec.js` | On a laptop: nothing covers Back to Discover and nothing scrolls sideways; the header and its search stay; the cards sit beside the reader. On a phone: the cards come under Follow and Message. Back to Discover has the Daily button's frame, fill and shadow, and goes to the Cafe |
+
+### A Friend requests section in the friends list (AI-generated)
+
+Written by Claude Code at Dylan's request. Layout and wording only: no logic or endpoints.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Friends list | `client/src/components/town/FriendsList.vue` | A Friend requests heading above the waiting requests, with "No requests right now." when there are none, and a Your friends heading above the friends. The requests section is hidden while choosing friends to remove |
+| Tests | `tests/e2e/friends-list.spec.js` | The section shows a waiting request, and after Accept says none are left and the friend joins the list |
+
+### The bell's unread count sits on the bell (AI-generated)
+
+Written by Claude Code at Dylan's request. Styling only: no logic or endpoints.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Bell | `client/src/components/town/NotificationsButton.vue` | `position: relative`, so on a laptop the unread count is placed against the bell and not the whole top bar, where it landed on Friends |
+| Tests | `tests/e2e/notifications.spec.js` | On a laptop the unread count sits inside the bell's width |

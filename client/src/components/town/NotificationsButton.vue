@@ -32,6 +32,7 @@ const label = computed(() => `Notifications, ${props.unread} new`)
 
 <style scoped>
 .notifications-button {
+  position: relative;
   pointer-events: auto;
 }
 

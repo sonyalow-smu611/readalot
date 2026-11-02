@@ -80,13 +80,18 @@ watch(
       <button v-if="friends.length" type="button" class="btn btn-secondary btn-sm" @click="startSelecting">Remove friends</button>
     </div>
     <AddFriendForm v-if="adding" :status="addStatus" :username="username" @add="emit('add', $event)" />
-    <FriendRequestRow
-      v-for="request in requests"
-      :key="request.requestId"
-      :request="request"
-      @answer="(id, accept) => emit('answer', id, accept)"
-    />
-    <p v-if="!friends.length && !requests.length" class="friends-list__empty">No friends yet. Go public to find readers nearby: friends you add get a house in town.</p>
+    <template v-if="!selecting">
+      <h2 class="friends-list__heading">Friend requests</h2>
+      <FriendRequestRow
+        v-for="request in requests"
+        :key="request.requestId"
+        :request="request"
+        @answer="(id, accept) => emit('answer', id, accept)"
+      />
+      <p v-if="!requests.length" class="friends-list__empty">No requests right now.</p>
+    </template>
+    <h2 class="friends-list__heading">Your friends</h2>
+    <p v-if="!friends.length" class="friends-list__empty">No friends yet. Go public to find readers nearby: friends you add get a house in town.</p>
     <FriendRow
       v-for="friend in sorted"
       :key="friend.id"
