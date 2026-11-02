@@ -2,11 +2,12 @@
 // Other readers' rooms, for visiting: who lives there, the books on their bookshelf and the
 // furniture in the room. The readers come from the people store (stores/people.js); the house
 // only reads them, and turns their books into the shape the room's bookshelf uses.
+import { getRoomFurniture } from '@/services/api.js'
 import { usePeopleStore } from '@/stores/people.js'
 
-// What each reader has put in their room, from the furniture library: the same { id, zone, x }
-// as a piece placed in My Room (x along its zone, as the spots in strip/layout.js have it). A
-// reader missing here has the plain room.
+// The sample readers' demo furniture, from the furniture library: the same { id, zone, x } as a
+// piece placed in My Room (x along its zone, as the spots in strip/layout.js have it). A reader's
+// own saved furniture comes first; a reader with none saved, and none here, has the plain room.
 const FURNISHINGS = {
   'emma.reads': [
     { id: 'chair-wingback', zone: 'chair', x: 0.28 },
@@ -57,6 +58,20 @@ function shelfBook(book) {
   }
 }
 
+// The furniture standing in a reader's room: what they've placed, or their demo furniture when
+// they've saved none. Furniture that can't be fetched leaves the demo furniture, so the visit
+// still works.
+async function furnitureOf(readerId) {
+  let saved = []
+  try {
+    saved = (await getRoomFurniture(readerId)).pieces.filter((piece) => piece.zone)
+  } catch {
+    saved = []
+  }
+  if (saved.length) return saved
+  return (FURNISHINGS[readerId] ?? []).map((item, k) => ({ ...item, uid: `${readerId}-${k}` }))
+}
+
 // A reader's room: { id, name, firstName, books, currentBook, furniture, theme }, or null when there's
 // no such reader. Throws when the reader can't be fetched.
 export async function readerRoom(id) {
@@ -69,7 +84,7 @@ export async function readerRoom(id) {
     firstName: reader.displayName.split(' ')[0],
     books,
     currentBook: books.find((book) => book.status === 'reading') ?? null,
-    furniture: (FURNISHINGS[reader.id] ?? []).map((item, k) => ({ ...item, uid: `${reader.id}-${k}` })),
+    furniture: await furnitureOf(reader.id),
     theme: THEME_OF[reader.id] ?? null,
   }
 }

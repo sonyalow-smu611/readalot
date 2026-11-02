@@ -1,6 +1,7 @@
 import { test as signedOut } from "@playwright/test";
 import { buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, test } from "./fixtures.js";
 import { EMMA, NOAH, mockFriends } from "./townFriends.js";
+import { SPOTS, buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, tapRoomAt, test } from "./fixtures.js";
 import { createReader, hasSupabase, NEEDS_SUPABASE, signInPage } from "./supabaseUser.js";
 
 // a brand-new reader, who hasn't filled in Welcome yet
@@ -270,12 +271,12 @@ test.describe("the house", () => {
     await buy(page, "Mountain poster");
     await fromMenu(page, "Inventory");
     await inventory(page).getByRole("button", { name: /Mountain poster/ }).click();
-    const placing = page.getByRole("status").filter({ hasText: "Tap a glowing spot" });
+    const placing = page.getByRole("status").filter({ hasText: "Tap where the Mountain poster should go" });
     await expect(placing).toBeVisible();
     expect(await offLook(placing)).toEqual([]);
 
     await goToPlace(page, "Chair");
-    await page.getByRole("button", { name: "Put Mountain poster on the wall by the reading chair" }).click();
+    await tapRoomAt(page, SPOTS["by the reading chair"].x, SPOTS["by the reading chair"].y);
     const poster = page.getByRole("button", { name: "Mountain poster", exact: true });
     await poster.click();
     await expect(poster.getByText("Remove")).toBeVisible();

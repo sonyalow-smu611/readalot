@@ -17,6 +17,24 @@ book to find it".
 There are no emoji in the library: every icon is a pixel icon drawn in the hall's style
 (`hall/icons.js`).
 
+## Bestsellers
+
+The first bookcase, by the help desk, holds this week's bestsellers. Google Books has no idea of
+"popular", so the server builds the list (`GET /api/books/bestsellers`,
+`server/src/services/bestsellers.js`):
+- from the **New York Times Best Sellers** (every current list, top books first) when
+  `NYT_BOOKS_API_KEY` is set in `.env` (a free key from developer.nytimes.com, with the Books API
+  enabled),
+- otherwise, or when the NYT can't be reached, from **Open Library's trending list** for the week
+  (no key).
+
+Each book is matched to Google Books by title and author, so its preview, Add to To be read, its
+page and its reviews work like any other book's; a book with no match is left out. The list is kept
+for six hours (also in `server/data/bestsellers.cache.json`), as the lists change weekly and the
+NYT allows few requests a day. The opened bookcase credits where the list came from ("Data
+provided by The New York Times", as the NYT asks, or "Trending this week on Open Library"). If no
+list can be had, the route answers 502 and the bookcase offers Retry.
+
 ## The genres
 
 The ten bookcases are the most read genres of 2025, so the shelves match what readers look for:
@@ -73,7 +91,7 @@ turns it off and on, remembered on that device. The weather comes from `services
 |---|---|
 | `LibraryView.vue` | The building's page: the hall, the search bar, the open bookcase and the book preview. Holds the state, and loads the weather |
 | `SearchView.vue` | Search (`/search`): the catalogue, its results in a bookcase |
-| `categories.js` | **The bookcases.** One entry per genre: its name, icon, search, colours, wood, sign, wall art and props. Also `HALL_CASE`, the library's own bookcase for search |
+| `categories.js` | **The bookcases.** Bestsellers (`source: 'bestsellers'`), then one entry per genre: its name, icon, search, colours, wood, sign, wall art and props. Also `HALL_CASE`, the library's own bookcase for search |
 | `shelves.js` | How an opened bookcase lays out its books: spines, stacks, props, leaning books, shelves |
 | `fonts.js` | Loads the genre signs' pixel fonts |
 | `components/LibraryHall.vue` | The hall itself: sizing, scrolling, the bookcase and desk buttons, the signs, the weather |

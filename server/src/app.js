@@ -10,7 +10,9 @@ import messagesRouter from "./routes/messages.js";
 import quoteRouter from "./routes/quote.js";
 import recommendationsRouter from "./routes/recommendations.js";
 import notificationsRouter from "./routes/notifications.js";
+import roomFurnitureRouter from "./routes/roomFurniture.js";
 import roomNotesRouter from "./routes/roomNotes.js";
+import savedQuotesRouter from "./routes/savedQuotes.js";
 import scanBookRouter from "./routes/scanBook.js";
 import storesRouter from "./routes/stores.js";
 import timeRouter from "./routes/time.js";
@@ -40,6 +42,8 @@ app.use("/api/notifications", notificationsRouter);
 app.use("/api/stores", storesRouter);
 app.use("/api/recommendations", recommendationsRouter);
 app.use("/api/rooms/:readerId/notes", roomNotesRouter);
+app.use("/api/rooms/:readerId/furniture", roomFurnitureRouter);
+app.use("/api/saved-quotes", savedQuotesRouter);
 app.use("/api/scan-book", scanBookRouter);
 
 app.use((err, req, res, next) => {

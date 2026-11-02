@@ -697,3 +697,26 @@ username work connects at `client/src/town/username.js`, which lists the two thi
 | Daily button | `client/src/components/town/DailyButton.vue`, `DailyDock.vue` | Shut to the flame and streak; "Daily task" slides out on hover or keyboard focus. On other pages it is the town's button, placed by measuring each page's own buttons, and stays hidden until its spot has settled |
 | Tests | `tests/e2e/town-map.spec.js`, `friends-list.spec.js`, `notifications.spec.js`, `townFriends.js`, `daily.spec.js`, `friends.spec.js` | The new journeys, with friends answered in the test so they pass without the server's Supabase keys |
 | Test tidy-up | `tests/e2e/smoke.spec.js`, `shelve-book.spec.js` (removed); `town.spec.js`, `bookshelf.spec.js`, `back-button.spec.js`, `library.spec.js`, `buttons.spec.js` | Duplicates removed, with anything only they checked moved into the test that stays. The cafe's count test follows the page's words, and the friends button test now has friends |
+### A roomier book preview (AI-generated)
+
+Written by Claude Code at Aasim's request, after the team asked for the book preview to be bigger.
+Team to review: `BookPreviewModal.vue` is shared, so My Shelf's and a friend's shelf's book card
+change too.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Preview | `client/src/components/BookPreviewModal.vue` | Its own width (520px on a phone, 620px on a tablet, 880px on a laptop) instead of the 360px of the app's other pop-ups. On a laptop, two columns: a 240px cover on the left, the title, synopsis and buttons beside it, in bigger type. A phone keeps the cover beside the title and the rest below |
+| Tests | `tests/e2e/find-book.spec.js` | On a laptop the preview is over 800px wide, with the cover on the left of the title and the buttons |
+
+### The library's Bestsellers bookcase (AI-generated, team-agreed)
+
+Written by Claude Code at Aasim's request. It includes a backend endpoint, which `PROJECT.md`
+only allows AI to write when the team agrees: Aasim told the assistant the team agreed to it, and
+it is recorded here. Team to review: the route, the service and `services/api.js` are shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Service | `server/src/services/bestsellers.js`, `server/src/services/env.js`, `.env.example` | This week's NYT Best Sellers (the lists overview, each book once) with `NYT_BOOKS_API_KEY`, or Open Library's weekly trending list without it or when the NYT fails; each book matched to Google Books with the existing `findGoogleBook`, unmatched ones left out; kept six hours in memory and in `server/data/bestsellers.cache.json`; last time's list if both sources fail, else an error |
+| Route | `server/src/routes/books.js` | `GET /api/books/bestsellers`: `{ books, source, updatedAt }`, or 502 with an error (no placeholder books) |
+| Library | `client/src/services/api.js` (`getBestsellers`), `client/src/buildings/library/categories.js`, `LibraryView.vue`, `components/GenreBookcase.vue`, `hall/icons.js` (trophy), `hall/murals.js`, `hall/layout.js`, `fonts.js` (Silkscreen), `README.md` | A Bestsellers bookcase first in the hall: red and gold, a ribbon and trophy on the wall behind it, its sign in Silkscreen; it loads from the route instead of a search, and credits its source under the sign with a link (the NYT's attribution, or Open Library's). The ladder still leans on the Mystery bookcase |
+| Tests | `tests/e2e/library.spec.js` | It stands first, by the help desk, and first in Places; it loads from the route and not a search, with the NYT credit; Open Library's credit; a failed load offers Retry, then shows the books. The route itself was checked live against Open Library, and against a sample NYT reply |

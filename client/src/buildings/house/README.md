@@ -8,7 +8,7 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `HouseView.vue` | The building's entry view, inside the shared `BuildingShell` |
 | `RoomView.vue` | The room page: the room, the Currently Reading card, book details, modals, the menu. With `visiting`, someone else's room |
 | `VisitView.vue` | Someone else's room (`/people/:id/room`), opened from their profile in the Cafe |
-| `ShelfView.vue` | My Shelf (`/house/shelf`): every book, by shelf, with genre chips and a search. Opened by tapping the bookshelf. A cover opens the genre page's book card (`BookPreviewModal`), with the progress slider and Remove from shelf. At `/people/:id/room/shelf`, the visited reader's shelf, whose card has no status buttons |
+| `ShelfView.vue` | My Shelf (`/house/shelf`): headed like an opened Library bookcase (Back to room, the My Shelf sign, Spines / Covers), then a search, genre chips and the bookcase, in My Room's colours. Opened by tapping the bookshelf. A book slides out and opens `components/BookDialog.vue`, the same card as the room's. At `/people/:id/room/shelf`, the visited reader's shelf in their room's colours, with no search and no status buttons on its card |
 | `furniture.js` | **The furniture library:** the pieces in the room's pixel style that the Shop sells (the Shop sells nothing else) |
 | `visitors.js` | Other readers' rooms: the reader (fetched through `stores/people.js`), their books in the shelf's shape, the furniture in each room and its theme |
 | `themes.js` | **Each house's look:** wall and floor colours, and its own curtains, bedding, lamps and rug |
@@ -19,9 +19,12 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `components/VisitorBookDialog.vue` | A book off someone else's shelf in their room: what it is and which shelf, with nothing to change |
 | `components/NoteComposer.vue` | The Leave a note card |
 | `components/NoticeBoard.vue` | A notice board, a visited reader's or your own: the Quote of the Day, then the notes left there |
-| `components/ShelfRow.vue` | One shelf on My Shelf, drawn as the genre page's shelf tier (header card, covers, plank): a sideways row of covers that scrolls by swipe, wheel, drag, buttons or arrow keys |
+| `components/ShelfBookcase.vue` | My Shelf's bookcase: the Library's bookcase look (frame, dark back) with exactly three shelves, one per reading status. Carries a book picked up off a shelf, lights the shelf under it, scrolls the page at its edges, and emits `move` when it's let go over another shelf |
+| `components/BookcaseShelf.vue` | One shelf of it: spines (some lying flat, the last leaning) or covers, the plank with its plate (name · count), scrolling sideways by swipe, wheel, drag, Previous / Next or arrow keys. On your own shelf a book is picked up by pulling it up or down with the mouse, or by pressing and holding it with a finger |
+| `bookcase.js` | How a shelf stands its books (copied from the Library's `shelves.js`, one line per shelf, colours from `spineLook`), and the bookcase's colours from a room theme |
 | `components/DecorArt.vue` | A decoration's picture in the Shop and inventory: a furniture piece's own sprite, kept crisp |
-| `components/BookDialog.vue` | A book's card over the room (remove with Undo included) |
+| `components/BookDialog.vue` | A book of your own, open over the room or My Shelf: shows `OwnBookPreview` and saves its next step, progress and Remove from shelf (with Undo); `close` says whether the book was removed |
+| `components/OwnBookPreview.vue` | Your own book's card, laid out like the library's preview: one next step (Start reading, Mark as finished), Where to get while it's still to be read, the progress slider, Remove from shelf, and the reviews behind Read reviews |
 | `useRemoveBook.js` | Remove from shelf for the room's and My Shelf's cards: ask first (unless told not to), then Undo in a toast |
 | `components/WindowView.vue` | The view through the window: sky, weather and the town across the street |
 | `strip/layout.js` | **What stands where.** Every piece, the parts of the room, decoration spots, lights |
@@ -90,10 +93,10 @@ furniture as its `y`.
 ## Other things in the layout
 
 - **`PARTS`:** the Places menu, left to right. `at` is the x the view centres on.
-- **`SLOTS`:** the glowing spots a decoration can be put on with a tap. Wall art, plants and the
-  succulents can also stand anywhere else they fit (see "Putting pieces anywhere" below); a spot
-  glows only while the piece fits on it. Keep their `zone` and `x` as they are, or the visited
-  readers' furniture will move. You can change `at`, where a slot is drawn.
+- **`SLOTS`:** where pieces placed before they could stand anywhere stand (a piece saved with a
+  `zone` and `x` but no `at`), and the one place each chair, set of curtains and bedding goes. The
+  room shows no spots; see "Putting pieces anywhere" below. Keep their `zone` and `x` as they are,
+  or the visited readers' furniture will move.
 - **`WALK`:** the line along the floor that pets walk on. It's also where visitors could walk later.
 - **`LIGHTS`:** the window's cool light at night, each lamp's pool of warm light, and the fairy lights.
 
@@ -101,9 +104,19 @@ furniture as its `y`.
 
 Readers furnish the room from the Shop with pieces drawn in the room's own style. Each piece
 is a line in `furniture.js` plus a sprite. The Shop's catalog takes the list in, so buying,
-the inventory and the glowing spots work for it as for any decoration. A placed piece is painted
+the inventory and placing work for it as for any decoration. A placed piece is painted
 into the room's canvas, so it gets the same shadows, weather tints and lamplight as the room's own
 pieces. An invisible button over it makes it tappable.
+
+**Saved in the reader's account.** The inventory and every placed piece (`{ uid, id }` in the
+inventory, `{ uid, id, zone, x, at }` placed) are kept on the server at
+`/api/rooms/:id/furniture`, in the `room_furniture` table (`database/room_furniture.sql`; run it
+in the Supabase SQL editor). `useDecor` loads them when My Room opens (once per reader) and saves
+the whole list after each buy, place, swap and remove, and when a move ends. Saves go one at a
+time. Until the furniture has loaded, the Shop and Inventory are disabled; a load that fails shows
+**Try again**, and a save that fails says so and is retried with the next change. Without
+Supabase the server keeps rooms in memory; the e2e `reader` fixture empties the room before each
+test.
 
 To add a piece:
 
@@ -131,8 +144,9 @@ To add a piece:
 
 ## Putting pieces anywhere
 
-Wall art, plants and the succulents aren't held to the glowing spots. Dragged out of the inventory,
-they land where they're let go, if they fit there (`strip/placement.js`):
+The room shows no spots to aim at. A piece dragged out of the inventory, or tapped in the
+inventory and then tapped into the room ("Place in the middle" does it from the keyboard), lands
+where it's let go. Wall art, plants and the succulents go there if they fit (`strip/placement.js`):
 
 - **Wall art** hangs anywhere on the wall: below the bunting, above the skirting, inside the
   room's two ends, and 8 art px (`GAP`) clear of the room's own pieces (the window and its curtains,
@@ -146,9 +160,15 @@ they land where they're let go, if they fit there (`strip/placement.js`):
 Let go where it doesn't fit, a piece moves to the nearest place it does within 40 art px
 (`REACH`); if there's none, it stays in the inventory and the room says "Not enough room there".
 
+- **A reading chair, curtains or bedding** swaps in for the room's own when it's let go on (or
+  within 24 art px of) the armchair, the window and its curtains, or the bed. Anywhere else it goes
+  back to the inventory and the room says where it goes ("Put the chair on the armchair", "Hang the
+  curtains at the window", "Put the bedding on the bed"). `SWAP_INTO` in `RoomStrip.vue`.
+- **A cat** starts on the floor right below where it's let go (kept inside `WALK`), then roams.
+
 A placed piece remembers its point, `at`: the middle of wall art, the bottom middle of anything
-standing. Reading chairs, curtains and bedding still go on their one spot each, and the visited
-readers' furniture (`{ id, zone, x }`, no `at`) stands on the spot in its zone nearest `x`.
+standing, and where a cat started. The visited readers' furniture (`{ id, zone, x }`, no `at`)
+stands on the spot in its zone nearest `x`.
 
 To move a placed piece in My Room:
 
@@ -212,8 +232,10 @@ see them on any device. Without Supabase (local dev, the e2e tests) the server k
 memory until it restarts, and takes the account id from the sign-in token without checking it,
 because it can't.
 
-To furnish a reader's room differently, change their list in `FURNISHINGS` in `visitors.js`.
-Each piece is `{ id, zone, x }`, and stands on the spot in its zone nearest `x`.
+A visited room shows the furniture that reader saved. A reader who has saved none gets their
+demo furniture from `FURNISHINGS` in `visitors.js`, if they have any (the Cafe's sample readers
+do), or else the plain room. Each demo piece is `{ id, zone, x }`, and stands on the spot in its
+zone nearest `x`. A visit never saves anything.
 
 ## On a laptop
 

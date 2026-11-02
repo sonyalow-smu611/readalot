@@ -37,6 +37,11 @@ export function searchBooks(query, limit) {
   return request(`/books/search?${params}`);
 }
 
+// The library's Bestsellers bookcase: { books, source: "nyt" | "openlibrary", updatedAt }
+export function getBestsellers() {
+  return request("/books/bestsellers");
+}
+
 export function getBook(id) {
   return request(`/books/${id}`);
 }
@@ -186,4 +191,34 @@ export function postRoomNote(readerId, data) {
 
 export function deleteRoomNote(readerId, noteId) {
   return request(`/rooms/${encodeURIComponent(readerId)}/notes/${encodeURIComponent(noteId)}`, { method: "DELETE" });
+}
+
+// A reader's room furniture: { pieces: [{ uid, id, zone?, x?, at? }] } (no zone: in the inventory)
+export function getRoomFurniture(readerId) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/furniture`);
+}
+
+// Replaces your own room's furniture with `pieces`
+export function saveRoomFurniture(readerId, pieces) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/furniture`, {
+    method: "PUT",
+    body: JSON.stringify({ pieces })
+  });
+}
+
+// The reader's saved mood quotes, newest first: { quotes: [{ id, quoteText, author, work, bookId, sourceUrl, mood, createdAt }] }
+export function getSavedQuotes() {
+  return request("/saved-quotes");
+}
+
+// { quoteText, author, work, bookId, sourceUrl, mood }: saving one already saved returns it as it was
+export function saveQuote(data) {
+  return request("/saved-quotes", {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export function unsaveQuote(id) {
+  return request(`/saved-quotes/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

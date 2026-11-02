@@ -9,7 +9,7 @@ import { useRoute, useRouter } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
 import { useBookPreview } from '@/composables/useBookPreview'
-import { searchBooks } from '@/services/api.js'
+import { getBestsellers, searchBooks } from '@/services/api.js'
 import { fetchWeather } from '@/services/weather.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { PLACES } from '@/town/places.js'
@@ -121,13 +121,20 @@ const shelves = reactive({})
 const openKey = ref(null)
 let trigger = null
 
+// where the Bestsellers bookcase's list came from, credited under its sign (the NYT asks for it)
+const CREDITS = {
+  nyt: { text: 'Data provided by The New York Times', url: 'https://www.nytimes.com/books/best-sellers/' },
+  openlibrary: { text: 'Trending this week on Open Library', url: 'https://openlibrary.org/trending/weekly' },
+}
+
 async function loadShelf(key) {
   const category = categoryByKey(key)
   if (!category) return
-  shelves[key] = { books: [], loading: true, error: '' }
+  shelves[key] = { books: [], loading: true, error: '', credit: null }
   try {
-    const result = await searchBooks(category.query, BOOKS_PER_CASE)
+    const result = category.source === 'bestsellers' ? await getBestsellers() : await searchBooks(category.query, BOOKS_PER_CASE)
     shelves[key].books = result.books || []
+    shelves[key].credit = CREDITS[result.source] ?? null
   } catch {
     shelves[key].error = "Couldn't load these books. Check your connection and try again."
   } finally {
@@ -243,6 +250,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
         :books="shelves[openKey]?.books"
         :loading="shelves[openKey]?.loading"
         :error="shelves[openKey]?.error"
+        :credit="shelves[openKey]?.credit"
         :open-book="previewBook?.id ?? null"
         @select="openPreview"
         @close="closeShelf"

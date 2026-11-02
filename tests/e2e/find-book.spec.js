@@ -89,3 +89,19 @@ test.describe("the book's own page", () => {
     await expect(shelves.getByRole("button", { name: "To be read" })).toHaveAttribute("aria-pressed", "true");
   });
 });
+
+test.describe("on a laptop", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("the preview is roomy: wide, with the cover in a column on the left", async ({ page }) => {
+    const dialog = preview(page).locator(".modal-content");
+    await expect.poll(async () => (await dialog.boundingBox()).width).toBeGreaterThan(800);
+    const cover = await preview(page).locator(".preview__cover").boundingBox();
+    const title = await preview(page).getByRole("heading", { name: "The Midnight Library" }).boundingBox();
+    const add = await preview(page).getByRole("button", { name: "Add to To be read" }).boundingBox();
+    // the title and the choices sit beside the cover, not under it
+    expect(title.x).toBeGreaterThan(cover.x + cover.width);
+    expect(add.x).toBeGreaterThan(cover.x + cover.width);
+    expect(cover.width).toBeGreaterThan(200);
+  });
+});
