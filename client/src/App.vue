@@ -1,7 +1,7 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { START_LOCATION, useRoute, useRouter } from 'vue-router'
 import PhoneFrame from '@/components/PhoneFrame.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import BookOpenOverlay from '@/components/BookOpenOverlay.vue'
@@ -10,8 +10,19 @@ import LoadingScreen from '@/components/LoadingScreen.vue'
 import Toast from '@/components/Toast.vue'
 
 const route = useRoute()
+const router = useRouter()
 const main = ref(null)
-const booting = ref(true)
+// nothing is drawn until the first page is known, so the landing page opens straight away
+const ready = ref(false)
+// the town wakes up (LoadingScreen) on the way in: at the first page of a visit, or on leaving
+// the landing page through Sign up or Log in. The landing page itself never waits for it.
+const booting = ref(false)
+const stopWatching = router.afterEach((to, from, failure) => {
+  ready.value = true
+  if (failure) return
+  if (to.name !== 'start' && (from === START_LOCATION || from.name === 'start')) booting.value = true
+})
+onBeforeUnmount(stopWatching)
 const showChrome = computed(() => !route.meta.bare)
 
 function resetScroll() {
@@ -23,7 +34,7 @@ function resetScroll() {
   <PhoneFrame :full="booting">
     <LoadingScreen v-if="booting" @done="booting = false" />
     <!-- full-bleed pages (the room) draw to the edges and bring their own chrome -->
-    <AppHeader v-if="showChrome && !route.meta.fullBleed && !route.meta.hideHeader" />
+    <AppHeader v-if="ready && showChrome && !route.meta.fullBleed && !route.meta.hideHeader" />
     <main
       ref="main"
       class="app-main"
