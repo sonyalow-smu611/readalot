@@ -56,7 +56,7 @@
     <button
       v-if="!shelved && !bookshelf.loading"
       type="button"
-      class="btn btn-primary w-100 details__add"
+      class="btn btn-success w-100 details__add"
       :disabled="saving"
       @click="choose('want_to_read')"
     >
