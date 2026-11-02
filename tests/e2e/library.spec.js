@@ -1,5 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, openPlaces, test } from "./fixtures.js";
+import { expect, openPlaces, standsStill, test } from "./fixtures.js";
 
 // The bookcases fill from a book search; answer it here so the tests never wait on Google Books.
 const BOOKS = [
@@ -159,7 +159,7 @@ for (const [label, viewport] of [
 ]) {
   test(`on ${label}, the back button, search and weather share the top line`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    const back = await page.getByRole("link", { name: "Back to town" }).boundingBox();
+    const back = await standsStill(page.getByRole("link", { name: "Back to town" }));
     const search = await page.getByRole("search").boundingBox();
     const weather = await page.getByRole("img", { name: /Weather outside/ }).boundingBox();
 

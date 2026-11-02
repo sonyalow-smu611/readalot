@@ -27,12 +27,16 @@ test("a first-time visitor lands on the start page and reads about the town", as
   await expect(page).toHaveURL(/\/start$/);
   await expect(page.getByRole("heading", { name: SIGN, level: 1 })).toBeVisible();
   await expect(page.getByText(SLOGAN)).toBeVisible();
-  await expect(page.locator("#start-home").getByText("읽다 · to read")).toBeVisible();
+  await expect(page.getByText("읽다 · to read")).toBeVisible();
   for (const title of SECTIONS) {
     await expect(page.getByRole("heading", { name: title })).toBeAttached();
   }
+  // the landing page opens straight away; the town wakes up on the way to Sign up or Log in
+  await expect(page.getByText("Waking up the town…")).toHaveCount(0);
 
   await page.getByRole("link", { name: "Sign up" }).first().click();
+  await expect(page.getByText("Waking up the town…")).toBeVisible();
+  await expect(page.getByText("Waking up the town…")).toBeHidden();
   await expect(page.getByRole("heading", { name: "Create your card" })).toBeVisible();
 
   // seen once: signed-out visitors now go to Log in, as before
@@ -125,6 +129,7 @@ test("the last screen signs up too", async ({ page }) => {
 test("Log in on the start page opens Log in and counts as seen", async ({ page }) => {
   await page.goto("/start");
   await page.getByRole("link", { name: "Log in" }).first().click();
+  await expect(page.getByText("Waking up the town…")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);

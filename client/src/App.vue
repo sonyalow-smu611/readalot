@@ -1,7 +1,7 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 import PhoneFrame from '@/components/PhoneFrame.vue'
@@ -13,8 +13,18 @@ import LoadingScreen from '@/components/LoadingScreen.vue'
 import Toast from '@/components/Toast.vue'
 
 const route = useRoute()
+const router = useRouter()
 const main = ref(null)
-const booting = ref(true)
+// nothing is drawn until the first page is known, so the landing page opens straight away
+const ready = ref(false)
+// the town wakes up (LoadingScreen) only on leaving the landing page for Sign up or Log in
+const booting = ref(false)
+const stopWatching = router.afterEach((to, from, failure) => {
+  ready.value = true
+  if (failure) return
+  if (from.name === 'start' && ['login', 'register'].includes(to.name)) booting.value = true
+})
+onBeforeUnmount(stopWatching)
 const { guide } = storeToRefs(useUserStore())
 const showChrome = computed(() => !route.meta.bare)
 // the town has its own Daily button, and the tour shouldn't have anything over it
@@ -29,7 +39,7 @@ function resetScroll() {
   <PhoneFrame :full="booting">
     <LoadingScreen v-if="booting" @done="booting = false" />
     <!-- full-bleed pages (the room) draw to the edges and bring their own chrome -->
-    <AppHeader v-if="showChrome && !route.meta.fullBleed && !route.meta.hideHeader" />
+    <AppHeader v-if="ready && showChrome && !route.meta.fullBleed && !route.meta.hideHeader" />
     <main
       ref="main"
       class="app-main"
