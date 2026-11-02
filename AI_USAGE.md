@@ -720,3 +720,14 @@ it is recorded here. Team to review: the route, the service and `services/api.js
 | Route | `server/src/routes/books.js` | `GET /api/books/bestsellers`: `{ books, source, updatedAt }`, or 502 with an error (no placeholder books) |
 | Library | `client/src/services/api.js` (`getBestsellers`), `client/src/buildings/library/categories.js`, `LibraryView.vue`, `components/GenreBookcase.vue`, `hall/icons.js` (trophy), `hall/murals.js`, `hall/layout.js`, `fonts.js` (Silkscreen), `README.md` | A Bestsellers bookcase first in the hall: red and gold, a ribbon and trophy on the wall behind it, its sign in Silkscreen; it loads from the route instead of a search, and credits its source under the sign with a link (the NYT's attribution, or Open Library's). The ladder still leans on the Mystery bookcase |
 | Tests | `tests/e2e/library.spec.js` | It stands first, by the help desk, and first in Places; it loads from the route and not a search, with the NYT credit; Open Library's credit; a failed load offers Retry, then shows the books. The route itself was checked live against Open Library, and against a sample NYT reply |
+
+### A reader's profile fills a laptop window (AI-generated)
+
+Written by Claude Code at Sonya's request, test first. Layout only: no logic or endpoints.
+Team to review: the route line in `client/src/router/index.js` is shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Route | `client/src/router/index.js` | `reader-room` gets `meta.wide`, so the profile leaves the phone column on a laptop. It keeps the Readalot header, which is where the Daily button sits |
+| Profile | `client/src/views/ReaderRoomView.vue` | From 768px: two columns up to 1100px wide, the reader card, Visit room, Follow and Message on the left (staying in view as you scroll), the Currently Reading, Reading Prefs and Books You Both Have cards on the right. A phone keeps the one column. Back to Discover is a pixel button in the Daily button's look (`btn-secondary px-sign`, with the building back buttons' chevron) |
+| Tests | `tests/e2e/reader-profile.spec.js` | On a laptop: nothing covers Back to Discover and nothing scrolls sideways; the header and its search stay; the cards sit beside the reader. On a phone: the cards come under Follow and Message. Back to Discover has the Daily button's frame, fill and shadow, and goes to the Cafe |

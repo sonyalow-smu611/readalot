@@ -75,45 +75,57 @@ async function follow() {
 
 <template>
   <main class="reader-room" :style="colours">
-    <RouterLink class="back-link" to="/people">← Back to Discover</RouterLink>
+    <div class="back-row">
+      <RouterLink class="btn btn-secondary px-sign back-link" to="/people">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+        Back to Discover
+      </RouterLink>
+    </div>
 
     <template v-if="reader">
-      <ReaderCard :reader="reader" :match="people.compatibility(reader)" />
-      <RouterLink class="btn btn-primary visit-room" :to="{ name: 'reader-house', params: { id: reader.id } }">
-        Visit {{ firstName }}'s room
-      </RouterLink>
-      <div class="actions">
-        <button type="button" class="btn btn-primary follow-button" :aria-pressed="following" @click="follow">{{ following ? 'Following' : 'Follow' }}</button>
-        <button ref="messageButton" type="button" class="btn btn-primary message-button" @click="chatOpen = true">Message</button>
+      <!-- on a laptop: the reader on the left, the cards beside them -->
+      <div class="reader-layout">
+        <div class="reader-side">
+          <ReaderCard :reader="reader" :match="people.compatibility(reader)" />
+          <RouterLink class="btn btn-primary visit-room" :to="{ name: 'reader-house', params: { id: reader.id } }">
+            Visit {{ firstName }}'s room
+          </RouterLink>
+          <div class="actions">
+            <button type="button" class="btn btn-primary follow-button" :aria-pressed="following" @click="follow">{{ following ? 'Following' : 'Follow' }}</button>
+            <button ref="messageButton" type="button" class="btn btn-primary message-button" @click="chatOpen = true">Message</button>
+          </div>
+          <p v-if="error" class="error" role="alert">{{ error }}</p>
+        </div>
+
+        <div class="reader-cards">
+          <PixelCard title="Currently Reading" icon="📖">
+            <PixelBookRow v-if="currentBook" :title="currentBook.title" :author="currentBook.author" :genre="currentBook.genre">
+              <GenreChip v-if="currentBook.genre" :genre="currentBook.genre" />
+            </PixelBookRow>
+            <p v-else class="card-empty">Not reading anything right now</p>
+          </PixelCard>
+
+          <PixelCard title="Reading Prefs" icon="💭">
+            <ul class="genre-list" aria-label="Favourite genres">
+              <li v-for="genre in reader.favoriteGenres" :key="genre"><GenreChip :genre="genre" :shared="sharedGenres.includes(genre)" /></li>
+            </ul>
+            <p class="in-common">{{ sharedGenres.length ? `★ ${sharedGenres.length} in common: ${sharedGenres.join(', ')}` : 'No genres in common yet' }}</p>
+          </PixelCard>
+
+          <PixelCard title="Books You Both Have" icon="🤝">
+            <template v-if="sharedBooks.length">
+              <p class="shared-count">{{ sharedBooks.length }} shared {{ sharedBooks.length === 1 ? 'book' : 'books' }} with You</p>
+              <ul class="book-list">
+                <li v-for="book in sharedBooks" :key="book.id"><PixelBookRow :title="book.title" :author="book.author" :genre="book.genre" /></li>
+              </ul>
+            </template>
+            <template v-else>
+              <p class="card-empty">No books in common yet. Their room's shelf has everything they're reading.</p>
+              <RouterLink class="btn btn-secondary btn-sm shelf-link" :to="{ name: 'reader-house-shelf', params: { id: reader.id } }">See {{ firstName }}'s shelf</RouterLink>
+            </template>
+          </PixelCard>
+        </div>
       </div>
-      <p v-if="error" class="error" role="alert">{{ error }}</p>
-
-      <PixelCard title="Currently Reading" icon="📖">
-        <PixelBookRow v-if="currentBook" :title="currentBook.title" :author="currentBook.author" :genre="currentBook.genre">
-          <GenreChip v-if="currentBook.genre" :genre="currentBook.genre" />
-        </PixelBookRow>
-        <p v-else class="card-empty">Not reading anything right now</p>
-      </PixelCard>
-
-      <PixelCard title="Reading Prefs" icon="💭">
-        <ul class="genre-list" aria-label="Favourite genres">
-          <li v-for="genre in reader.favoriteGenres" :key="genre"><GenreChip :genre="genre" :shared="sharedGenres.includes(genre)" /></li>
-        </ul>
-        <p class="in-common">{{ sharedGenres.length ? `★ ${sharedGenres.length} in common: ${sharedGenres.join(', ')}` : 'No genres in common yet' }}</p>
-      </PixelCard>
-
-      <PixelCard title="Books You Both Have" icon="🤝">
-        <template v-if="sharedBooks.length">
-          <p class="shared-count">{{ sharedBooks.length }} shared {{ sharedBooks.length === 1 ? 'book' : 'books' }} with You</p>
-          <ul class="book-list">
-            <li v-for="book in sharedBooks" :key="book.id"><PixelBookRow :title="book.title" :author="book.author" :genre="book.genre" /></li>
-          </ul>
-        </template>
-        <template v-else>
-          <p class="card-empty">No books in common yet. Their room's shelf has everything they're reading.</p>
-          <RouterLink class="btn btn-secondary btn-sm shelf-link" :to="{ name: 'reader-house-shelf', params: { id: reader.id } }">See {{ firstName }}'s shelf</RouterLink>
-        </template>
-      </PixelCard>
 
       <ReaderChatDialog :key="reader.id" :open="chatOpen" :reader-id="reader.id" :reader-name="reader.displayName" @close="closeChat" />
       <p class="demo-note">These are sample readers. Chats are saved only in this browser.</p>
@@ -147,16 +159,60 @@ async function follow() {
   margin-right: auto;
 }
 
+/* the Daily button's look, at the left of the column */
+.back-row {
+  margin-bottom: 18px;
+}
+
 .back-link {
-  display: block;
-  margin-bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
-  font-weight: 700;
-  color: var(--profile-ink-soft);
+}
+
+.back-link svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .reader-room .reader-card {
   margin-bottom: 18px;
+}
+
+/* a laptop: the reader stays in view on the left while the cards run down the right */
+@media (min-width: 768px) {
+  .reader-room {
+    padding: 20px 32px 95px;
+  }
+
+  .reader-room > .back-row,
+  .reader-room > .reader-layout,
+  .reader-room > .demo-note {
+    max-width: 1100px;
+  }
+
+  .reader-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+  }
+
+  .reader-side {
+    position: sticky;
+    top: 20px;
+  }
+
+  /* the first card's tab lines up with the top of the reader card */
+  .reader-cards > :first-child {
+    margin-top: 0;
+  }
 }
 
 /* Visit, the main action: wide and green */

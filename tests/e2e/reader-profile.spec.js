@@ -181,11 +181,72 @@ test.describe("books you both have", () => {
   });
 });
 
+test("Back to Discover is a pixel button like the Daily button, and leads to the Cafe", async ({ page }) => {
+  await page.goto("/people/emma.reads");
+  const back = page.getByRole("link", { name: "Back to Discover" });
+  const daily = page.getByRole("button", { name: /^Daily tasks/ });
+  await expect(daily).toBeVisible();
+  const look = (el) => el.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return [style.borderTopWidth, style.borderTopColor, style.backgroundColor, style.boxShadow];
+  });
+  expect(await look(back)).toEqual(await look(daily));
+
+  await back.click();
+  await expect(page).toHaveURL(/\/cafe$/);
+});
+
 test("an address with no reader says so and leads back to the Cafe", async ({ page }) => {
   await page.goto("/people/nobody.here");
   await expect(page.getByRole("heading", { level: 1, name: "Reader not found" })).toBeVisible();
   await page.getByRole("link", { name: "Find readers in the Cafe" }).click();
   await expect(page).toHaveURL(/\/cafe$/);
+});
+
+test.describe("on a laptop", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("Back to Discover isn't covered by anything, and nothing scrolls sideways", async ({ page }) => {
+    await page.goto("/people/emma.reads");
+    const back = page.getByRole("link", { name: "Back to Discover" });
+    await expect(back).toBeVisible();
+    // once the page has slid in and the Daily button has found its spot
+    await expect.poll(() => back.evaluate((link) => {
+      const box = link.getBoundingClientRect();
+      return link.contains(document.elementFromPoint(box.left + 4, box.top + box.height / 2));
+    })).toBe(true);
+    const sideways = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(sideways).toBe(0);
+  });
+
+  test("the Readalot header and its search stay above it", async ({ page }) => {
+    await page.goto("/people/emma.reads");
+    await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
+    await expect(page.getByRole("banner").getByRole("link", { name: /search/i })).toBeVisible();
+  });
+
+  test("the cards sit beside the reader, not under it", async ({ page }) => {
+    await page.goto("/people/emma.reads");
+    const visit = await page.getByRole("link", { name: "Visit Emma's room" }).boundingBox();
+    const reading = card(page, "Currently Reading");
+    await expect(reading).toBeVisible();
+    const box = await reading.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(visit.x + visit.width);
+    // it starts beside the reader card, above the Visit button
+    expect(box.y).toBeLessThan(visit.y);
+  });
+});
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("the cards come under Follow and Message", async ({ page }) => {
+    await page.goto("/people/emma.reads");
+    const message = await page.getByRole("button", { name: "Message", exact: true }).boundingBox();
+    const reading = card(page, "Currently Reading");
+    await expect(reading).toBeVisible();
+    expect((await reading.boundingBox()).y).toBeGreaterThanOrEqual(message.y + message.height);
+  });
 });
 
 test.describe("on a small phone", () => {
