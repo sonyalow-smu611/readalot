@@ -128,7 +128,6 @@ async function follow() {
       </div>
 
       <ReaderChatDialog :key="reader.id" :open="chatOpen" :reader-id="reader.id" :reader-name="reader.displayName" @close="closeChat" />
-      <p class="demo-note">These are sample readers. Chats are saved only in this browser.</p>
     </template>
     <p v-else-if="loading" class="card-empty" role="status">Loading reader…</p>
     <section v-else-if="loadError" class="notice" role="alert">

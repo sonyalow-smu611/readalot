@@ -3,7 +3,7 @@
 import { supabase } from './supabase.js'
 import { getReader } from './api.js'
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DEMO_PREFIX = 'readalot_demo_messages_unlinked_v2'
 
 export async function getChatIdentity() {
