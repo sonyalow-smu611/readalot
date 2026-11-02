@@ -1,5 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 import { expect, test } from "./fixtures.js";
+import { EMMA, mockFriends } from "./townFriends.js";
 
 // A reader's profile, opened from a reader in the Cafe: who they are, how well your reading
 // matches, and the way into their room. The signed-in test reader likes Fantasy and has no books;
@@ -31,28 +32,45 @@ test.describe("the reader card", () => {
   });
 });
 
-test.describe("follow", () => {
-  test("Follow turns to Following and is still on after a reload", async ({ page }) => {
+// Add friend sends the same friend request as the town's Friends list. The API runs without
+// Supabase in these tests, where nobody has friends, so mockFriends answers it.
+test.describe("add friend", () => {
+  test("Add friend sends Emma a friend request, and says Request sent until she answers", async ({ page }) => {
+    const town = await mockFriends(page);
     await page.goto("/people/emma.reads");
-    await page.getByRole("button", { name: "Follow", exact: true }).click();
+    await page.getByRole("button", { name: "Add friend", exact: true }).click();
 
-    const following = page.getByRole("button", { name: "Following", exact: true });
-    await expect(following).toHaveAttribute("aria-pressed", "true");
+    const sent = page.getByRole("button", { name: "Request sent", exact: true });
+    await expect(sent).toBeDisabled();
+    expect(town.asked).toEqual(["emma.reads"]);
     await page.reload();
-    await expect(following).toHaveAttribute("aria-pressed", "true");
-
-    // and off again, so the next test meets Emma unfollowed
-    await following.click();
-    await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveAttribute("aria-pressed", "false");
+    await expect(sent).toBeDisabled();
   });
 
-  test("a follow that isn't saved says so", async ({ page }) => {
-    await page.route("**/api/people/*/follow", (route) => route.fulfill({ status: 500, json: { error: "Server error" } }));
+  test("a reader who accepts straight away shows Added as friend, and still does after a reload", async ({ page }) => {
+    const town = await mockFriends(page);
+    // a demo reader accepts at once: she's a friend, not an open request
+    await page.route("**/api/friends/requests", (route) => {
+      town.friends.push(EMMA);
+      return route.fulfill({ status: 201, json: { requested: true } });
+    });
     await page.goto("/people/emma.reads");
-    await page.getByRole("button", { name: "Follow", exact: true }).click();
+    await page.getByRole("button", { name: "Add friend", exact: true }).click();
+
+    const added = page.getByRole("button", { name: "Added as friend", exact: true });
+    await expect(added).toBeDisabled();
+    await page.reload();
+    await expect(added).toBeDisabled();
+  });
+
+  test("a friend request that isn't sent says so, and Add friend stays", async ({ page }) => {
+    await mockFriends(page);
+    await page.route("**/api/friends/requests", (route) => route.fulfill({ status: 500, json: { error: "Server error" } }));
+    await page.goto("/people/emma.reads");
+    await page.getByRole("button", { name: "Add friend", exact: true }).click();
 
     await expect(page.getByRole("alert")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveAttribute("aria-pressed", "false");
+    await expect(page.getByRole("button", { name: "Add friend", exact: true })).toBeEnabled();
   });
 });
 
@@ -240,7 +258,7 @@ test.describe("on a laptop", () => {
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("the cards come under Follow and Message", async ({ page }) => {
+  test("the cards come under Add friend and Message", async ({ page }) => {
     await page.goto("/people/emma.reads");
     const message = await page.getByRole("button", { name: "Message", exact: true }).boundingBox();
     const reading = card(page, "Currently Reading");

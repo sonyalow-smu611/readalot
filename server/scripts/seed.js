@@ -159,15 +159,4 @@ if (!count) {
   console.log("✓ quotes (already seeded)");
 }
 
-await ok(
-  "connections",
-  supabase.from("connections").upsert(
-    [
-      { user_id: DEMO_ID, target_user_id: readerId(1) },
-      { user_id: DEMO_ID, target_user_id: readerId(3) }
-    ],
-    { onConflict: "user_id,target_user_id" }
-  )
-);
-
 console.log(`\nDone. Add this to .env:\nDEMO_USER_ID=${DEMO_ID}`);

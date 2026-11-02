@@ -731,3 +731,26 @@ Team to review: the route line in `client/src/router/index.js` is shared.
 | Route | `client/src/router/index.js` | `reader-room` gets `meta.wide`, so the profile leaves the phone column on a laptop. It keeps the Readalot header, which is where the Daily button sits |
 | Profile | `client/src/views/ReaderRoomView.vue` | From 768px: two columns up to 1100px wide, the reader card, Visit room, Follow and Message on the left (staying in view as you scroll), the Currently Reading, Reading Prefs and Books You Both Have cards on the right. A phone keeps the one column. Back to Discover is a pixel button in the Daily button's look (`btn-secondary px-sign`, with the building back buttons' chevron) |
 | Tests | `tests/e2e/reader-profile.spec.js` | On a laptop: nothing covers Back to Discover and nothing scrolls sideways; the header and its search stay; the cards sit beside the reader. On a phone: the cards come under Follow and Message. Back to Discover has the Daily button's frame, fill and shadow, and goes to the Cafe |
+
+### "Add friend" on a reader's profile, and a username for every reader (AI-generated)
+
+Written by Claude Code at Sonya's request, test first. Team to review: `database/` is shared, and
+the SQL is run by hand in Supabase.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Profile | `client/src/views/ReaderRoomView.vue` | The Follow button reads "Add friend", and "Added as friend" once pressed. Only the words changed |
+| Usernames | `database/usernames.sql` | Run after `schema.sql` and `profiles_and_tour.sql`; safe to re-run. Every profile with a blank username gets firstname.word (dylan.pages, like the demo readers' sofia.shelves), a number on the end when taken; a trigger gives new profiles one when Welcome saves them. The trigger runs as the function's owner, so it sees private readers' names too, and readers can't call the name lookup through the API |
+| Tests | `tests/e2e/reader-profile.spec.js`, `server/tests/usernames.check.js` | The follow tests use the new labels. The check runs the SQL in a throwaway Postgres in Docker (`node server/tests/usernames.check.js`, needs Docker): blank names filled and lowercase, 40 Dylans all different, existing names kept, re-running changes nothing, new profiles get one, a sign-up still works when private readers hold every dylan.<word>, and a reader can't call the lookup |
+
+### The profile's Add friend sends a friend request; connections is dropped (AI-generated)
+
+Written by Claude Code at Sonya's request, test first, from `.scratch/profile-add-friend-friendships/spec.md`.
+Team to review: the server, `database/`, the people store and `services/api.js` are shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Profile | `client/src/views/ReaderRoomView.vue` | Add friend sends the town's friend request (`sendFriendRequest`) and reads its state from `town/nearbyStore.js`: "Add friend", "Request sent" while they haven't answered, "Added as friend" once friends. The last two can't be pressed; removing a friend stays in the town's Friends list |
+| Follows removed | `client/src/stores/people.js`, `client/src/services/api.js`, `server/src/routes/people.js`, `server/src/services/readers.js`, `server/scripts/seed.js` | The follow endpoints (`GET /api/people/following`, `PUT`/`DELETE /api/people/:id/follow`), their service code, the store's following list and the seeded follows. `views/PeopleView.vue` (no route reaches it) still calls the removed store functions |
+| SQL | `database/drop_connections.sql`, `database/schema.sql` | Drops `connections` (re-runnable, no cascade); `schema.sql` no longer makes it |
+| Tests | `tests/e2e/reader-profile.spec.js`, `server/tests/dropConnections.check.js`, `server/tests/dockerPostgres.js` | Add friend sends the request and shows Request sent, or Added as friend when accepted at once, after a reload too; a failed request alerts and keeps Add friend. The SQL check runs in Docker: connections dropped, profiles and friendships kept, safe twice, a fresh schema.sql has no connections. The Docker setup is shared with the usernames check |

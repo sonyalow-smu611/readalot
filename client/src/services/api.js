@@ -110,14 +110,6 @@ export function getReader(id) {
   return request(`/people/${encodeURIComponent(id)}`);
 }
 
-export function getFollowing() {
-  return request("/people/following");
-}
-
-export function setFollowing(id, follow) {
-  return request(`/people/${encodeURIComponent(id)}/follow`, { method: follow ? "PUT" : "DELETE" });
-}
-
 export function getCompatibility(userId) {
   return request(`/people/${userId}/compatibility`);
 }

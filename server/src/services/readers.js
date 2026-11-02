@@ -1,6 +1,6 @@
 // Other readers, as the Cafe, the town and reader profiles show them: discoverable profiles with
-// the books on their shelves, and who you follow (the connections table). Without Supabase the
-// demo readers in data/demoReaders.js stand in, and follows are kept in memory.
+// the books on their shelves. Without Supabase the demo readers in data/demoReaders.js stand in.
+// Friends are in friends.js (the friendships table).
 import { DEMO_BOOKS, DEMO_READERS } from "../../data/demoReaders.js";
 import { env } from "./env.js";
 import { supabase } from "./supabase.js";
@@ -33,8 +33,6 @@ function toReader(profile, books) {
 
 // ---- without Supabase: the demo readers, held in memory -----------------------------------
 
-const demoFollows = new Map();
-
 function demoReaders() {
   const now = Date.now();
   return DEMO_READERS.map((reader) =>
@@ -56,10 +54,6 @@ function demoReaders() {
   );
 }
 
-function demoFollowing(viewerId) {
-  if (!demoFollows.has(viewerId)) demoFollows.set(viewerId, new Set());
-  return demoFollows.get(viewerId);
-}
 
 // ---- with Supabase -------------------------------------------------------------------------
 
@@ -154,38 +148,3 @@ export async function findReader(handle, viewerId) {
   return (await withBooks([data]))[0];
 }
 
-// The ids (as in reader.id) of the readers someone follows.
-export async function followingOf(viewerId) {
-  if (!env.HAS_SUPABASE) {
-    const following = demoFollowing(viewerId);
-    return demoReaders().filter((reader) => following.has(reader.userId)).map((reader) => reader.id);
-  }
-  const { data, error } = await supabase
-    .from("connections")
-    .select("target:profiles!connections_target_user_id_fkey(id, username)")
-    .eq("user_id", viewerId);
-  if (error) throw error;
-  return data.filter((row) => row.target).map((row) => row.target.username || row.target.id);
-}
-
-// Follow or unfollow a reader (by reader.id); false when there is no such reader.
-export async function setFollowing(viewerId, handle, follow) {
-  const reader = await findReader(handle);
-  if (!reader || reader.userId === viewerId) return false;
-
-  if (!env.HAS_SUPABASE) {
-    const following = demoFollowing(viewerId);
-    if (follow) following.add(reader.userId);
-    else following.delete(reader.userId);
-    return true;
-  }
-
-  const query = follow
-    ? supabase
-        .from("connections")
-        .upsert({ user_id: viewerId, target_user_id: reader.userId }, { onConflict: "user_id,target_user_id" })
-    : supabase.from("connections").delete().eq("user_id", viewerId).eq("target_user_id", reader.userId);
-  const { error } = await query;
-  if (error) throw error;
-  return true;
-}
