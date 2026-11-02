@@ -52,7 +52,7 @@ const initials = computed(() => props.reader.initials || name.value.split(/\s+/)
       <p v-if="currentBook" class="reader-popup__reading">📖 Reading: <strong>{{ currentBook.title }}</strong></p>
     </div>
 
-    <button type="button" class="reader-popup__visit" @click="emit('visit')">Visit {{ name.split(' ')[0] }}'s room →</button>
+    <button type="button" class="reader-popup__visit" @click="emit('visit')">Visit {{ name.split(' ')[0] }}'s profile →</button>
   </aside>
 </template>
 
