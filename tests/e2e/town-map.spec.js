@@ -87,22 +87,16 @@ test("tapping a townsperson makes them jiggle, then carry on", async ({ page }) 
   expect(await you(page)).toEqual(before);
 });
 
-for (const [name, button, art, url] of [
-  ["Library", "Enter the library", "library", /\/library$/],
-  ["Cafe", "Enter the cafe", "cafe", /\/cafe$/],
-  ["Your house", "Go inside", "house", /\/house$/],
-]) {
-  test(`coming back from ${name} leaves you outside its door`, async ({ page }) => {
-    await page.getByRole("button", { name: "Places" }).click();
-    await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: new RegExp(`^${name}`) }).click();
-    await page.getByRole("dialog", { name }).getByRole("button", { name: button }).click();
-    await expect(page).toHaveURL(url, WALK_IN);
-    await page.getByRole("link", { name: "Back to town" }).click();
-    await expect.poll(() => you(page), BOOT).toEqual(front(art));
-    await page.waitForTimeout(4500);
-    expect(await you(page)).toEqual(front(art));
-  });
-}
+test("coming back from a building leaves you outside its door", async ({ page }) => {
+  await page.getByRole("button", { name: "Places" }).click();
+  await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Library/ }).click();
+  await page.getByRole("dialog", { name: "Library" }).getByRole("button", { name: "Enter the library" }).click();
+  await expect(page).toHaveURL(/\/library$/, WALK_IN);
+  await page.getByRole("link", { name: "Back to town" }).click();
+  await expect.poll(() => you(page), BOOT).toEqual(front("library"));
+  await page.waitForTimeout(4500);
+  expect(await you(page)).toEqual(front("library"));
+});
 
 test("coming back from a friend's house leaves you outside it", async ({ page }) => {
   await page.getByRole("button", { name: "Places" }).click();

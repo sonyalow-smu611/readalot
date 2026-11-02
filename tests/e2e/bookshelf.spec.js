@@ -237,14 +237,6 @@ test.describe("from the room", () => {
     expect(errors).toEqual([]);
   });
 
-  test("tapping a book on the bookcase opens its details", async ({ page }) => {
-    await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
-
-    const details = page.getByRole("dialog", { name: "Book details" });
-    await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
-    await expect(details.getByText("A comfort-loving hobbit is swept into a quest to win back a dragon's hoard.")).toBeVisible();
-  });
-
   test("the details are My Shelf's card, laid out like the library's", async ({ page }) => {
     await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
 

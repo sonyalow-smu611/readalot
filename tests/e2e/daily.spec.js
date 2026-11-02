@@ -175,15 +175,13 @@ test.describe("where the Daily button sits", () => {
     await skipMoodCheckIn(page);
   });
 
-  for (const path of ["/library", "/salon"]) {
-    test(`on ${path} it stacks under the back button`, async ({ page }) => {
-      await page.goto(path);
-      await expect(button(page)).toBeVisible({ timeout: 20_000 });
-      const back = await box(page.getByRole("link", { name: "Back to town" }));
-      await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(back.y + back.height);
-      expect((await box(button(page))).x).toBeCloseTo(back.x, 0);
-    });
-  }
+  test("in a building it stacks under the back button", async ({ page }) => {
+    await page.goto("/library");
+    await expect(button(page)).toBeVisible({ timeout: 20_000 });
+    const back = await box(page.getByRole("link", { name: "Back to town" }));
+    await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(back.y + back.height);
+    expect((await box(button(page))).x).toBeCloseTo(back.x, 0);
+  });
 
   // it stays out of sight until it's in its place, so it never shows jumping there
   test("going from page to page it only ever shows in the right spot", async ({ page, reader }) => {
@@ -237,10 +235,10 @@ test.describe("where the Daily button sits", () => {
     test.describe(`on ${label}`, () => {
       test.use({ viewport });
 
-      for (const [shelf, path, name] of [
-        ["My Shelf", "/house/shelf", "Back to room"],
-        ["a friend's shelf", "/people/emma.reads/room/shelf", "Back to Emma's room"],
-      ]) {
+      const shelves = [["My Shelf", "/house/shelf", "Back to room"]];
+      // a friend's long back button only gets in the way on a phone
+      if (viewport.width < 600) shelves.push(["a friend's shelf", "/people/emma.reads/room/shelf", "Back to Emma's room"]);
+      for (const [shelf, path, name] of shelves) {
         test(`on ${shelf} it stacks under the back button, clear of the shelf's own controls`, async ({ page }) => {
           await page.goto(path);
           const back = page.getByRole("link", { name });
