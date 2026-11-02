@@ -67,22 +67,38 @@ watch(
   { immediate: true },
 )
 
+// Where an element sits in the frame, from the page's layout. Pages slide in with transforms, and
+// the layout's numbers are the same before, during and after that, unlike what's on screen.
+function layoutBox(el, frame) {
+  let top = 0
+  let left = 0
+  for (let at = el; at && at !== frame; at = at.offsetParent) {
+    top += at.offsetTop
+    left += at.offsetLeft
+  }
+  return { top, left, right: left + el.offsetWidth, bottom: top + el.offsetHeight }
+}
+
 // { top, left } or { top, right } in the frame. Measured, because the buttons differ from page to
 // page and a back button's label can be long.
 function findSpot(frame) {
-  const titleBarButton = document.querySelector(TITLE_BAR_BUTTON)?.getBoundingClientRect()
+  const find = (selector) => {
+    const el = document.querySelector(selector)
+    return el ? layoutBox(el, frame) : null
+  }
+  const titleBarButton = find(TITLE_BAR_BUTTON)
   // from the right, so the words slide out over the title and not over the search button
-  if (titleBarButton) return { top: titleBarButton.top - frame.top, right: frame.right - titleBarButton.left + GAP }
-  const back = document.querySelector(BACK)?.getBoundingClientRect()
+  if (titleBarButton) return { top: titleBarButton.top, right: frame.offsetWidth - titleBarButton.left + GAP }
+  const back = find(BACK)
   if (!back) return EDGE
-  if (BESIDE_BACK.includes(route.name)) return { top: back.top - frame.top, left: back.right - frame.left + GAP }
-  const below = [...document.querySelectorAll(UNDER_BACK)].map((el) => el.getBoundingClientRect().bottom)
-  return { top: Math.max(EDGE.top, Math.max(back.bottom, ...below) - frame.top + GAP), left: back.left - frame.left }
+  if (BESIDE_BACK.includes(route.name)) return { top: back.top, left: back.right + GAP }
+  const below = [...document.querySelectorAll(UNDER_BACK)].map((el) => layoutBox(el, frame).bottom)
+  return { top: Math.max(EDGE.top, Math.max(back.bottom, ...below) + GAP), left: back.left }
 }
 
 function measure() {
   measuring = 0
-  const frame = tab.value?.$el.offsetParent?.getBoundingClientRect()
+  const frame = tab.value?.$el.offsetParent
   if (frame) spot.value = findSpot(frame)
 }
 

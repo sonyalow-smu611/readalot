@@ -404,10 +404,11 @@ function selectFriend(id) {
   friendId.value = id
 }
 
-// From the friends list: to them where they're walking, or to their house if they're in.
+// From the friends list: to them where they're walking, or to their house if they're in. Only
+// someone with a character can be out walking.
 function findFriend(friend) {
   if (entering.value) return
-  if (friend.online) friendFocus.value = { id: friend.id, key: Date.now() }
+  if (friend.online && friend.character) friendFocus.value = { id: friend.id, key: Date.now() }
   else if (friend.house) go(friend.house)
 }
 

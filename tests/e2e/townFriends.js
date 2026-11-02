@@ -8,7 +8,7 @@ export const friend = (id, displayName, spot, { away = 0, reading = null } = {})
   userId: `account-${id}`,
   username: id,
   displayName,
-  character: null,
+  character: { base: "maya" },
   books: reading ? [{ id: `book-${id}`, title: reading, author: "Someone", genre: "Fantasy", status: "reading" }] : [],
   lastSeenAt: new Date(Date.now() - away * MINUTE).toISOString(),
   spot,
