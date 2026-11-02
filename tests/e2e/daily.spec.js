@@ -230,14 +230,34 @@ test.describe("where the Daily button sits", () => {
     await expect.poll(async () => clear(await box(button(page)), under)).toBe(true);
   });
 
-  test("on My Shelf it sits beside the back button, off the search box", async ({ page }) => {
-    await page.goto("/house/shelf");
-    const back = page.getByRole("link", { name: "Back to room" });
-    await expect(back).toBeVisible({ timeout: 20_000 });
-    const beside = await box(back);
-    await expect.poll(async () => (await box(button(page))).x).toBeGreaterThanOrEqual(beside.x + beside.width);
-    expect((await box(button(page))).y).toBeCloseTo(beside.y, 0);
-  });
+  for (const [label, viewport] of [
+    ["a phone", { width: 390, height: 844 }],
+    ["a laptop", { width: 1440, height: 900 }],
+  ]) {
+    test.describe(`on ${label}`, () => {
+      test.use({ viewport });
+
+      for (const [shelf, path, name] of [
+        ["My Shelf", "/house/shelf", "Back to room"],
+        ["a friend's shelf", "/people/emma.reads/room/shelf", "Back to Emma's room"],
+      ]) {
+        test(`on ${shelf} it stacks under the back button, clear of the shelf's own controls`, async ({ page }) => {
+          await page.goto(path);
+          const back = page.getByRole("link", { name });
+          await expect(back).toBeVisible({ timeout: 20_000 });
+          const under = await box(back);
+          await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(under.y + under.height);
+          expect((await box(button(page))).x).toBeCloseTo(under.x, 0);
+
+          await expect(button(page)).toHaveCSS("opacity", "1");
+          const daily = await box(button(page));
+          const controls = [page.getByRole("button", { name: "Spines" }), page.getByRole("button", { name: "Covers" }), page.getByRole("heading", { level: 2 }).first()];
+          for (const control of controls) expect(clear(daily, await box(control))).toBe(true);
+          if (await page.getByRole("search").count()) expect(clear(daily, await box(page.getByRole("search")))).toBe(true);
+        });
+      }
+    });
+  }
 
   test("on search it sits beside the Back button, which can still be pressed", async ({ page }) => {
     await page.goto("/search");

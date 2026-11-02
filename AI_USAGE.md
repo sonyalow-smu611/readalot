@@ -679,12 +679,12 @@ Shared (for a teammate to review):
 | Docs | `AGENTS.md` | Search is listed with the library |
 | Tests | `tests/e2e/library.spec.js`, `find-book.spec.js`, `search.spec.js` (new), `library-wide.spec.js`, `scan-book.spec.js`, `fixtures.js` (`openPlaces`), `buttons.spec.js`, `back-button.spec.js`, `smoke.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `reviews.spec.js`, `daily.spec.js`, `house-desktop.spec.js` | The top line on a phone and a laptop; the Places menu; ten bookcases with signs, icons and fonts, and no emoji; an opened bookcase (24 books, uneven shelves, Covers, a book's preview, a phone); Add to To be read and Where to get, in the preview and on the book's page; search full screen, its cards, Back. Other tests updated for the new names and for search filling the window |
 
-### Town notifications, tap to walk and the fuller friends list (AI-generated, team to agree)
+### Town notifications, tap to walk and the fuller friends list (AI-generated, team-agreed)
 
-Written by Claude Code at Dylan's request. Most of this is the town, which is Dylan's part.
-**The team has not agreed this yet:** tapping to walk is interactivity, and
-`GET /api/notifications/visits` is a backend endpoint, so both need the team's agreement recorded
-here before they merge. Team to review: `server/` and `services/api.js` are shared. Aalric's
+Written by Claude Code at Dylan's request. Most of this is the town, which is Dylan's part. It
+includes interactivity (tapping to walk) and a backend endpoint (`GET /api/notifications/visits`),
+which `PROJECT.md` only allows AI to write when the team agrees: Dylan told the assistant the team
+agreed to both, and it is recorded here. Team to review: `server/` and `services/api.js` are shared. Aalric's
 username work connects at `client/src/town/username.js`, which lists the two things it needs.
 
 | Area | Files | What AI produced |

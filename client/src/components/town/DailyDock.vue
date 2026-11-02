@@ -1,10 +1,10 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The day's tasks on every page but the town, which has its own: the same button, opening the same
-// panel. It lines up with the buttons each page already has. Pages that are a scene (the room, the
-// cafe, the library, the salon) have room down the left, so it stacks under theirs as the town
-// does. Pages of content have none, so it joins their row: in the title bar beside the search
-// button, or beside the back button. A task's Go goes to its building; a friend's house is in town.
+// panel. It lines up with the buttons each page already has. Most pages have room down the left,
+// so it stacks under their buttons as the town does. Where they don't, it joins the row: in the
+// title bar beside the search button, or beside search's Back. A task's Go goes to its building; a
+// friend's house is in town.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -21,7 +21,7 @@ const TITLE_BAR_BUTTON = '.app-header__card a.app-header__icon'
 // what a scene keeps down its left side, under the back button
 const UNDER_BACK = '.strip__menu, .cafe__count'
 // pages whose content starts right under the back button
-const BESIDE_BACK = ['my-shelf', 'reader-house-shelf', 'search']
+const BESIDE_BACK = ['search']
 // the town's Daily button sits this far in, for a page with nothing in its corner
 const EDGE = { top: 14, left: 17 }
 const GAP = 8
