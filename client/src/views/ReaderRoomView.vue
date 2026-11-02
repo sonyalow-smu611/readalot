@@ -8,7 +8,9 @@ import ReaderCard from '../components/people/ReaderCard.vue';
 import ReaderChatDialog from '../components/people/ReaderChatDialog.vue';
 import { PAL } from '@/buildings/library/hall/palette.js';
 import { getCurrentlyReading } from '@/lib/readerMatch.js';
+import { sendFriendRequest } from '@/services/api.js';
 import { usePeopleStore } from '@/stores/people.js';
+import { useNearbyStore } from '@/town/nearbyStore.js';
 
 // the Library's colours, read from its palette so the two stay in step
 const colours = {
@@ -31,10 +33,11 @@ const colours = {
 
 const route = useRoute();
 const people = usePeopleStore();
+// your friends and requests: the same friendships the town's Friends list shows
+const nearby = useNearbyStore();
 const reader = ref(null);
 const loading = ref(true);
 const loadError = ref('');
-const following = ref(false);
 const error = ref('');
 const chatOpen = ref(false);
 const messageButton = ref(null);
@@ -42,6 +45,14 @@ const firstName = computed(() => reader.value?.displayName.split(' ')[0] ?? '');
 const currentBook = computed(() => reader.value ? getCurrentlyReading(reader.value) : null);
 const sharedBooks = computed(() => reader.value ? people.sharedBooks(reader.value) : []);
 const sharedGenres = computed(() => reader.value ? people.sharedGenres(reader.value) : []);
+// 'friend', 'asked' (waiting for them to answer) or 'none'
+const friendship = computed(() => {
+  const id = reader.value?.id;
+  if (nearby.friends.some((friend) => friend.id === id)) return 'friend';
+  if (nearby.outgoing.includes(id)) return 'asked';
+  return 'none';
+});
+const friendLabel = computed(() => ({ friend: 'Added as friend', asked: 'Request sent', none: 'Add friend' })[friendship.value]);
 
 async function load(id) {
   loading.value = true;
@@ -49,7 +60,6 @@ async function load(id) {
   error.value = '';
   try {
     reader.value = await people.fetchReader(id);
-    following.value = people.isFollowing(id);
   } catch (err) {
     reader.value = null;
     loadError.value = err.message || "Couldn't load this reader.";
@@ -59,6 +69,8 @@ async function load(id) {
 }
 
 watch(() => route.params.id, load, { immediate: true });
+// without them the button says Add friend, and the profile still opens
+nearby.loadFriends().catch(() => {});
 
 // the chat closes back to the Message button that opened it
 function closeChat() {
@@ -66,10 +78,14 @@ function closeChat() {
   messageButton.value?.focus();
 }
 
-async function follow() {
+async function addFriend() {
   error.value = '';
-  try { following.value = await people.toggleFollow(reader.value.id); }
-  catch (err) { error.value = err.message || 'Could not save your follow.'; }
+  try {
+    await sendFriendRequest(reader.value.id);
+    await nearby.loadFriends();
+  } catch (err) {
+    error.value = err.message || "Couldn't send your friend request.";
+  }
 }
 </script>
 
@@ -91,7 +107,7 @@ async function follow() {
             Visit {{ firstName }}'s room
           </RouterLink>
           <div class="actions">
-            <button type="button" class="btn btn-primary follow-button" :aria-pressed="following" @click="follow">{{ following ? 'Following' : 'Follow' }}</button>
+            <button type="button" class="btn btn-primary follow-button" :disabled="friendship !== 'none'" @click="addFriend">{{ friendLabel }}</button>
             <button ref="messageButton" type="button" class="btn btn-primary message-button" @click="chatOpen = true">Message</button>
           </div>
           <p v-if="error" class="error" role="alert">{{ error }}</p>

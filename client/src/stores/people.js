@@ -2,17 +2,16 @@
 // read them from here, so they are fetched once. Each reader is { id, userId, username,
 // displayName, initials, tagline, neighborhood, lat, lng, favoriteGenres, character, lastSeenAt,
 // books: [{ id, title, author, genre, status }] }; `id` is their username, used in links.
-// Also who you follow, and how well each reader matches your shelf and favourite genres.
+// Also how well each reader matches your shelf and favourite genres. Friends are in town/nearbyStore.js.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { getFollowing, getReader, getReaders, setFollowing } from '@/services/api.js'
+import { getReader, getReaders } from '@/services/api.js'
 import { getCompatibility, getSharedBooks, getSharedGenres } from '@/lib/readerMatch.js'
 import { useBookshelfStore } from '@/stores/bookshelf.js'
 import { useUserStore } from '@/stores/user'
 
 export const usePeopleStore = defineStore('people', () => {
   const readers = ref([])
-  const following = ref([])
   const loaded = ref(false)
   const loading = ref(false)
   const error = ref('')
@@ -23,16 +22,15 @@ export const usePeopleStore = defineStore('people', () => {
   // you, as the match compares you
   const me = computed(() => ({ books: bookshelf.books, favoriteGenres: user.profile.favouriteGenres ?? [] }))
 
-  // Fetches the readers and your follows once; `force` fetches them again.
+  // Fetches the readers once; `force` fetches them again.
   function load(force = false) {
     if (loaded.value && !force) return Promise.resolve()
     pending ??= (async () => {
       loading.value = true
       error.value = ''
       try {
-        const [list, follows] = await Promise.all([getReaders(), getFollowing()])
+        const list = await getReaders()
         readers.value = list.readers
-        following.value = follows.following
         loaded.value = true
       } catch (err) {
         error.value = err.message || "Couldn't load the readers."
@@ -64,37 +62,21 @@ export const usePeopleStore = defineStore('people', () => {
     }
   }
 
-  function isFollowing(id) {
-    return following.value.includes(String(id))
-  }
-
-  // Follow or unfollow; resolves to whether you now follow them, and throws when it isn't saved.
-  async function toggleFollow(id) {
-    const follow = !isFollowing(id)
-    await setFollowing(id, follow)
-    following.value = follow ? [...following.value, String(id)] : following.value.filter((other) => other !== String(id))
-    return follow
-  }
-
   // signed out: the next reader fetches their own
   function reset() {
     readers.value = []
-    following.value = []
     loaded.value = false
     error.value = ''
   }
 
   return {
     readers,
-    following,
     loaded,
     loading,
     error,
     load,
     find,
     fetchReader,
-    isFollowing,
-    toggleFollow,
     reset,
     compatibility: (reader) => getCompatibility(reader, me.value),
     sharedBooks: (reader) => getSharedBooks(reader, me.value),

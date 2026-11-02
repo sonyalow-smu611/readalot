@@ -8,7 +8,7 @@ through a pull request a teammate reviews.
 |---|---|---|---|---|
 | Your house | `house/` | `/house` | Sonz | `house/RoomView.vue` (My Room) |
 | Library | `library/` | `/library` | Aasim | `views/DiscoverBooksView.vue` (Discover) |
-| Cafe | `cafe/` | `/cafe` | Emiley | `views/PeopleView.vue` (Social) |
+| Cafe | `cafe/` | `/cafe` | Emiley | `cafe/CafeView.vue` (Social) |
 | Hair Salon | `salon/` | `/salon` | Aalric | Profile, now in `salon/` (split into `salon/components/`) |
 
 ## The contract

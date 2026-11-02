@@ -65,14 +65,6 @@ create table quotes (
   created_at timestamptz default now()
 );
 
-create table connections (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade,
-  target_user_id uuid references profiles(id) on delete cascade,
-  created_at timestamptz default now(),
-  unique (user_id, target_user_id)
-);
-
 create table featured_quotes (
   id uuid primary key default gen_random_uuid(),
   quote_text text not null,
