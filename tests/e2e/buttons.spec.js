@@ -1,5 +1,4 @@
 import { test as signedOut } from "@playwright/test";
-import { buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, test } from "./fixtures.js";
 import { EMMA, NOAH, mockFriends } from "./townFriends.js";
 import { SPOTS, buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, tapRoomAt, test } from "./fixtures.js";
 import { createReader, hasSupabase, NEEDS_SUPABASE, signInPage } from "./supabaseUser.js";
