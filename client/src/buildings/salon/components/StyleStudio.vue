@@ -31,7 +31,7 @@ function surprise() {
           <h2 id="looks-title" class="widget__title">Looks</h2>
           <p class="widget__note">Start from one of the five, or let the stylist surprise you.</p>
         </div>
-        <button type="button" class="surprise" @click="surprise">
+        <button type="button" class="btn btn-accent surprise" @click="surprise">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
             <circle cx="8" cy="8" r="1.4" /><circle cx="16" cy="8" r="1.4" /><circle cx="12" cy="12" r="1.4" />
@@ -70,6 +70,13 @@ function surprise() {
 </template>
 
 <style scoped>
+.surprise {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
 .studio {
   display: flex;
   flex-direction: column;
@@ -113,32 +120,6 @@ function surprise() {
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
-}
-
-.surprise {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0 14px;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #f6e27a, #f2a0b8);
-  color: #1e1a24;
-  font-weight: 700;
-  box-shadow: 3px 3px 0 #1e1a24;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-}
-
-.surprise:hover {
-  transform: translate(-1px, -1px) rotate(-2deg);
-  box-shadow: 4px 4px 0 #1e1a24;
-}
-
-.surprise:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 #1e1a24;
 }
 
 .surprise svg {

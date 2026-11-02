@@ -2,7 +2,8 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The Phaser canvas with the town on it, plus its follow-me and zoom buttons and loading / error
 // states. It says which building was tapped (select), which friend out walking was tapped
-// (select-friend) and when your character has walked inside one (inside); the parent says which one to glide to (focus), which one to walk into (enter),
+// (select-friend), when your character has walked inside one (inside) and when a tap on the ground
+// has sent them walking (walk); the parent says which one to glide to (focus), which one to walk into (enter),
 // what you look like (character) and what the weather is (sky).
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Phaser from 'phaser'
@@ -13,12 +14,18 @@ const props = defineProps({
   focus: { type: Object, default: null },
   // a place id to open on, framed as the first tour frames it (a new reader arriving)
   start: { type: String, default: '' },
+  // the id of the place you just left: you start outside its door
+  comingFrom: { type: String, default: '' },
+  // whether a tap on the ground walks your character there
+  canWalk: { type: Boolean, default: true },
   // { id, key }: walk your character to that building and in through its door
   enter: { type: Object, default: null },
   // the reader's saved character (see lib/avatar/catalogue.js)
   character: { type: Object, default: null },
-  // friends' presence, [{ id: reader id, online, upkeep, character }] (see town/friends.js)
+  // friends' presence, [{ id: reader id, online, upkeep, character, house }] (see town/friends.js)
   friends: { type: Array, default: () => [] },
+  // readers near you, [{ id: reader id, displayName, character, online }]
+  nearby: { type: Array, default: () => [] },
   // { id, key }: glide to that friend out walking. A new key repeats the same friend.
   focusFriend: { type: Object, default: null },
   // the friend whose card is open; null lets them walk on
@@ -28,7 +35,7 @@ const props = defineProps({
   // how the town looks: { night, rain }
   sky: { type: Object, default: () => ({ night: false, rain: false }) },
 })
-const emit = defineEmits(['select', 'select-friend', 'ready', 'inside'])
+const emit = defineEmits(['select', 'select-friend', 'ready', 'inside', 'walk'])
 
 const host = ref(null)
 const state = ref('loading') // loading | ready | error
@@ -91,6 +98,11 @@ watch(
 )
 
 watch(
+  () => props.nearby,
+  (readers) => scene?.setNearby(readers),
+)
+
+watch(
   () => props.character,
   (character) => scene?.setCharacter(character),
 )
@@ -107,11 +119,18 @@ watch(
   (sky) => scene?.setSky(sky),
 )
 
+watch(
+  () => props.canWalk,
+  (on) => scene?.setCanWalk(on),
+)
+
 onMounted(() => {
   scene = new TownScene({
     reducedMotion,
     character: props.character,
     start: props.start,
+    comingFrom: props.comingFrom,
+    onWalk: () => emit('walk'),
     onTourSpot: (box) => {
       spot.value = box
     },
@@ -129,8 +148,12 @@ onMounted(() => {
       state.value = 'error'
     },
   })
+  // the map is a canvas with nothing to label, so the e2e tests read where everyone is from here
+  if (import.meta.env.DEV) window.__townScene = scene
+  scene.setCanWalk(props.canWalk)
   scene.setSky(props.sky)
   scene.setFriends(props.friends)
+  scene.setNearby(props.nearby)
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: host.value,
@@ -143,6 +166,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (import.meta.env.DEV) delete window.__townScene
   game?.destroy(true)
   game = null
   scene = null
@@ -160,7 +184,7 @@ onBeforeUnmount(() => {
     <div v-if="state === 'ready'" class="town-map__zoom">
       <button
         type="button"
-        class="town-map__round town-map__follow"
+        class="btn btn-chip btn-icon px-sign town-map__follow"
         :class="{ 'is-on': following }"
         aria-label="Follow my character"
         :aria-pressed="following"
@@ -172,10 +196,10 @@ onBeforeUnmount(() => {
           <circle class="town-map__follow-dot" cx="12" cy="12" r="1.6" />
         </svg>
       </button>
-      <button type="button" class="town-map__round" aria-label="Zoom in" @click="zoom(1.25)">
+      <button type="button" class="btn btn-secondary btn-icon px-sign town-map__round" aria-label="Zoom in" @click="zoom(1.25)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
-      <button type="button" class="town-map__round" aria-label="Zoom out" @click="zoom(0.8)">
+      <button type="button" class="btn btn-secondary btn-icon px-sign town-map__round" aria-label="Zoom out" @click="zoom(0.8)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /></svg>
       </button>
     </div>
@@ -208,27 +232,16 @@ onBeforeUnmount(() => {
 
 .town-map__zoom {
   position: absolute;
-  right: 14px;
-  bottom: 24px;
+  right: 17px;
+  bottom: 30px;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
 }
 
-.town-map__round {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-  color: var(--rl-text);
-}
-
-.town-map__round svg {
+.town-map__round svg,
+.town-map__follow svg {
   width: 20px;
   height: 20px;
   fill: none;
@@ -247,9 +260,4 @@ onBeforeUnmount(() => {
   stroke: none;
 }
 
-.town-map__follow.is-on {
-  border-color: #2f5fb3;
-  background: #2f5fb3;
-  color: var(--rl-surface);
-}
 </style>

@@ -163,6 +163,8 @@ test.describe("from the room", () => {
     const details = page.getByRole("dialog", { name: "Book details" });
     expect(await details.count()).toBe(0);
     await expect(details).toBeVisible({ timeout: 8000 });
+    await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
+    await expect(details.getByText("A comfort-loving hobbit is swept into a quest to win back a dragon's hoard.")).toBeVisible();
   });
 
   test("a tap while the book comes out skips to it open", async ({ page }) => {
@@ -204,7 +206,7 @@ test.describe("from the room", () => {
     expect(Math.abs((await bottom("The Hobbit by J.R.R. Tolkien")) - reading)).toBeGreaterThan(40);
 
     await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
-    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Reading", exact: true }).click();
+    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Start reading" }).click();
     await page.getByRole("button", { name: "Close book" }).click();
 
     await expect
@@ -235,12 +237,17 @@ test.describe("from the room", () => {
     expect(errors).toEqual([]);
   });
 
-  test("tapping a book on the bookcase opens its details", async ({ page }) => {
+  test("the details are My Shelf's card, laid out like the library's", async ({ page }) => {
     await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
 
     const details = page.getByRole("dialog", { name: "Book details" });
     await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
-    await expect(details.getByText("A comfort-loving hobbit is swept into a quest to win back a dragon's hoard.")).toBeVisible();
+    for (const name of ["Start reading", "Where to get", /^Read reviews/, "Remove from shelf", "Close book"]) {
+      await expect(details.getByRole("button", { name })).toBeVisible();
+    }
+    await expect(details.getByRole("link", { name: "Open full book page" })).toHaveAttribute("href", "/books/demo-shelf-2");
+    await expect(details.getByText("Reading status")).toHaveCount(0);
+    await expect(details.getByRole("region", { name: "Reviews" })).toBeHidden();
   });
 
   test("Close book puts the details away and goes back to that book", async ({ page }) => {
@@ -270,9 +277,10 @@ test.describe("from the room", () => {
     const details = page.getByRole("dialog", { name: "Book details" });
     await expect(details).toBeVisible();
 
-    // just above the details, over the bookcase
+    // beside the card, over the bookcase (the dialog's backdrop fills the screen, as the library's does)
+    const card = await details.getByRole("heading", { name: "The Hobbit" }).boundingBox();
     const box = await details.boundingBox();
-    await page.mouse.click(box.x + box.width / 2, box.y - 12);
+    await page.mouse.click(box.x + 8, card.y);
 
     await expect(details).toBeHidden();
     // and nothing tapped through it opens instead: a tap that went through would open the book's
@@ -284,12 +292,12 @@ test.describe("from the room", () => {
 
   test("the details lead to the book's own page", async ({ page }) => {
     await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
-    await page.getByRole("dialog", { name: "Book details" }).getByRole("link", { name: "Open book page" }).click();
+    await page.getByRole("dialog", { name: "Book details" }).getByRole("link", { name: "Open full book page" }).click();
 
     await expect(page).toHaveURL(/\/books\/demo-shelf-2$/);
     // the page is the same card: the book, and which shelf it is on
     await expect(page.getByRole("heading", { level: 1, name: "The Hobbit" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Want to read" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "To be read", exact: true })).toHaveAttribute("aria-pressed", "true");
 
     // and its close button goes back to the room
     await page.getByRole("button", { name: "Back" }).click();
@@ -315,13 +323,11 @@ test.describe("from the room", () => {
 
   test("a To read book can be started, which makes it a Reading book", async ({ page }) => {
     await page.getByRole("button", { name: "The Hobbit by J.R.R. Tolkien" }).click();
-    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Reading", exact: true }).click();
+    await page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Start reading" }).click();
 
     await expect.poll(() => saves).toEqual([{ id: "demo-shelf-2", status: "reading" }]);
-    // Reading is now the chosen shelf, and the progress slider pops up under it
-    await expect(
-      page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Reading", exact: true })
-    ).toHaveAttribute("aria-pressed", "true");
+    // its next step is now finishing it, and the progress slider pops up
+    await expect(page.getByRole("dialog", { name: "Book details" }).getByRole("button", { name: "Mark as finished" })).toBeVisible();
     await expect(page.getByRole("slider")).toHaveValue("0");
   });
 
@@ -334,43 +340,18 @@ test.describe("from the room", () => {
     await expect(page.getByText("80% read")).toBeVisible();
     await expect.poll(() => saves).toEqual([{ id: "demo-shelf-1", progress: 80 }]);
 
-    await page.getByRole("button", { name: "Finished reading" }).click();
+    await page.getByRole("button", { name: "Mark as finished" }).click();
     await expect.poll(() => saves.at(-1)).toEqual({ id: "demo-shelf-1", status: "read", progress: 100 });
-
-    // a Finished book that has not been reviewed or rated offers both, on the book's page
-    await expect(page.getByRole("link", { name: "Review" })).toHaveAttribute("href", "/books/demo-shelf-1");
-    await expect(page.getByRole("link", { name: "Rate" })).toHaveAttribute("href", "/books/demo-shelf-1");
+    // a Finished book has nowhere further to go
+    await expect(page.getByRole("button", { name: "Mark as finished" })).toHaveCount(0);
   });
 
-  test("a Finished book leads to its page to review and rate", async ({ page }) => {
+  test("a Finished book is rated and reviewed behind Read reviews, as in the library", async ({ page }) => {
     await page.getByRole("button", { name: "Pride and Prejudice by Jane Austen" }).click();
 
-    await expect(page.getByRole("link", { name: "Rate" })).toBeVisible();
-    await page.getByRole("link", { name: "Review" }).click();
-
-    await expect(page).toHaveURL(/\/books\/demo-shelf-7$/);
-    await expect(page.getByRole("dialog", { name: "Book details" })).toBeHidden();
-  });
-
-  test("a Finished book already reviewed and rated offers to view them", async ({ page }) => {
-    await page.route("**/api/user-books", async (route) => {
-      const response = await route.fetch();
-      const { books } = await response.json();
-      const reviewed = books.map((book) =>
-        book.id === "demo-shelf-7" ? { ...book, reviewed: true, myRating: 5 } : book
-      );
-      return route.fulfill({ response, json: { books: reviewed } });
-    });
-    await page.reload();
-    await turnToBookshelf(page);
-
-    await page.getByRole("button", { name: "Pride and Prejudice by Jane Austen" }).click();
-
-    await expect(page.getByRole("link", { name: "View review and rating" })).toHaveAttribute(
-      "href",
-      "/books/demo-shelf-7"
-    );
-    await expect(page.getByRole("link", { name: "Review", exact: true })).toHaveCount(0);
+    const details = page.getByRole("dialog", { name: "Book details" });
+    await details.getByRole("button", { name: /^Read reviews/ }).click();
+    await expect(details.getByRole("region", { name: "Reviews" }).getByText("Rate this book")).toBeVisible();
   });
 });
 
@@ -378,7 +359,10 @@ test.describe("from the room", () => {
 // My Shelf instead, where every book can still be opened.
 test.describe("without the room's pictures", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("**/room/strip/**", (route) => route.abort());
+    // only the pictures: the dev server also serves a picture an import names as a script
+    await page.route("**/room/strip/**", (route) =>
+      route.request().resourceType() === "image" ? route.abort() : route.fallback()
+    );
     await page.reload();
   });
 
@@ -394,7 +378,7 @@ test.describe("without the room's pictures", () => {
 
     const details = page.getByRole("dialog", { name: "Book details" });
     await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
-    await details.getByRole("button", { name: "Reading", exact: true }).click();
+    await details.getByRole("button", { name: "Start reading" }).click();
     await expect.poll(() => saves).toEqual([{ id: "demo-shelf-2", status: "reading" }]);
 
     await page.getByRole("button", { name: "Close book" }).click();

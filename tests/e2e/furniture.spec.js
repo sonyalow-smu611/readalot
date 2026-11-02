@@ -1,11 +1,12 @@
 import {
-  buy, expect, fromMenu, goToPlace, inventory, mockWeather, nextPaint, openShop, pickFromInventory, roomCanvas,
-  roomReady, skipMoodCheckIn, test,
+  SPOTS, buy, expect, fromMenu, goToPlace, inventory, mockWeather, nextPaint, openShop, pickFromInventory, placeAt,
+  roomCanvas, roomReady, screenOf, skipMoodCheckIn, tapRoomAt, test,
 } from "./fixtures.js";
 
-// Furnishing My Room: pieces drawn in the room's own pixel style, bought in the Shop and put on
-// glowing spots in the room. Placed pieces are painted into the room's picture, so some checks
-// read its pixels; everything else goes through labelled buttons.
+// Furnishing My Room: pieces drawn in the room's own pixel style, bought in the Shop and put in
+// the room by dragging them in, or by tapping one and then the room. Placed pieces are painted into
+// the room's picture, so some checks read its pixels; everything else goes through labelled
+// buttons and where things are on the screen.
 test.use({ viewport: { width: 480, height: 720 } });
 
 test.beforeEach(async ({ page }) => {
@@ -82,9 +83,8 @@ test.describe("the Shop", () => {
 test.describe("wall art", () => {
   async function hang(page, name, spot) {
     await buy(page, name);
-    await pickFromInventory(page, name);
-    await page.getByRole("button", { name: `Put ${name} on the wall ${spot}` }).click();
-    await expect(page.getByRole("status")).toHaveText(new RegExp(`^${name} is on the wall ${spot}`));
+    await placeAt(page, name, spot);
+    await expect(page.getByRole("status")).toHaveText(new RegExp(`^${name} is on the wall`));
   }
 
   // The brightness of the room's picture under the upper middle of a placed piece's button: the
@@ -101,19 +101,14 @@ test.describe("wall art", () => {
     }, canvas);
   }
 
-  test("is bought, then hung on a glowing spot on the wall and nowhere else", async ({ page }) => {
+  test("is bought, then hung where the wall is tapped", async ({ page }) => {
     await expect(page.getByText("480").first()).toBeVisible();
     await buy(page, "Mountain poster");
     await expect(page.getByText("455").first()).toBeVisible();
 
-    await pickFromInventory(page, "Mountain poster");
-    await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Mountain poster");
-    await expect(page.getByRole("button", { name: /^Put Mountain poster on the wall/ })).toHaveCount(5);
-    await expect(page.getByRole("button", { name: /^Put Mountain poster (on the floor|on the window seat)/ })).toHaveCount(0);
-
     await goToPlace(page, "Chair");
-    await page.getByRole("button", { name: "Put Mountain poster on the wall by the reading chair" }).click();
-    await expect(page.getByRole("status")).toHaveText(/^Mountain poster is on the wall by the reading chair/);
+    await placeAt(page, "Mountain poster", "by the reading chair");
+    await expect(page.getByRole("status")).toHaveText(/^Mountain poster is on the wall/);
     await expect(placed(page, "Mountain poster")).toHaveCount(1);
   });
 
@@ -134,7 +129,7 @@ test.describe("wall art", () => {
     const boxes = (locator) => locator.evaluateAll((buttons) => buttons.map((b) => ({ name: b.getAttribute("aria-label"), ...b.getBoundingClientRect().toJSON() })));
     const posters = await boxes(placed(page, "Mountain poster"));
     expect(posters).toHaveLength(5);
-    const parts = await boxes(page.getByRole("button", { name: /^(Quote of the day|Bookshelf, \d+ books)/ }));
+    const parts = await boxes(page.getByRole("button", { name: /^(Notice board|Bookshelf, \d+ books)/ }));
     parts.push(...(await boxes(page.getByRole("img", { name: /^(Window view|Singapore time)/ }))));
     expect(parts.length).toBeGreaterThanOrEqual(4);
     for (const poster of posters) {
@@ -155,21 +150,16 @@ test.describe("wall art", () => {
     await expect(poster).toHaveCount(0);
 
     await fromMenu(page, "Inventory");
-    await pickFromInventory(page, "Mountain poster");
     await goToPlace(page, "Bed");
-    await page.getByRole("button", { name: "Put Mountain poster on the wall by the mirror" }).click();
-    await expect(page.getByRole("status")).toHaveText(/^Mountain poster is on the wall by the mirror/);
+    await placeAt(page, "Mountain poster", "by the mirror");
+    await expect(page.getByRole("status")).toHaveText(/^Mountain poster is on the wall/);
     await expect(poster).toHaveCount(1);
   });
 
-  test("two pieces hang at once, and a taken spot stops glowing", async ({ page }) => {
+  test("two pieces hang at once", async ({ page }) => {
     await goToPlace(page, "Chair");
     await hang(page, "Botanical print", "by the reading chair");
-    await buy(page, "Gold photo frame");
-    await pickFromInventory(page, "Gold photo frame");
-    await expect(page.getByRole("button", { name: /^Put Gold photo frame on the wall/ })).toHaveCount(4);
-    await expect(page.getByRole("button", { name: "Put Gold photo frame on the wall by the reading chair" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Put Gold photo frame on the wall by the window" }).click();
+    await hang(page, "Gold photo frame", "by the window");
     await expect(placed(page, "Botanical print")).toHaveCount(1);
     await expect(placed(page, "Gold photo frame")).toHaveCount(1);
   });
@@ -187,21 +177,12 @@ test.describe("wall art", () => {
 test.describe("plants", () => {
   test("a big plant stands on the floor, and the succulents on a small surface", async ({ page }) => {
     await buy(page, "Monstera");
-    await pickFromInventory(page, "Monstera");
-    const monsteraSpots = page.getByRole("button", { name: /^Put Monstera / });
-    await expect(monsteraSpots.first()).toBeAttached();
-    const where = await monsteraSpots.evaluateAll((spots) => [...new Set(spots.map((s) => s.getAttribute("aria-label")))]);
-    expect(where).toEqual(["Put Monstera on the floor"]);
-    await goToPlace(page, "Chair");
-    await monsteraSpots.locator("visible=true").first().click();
+    await placeAt(page, "Monstera", "on the floor");
     await expect(page.getByRole("status")).toHaveText(/^Monstera is on the floor/);
     await expect(placed(page, "Monstera")).toHaveCount(1);
 
     await buy(page, "Succulent trio");
-    await pickFromInventory(page, "Succulent trio");
-    const names = await page.getByRole("button", { name: /^Put Succulent trio / }).evaluateAll((spots) => spots.map((s) => s.getAttribute("aria-label")));
-    expect(new Set(names)).toEqual(new Set(["Put Succulent trio on the window seat", "Put Succulent trio on the side table", "Put Succulent trio on the nightstand"]));
-    await page.getByRole("button", { name: "Put Succulent trio on the side table" }).click();
+    await placeAt(page, "Succulent trio", "on the side table");
     await expect(page.getByRole("status")).toHaveText(/^Succulent trio is on the side table/);
     await expect(placed(page, "Succulent trio")).toHaveCount(1);
   });
@@ -229,11 +210,7 @@ test.describe("reading chairs", () => {
     const armchair = await nook(page);
 
     await buy(page, "Rocking chair");
-    await pickFromInventory(page, "Rocking chair");
-    // a chair goes in the reading nook and nowhere else
-    const spots = page.getByRole("button", { name: /^Put Rocking chair / });
-    await expect(spots).toHaveCount(1);
-    await spots.click();
+    await placeAt(page, "Rocking chair", "in the reading nook");
     await expect(page.getByRole("status")).toHaveText(/^Rocking chair is in the reading nook/);
     await expect(placed(page, "Rocking chair")).toHaveCount(1);
     await expect.poll(() => nook(page)).not.toBe(armchair);
@@ -246,14 +223,12 @@ test.describe("reading chairs", () => {
     await goToPlace(page, "Chair");
     const armchair = await nook(page);
     await buy(page, "Rocking chair");
-    await pickFromInventory(page, "Rocking chair");
-    await page.getByRole("button", { name: "Put Rocking chair in the reading nook" }).click();
+    await placeAt(page, "Rocking chair", "in the reading nook");
     await expect.poll(() => nook(page)).not.toBe(armchair);
     const rocking = await nook(page);
 
     await buy(page, "Wingback chair");
-    await pickFromInventory(page, "Wingback chair");
-    await page.getByRole("button", { name: "Put Wingback chair in the reading nook" }).click();
+    await placeAt(page, "Wingback chair", "in the reading nook");
     await expect(placed(page, "Wingback chair")).toHaveCount(1);
     await expect(placed(page, "Rocking chair")).toHaveCount(0);
     await expect.poll(() => nook(page)).not.toBe(rocking);
@@ -271,8 +246,7 @@ test.describe("reading chairs", () => {
 test.describe("cats", () => {
   async function adopt(page, name) {
     await buy(page, name);
-    await pickFromInventory(page, name);
-    await page.getByRole("button", { name: `Put ${name} on the floor` }).locator("visible=true").first().click();
+    await placeAt(page, name, "on the floor");
     await expect(placed(page, name)).toHaveCount(1);
   }
 
@@ -330,6 +304,22 @@ test.describe("cats", () => {
     expect((await whereIs(page, "Black cat")).x).toBe(start);
   });
 
+  test("a cat let go anywhere starts on the floor right below there", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await goToPlace(page, "Bed");
+    await dragIn(page, "Black cat", 1000, 250);
+    await expect(page.getByRole("status")).toHaveText(/^Black cat is on the floor/);
+    expect(Math.abs((await whereIs(page, "Black cat")).x - 1000)).toBeLessThanOrEqual(2);
+  });
+
+  test("a cat let go past the end of the floor starts at that end", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await goToPlace(page, "Window");
+    await dragIn(page, "Calico", 6, 400);
+    await expect(placed(page, "Calico")).toHaveCount(1);
+    expect(Math.abs((await whereIs(page, "Calico")).x - 20)).toBeLessThanOrEqual(2);
+  });
+
   test("cats are drawn in the room's light, darker after dark", async ({ page }) => {
     await adopt(page, "Calico");
     await expect.poll(() => catBrightness(page)).not.toBeNull();
@@ -344,16 +334,6 @@ test.describe("cats", () => {
 // Pieces dragged out of the inventory land where they're let go, if they fit there (see
 // buildings/house/strip/placement.js). Points are art pixels: x from the room's left wall, y down
 // from the top of the room as designed. The bookshelf's top is at art y 132.
-
-// where art point (x, y) is on the screen
-function screenOf(page, x, y) {
-  return page.getByRole("button", { name: /^Bookshelf, \d+ books$/ }).evaluate((shelf, [ax, ay]) => {
-    const picture = document.querySelector("[data-testid='room-canvas']");
-    const c = picture.getBoundingClientRect();
-    const unit = c.width / picture.width;
-    return { x: c.left + ax * unit, y: shelf.getBoundingClientRect().top + (ay - 132) * unit };
-  }, [x, y]);
-}
 
 // the box a placed piece (or a part of the room) fills, in art pixels
 function artBox(locator) {
@@ -375,9 +355,9 @@ const apart = (a, b) => Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), b.y - (a.
 async function dragIn(page, name, x, y) {
   await buy(page, name);
   const card = inventory(page).getByRole("button", { name: new RegExp(name) });
-  const from = await card.boundingBox();
+  // hover waits for the Inventory to finish sliding in, so the press lands on the card
+  await card.hover();
   const to = await screenOf(page, x, y);
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(to.x, to.y, { steps: 12 });
   await page.mouse.up();
@@ -386,6 +366,18 @@ async function dragIn(page, name, x, y) {
 const bookshelf = (page) => page.getByRole("button", { name: /^Bookshelf, \d+ books$/ });
 
 test.describe("putting pieces anywhere they fit", () => {
+  test("a piece dragged out of the inventory shows no glowing spots on its way", async ({ page }) => {
+    await goToPlace(page, "Bed");
+    await buy(page, "Mountain poster");
+    await inventory(page).getByRole("button", { name: /Mountain poster/ }).hover();
+    const to = await screenOf(page, 1000, 220);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 12 });
+    await expect(page.getByRole("button", { name: /^Put / })).toHaveCount(0);
+    await page.mouse.up();
+    await expect(placed(page, "Mountain poster")).toHaveCount(1);
+  });
+
   test("wall art hangs where it's let go on open wall, not only on a glowing spot", async ({ page }) => {
     await goToPlace(page, "Bed");
     await dragIn(page, "Mountain poster", 1000, 220);
@@ -449,6 +441,41 @@ test.describe("putting pieces anywhere they fit", () => {
   });
 });
 
+test.describe("tapping a piece, then the room", () => {
+  test("puts it where the room is tapped, with no glowing spots", async ({ page }) => {
+    await goToPlace(page, "Bed");
+    await buy(page, "Mountain poster");
+    await pickFromInventory(page, "Mountain poster");
+    await expect(page.getByRole("status")).toContainText("Tap where the Mountain poster should go");
+    await expect(page.getByRole("button", { name: /^Put / })).toHaveCount(0);
+    await tapRoomAt(page, 1000, 220);
+    await expect(page.getByRole("status")).toHaveText(/^Mountain poster is on the wall/);
+    const box = await artBox(placed(page, "Mountain poster"));
+    expect(Math.abs(middleOf(box).x - 1000)).toBeLessThanOrEqual(1);
+    expect(Math.abs(middleOf(box).y - 220)).toBeLessThanOrEqual(1);
+  });
+
+  test("a tap where it doesn't fit says so, and the piece can still be put somewhere else", async ({ page }) => {
+    await goToPlace(page, "Corkboard");
+    await buy(page, "Mountain poster");
+    await pickFromInventory(page, "Mountain poster");
+    await tapRoomAt(page, 747, 255);
+    await expect(page.getByRole("status").filter({ hasText: "Not enough room there" })).toBeVisible();
+    await expect(placed(page, "Mountain poster")).toHaveCount(0);
+    await tapRoomAt(page, SPOTS["above the corkboard"].x, SPOTS["above the corkboard"].y);
+    await expect(placed(page, "Mountain poster")).toHaveCount(1);
+  });
+
+  test("Place in the middle puts it in the room without a pointer", async ({ page }) => {
+    await goToPlace(page, "Corkboard");
+    await buy(page, "Monstera");
+    await pickFromInventory(page, "Monstera");
+    await page.getByRole("button", { name: "Place in the middle" }).press("Enter");
+    await expect(page.getByRole("status")).toHaveText(/^Monstera is on the floor/);
+    await expect(placed(page, "Monstera")).toHaveCount(1);
+  });
+});
+
 // --- Moving a placed piece -------------------------------------------------------------------------
 
 // Presses a placed piece, holds it (or not), and drags it to art point (x, y).
@@ -498,7 +525,7 @@ test.describe("moving a placed piece by pressing and holding it", () => {
   });
 
   test("nothing in someone else's room can be picked up", async ({ page }) => {
-    await page.goto("/people/reader-emma/room");
+    await page.goto("/people/emma.reads/room");
     await roomReady(page);
     await goToPlace(page, "Chair");
     const before = await artBox(placed(page, "Moon poster"));
@@ -570,11 +597,30 @@ test.describe("moving a placed piece from its card", () => {
   test("a reading chair has no Move", async ({ page }) => {
     await goToPlace(page, "Chair");
     await buy(page, "Rocking chair");
-    await pickFromInventory(page, "Rocking chair");
-    await page.getByRole("button", { name: "Put Rocking chair in the reading nook" }).click();
+    await placeAt(page, "Rocking chair", "in the reading nook");
     const chair = placed(page, "Rocking chair");
     await chair.click();
     await expect(chair.getByText("Remove")).toBeVisible();
     await expect(chair.getByText("Move", { exact: true })).toHaveCount(0);
+  });
+});
+
+// Chairs, curtains and bedding take the place of the room's own: let go on (or near) the armchair,
+// the window or the bed, they swap in; anywhere else they go back with a word on where they go.
+test.describe("swapping in a chair, curtains or bedding", () => {
+  test("a chair let go on the armchair's corner takes its place", async ({ page }) => {
+    await goToPlace(page, "Chair");
+    await dragIn(page, "Rocking chair", 300, 292);
+    await expect(page.getByRole("status")).toHaveText(/^Rocking chair is in the reading nook/);
+    await expect(placed(page, "Rocking chair")).toHaveCount(1);
+  });
+
+  test("a chair let go on the wall goes back, saying where chairs go", async ({ page }) => {
+    await goToPlace(page, "Bed");
+    await dragIn(page, "Rocking chair", 1000, 220);
+    await expect(page.getByRole("status")).toHaveText("Put the chair on the armchair");
+    await expect(placed(page, "Rocking chair")).toHaveCount(0);
+    await fromMenu(page, "Inventory");
+    await expect(inventory(page).getByRole("button", { name: /Rocking chair/ })).toHaveCount(1);
   });
 });

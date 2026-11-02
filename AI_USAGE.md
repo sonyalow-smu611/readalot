@@ -225,6 +225,21 @@ AI-written (see the 3D room section above). Team to review: the placement rules 
 | Schema | `database/room_notes.sql` | The table for keeping notes on the server, for the team to build the endpoint on |
 | Tests | `tests/e2e/furniture.spec.js`, `tests/e2e/visit-room.spec.js` | Dropping anywhere, keeping clear, press-and-hold and Move journeys; Leave a note from the board and taking down only your own notes |
 
+### Pixel buttons: the shared look and the house's buttons (AI-generated)
+
+Written by Claude Code at Sonz's request, test first, from tickets 01 and 02 in
+`.scratch/pixel-buttons/issues/` (spec `docs/specs/pixel-buttons.md`). Styling only: no label,
+role, name or behaviour changed. Team to review: the shared stylesheet touches every building's
+Bootstrap buttons, so it goes in as its own pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| The look | `client/src/styles/pixel-buttons.css`, `client/src/lib/roomPalette.js`, `client/src/main.js`, `client/src/assets/theme.css` | One pixel button look on Bootstrap's button classes, in My Room's colours: square corners, a 2 px outline, light and dark bands, a hard shadow it presses into, a keyboard-only focus ring, a flat disabled state, 44 px tap areas; the kinds Primary, Secondary, Accent, Danger, Quiet, Icon and Chip |
+| Shared pages | `client/src/components/AppButton.vue`, `client/src/views/WelcomeView.vue`, `client/src/views/GenreShelfView.vue`, `client/src/views/LoginView.vue`, `client/src/components/AppHeader.vue`, `client/src/components/book/`, `client/src/components/modals/` | The sticker button's colours mapped onto the kinds; Welcome's and the genre shelf's choices became Chips; the pop-ups' and book pages' buttons use the kinds |
+| Marks | `client/src/components/Book.vue`, `BookTile.vue`, `client/src/buildings/library/components/LibraryHall.vue`, `client/src/buildings/house/components/RoomStrip.vue`, `CurrentlyReadingCard.vue`, `RoomDock.vue` | Tap zones over the art marked `data-hit`, cards that are a button marked `data-card`, and Move/Remove inside a placed piece marked `data-button` |
+| The house | `client/src/buildings/house/RoomView.vue`, `ShelfView.vue`, `components/RoomDock.vue`, `PlacesMenu.vue`, `RoomStrip.vue`, `BookDialog.vue`, `NoticeBoard.vue`, `ShelfRow.vue` | Every button in the house on a kind, its own pills, rounded corners, blurred shadows and per-theme tint removed, keeping only layout |
+| Tests | `tests/e2e/buttons.spec.js` | The look check: every visible button that isn't a tap zone or card has square corners, a solid outline, an unblurred shadow, 44 px and a 4.5:1 label, on the shared pages, the pop-ups, Welcome and every part of the house at 360 px |
+
 ### End-to-end tests: shared helpers, stable selectors, no fixed waits (AI-generated)
 
 Written by Claude Code at Sonz's request, reviewing the house's Playwright tests against the
@@ -394,6 +409,19 @@ Dylan reviews the badge (`PlayerBadge.vue`, `TownHud.vue`, `TownView.vue`, `Weat
 | Salon | `client/src/buildings/salon/components/LevelCard.vue`, `SalonView.vue` | A Reader level card with XP counting up, a filling bar, the next level's coins and how to earn XP; confetti on a level-up |
 | Tests | `tests/e2e/progress.spec.js`, `tests/e2e/supabaseUser.js` | The badge, a visit's XP once a day, level-up coins, the Shop's saved coins, and the database refusing coins a reader sets |
 
+### IKDA landing page (AI-generated)
+
+Written by Claude Code at Aalric's request: a standalone page in `landing/` (HTML, CSS and
+JavaScript, no framework). The persona (Mia), her scenario and all copy are AI-written; every
+feature it mentions exists in the app. Pixel art is the app's own; screenshots are frames of the
+real app with demo readers.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Page | `landing/index.html`, `landing/styles.css` | Hero with the name, slogan, purpose and sign-up link; the problem; Mia's persona and Friday-night scenario; the town's places; levels and coins; three steps; FAQ; final call to action |
+| Behaviour | `landing/main.js` | Scenes that fade in and out both ways as you scroll, a sky from morning to night, the active section link, the drifting town map, the places as keyboard-friendly tabs that cross-fade smoothly, and an XP ring using the app's level and coin rules |
+| Your character | `landing/avatar.js`, `landing/main.js`, `landing/index.html`, `landing/styles.css` | A mini salon (looks, hair, skin, outfit, Surprise me, a name) drawn with the app's character code; the character then wears the XP badge, and stands by its house as the town lights up at night |
+
 ### Big signs over the four main buildings (AI-generated)
 
 Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session: smooth
@@ -439,3 +467,268 @@ part (daily_claims, claim_daily()) comes later, through a reviewed pull request.
 | State | `client/src/town/dailyStore.js` | Today's tasks, streak and freezes; listens to the progress and bookshelf stores so a task done in any building ticks off, without changing those stores |
 | Map | `client/src/components/town/DailyButton.vue`, `DailyPanel.vue`, `DailyTaskRow.vue`, `StreakStrip.vue`, `DailyReward.vue`, `client/src/views/TownView.vue` | The Daily button under the weather chip (streak, a ring of tasks done, a dot when the reward is ready); the panel with Go to each task's building, Claim, this week's rewards and the freezes, opening by itself on the first visit each day; the chest that pops open on Claim; Preview buttons to move the day on, in development only |
 | Tests | `tests/e2e/daily.spec.js`, `tests/e2e/town.spec.js` | The first visit opens the tasks with the check-in ticked; Go opens the building; claiming starts the streak; a missed day uses a freeze, and with none left ends the streak. The town tests mark today's tasks as already shown |
+
+### Failing e2e tests after merging main (AI-generated)
+
+Written by Claude Code at Sonz's request, test first: the existing tests were the red ones, and
+each was traced to its cause before anything changed. Two are app fixes; the rest are the tests
+waiting for what the app really does. Team to review: `GuideTour.vue` and `supabaseUser.js` are
+shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Tour | `client/src/components/GuideTour.vue` | A building stop keeps looking for its building until the camera arrives, instead of giving up after 3.6 s; on a slow device the card never showed and the tour stuck |
+| Inventory | `client/src/buildings/house/components/RoomDock.vue` | Dragging a piece out of the Inventory with a mouse no longer starts the browser's own image drag, which cancelled the drop |
+| Loading screen | `tests/e2e/supabaseUser.js` | Signed-in tests wait for the loading screen (the town waking up) to finish before each step; until then the app fills the window and covers the page |
+| Tests | `tests/e2e/bookshelf.spec.js`, `furniture.spec.js`, `onboarding.spec.js` | Blocking the room's pictures blocks only images (the dev server serves an imported picture as a script, so the whole app failed to start); the drag waits for the Inventory card to settle; the tour journey is marked slow and waits longer for each camera glide |
+
+### My Shelf's rows under header cards (AI-generated)
+
+Written by Claude Code at Sonz's request, test first (ticket pixel-and-reviews 06). My Shelf's three
+rows are now shelf tiers, the same part as a genre page's shelves: a header card, the covers, and
+the plank under them. Team to review: `ShelfTier.vue` is shared with the Library's genre page,
+whose "Shelf 1" labels become pixel header cards too.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shelf tier | `client/src/components/ShelfTier.vue` | The floating label becomes a header card (square, 2 px outline, hard shadow, a heading at a chosen level) with a slot for buttons at its end; the row of books is a slot, so another part can put its own row on the plank |
+| My Shelf | `client/src/buildings/house/components/ShelfRow.vue` | Each row is drawn as a shelf tier: its name and Previous / Next in the header card, its scrolling covers in the slot; scrolling, drag, keys and focus unchanged |
+| Tests | `tests/e2e/my-shelf.spec.js` | Every row has a header card and a plank parting it from the next; My Shelf's header card and plank look exactly like a genre page's |
+
+### Readable synopsis, and My Shelf opening the genre page's card (AI-generated)
+
+Written by Claude Code at Sonz's request, test first (tickets pixel-and-reviews 07 and 08). Team
+to review: `BookPreviewModal.vue`, `BookDetailsContent.vue`, `lib/book.js` and the two new
+components in `components/book/` are shared with the Library, Discover, search and the book page.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Synopsis | `client/src/lib/book.js`, `client/src/components/book/BookSynopsis.vue` | `synopsisParagraphs`: Google's tags dropped and entities decoded (parsed with DOMParser, never shown as HTML), `<p>` and blank lines made paragraphs, `<br>` kept as a line break. The component cuts a long synopsis at six lines with Read more / Show less (`aria-expanded`, `aria-controls`), shows a short one whole, and says when there's none |
+| Book cards | `client/src/components/BookPreviewModal.vue`, `client/src/components/book/BookDetailsContent.vue` | Both show `BookSynopsis`. The genre card takes a name, a close label, a shelf line, status buttons and the book-page link on or off, and a slot for extras; its close button is a pixel button and its buttons keep the 44 px tap height |
+| Progress | `client/src/components/book/ReadingProgress.vue` | The progress slider, moved out of `BookDetailsContent` so the room's card and My Shelf's card share it |
+| My Shelf | `client/src/buildings/house/ShelfView.vue`, `useRemoveBook.js`, `components/BookDialog.vue` | My Shelf opens the genre card, still named "Book details": status buttons move the book, the slider while it's being read, Remove from shelf with Undo (moved into `useRemoveBook`, which the room's card uses too). A friend's shelf opens it without status buttons or the book-page link (their demo books have no page) |
+| Tests | `tests/e2e/synopsis.spec.js`, `my-shelf.spec.js`, `visit-room.spec.js`, `buttons.spec.js` | HTML cleaned into paragraphs, Read more / Show less, short and missing synopses, on the genre card and the book page; My Shelf's card (genre card, progress saves, remove and Undo, Open full book page, focus back on the cover); a friend's shelf card with no status buttons; both cards pass the pixel button check |
+
+### Pixel fonts and surfaces, the book page on a laptop, shared buttons (AI-generated)
+
+Written by Claude Code at Sonz's request, test first (tickets pixel-and-reviews 01 and 05, and
+pixel-buttons 07). Team to review: all of it is shared, and 01 changes every building's titles,
+Bootstrap cards, tags, text boxes and modals. Buildings' own card components (place card, cafe
+card…) are left to their owners and to ticket 03.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Fonts | `client/src/assets/theme.css` | `--rl-font-title` is Arial (bold on headings), the pixel buttons' font, instead of Georgia |
+| Surfaces | `client/src/styles/pixel-surfaces.css`, `client/src/main.js`, `client/src/assets/theme.css`, `client/src/components/book/BookCard.vue`, `BookDetailsContent.vue` | Bootstrap's `.card`, `.modal-content`, `.badge`, `.form-control` and `.form-select`, the app's modals (`.rl-modal`), the book's card and its genre tags: square, a 2 px outline in My Room's outline colour, and a hard 3 px shadow on the raised ones. Bootstrap's and the town's radius variables are 0 |
+| Design system | `design-system/tokens.json`, `README.md`, `design-system.json`, `components/*/README.md`, `components/*/preview.html` | An `outline` colour, Arial as the one family, radii 0 apart from book covers, hard shadows; the previews and READMEs show and describe the pixel look |
+| Book page | `client/src/router/index.js`, `client/src/views/BookDetailsView.vue`, `client/src/components/book/BookDetailsContent.vue` | The book page fills a laptop window (up to 1100 px): on a card at least 720 px wide, the cover sits on the left with the title and details beside it, and status, synopsis and reviews below. A phone, and the room's card, stay one column |
+| Shared buttons | `client/src/components/Toast.vue`, `BottomSheet.vue`, `BookOpenOverlay.vue`, `client/src/views/BookDetailsView.vue` | The toast's Undo (Accent, small), the sheet's and the open book's ✕ (Icon) and the book page's Retry (Primary) are pixel buttons, with their own button styling removed |
+| Tests | `tests/e2e/pixel-look.spec.js`, `book-page.spec.js`, `buttons.spec.js` | Titles on six pages aren't Georgia; the book card, a genre tag, a modal and a text box are square and outlined, the raised ones with a hard shadow; the book page's laptop and phone layouts; the look check on the app header, toast, Retry, bottom sheet, opened book and guide tour |
+
+### Pixel signs on the town map (AI-generated)
+
+Written by Claude Code at Dylan's request. Only the four big signs changed: friends' name tags
+stay as they are.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The four signs redrawn as pixel art at 4 map pixels to a block, from each place's accent colour, in place of the SVG art: the bronze frame, a plate of flat colour bands, and the book, cup, roof, and comb and scissors. Blinking sparkles replace the plate's smooth shine. The Fredoka words, the movement, the night glow and tapping are unchanged |
+
+### Nearby readers and friends' houses (AI-generated)
+
+Written by Claude Code at Dylan's request, from decisions made with Dylan in a Q&A session
+(`docs/specs/nearby-readers-and-friend-houses.md`). The team agreed that AI writes this feature,
+including its backend endpoints and interactivity. Team to review: `server/`, `stores/user.js`,
+`services/` and `database/` are shared; Aalric reviews the salon's privacy switch.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Database | `database/nearby_friends.sql` | `reader_areas` (rough areas, server only), `friendships` (requests, friends, house spots), `location_asked_at` on `profiles`; triggers that keep under-18s private and delete a reader's area when they go private |
+| Server | `server/src/services/nearby.js`, `friends.js`, `readers.js`, `server/src/routes/nearby.js`, `friends.js`, `people.js`, `server/src/middleware/auth.js`, `server/scripts/seedReaders.js` | Check-in that saves a rough area and answers with who is near; friend requests, accept, decline and remove; house spots; friends stay visible when private; the old open `/api/people/nearby` removed; demo readers' areas near SMU |
+| Client | `client/src/town/nearbyStore.js`, `client/src/services/location.js`, `api.js`, `auth.js`, `client/src/stores/user.js` | One public/private setting, the browser's location rounded to about 1 km before sending, the 30-second refresh |
+| Town | `client/src/town/TownScene.js`, `friend.js`, `places.js`, `friends.js`, `daily.js`, `dailyStore.js`, `client/src/views/TownView.vue`, `client/src/components/town/` (`LocationPrompt.vue`, `LocationChip.vue`, `FriendRequestRow.vue`, `FriendCard.vue`, `FriendsList.vue`, `FriendsButton.vue`, `TownHud.vue`, `TownMap.vue`, `ChatDock.vue`) | Cottages that appear with friends; readers nearby walking in town with a blue glow; the question after the tour; requests, Add friend and Remove friend; the daily friend tasks skipped with no friends |
+| Map art | `client/scripts/town-art/town.js`, `client/public/town/map.png` | The map redrawn with the seven cottages off the picture |
+| Salon | `client/src/buildings/salon/SalonView.vue`, `components/PrivacySetting.vue`, `profileOptions.js`, `client/src/components/start/StartFaq.vue` | The privacy switch uses the same setting, and its wording says what it now does |
+| Removed | `client/src/views/DiscoverPeopleView.vue`, `client/src/composables/useLocation.js` | An old page with no route of its own, and an unused stub |
+| Tests | `tests/e2e/nearby.spec.js`, `friends.spec.js`, `town.spec.js`, `salon.spec.js`, `supabaseUser.js` | The new journeys, with a faked location |
+
+### Database calls matched to the Supabase schema, ready for reviews (AI-generated)
+
+Written by Claude Code at Sonz's request, before tickets pixel-and-reviews 09 and 10. Sonz ran
+`database/reviews.sql` on the team's Supabase project first. Team to review: all of it is
+shared server code, and the reviews `POST` is a backend endpoint, so the team needs to agree to it
+and record that here, as ticket 10 asks.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Reviews table | `database/reviews.sql`, `database/schema.sql` | One review per reader per book, a required 1–5 rating, an optional caption up to 500 characters, `updated_at` and an index on `book_id`. Shelf ratings were copied into reviews. A new project's `schema.sql` creates the same table, without `user_books.rating` |
+| Shelf | `server/src/routes/userBooks.js`, `client/src/stores/bookshelf.js` | My Shelf's "my rating" comes from the reviews table, and "reviewed" means the review has a caption. The shelf no longer writes a rating, and saving a book already on the shelf updates its row instead of adding a second |
+| Reviews | `server/src/routes/books.js` | Saving a review checks the rating (1–5) and caption (≤ 500) and gives a 400 when either is wrong. Saving again edits the reader's one review and sets `updated_at` |
+| Removed | `server/src/routes/users.js`, `server/src/app.js`, `client/src/services/api.js` | `/api/users/:id` and `/api/users/:id/books`, which nothing called. The second joined `books` from `user_books`, which has no foreign key to it, so it could only fail |
+
+### A reader's profile in the pixel style (AI-generated)
+
+Written by Claude Code at Sonz's request, for tickets reader-profile-pixel 01–05 (spec
+`docs/specs/reader-profile-pixel-redesign.md`) and the last part of pixel-buttons 04. The profile
+is the Cafe's page (Emiley's part); Emiley agreed to the change and reviews the pull request. It
+reads the Library's palette and bookcase colours, so the Library's owner should see it too.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Profile page | `client/src/views/ReaderRoomView.vue` | Redrawn on the Library wall's parchment, one column up to 420 px: Back to Discover, the reader card, Visit <name>'s room (green), Follow (wood brown, a pressed toggle) and Message (rug red), then three cards. The tagline, the filtered bookshelf list and the inline chat are gone; an empty Books You Both Have links to their room's shelf. Colours are read from the Library's palette |
+| Reader card | `client/src/components/people/ReaderCard.vue` | Their town character (`reader.character`, the same one the town draws) on sky and grass, name as the page heading, `@username · neighbourhood` without "(demo)", and a "Reading match" progress bar |
+| Cards and books | `client/src/components/people/PixelCard.vue`, `GenreChip.vue`, `PixelBookRow.vue`, `genreColour.js` | A card with a brass tab heading, paper inside, teal line and hard shadow; a genre chip (starred and announced when you share it) whose label is paper or ink, whichever reads better; a small pixel book in its genre's colour; one genre-to-colour lookup from the Library's bookcases (others are wood) |
+| Chat | `client/src/components/people/ReaderChatDialog.vue` | The existing chat in a pixel-framed dialog, "Message <first name>": it takes focus, closes with Escape, Close or a tap outside, and focus goes back to Message |
+| Tests | `tests/e2e/reader-profile.spec.js`, `buttons.spec.js`, `visit-room.spec.js` | The profile journey (card, character, Follow and its failure, Message, each card and its empty state, not found, 360 px); the reader page and chat look check turned back on; four old `reader-<name>` addresses changed to usernames |
+
+### Everyone's reviews, and writing your own (AI-generated, team-agreed)
+
+Written by Claude Code at Sonz's request, test first (tickets pixel-and-reviews 09 and 10). The
+team agreed to AI writing the reviews endpoints (listing with reviewers, saving, deleting) and
+the review form, as ticket 10 asks. Team to review: the server routes and service, and the
+shared book cards (`BookPreviewModal.vue`, `BookDetailsContent.vue`), which the Library,
+Discover, search, My Shelf, the room and the book page all use.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Reviews service | `server/src/services/reviews.js`, `server/data/demoReviews.js` | A book's reviews, newest first, each with its reviewer's name, character, avatar and page link (none for a private profile), and whether it's yours. Saving (one per reader per book, so saving again edits it), deleting your own, and your ratings for the shelf. Without Supabase, the demo readers' reviews of Pride and Prejudice and Dune, one by a private reader, kept in memory |
+| Routes | `server/src/routes/books.js`, `server/src/routes/userBooks.js` | `GET`, `POST` and `DELETE /api/books/:id/reviews` through the service (`POST` checks 1–5 stars and ≤ 500 characters). The shelf's "my rating" and "reviewed" come from the reviews in both modes |
+| Cards | `client/src/composables/useBookReviews.js`, `client/src/components/book/BookReviews.vue`, `ReviewList.vue`, `ReviewForm.vue`, `StarMeter.vue`, `client/src/components/BookPreviewModal.vue`, `BookDetailsContent.vue` | The genre card, My Shelf's and the room's cards and the book page list every review (name with avatar, stars, caption, "3 days ago" with the exact date on hover). The name goes to the reader's page, yours to the salon. The rating is the Readalot readers' average, or Google's. A form to rate (required) and caption (optional, 500 at most), then Edit your review and Delete your review on yours only. The stars meter moved out of `BookDetailsContent` into its own component |
+| Shelf | `client/src/stores/bookshelf.js`, `client/src/services/api.js`, `client/src/lib/time.js` | `setMyReview` shows a saved or deleted review's rating on a shelved book at once. `saveReview` and `deleteReview` API calls. `timeAgo` and `exactDate` |
+| Tests | `tests/e2e/reviews.spec.js` | Every review on the book page; a reviewer's name goes to their page, a private one isn't a link; the readers' average and Google's fallback; the list on the genre card, My Shelf's card and the room's card; write, edit and delete through labelled buttons; the rating and 500-character rules in the form and the API; the shelf reading your rating from your review |
+| Tests | `tests/e2e/reviews.spec.js` | Every review on the book page; a reviewer's name goes to their page, a private one isn't a link; the readers' average and Google's fallback; the list on the genre card, My Shelf's card and the room's card; write, edit and delete through labelled buttons; the rating and 500-character rules in the form and the API; the shelf reading your rating from your review |
+
+### Notes on notice boards, kept on the server (AI-generated, team-agreed)
+
+Written by Claude Code at Sonz's request, test first (tickets saved-mood-quotes-and-synced-room-notes
+04 and 05, spec `docs/specs/saved-mood-quotes-and-synced-room-notes.md`). The team agreed to AI
+writing the room notes endpoints. Team to review: the server route and service, and the new API
+calls in `client/src/services/api.js`.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Notes service | `server/src/services/roomNotes.js` | A board's notes, newest first, with each author's profile name; pinning a note; taking one down when you wrote it or own the board. Uses `room_notes`; without Supabase, kept in memory |
+| Route | `server/src/routes/roomNotes.js`, `server/src/app.js` | `GET`, `POST` and `DELETE /api/rooms/:readerId/notes`. A real sign-in is needed (no demo-user fallback); without Supabase the token's account id is taken unchecked. 1–140 characters, never on your own board; 403 for someone else's note. The board is your own, a discoverable reader's, or (without Supabase) any account id |
+| Room | `client/src/buildings/house/notes.js`, `RoomView.vue`, `components/NoticeBoard.vue`, `components/NoteComposer.vue`, `client/src/services/api.js` | Notes load from and save to the API instead of this browser. The board shows loading and Retry on failure; Post note says Posting… while it works and keeps the text with a message if it fails. Your own room's corkboard is now your notice board: the Quote of the Day, the notes left for you, Take down on each, no Leave a note |
+| Tests | `tests/e2e/visit-room.spec.js`, `room.spec.js`, `buttons.spec.js`, `furniture.spec.js` | A note shows on another device; a board that can't load, and Retry; Posting…; a note that can't be pinned; another reader's note (left through the API as a made-up second reader) can't be taken down by a visitor, but can by the board's owner in their own room. Each test takes down the notes it left. The corkboard's name in your own room is Notice board |
+
+### No bar on the buildings: the back button over the page (AI-generated)
+
+Written by Claude Code at Dylan's request. Team to review: `BuildingShell` is shared, and every
+building moved a little (the house, library and cafe each had something in the top left).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shell | `client/src/components/shared/BuildingShell.vue` | The coloured bar is gone, so the page's own background runs to the top. The back button is a pixel button (Secondary) in the top left: floating on a `flush` page, at the top of the page otherwise. The title and owner stay for screen readers. `--building-back-space` says how far down a `flush` page's own top-left controls start. The `accent` prop went with the bar |
+| Buildings | `client/src/buildings/house/` (`HouseView.vue`, `VisitView.vue`, `ShelfView.vue`, `components/RoomStrip.vue`), `client/src/buildings/library/` (`LibraryView.vue`, `components/LibraryHall.vue`), `client/src/buildings/cafe/CafeView.vue`, `client/src/buildings/salon/SalonView.vue` | `accent` no longer passed. Places, the library's search bar and weather chip, and the cafe's reader count sit below the back button |
+| Docs | `AGENTS.md`, `client/src/buildings/README.md` | The shell's new contract |
+| Tests | `tests/e2e/back-button.spec.js`, `house-desktop.spec.js` | No bar and the back button in the corner, clear of the page's controls, on a phone and a laptop; the width checks read the page instead of the old header |
+
+### Pixel plates for the four signs, and the words kept clear (AI-generated)
+
+Written by Claude Code at Dylan's request, from a reference picture of pixel buttons.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Signs | `client/src/town/signs.js` | The bronze frame and colour bands replaced by one chunky plate in each building's accent colour: stepped dark outline, thick base, a bright line with a white glint, and a box set into it. The motifs and their movement are kept. `setZoom` stops a sign shrinking once a block would be under 2 screen pixels, growing up from its base, and the section's letters grow back first |
+| Letters | `client/src/town/pixelFont.js` | Two blocky alphabets, in place of live Fredoka text. The name is white on a dark backing, the app section a little smaller below it. `client/public/town/signs/fredoka-bold.woff2` removed, nothing else used it |
+| Camera | `client/src/town/TownScene.js` | Whole-pixel drawing off for the town camera, so the signs bob smoothly, and each frame gives the signs the zoom |
+
+### Daily tasks on every page (AI-generated)
+
+Written by Claude Code at Dylan's request. This is interactive code in a shared part of the app:
+the team needs to agree to it and record that here. Team to review: `App.vue` and `nearbyStore.js`
+are shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Tab | `client/src/components/town/DailyDock.vue`, `DailyButton.vue`, `client/src/App.vue` | A Daily task tab, with the flame, on the left edge of every signed-in page but the town, opening the town's own panel. Go goes to the task's building, or the town for a friend's house. Closes with Escape, a tap outside or the tab. Claim works there too. Hidden during the guide tour, and kept under each page's dialogs |
+| Friends | `client/src/town/nearbyStore.js` | `loadFriends` shared, so a page opened directly lists the same third task as the town |
+| Tests | `tests/e2e/daily.spec.js`, `house-desktop.spec.js`, `town.spec.js`, `room.spec.js` | Opening, closing, Go and Claim from other pages, and only one Daily button in town; Places now sits under the back button, the mood check-in skipped where it isn't the point, and the phone column checked on Search. `reader-profile.spec.js`, `salon.spec.js` and `buttons.spec.js` search for an exact button or a text box, now that the Daily tab's label and the privacy switch use the same words |
+
+### Library redesign after peer feedback (AI-generated)
+
+Written by Claude Code at Aasim's request, from the peers' feedback on the library: off-theme
+emoji, small shelf text, plain bookcases, confusing book options and a search page that didn't
+fill the screen. Aasim asked the assistant to write all of it, the interactive parts included
+(the Places menu, opening a bookcase and sliding a book out, Add to To be read): that is
+critical frontend interactivity under the AI use rules in `PROJECT.md`, so the team needs to
+agree to it and record that here. Team to review: the second group of files is shared.
+
+The library (Aasim's folder):
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Top line | `client/src/buildings/library/LibraryView.vue`, `components/LibraryHall.vue` | Back to town, the search bar centred and the weather on the right, on one line; on a phone the search rests as a magnifier and grows into a bar below. The search bar and weather chip in the pixel look, with pixel icons |
+| Places menu | `components/PlacesMenu.vue`, `components/LibraryHall.vue`, `hall/layout.js` | My Room's Places menu copied into the library, grouped (Around the library, Shelves), in the bottom right, in place of the bar of places |
+| Opening view and signs | `components/LibraryHall.vue` | The hall always opens at its left end with the help desk and scanner in view (on a phone, the whole desk), instead of where the reader last left it; the first sizing no longer scrolls it along. Signs on the desk ("Search for any book here") and the scanner ("Scan a book to find it") |
+| Genres | `categories.js` | Ten genres from Goodreads' and Circana's 2025 lists (sources in the library README), each with its search, colours, wood, sign, wall art and props; `HALL_CASE` for search |
+| Hall art | `hall/icons.js`, `hall/murals.js`, `hall/sprites.js`, `hall/layout.js`, `fonts.js` | Pixel icons as bitmaps (no emoji anywhere in the library); each bookcase in its genre's wood; the genre's art on the wall behind it; signs hung over the bookcases in a Google Fonts pixel font for each genre, at 16 px or more |
+| Opened bookcase | `components/GenreBookcase.vue`, `components/BookShelves.vue`, `shelves.js` | A full-screen bookcase on the genre's wall: 24 books as spines with readable titles, on uneven shelves, with stacks, a leaning book, props and a ladder; Spines / Covers; a book slides out before its preview. Replaces `components/ShelfSheet.vue` and its "See all" |
+| Search | `SearchView.vue` (moved from `client/src/views/`) | Full screen on the hall's wall, the library's search bar, results in a bookcase (covers by default), the librarian's card for before a search, no results and offline; Back to where the reader came from |
+| Docs | `client/src/buildings/library/README.md` | The README brought up to date |
+
+Shared (for a teammate to review):
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Found book's preview | `client/src/components/book/FoundBookPreview.vue`, `WhereToGet.vue`, `client/src/services/bookShops.js`, `client/src/composables/useBookPreview.js` | For a book found in the library, the scanner, search and the genre page: Add to To be read (then "On your To be read shelf", with See it in My Room) and Where to get, links to fourteen shops' and the NLB's own searches by ISBN or title, in a new tab. The preview stays open once a book is added |
+| Preview | `client/src/components/BookPreviewModal.vue` | `collapseReviews`: the reviews behind a Read reviews button. Off by default, so My Shelf is unchanged |
+| Book page | `client/src/components/book/BookDetailsContent.vue`, `client/src/views/BookDetailsView.vue` | A book not on the shelf offers Add to To be read; one on it shows its shelves by My Room's names (To be read, Currently reading, Finished reading); the book's page adds Where to get |
+| Shelf names | `client/src/services/shelves.js` | The status buttons named and ordered as My Room's shelves, so "Want to read" is gone. This changes My Shelf's preview buttons too (Sonya's) |
+| Pages | `client/src/views/GenreShelfView.vue`, `client/src/router/index.js` | The genre page uses the found book's preview; `/search` opens the library's search, full screen |
+| Docs | `AGENTS.md` | Search is listed with the library |
+| Tests | `tests/e2e/library.spec.js`, `find-book.spec.js`, `search.spec.js` (new), `library-wide.spec.js`, `scan-book.spec.js`, `fixtures.js` (`openPlaces`), `buttons.spec.js`, `back-button.spec.js`, `smoke.spec.js`, `my-shelf.spec.js`, `bookshelf.spec.js`, `reviews.spec.js`, `daily.spec.js`, `house-desktop.spec.js` | The top line on a phone and a laptop; the Places menu; ten bookcases with signs, icons and fonts, and no emoji; an opened bookcase (24 books, uneven shelves, Covers, a book's preview, a phone); Add to To be read and Where to get, in the preview and on the book's page; search full screen, its cards, Back. Other tests updated for the new names and for search filling the window |
+
+### Town notifications, tap to walk and the fuller friends list (AI-generated, team-agreed)
+
+Written by Claude Code at Dylan's request. Most of this is the town, which is Dylan's part. It
+includes interactivity (tapping to walk) and a backend endpoint (`GET /api/notifications/visits`),
+which `PROJECT.md` only allows AI to write when the team agrees: Dylan told the assistant the team
+agreed to both, and it is recorded here. Team to review: `server/` and `services/api.js` are shared. Aalric's
+username work connects at `client/src/town/username.js`, which lists the two things it needs.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Server | `server/src/services/notifications.js`, `server/src/routes/notifications.js`, `server/src/app.js` | Who visited your room since a date, read from the XP table's `visit_room` rows. A visitor is named only if they're a friend or public |
+| Notifications | `client/src/town/notificationsStore.js`, `client/src/services/api.js`, `client/src/components/town/NotificationsButton.vue`, `NotificationsPanel.vue`, `TownHud.vue` | Friend requests, friends coming online and room visits: one pop-up each (the shared toast), kept in a bell list in the browser, per reader |
+| Friends list | `client/src/components/town/FriendsList.vue`, `FriendRow.vue`, `AddFriendForm.vue`, `client/src/town/nearbyStore.js`, `username.js` | Each friend's head, book and chat button; Add friend by username (a skeleton until usernames can be chosen); choosing several friends to remove |
+| Map | `client/src/town/ground.js`, `TownScene.js`, `you.js`, `traffic.js`, `roads.js`, `client/src/components/town/TownMap.vue` | Tap the ground to walk there, stopping short of water and buildings; tap a townsperson to make them jiggle; a dev-only `window.__townScene` for the tests |
+| Leaving a place | `client/src/town/lastPlace.js`, `client/src/views/TownView.vue` | You come back out of the door you went in by, until the page is refreshed |
+| Daily button | `client/src/components/town/DailyButton.vue`, `DailyDock.vue` | Shut to the flame and streak; "Daily task" slides out on hover or keyboard focus. On other pages it is the town's button, placed by measuring each page's own buttons, and stays hidden until its spot has settled |
+| Tests | `tests/e2e/town-map.spec.js`, `friends-list.spec.js`, `notifications.spec.js`, `townFriends.js`, `daily.spec.js`, `friends.spec.js` | The new journeys, with friends answered in the test so they pass without the server's Supabase keys |
+| Test tidy-up | `tests/e2e/smoke.spec.js`, `shelve-book.spec.js` (removed); `town.spec.js`, `bookshelf.spec.js`, `back-button.spec.js`, `library.spec.js`, `buttons.spec.js` | Duplicates removed, with anything only they checked moved into the test that stays. The cafe's count test follows the page's words, and the friends button test now has friends |
+### A roomier book preview (AI-generated)
+
+Written by Claude Code at Aasim's request, after the team asked for the book preview to be bigger.
+Team to review: `BookPreviewModal.vue` is shared, so My Shelf's and a friend's shelf's book card
+change too.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Preview | `client/src/components/BookPreviewModal.vue` | Its own width (520px on a phone, 620px on a tablet, 880px on a laptop) instead of the 360px of the app's other pop-ups. On a laptop, two columns: a 240px cover on the left, the title, synopsis and buttons beside it, in bigger type. A phone keeps the cover beside the title and the rest below |
+| Tests | `tests/e2e/find-book.spec.js` | On a laptop the preview is over 800px wide, with the cover on the left of the title and the buttons |
+
+### The library's Bestsellers bookcase (AI-generated, team-agreed)
+
+Written by Claude Code at Aasim's request. It includes a backend endpoint, which `PROJECT.md`
+only allows AI to write when the team agrees: Aasim told the assistant the team agreed to it, and
+it is recorded here. Team to review: the route, the service and `services/api.js` are shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Service | `server/src/services/bestsellers.js`, `server/src/services/env.js`, `.env.example` | This week's NYT Best Sellers (the lists overview, each book once) with `NYT_BOOKS_API_KEY`, or Open Library's weekly trending list without it or when the NYT fails; each book matched to Google Books with the existing `findGoogleBook`, unmatched ones left out; kept six hours in memory and in `server/data/bestsellers.cache.json`; last time's list if both sources fail, else an error |
+| Route | `server/src/routes/books.js` | `GET /api/books/bestsellers`: `{ books, source, updatedAt }`, or 502 with an error (no placeholder books) |
+| Library | `client/src/services/api.js` (`getBestsellers`), `client/src/buildings/library/categories.js`, `LibraryView.vue`, `components/GenreBookcase.vue`, `hall/icons.js` (trophy), `hall/murals.js`, `hall/layout.js`, `fonts.js` (Silkscreen), `README.md` | A Bestsellers bookcase first in the hall: red and gold, a ribbon and trophy on the wall behind it, its sign in Silkscreen; it loads from the route instead of a search, and credits its source under the sign with a link (the NYT's attribution, or Open Library's). The ladder still leans on the Mystery bookcase |
+| Tests | `tests/e2e/library.spec.js` | It stands first, by the help desk, and first in Places; it loads from the route and not a search, with the NYT credit; Open Library's credit; a failed load offers Retry, then shows the books. The route itself was checked live against Open Library, and against a sample NYT reply |
+
+### A reader's profile fills a laptop window (AI-generated)
+
+Written by Claude Code at Sonya's request, test first. Layout only: no logic or endpoints.
+Team to review: the route line in `client/src/router/index.js` is shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Route | `client/src/router/index.js` | `reader-room` gets `meta.wide`, so the profile leaves the phone column on a laptop. It keeps the Readalot header, which is where the Daily button sits |
+| Profile | `client/src/views/ReaderRoomView.vue` | From 768px: two columns up to 1100px wide, the reader card, Visit room, Follow and Message on the left (staying in view as you scroll), the Currently Reading, Reading Prefs and Books You Both Have cards on the right. A phone keeps the one column. Back to Discover is a pixel button in the Daily button's look (`btn-secondary px-sign`, with the building back buttons' chevron) |
+| Tests | `tests/e2e/reader-profile.spec.js` | On a laptop: nothing covers Back to Discover and nothing scrolls sideways; the header and its search stay; the cards sit beside the reader. On a phone: the cards come under Follow and Message. Back to Discover has the Daily button's frame, fill and shadow, and goes to the Cafe |

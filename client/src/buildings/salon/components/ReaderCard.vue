@@ -44,6 +44,7 @@ const emit = defineEmits(['edit', 'open-list'])
         <button
           type="button"
           class="stat"
+          data-card
           aria-haspopup="dialog"
           :disabled="!ready"
           @click="emit('open-list', stat.status, $event.currentTarget)"
@@ -86,19 +87,6 @@ const emit = defineEmits(['edit', 'open-list'])
 .reader-card__edit {
   flex: none;
   align-self: flex-start;
-  min-height: 44px;
-  padding-inline: 18px;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: #fffdf9;
-  color: #1e1a24;
-  font-weight: 700;
-  box-shadow: 3px 3px 0 #1e1a24;
-}
-
-.reader-card__edit:hover {
-  background: #fbe7f0;
-  color: #1e1a24;
 }
 
 .avatar {

@@ -172,8 +172,7 @@ async function retryLoad() {
           v-for="option in GENDERS"
           :key="option"
           type="button"
-          class="choice"
-          :class="{ 'is-on': gender === option }"
+          class="btn btn-chip"
           :aria-pressed="gender === option"
           @click="choose('gender', option)"
         >
@@ -191,8 +190,7 @@ async function retryLoad() {
           v-for="option in FAITHS"
           :key="option"
           type="button"
-          class="choice"
-          :class="{ 'is-on': religion === option }"
+          class="btn btn-chip"
           :aria-pressed="religion === option"
           @click="choose('religion', option)"
         >
@@ -205,8 +203,7 @@ async function retryLoad() {
           v-for="genre in GENRES"
           :key="genre"
           type="button"
-          class="choice"
-          :class="{ 'is-on': genres.includes(genre) }"
+          class="btn btn-chip"
           :aria-pressed="genres.includes(genre)"
           @click="toggleGenre(genre)"
         >
@@ -250,21 +247,6 @@ async function retryLoad() {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.choice {
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-canvas);
-  color: var(--rl-text);
-  font-size: 0.875rem;
-  padding: 6px 12px;
-}
-
-.choice.is-on {
-  background: var(--rl-primary);
-  border-color: var(--rl-primary);
-  color: var(--rl-surface);
 }
 
 .stage-error {

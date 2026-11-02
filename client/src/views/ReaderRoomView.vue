@@ -1,97 +1,319 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import ReaderChat from '../components/people/ReaderChat.vue';
-import {
-  myDemoProfile, getDemoReader, getCompatibility, getCurrentlyReading,
-  getSharedBooks, getSharedGenres, isFollowing, toggleFollow,
-} from '../services/peopleDemo.js';
+import GenreChip from '../components/people/GenreChip.vue';
+import PixelBookRow from '../components/people/PixelBookRow.vue';
+import PixelCard from '../components/people/PixelCard.vue';
+import ReaderCard from '../components/people/ReaderCard.vue';
+import ReaderChatDialog from '../components/people/ReaderChatDialog.vue';
+import { PAL } from '@/buildings/library/hall/palette.js';
+import { getCurrentlyReading } from '@/lib/readerMatch.js';
+import { usePeopleStore } from '@/stores/people.js';
+
+// the Library's colours, read from its palette so the two stay in step
+const colours = {
+  '--profile-wall': PAL.wall,
+  '--profile-paper': PAL.paper,
+  '--profile-paper-shade': PAL.paperShade,
+  '--profile-ink-soft': PAL.woodDeep,
+  '--profile-brass': PAL.brass,
+  '--profile-teal': PAL.teal,
+  '--profile-green': PAL.green,
+  '--profile-green-dark': PAL.leafDark,
+  '--profile-wood': PAL.wood,
+  '--profile-wood-light': PAL.woodLight,
+  '--profile-wood-dark': PAL.woodDark,
+  '--profile-rug': PAL.rug,
+  '--profile-rug-shade': PAL.rugShade,
+  '--profile-sky': PAL.sky,
+  '--profile-grass': PAL.leaf,
+};
 
 const route = useRoute();
-const reader = computed(() => getDemoReader(route.params.id));
+const people = usePeopleStore();
+const reader = ref(null);
+const loading = ref(true);
+const loadError = ref('');
 const following = ref(false);
 const error = ref('');
-const filter = ref('All');
-const statuses = ['All', 'Reading', 'To Read', 'Finished'];
+const chatOpen = ref(false);
+const messageButton = ref(null);
+const firstName = computed(() => reader.value?.displayName.split(' ')[0] ?? '');
 const currentBook = computed(() => reader.value ? getCurrentlyReading(reader.value) : null);
-const sharedBooks = computed(() => reader.value ? getSharedBooks(reader.value) : []);
-const sharedGenres = computed(() => reader.value ? getSharedGenres(reader.value) : []);
-const filteredBooks = computed(() => (reader.value?.books ?? []).filter((book) => filter.value === 'All' || book.status === filter.value));
-watch(() => route.params.id, (id) => {
-  following.value = isFollowing(id);
-  filter.value = 'All';
+const sharedBooks = computed(() => reader.value ? people.sharedBooks(reader.value) : []);
+const sharedGenres = computed(() => reader.value ? people.sharedGenres(reader.value) : []);
+
+async function load(id) {
+  loading.value = true;
+  loadError.value = '';
   error.value = '';
-}, { immediate: true });
-function follow() {
+  try {
+    reader.value = await people.fetchReader(id);
+    following.value = people.isFollowing(id);
+  } catch (err) {
+    reader.value = null;
+    loadError.value = err.message || "Couldn't load this reader.";
+  } finally {
+    loading.value = false;
+  }
+}
+
+watch(() => route.params.id, load, { immediate: true });
+
+// the chat closes back to the Message button that opened it
+function closeChat() {
+  chatOpen.value = false;
+  messageButton.value?.focus();
+}
+
+async function follow() {
   error.value = '';
-  try { following.value = toggleFollow(reader.value.id); }
-  catch (err) { error.value = err.message; }
+  try { following.value = await people.toggleFollow(reader.value.id); }
+  catch (err) { error.value = err.message || 'Could not save your follow.'; }
 }
 </script>
 
 <template>
-  <main class="reader-room">
-    <RouterLink class="back-link" to="/people">← Back to Discover People</RouterLink>
+  <main class="reader-room" :style="colours">
+    <div class="back-row">
+      <RouterLink class="btn btn-secondary px-sign back-link" to="/people">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+        Back to Discover
+      </RouterLink>
+    </div>
 
     <template v-if="reader">
-      <header class="profile-hero">
-        <div class="avatar">{{ reader.initials }}</div>
-        <div class="profile-details">
-          <h1>{{ reader.displayName }}</h1>
-          <p>@{{ reader.username }} · {{ reader.neighborhood }}</p>
-          <span class="match">{{ getCompatibility(reader) }}% Reading Match</span>
+      <!-- on a laptop: the reader on the left, the cards beside them -->
+      <div class="reader-layout">
+        <div class="reader-side">
+          <ReaderCard :reader="reader" :match="people.compatibility(reader)" />
+          <RouterLink class="btn btn-primary visit-room" :to="{ name: 'reader-house', params: { id: reader.id } }">
+            Visit {{ firstName }}'s room
+          </RouterLink>
+          <div class="actions">
+            <button type="button" class="btn btn-primary follow-button" :aria-pressed="following" @click="follow">{{ following ? 'Following' : 'Follow' }}</button>
+            <button ref="messageButton" type="button" class="btn btn-primary message-button" @click="chatOpen = true">Message</button>
+          </div>
+          <p v-if="error" class="error" role="alert">{{ error }}</p>
         </div>
-      </header>
-      <p class="tagline">“{{ reader.tagline }}”</p>
-      <RouterLink class="visit-room" :to="{ name: 'reader-house', params: { id: reader.id } }">
-        <span aria-hidden="true">🏠</span> Visit {{ reader.displayName.split(' ')[0] }}'s room
-      </RouterLink>
-      <div class="actions">
-        <button class="follow-button" @click="follow">{{ following ? '✓ Following' : '+ Follow Reader' }}</button>
-        <a href="#reader-chat" class="message-button">💌 Leave a message</a>
+
+        <div class="reader-cards">
+          <PixelCard title="Currently Reading" icon="📖">
+            <PixelBookRow v-if="currentBook" :title="currentBook.title" :author="currentBook.author" :genre="currentBook.genre">
+              <GenreChip v-if="currentBook.genre" :genre="currentBook.genre" />
+            </PixelBookRow>
+            <p v-else class="card-empty">Not reading anything right now</p>
+          </PixelCard>
+
+          <PixelCard title="Reading Prefs" icon="💭">
+            <ul class="genre-list" aria-label="Favourite genres">
+              <li v-for="genre in reader.favoriteGenres" :key="genre"><GenreChip :genre="genre" :shared="sharedGenres.includes(genre)" /></li>
+            </ul>
+            <p class="in-common">{{ sharedGenres.length ? `★ ${sharedGenres.length} in common: ${sharedGenres.join(', ')}` : 'No genres in common yet' }}</p>
+          </PixelCard>
+
+          <PixelCard title="Books You Both Have" icon="🤝">
+            <template v-if="sharedBooks.length">
+              <p class="shared-count">{{ sharedBooks.length }} shared {{ sharedBooks.length === 1 ? 'book' : 'books' }} with You</p>
+              <ul class="book-list">
+                <li v-for="book in sharedBooks" :key="book.id"><PixelBookRow :title="book.title" :author="book.author" :genre="book.genre" /></li>
+              </ul>
+            </template>
+            <template v-else>
+              <p class="card-empty">No books in common yet. Their room's shelf has everything they're reading.</p>
+              <RouterLink class="btn btn-secondary btn-sm shelf-link" :to="{ name: 'reader-house-shelf', params: { id: reader.id } }">See {{ firstName }}'s shelf</RouterLink>
+            </template>
+          </PixelCard>
+        </div>
       </div>
-      <p v-if="error" class="error" role="alert">{{ error }}</p>
 
-      <section class="info-panel">
-        <h2>📖 Currently Reading</h2>
-        <div v-if="currentBook" class="book-line"><div class="mini-cover">📗</div><div><strong>{{ currentBook.title }}</strong><span>by {{ currentBook.author }}</span><small>{{ currentBook.genre }}</small></div></div>
-        <p v-else class="muted">Not currently reading a book.</p>
-      </section>
-
-      <section class="info-panel">
-        <h2>💭 Reading Preferences</h2>
-        <p class="muted">Favourite genres</p>
-        <div class="tags"><span v-for="genre in reader.favoriteGenres" :key="genre" class="tag">{{ genre }}</span></div>
-        <p class="muted" style="margin-top:12px">{{ sharedGenres.length }} genre(s) in common: {{ sharedGenres.join(', ') || 'None yet' }}</p>
-      </section>
-
-      <section class="info-panel">
-        <h2>🤝 Books You Both Have</h2>
-        <p class="muted">{{ sharedBooks.length }} shared book(s) with {{ myDemoProfile.displayName }}</p>
-        <div v-if="sharedBooks.length" class="book-list">
-          <div v-for="book in sharedBooks" :key="book.id" class="book-line"><div class="mini-cover">📚</div><div><strong>{{ book.title }}</strong><span>by {{ book.author }}</span></div></div>
-        </div>
-        <p v-else class="muted">No shared books yet. Explore their shelf below!</p>
-      </section>
-
-      <section class="info-panel">
-        <h2>📚 {{ reader.displayName }}'s Bookshelf</h2>
-        <div class="filters" aria-label="Filter bookshelf by reading status">
-          <button v-for="status in statuses" :key="status" type="button" :class="{ active: filter === status }" @click="filter = status">{{ status }}</button>
-        </div>
-        <div v-if="filteredBooks.length" class="book-list">
-          <div v-for="book in filteredBooks" :key="book.id" class="book-line"><div class="mini-cover">📕</div><div><strong>{{ book.title }}</strong><span>by {{ book.author }}</span><small>{{ book.status }} · {{ book.genre }}</small></div></div>
-        </div>
-        <p v-else class="muted">No books in this category yet.</p>
-      </section>
-
-      <div id="reader-chat"><ReaderChat :key="reader.id" :reader-id="reader.id" :reader-name="reader.displayName" /></div>
-      <p class="demo-note">Demo mode: fictional profiles; follows and chat history are saved only in this browser.</p>
+      <ReaderChatDialog :key="reader.id" :open="chatOpen" :reader-id="reader.id" :reader-name="reader.displayName" @close="closeChat" />
     </template>
-    <section v-else class="info-panel"><h1>Reader not in demo</h1><p>This local prototype contains four sample readers. Return to Discover People to visit one.</p><RouterLink to="/people">Browse sample readers →</RouterLink></section>
+    <p v-else-if="loading" class="card-empty" role="status">Loading reader…</p>
+    <section v-else-if="loadError" class="notice" role="alert">
+      <h1>Couldn't load this reader</h1>
+      <p>{{ loadError }}</p>
+      <button type="button" class="btn btn-primary" @click="load(route.params.id)">Try again</button>
+    </section>
+    <section v-else class="notice">
+      <h1>Reader not found</h1>
+      <p>There's no reader at this address.</p>
+      <RouterLink class="btn btn-primary" to="/cafe">Find readers in the Cafe</RouterLink>
+    </section>
   </main>
 </template>
 
 <style scoped>
-.reader-room{padding:20px 16px 95px;color:#40372f;font-family:inherit}.back-link{font-size:12px;color:#765f4d}.profile-hero{display:flex;align-items:center;gap:12px;margin:22px 0 10px}.avatar{width:60px;height:60px;border-radius:50%;background:#d6e7d5;color:#39714e;display:grid;place-items:center;font-size:19px;font-weight:700;flex-shrink:0}.profile-details{min-width:0}.profile-details h1{font-size:21px;line-height:1.2;margin:0 0 5px}.profile-details p{font-size:11px;color:#917f72;margin:0 0 7px}.match{display:inline-block;background:#2b925c;color:#fff;font-size:11px;font-weight:700;border-radius:15px;padding:4px 9px}.tagline{font-size:13px;font-style:italic;color:#806e62}.actions{display:flex;gap:9px;margin:18px 0}.actions>*{flex:1;text-align:center;padding:12px 9px;border-radius:12px;font-size:12px;text-decoration:none;font-weight:700;cursor:pointer}.follow-button{border:0;color:white;background:#745d4e}.message-button{border:1px solid #d8c4d7;background:#f0e6ee;color:#705574}.info-panel{padding:15px;background:#fffdf8;border:1px solid #e6dccf;border-radius:17px;margin-top:18px}.info-panel h2{font-size:16px;margin:0 0 13px}.muted{font-size:12px;color:#8b7b6d}.tags,.filters{display:flex;gap:6px;flex-wrap:wrap}.tag{background:#f2e6d9;border-radius:20px;padding:6px 10px;font-size:11px}.book-list{display:flex;flex-direction:column;gap:11px}.book-line{display:flex;align-items:center;gap:12px;margin:8px 0}.mini-cover{height:59px;width:42px;border-radius:5px;background:#d9e5dd;display:grid;place-items:center;font-size:20px;flex-shrink:0}.book-line strong,.book-line span,.book-line small{display:block}.book-line strong{font-size:13px}.book-line span{font-size:11px;color:#837467;margin:4px 0}.book-line small{font-size:10px;color:#68826c}.filters{margin-bottom:15px}.filters button{padding:7px 9px;font-size:11px;background:#f5ede4;border:1px solid #e5d8c8;border-radius:10px;cursor:pointer}.filters button.active{background:#745d4e;color:#fff}.demo-note{font-size:10px;color:#938173}.error{font-size:12px;color:#ac3434}.visit-room{display:block;margin-top:16px;padding:13px;border-radius:12px;background:#4f6f52;color:#fff;font-size:13px;font-weight:700;text-align:center;text-decoration:none}
+/* one readable column on the Library's parchment wall */
+.reader-room {
+  min-height: 100%;
+  padding: 20px 16px 95px;
+  background: var(--profile-wall);
+  color: var(--px-outline);
+}
+
+.reader-room > * {
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* the Daily button's look, at the left of the column */
+.back-row {
+  margin-bottom: 18px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.back-link svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reader-room .reader-card {
+  margin-bottom: 18px;
+}
+
+/* a laptop: the reader stays in view on the left while the cards run down the right */
+@media (min-width: 768px) {
+  .reader-room {
+    padding: 20px 32px 95px;
+  }
+
+  .reader-room > .back-row,
+  .reader-room > .reader-layout,
+  .reader-room > .demo-note {
+    max-width: 1100px;
+  }
+
+  .reader-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+  }
+
+  .reader-side {
+    position: sticky;
+    top: 20px;
+  }
+
+  /* the first card's tab lines up with the top of the reader card */
+  .reader-cards > :first-child {
+    margin-top: 0;
+  }
+}
+
+/* Visit, the main action: wide and green */
+.visit-room {
+  --px-fill: var(--profile-green-dark);
+  --px-light: var(--profile-green);
+  --px-hover: var(--profile-green);
+  --px-label: var(--px-paper);
+  display: flex;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 12px auto 18px;
+}
+
+.actions > * {
+  flex: 1;
+}
+
+/* Follow, wood brown */
+.follow-button {
+  --px-fill: var(--profile-wood);
+  --px-light: var(--profile-wood-light);
+  --px-hover: var(--profile-wood-dark);
+  --px-label: var(--px-paper);
+}
+
+/* not found, or couldn't load: a paper card */
+.notice {
+  padding: 16px;
+  background: var(--profile-paper);
+  border: var(--px-border);
+  box-shadow: var(--px-shadow);
+}
+
+.notice h1 {
+  margin: 0 0 8px;
+  font-family: var(--font-heading);
+  font-size: 20px;
+}
+
+/* Message, the Library's rug red */
+.message-button {
+  --px-fill: var(--profile-rug);
+  --px-light: var(--profile-rug);
+  --px-dark: var(--profile-rug-shade);
+  --px-hover: var(--profile-rug-shade);
+  --px-label: var(--px-paper);
+}
+
+.card-empty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--profile-ink-soft);
+}
+
+.genre-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.in-common {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shared-count {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.book-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shelf-link {
+  margin-top: 12px;
+}
+
+.demo-note {
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--profile-ink-soft);
+}
+
+.error {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--profile-rug-shade);
+}
 </style>

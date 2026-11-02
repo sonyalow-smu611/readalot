@@ -37,7 +37,7 @@ onMounted(() => button.value?.focus())
         <li v-if="reward.chest"><span class="daily-reward__icon is-freeze" aria-hidden="true">❄</span>+1 streak freeze</li>
       </ul>
       <p class="daily-reward__next">Come back tomorrow to keep your streak going.</p>
-      <button ref="button" type="button" class="daily-reward__ok" @click="emit('close')">Nice!</button>
+      <button ref="button" type="button" class="btn btn-accent daily-reward__ok" @click="emit('close')">Nice!</button>
     </section>
   </div>
 </template>
@@ -169,19 +169,6 @@ onMounted(() => button.value?.focus())
 
 .daily-reward__ok {
   min-width: 140px;
-  min-height: 46px;
-  border: 3px solid #2b1d24;
-  border-radius: 999px;
-  background: #f6c94a;
-  box-shadow: 0 4px 0 #2b1d24;
-  color: #2b1d24;
-  font-weight: 800;
-  font-size: 16px;
-}
-
-.daily-reward__ok:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #2b1d24;
 }
 
 @keyframes reward-fade {

@@ -9,7 +9,7 @@ import { useRoute } from 'vue-router'
 import ShelfTier from '@/components/ShelfTier.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import SkeletonBlock from '@/components/SkeletonBlock.vue'
-import BookPreviewModal from '@/components/BookPreviewModal.vue'
+import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
 import { useBookPreview } from '@/composables/useBookPreview'
 import { genreInfo } from '@/services/discover.js'
 import { searchBooks } from '@/services/api.js'
@@ -30,7 +30,7 @@ const SORTS = [
 ]
 
 const route = useRoute()
-const { previewBook, openPreview, closePreview, saveStatus } = useBookPreview()
+const { previewBook, saving, openPreview, closePreview, saveStatus } = useBookPreview()
 
 const genre = computed(() => genreInfo(route.params.genre))
 const books = ref([])
@@ -105,8 +105,7 @@ const tiers = computed(() => {
         v-for="sort in SORTS"
         :key="sort.key"
         type="button"
-        class="genre__chip"
-        :class="{ 'is-active': sortKey === sort.key }"
+        class="btn btn-chip genre__chip"
         :aria-pressed="sortKey === sort.key"
         :disabled="loading"
         @click="sortKey = sort.key"
@@ -145,7 +144,7 @@ const tiers = computed(() => {
       />
     </template>
 
-    <BookPreviewModal :book="previewBook" @close="closePreview" @status="saveStatus" />
+    <FoundBookPreview :book="previewBook" :adding="saving" @add="saveStatus('want_to_read')" @close="closePreview" />
   </section>
 </template>
 
@@ -160,28 +159,15 @@ const tiers = computed(() => {
 .genre__sorts {
   display: flex;
   gap: 8px;
-  margin-bottom: 20px;
+  /* room below and to the right for the chips' pixel shadow, which the scroll would clip */
+  padding: 0 3px 3px 0;
+  margin-bottom: 17px;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
 .genre__chip {
   flex-shrink: 0;
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: var(--paper);
-  border: var(--outline);
-  border-radius: 999px;
-  color: var(--ink);
-}
-
-.genre__chip.is-active {
-  background: var(--mint);
-}
-
-.genre__chip:disabled {
-  opacity: 0.5;
 }
 
 .genre__skeleton {

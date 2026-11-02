@@ -2,19 +2,22 @@
 // Phaser 3 (phaser.io, MIT) — draws the town map, lets the reader drag and pinch around it, and
 // reports taps on buildings and friends' houses. On top of the picture: moving water
 // (water.js), the campfire (fire.js), cars and walkers (traffic.js), the weather (sky.js) and
-// your own character (you.js), whom the camera can follow. Friends' houses show whether
-// they are online (a green dot on the name tag) and, if they have been away a while, look
-// dusty or neglected (see friends.js), and friends who are online walk the streets with an
-// orange glow (friend.js); tap one to talk. Everything you press besides the map itself is HTML
-// (components/town).
+// your own character (you.js), whom the camera can follow. A friend's house stands on its plot
+// only once they're your friend; it shows whether they are online (a green dot on the name tag)
+// and, if they have been away a while, looks dusty or neglected (see friends.js). Friends who are
+// online walk the streets with an orange glow and readers nearby with a blue one (friend.js); tap
+// one to talk. Tap the ground and your character walks there (ground.js); tap a townsperson and
+// they jiggle (traffic.js). Everything you press besides the map itself is HTML (components/town).
 import Phaser from 'phaser'
 import mapData from './map-data.json'
 import { ALL_PLACES, AVATARS, FRIEND_HOUSES, MAP_W, MAP_H, PLACES, SPAWN, TOWNSFOLK } from './places.js'
+import { somewhereToWalk } from './roads.js'
 import { SKY_DEPTH, Sky } from './sky.js'
 import { Traffic } from './traffic.js'
 import { Water } from './water.js'
 import { Campfire } from './fire.js'
 import { You } from './you.js'
+import { routeTo } from './ground.js'
 import { doorstep } from './door.js'
 import { Friend } from './friend.js'
 import { Sign, hasSign, loadSigns } from './signs.js'
@@ -53,10 +56,16 @@ export default class TownScene extends Phaser.Scene {
   // start: a place id to open on, framed as the tour frames it (a new reader's first look).
   // onTourSpot({ id, x, y, w, h }) says where a tour stop's building is on screen once the
   // camera has settled on it.
-  constructor({ character, start, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, onTourSpot, reducedMotion }) {
+  // comingFrom: the id of the place you just left: you start outside its door, the camera on you.
+  // onWalk() says a tap on the ground has sent you walking.
+  constructor({ character, start, comingFrom, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, onTourSpot, onWalk, reducedMotion }) {
     super('town')
     this.character = character
     this.start = start
+    this.comingFrom = comingFrom
+    this.onWalk = onWalk
+    // the first tour keeps your character where it is
+    this.canWalk = true
     this.onTourSpot = onTourSpot
     this.onSelect = onSelect
     this.onReady = onReady
@@ -73,8 +82,12 @@ export default class TownScene extends Phaser.Scene {
     this.skyState = { night: false, rain: false }
     this.pops = {}
     this.hovered = null
-    // [{ id: reader id, online, upkeep }]: see setFriends
+    // [{ id: reader id, online, upkeep, house: place id or null }]: see setFriends
     this.friends = []
+    // readers near you, see setNearby
+    this.nearby = []
+    // each place's tap zone, by place id
+    this.zones = {}
     this.tags = {}
     // the big signs over the four main buildings, by place id
     this.signs = {}
@@ -108,13 +121,20 @@ export default class TownScene extends Phaser.Scene {
     const cam = this.cameras.main
     cam.setBounds(0, 0, MAP_W, MAP_H)
     cam.setBackgroundColor('#6fb14b')
+    // whole-pixel drawing makes slow movement (the signs' bob) jump a pixel at a time
+    cam.setRoundPixels(false)
     this.fitZoom()
     const first = this.start && ALL_PLACES.find((p) => p.id === this.start)
+    const left = !first && ALL_PLACES.find((p) => p.id === this.comingFrom)
+    const outside = left ? doorstep(left).front : null
     if (first) {
       // already where the tour begins, so arriving from Welcome is one move, not three
       const frame = this.tourFrame(first)
       cam.setZoom(frame.zoom)
       cam.centerOn(frame.x, frame.y)
+    } else if (outside) {
+      cam.setZoom(Math.max(FOLLOW_ZOOM, this.minZoom))
+      cam.centerOn(outside[0], outside[1] - 60)
     } else {
       cam.setZoom(Math.max(START_ZOOM, this.minZoom))
       cam.centerOn(SPAWN.x, SPAWN.y - 200)
@@ -125,10 +145,10 @@ export default class TownScene extends Phaser.Scene {
     this.sky.set(this.skyState, false)
     this.water = new Water(this, motion)
     this.campfire = new Campfire(this, { ...motion, glow: (x, y, options) => this.sky.glow(x, y, options) })
-    this.traffic = new Traffic(this, { ...motion, lights: this.sky.lights })
+    this.traffic = new Traffic(this, { ...motion, lights: this.sky.lights, isTap: (pointer) => this.isTap(pointer) })
     this.addPlaces()
     this.showFriends()
-    this.you = new You(this, { ...motion, character: this.character })
+    this.you = new You(this, { ...motion, character: this.character, at: outside })
     this.addCameraControls()
     this.scale.on('resize', () => {
       this.fitZoom()
@@ -139,6 +159,7 @@ export default class TownScene extends Phaser.Scene {
 
   update(time, delta) {
     this.sky?.update(delta)
+    for (const sign of Object.values(this.signs)) sign.setZoom(this.cameras.main.zoom)
     this.water?.update(delta)
     this.you?.sync()
     for (const walker of Object.values(this.walkers)) walker.sync()
@@ -150,50 +171,78 @@ export default class TownScene extends Phaser.Scene {
     this.you?.setLook(character)
   }
 
-  // Your friends' presence, [{ id: reader id, online, upkeep: 'kept' or one of AGED }].
+  // Your friends' presence, [{ id: reader id, online, upkeep: 'kept' or one of AGED, house }].
   // May come before the map has loaded; it is used as soon as it has.
   setFriends(friends) {
     this.friends = friends
     if (this.sky) this.showFriends()
   }
 
+  // Readers near you, [{ id, displayName, character, online }]. May come before the map has
+  // loaded; it is used as soon as it has.
+  setNearby(readers) {
+    this.nearby = readers
+    if (this.sky) this.showWalkers()
+  }
+
   // Each friend's house: a green dot on the name tag while they are online, and a dusty,
   // neglected or derelict look (windows dark at night from neglected on) the longer they are away.
+  // A plot with no friend on it is plain lawn: nothing shows and nothing can be tapped.
   showFriends() {
     for (const place of FRIEND_HOUSES) {
-      const friend = this.friends.find((f) => f.id === place.reader)
-      const upkeep = friend?.upkeep ?? 'kept'
-      this.addNameTag(place, Boolean(friend?.online))
+      const friend = this.friends.find((f) => f.house === place.id)
+      this.zones[place.id].input.enabled = Boolean(friend)
+      if (!friend) {
+        this.clearNameTag(place.id)
+        this.aged[place.id]?.setVisible(false)
+        this.sky.setWindowsLit(place.art, false)
+        continue
+      }
+      const { upkeep } = friend
+      // the house is named after whoever lives there
+      this.addNameTag({ ...place, label: friend.displayName.split(' ')[0] }, Boolean(friend.online))
       const box = mapData.buildings[place.art]
       if (!box) continue
       const aged = `building-${place.art}-${upkeep}`
       const look = upkeep !== 'kept' && this.textures.exists(aged) ? aged : `building-${place.art}`
-      // the aged house laid exactly over the clean one in the picture, under the pop copy
+      // just over the picture, so a door opening (door.js) still shows in front of it
       this.aged[place.id] ??= this.add
         .image(box.x + box.w / 2, box.y + box.h, look)
         .setOrigin(0.5, 1)
-        .setDepth(box.y + box.h - 0.5)
-      this.aged[place.id].setTexture(look).setVisible(look !== `building-${place.art}`)
+        .setDepth(1)
+      this.aged[place.id].setTexture(look).setVisible(true)
       this.pops[place.id]?.image.setTexture(look)
       this.sky.setWindowsLit(place.art, !DARK.includes(upkeep))
       if (this.haloFor === place.id) this.outline(place)
-      // online friends come out of their front door and walk about; the rest stay in
-      const out = friend?.online && friend.character
-      if (out && !this.walkers[friend.id]) {
-        this.walkers[friend.id] = new Friend(this, {
-          friend,
-          at: doorstep(place).front,
-          reducedMotion: this.reducedMotion,
-          onTap: (pointer) => {
-            const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
-            if (onMap && !this.dragged && !this.pinch) this.selectFriend(friend.id)
-          },
-        })
-      } else if (!out && friend && this.walkers[friend.id]) {
-        if (this.talkingTo === friend.id) this.talkingTo = null
-        this.walkers[friend.id].destroy()
-        delete this.walkers[friend.id]
-      }
+    }
+    this.showWalkers()
+  }
+
+  // Who is out walking: online friends, from their front door if they have one, and readers near
+  // you. Anyone who has gone, or has become a friend, is taken off the streets first.
+  showWalkers() {
+    const out = [
+      ...this.friends.filter((friend) => friend.online && friend.character).map((reader) => ({ reader, kind: 'friend' })),
+      ...this.nearby.map((reader) => ({ reader, kind: 'nearby' })),
+    ]
+    for (const [id, walker] of Object.entries(this.walkers)) {
+      if (out.some(({ reader, kind }) => reader.id === id && kind === walker.kind)) continue
+      if (this.talkingTo === id) this.talkingTo = null
+      walker.destroy()
+      delete this.walkers[id]
+    }
+    for (const { reader, kind } of out) {
+      if (this.walkers[reader.id]) continue
+      const house = FRIEND_HOUSES.find((place) => place.id === reader.house)
+      this.walkers[reader.id] = new Friend(this, {
+        friend: reader,
+        kind,
+        at: house ? doorstep(house).front : somewhereToWalk(),
+        reducedMotion: this.reducedMotion,
+        onTap: (pointer) => {
+          if (this.isTap(pointer)) this.selectFriend(reader.id)
+        },
+      })
     }
   }
 
@@ -248,6 +297,7 @@ export default class TownScene extends Phaser.Scene {
     for (const [index, place] of ALL_PLACES.entries()) {
       const zone = this.add.zone(place.x + place.w / 2, place.y + place.h / 2, place.w, place.h)
       zone.setInteractive({ useHandCursor: true })
+      this.zones[place.id] = zone
       this.listen(zone, place)
       this.addPop(place)
       // the four main buildings get a big sign; friends' houses a name tag
@@ -259,13 +309,17 @@ export default class TownScene extends Phaser.Scene {
     }
   }
 
+  // Whether a pointer-up was a tap on the map. Phaser hears pointer-ups on the whole window: a
+  // click on an HTML button over the map must not also tap what's underneath it.
+  isTap(pointer) {
+    const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
+    return onMap && !this.dragged && !this.pinch
+  }
+
   // Taps on a building, or on its sign, choose it; pointing at either pops it.
   listen(target, place) {
     target.on('pointerup', (pointer) => {
-      // Phaser hears pointer-ups on the whole window: a click on an HTML button over the
-      // map must not also tap the building underneath it
-      const onMap = pointer.downElement === this.game.canvas && pointer.upElement === this.game.canvas
-      if (onMap && !this.dragged && !this.pinch) this.select(place)
+      if (this.isTap(pointer)) this.select(place)
     })
     target.on('pointerover', () => {
       this.hovered = place.id
@@ -323,11 +377,7 @@ export default class TownScene extends Phaser.Scene {
   // A name tag floating over a building's roof, readable at night too; `online` puts a green
   // dot before a friend's name. Calling it again replaces the tag.
   addNameTag(place, online = false) {
-    const old = this.tags[place.id]
-    if (old) {
-      this.tweens.killTweensOf(old)
-      old.destroy()
-    }
+    this.clearNameTag(place.id)
     const text = this.add.text(0, 0, place.label, {
       fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
       fontSize: '26px',
@@ -349,6 +399,14 @@ export default class TownScene extends Phaser.Scene {
     const tag = this.add.container(place.x + place.w / 2, place.y + 4, [pill, text]).setDepth(SKY_DEPTH + 30)
     if (!this.reducedMotion) this.tweens.add({ targets: tag, y: tag.y - 8, duration: 1400, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
     this.tags[place.id] = tag
+  }
+
+  clearNameTag(id) {
+    const old = this.tags[id]
+    if (!old) return
+    this.tweens.killTweensOf(old)
+    old.destroy()
+    delete this.tags[id]
   }
 
   select(place) {
@@ -511,6 +569,36 @@ export default class TownScene extends Phaser.Scene {
     this.onFollow?.(false)
   }
 
+  setCanWalk(on) {
+    this.canWalk = on
+  }
+
+  // A tap on bare ground: you walk as near it as you can get, and a ring marks where you're going.
+  walkTo(pointer) {
+    if (this.busy || !this.canWalk) return
+    const { x, y } = this.cameras.main.getWorldPoint(pointer.x, pointer.y)
+    const emptyPlots = FRIEND_HOUSES.filter((place) => !this.friends.some((f) => f.house === place.id)).map((place) => place.art)
+    const route = routeTo([this.you.body.x, this.you.body.y], [x, y], emptyPlots)
+    this.you.goTo(route)
+    this.markSpot(route[route.length - 1])
+    this.onWalk?.()
+  }
+
+  markSpot([x, y]) {
+    const ring = this.add.circle(x, y, 14).setStrokeStyle(4, 0xffffff).setScale(1, 0.5).setDepth(SKY_DEPTH + 1)
+    this.tweens.add({
+      targets: ring,
+      scaleX: 2,
+      scaleY: 1,
+      alpha: 0,
+      // reduced motion only fades it
+      ...(this.reducedMotion ? { scaleX: 1, scaleY: 0.5 } : {}),
+      duration: 600,
+      ease: 'Sine.easeOut',
+      onComplete: () => ring.destroy(),
+    })
+  }
+
   // Walks you to the building; as its door opens the camera leans in, and once you are through
   // it says you are inside.
   goInto(id) {
@@ -561,7 +649,9 @@ export default class TownScene extends Phaser.Scene {
       cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom
     })
 
-    this.input.on('pointerup', () => {
+    this.input.on('pointerup', (pointer, over) => {
+      // nothing tappable under it: the ground
+      if (!over.length && this.isTap(pointer)) this.walkTo(pointer)
       if (this.activePointers().length < 2) {
         // let the zone's own pointerup see the pinch before it is cleared
         this.time.delayedCall(0, () => {

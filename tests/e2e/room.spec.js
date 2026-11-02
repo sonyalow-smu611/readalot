@@ -1,6 +1,6 @@
 import {
-  artColour, buy, expect, goToPlace, mockQuote, mockTime, mockWeather, pickFromInventory, roomCanvas, roomReady,
-  roomRegion, scrollSettled, skipMoodCheckIn, test,
+  SPOTS, artColour, buy, expect, goToPlace, mockQuote, mockTime, mockWeather, pickFromInventory, roomCanvas, roomReady,
+  roomRegion, scrollSettled, skipMoodCheckIn, tapRoomAt, test,
 } from "./fixtures.js";
 
 // My Room on a phone: the room is one wide picture, wider than the screen, that the reader looks
@@ -63,11 +63,11 @@ test.describe("looking around the room", () => {
     const list = page.getByRole("navigation", { name: "Places in the room" });
     await expect(menu).toHaveAttribute("aria-expanded", "false");
     await expect(list).toBeHidden();
-    // the top left corner of the room
+    // the top left corner of the room, just under the back button
     const box = await menu.boundingBox();
     const area = await roomRegion(page).boundingBox();
     expect(box.x - area.x).toBeLessThan(30);
-    expect(box.y - area.y).toBeLessThan(30);
+    expect(box.y - area.y).toBeLessThan(80);
 
     await menu.click();
     await expect(menu).toHaveAttribute("aria-expanded", "true");
@@ -210,16 +210,17 @@ test.describe("tapping the room", () => {
     await expect(card).toBeHidden();
   });
 
-  test("the corkboard opens the Quote of the Day", async ({ page }) => {
+  test("the corkboard opens my notice board, with the Quote of the Day on top", async ({ page }) => {
     await mockQuote(page);
     await goToPlace(page, "Corkboard");
-    await page.getByRole("button", { name: "Quote of the day" }).click();
+    await page.getByRole("button", { name: "Notice board" }).click();
 
-    const quote = page.getByRole("dialog", { name: "Quote of the Day" });
+    const board = page.getByRole("dialog", { name: "Notice board" });
+    const quote = board.getByRole("region", { name: "Quote of the Day" });
     await expect(quote.getByText("“So many books, so little time.”")).toBeVisible();
     await expect(quote.getByText("On books")).toBeVisible();
-    await quote.getByRole("button", { name: "Close" }).click();
-    await expect(quote).toBeHidden();
+    await board.getByRole("button", { name: "Close" }).click();
+    await expect(board).toBeHidden();
   });
 });
 
@@ -229,11 +230,11 @@ test.describe("decorating", () => {
     await buy(page, "Succulent trio");
     await expect(page.getByText("450").first()).toBeVisible();
 
-    // pick the succulents, then tap one of the glowing spots they can stand on
+    // pick the succulents, then tap the window seat
     await pickFromInventory(page, "Succulent trio");
-    await expect(page.getByRole("status")).toContainText("Tap a glowing spot for the Succulent trio");
+    await expect(page.getByRole("status")).toContainText("Tap where the Succulent trio should go");
     await goToPlace(page, "Window");
-    await page.getByRole("button", { name: /^Put Succulent trio on the window seat/ }).locator("visible=true").first().click();
+    await tapRoomAt(page, SPOTS["on the window seat"].x, SPOTS["on the window seat"].y);
 
     await expect(page.getByRole("status")).toHaveText(/^Succulent trio is on the window seat/);
     await expect(page.getByRole("button", { name: "Succulent trio", exact: true })).toHaveCount(1);

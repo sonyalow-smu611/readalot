@@ -59,7 +59,6 @@ function writeDigits(raw, start) {
   })
   digits.value = next
   focusAt(Math.min(5, start + chars.length))
-  if (next.join('').length === 6) submit()
 }
 
 function onDigit(index, event) {
@@ -72,7 +71,6 @@ function onDigit(index, event) {
   next[index] = value.slice(-1)
   digits.value = next
   if (value && index < 5) focusAt(index + 1)
-  if (next.join('').length === 6) submit()
 }
 
 function onKey(index, event) {
@@ -167,7 +165,7 @@ async function resend() {
         </div>
       </div>
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
-      <button class="btn btn-primary w-100" type="submit" :disabled="busy || sealed || code.length < 6">
+      <button class="btn btn-success w-100" type="submit" :disabled="busy || sealed || code.length < 6">
         {{ busy ? 'Checking…' : 'Confirm code' }}
       </button>
     </form>
@@ -226,7 +224,6 @@ async function resend() {
   outline: none;
   border-color: var(--rl-accent);
   background: #fffdf9;
-  transform: translateY(-8px);
 }
 
 .slot__mark {
@@ -263,10 +260,6 @@ async function resend() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slot__input:focus {
-    transform: none;
-  }
-
   .hand.is-done .slot {
     animation: none;
     opacity: 0;

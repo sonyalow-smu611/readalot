@@ -10,8 +10,15 @@ const emit = defineEmits(['go'])
 </script>
 
 <template>
-  <nav v-if="open" id="town-places" class="places-menu" aria-label="Places in town">
-    <button v-for="place in places" :key="place.id" type="button" class="places-menu__place" @click="emit('go', place.id)">
+  <nav v-if="open" id="town-places" class="places-menu px-sign-box" aria-label="Places in town">
+    <button
+      v-for="place in places"
+      :key="place.id"
+      type="button"
+      class="places-menu__place"
+      :style="{ '--accent': place.accent }"
+      @click="emit('go', place.id)"
+    >
       <span class="places-menu__name">{{ place.name }}</span>
       <span class="places-menu__tab">{{ place.tab }}</span>
     </button>
@@ -21,22 +28,19 @@ const emit = defineEmits(['go'])
 <style scoped>
 .places-menu {
   position: absolute;
-  top: 68px;
-  right: 14px;
+  top: 74px;
+  right: 17px;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: min(260px, calc(100% - 28px));
-  max-height: calc(100% - 150px);
+  gap: 6px;
+  width: min(270px, calc(100% - 34px));
+  max-height: calc(100% - 156px);
   overflow-y: auto;
-  padding: 8px;
-  border: 1px solid var(--rl-line);
-  border-radius: var(--rl-radius-card, 16px);
-  background: var(--rl-surface);
-  box-shadow: 0 10px 28px rgba(63, 46, 36, 0.2);
+  padding: 10px;
 }
 
+/* each place: a little sign in its building's colour */
 .places-menu__place {
   display: flex;
   align-items: center;
@@ -44,25 +48,39 @@ const emit = defineEmits(['go'])
   gap: 12px;
   min-height: 44px;
   padding: 0 12px;
-  border: none;
-  border-radius: 10px;
+  padding-left: 20px;
+  border: 0;
+  border-radius: 0;
   background: transparent;
+  /* the bar down its left side, in the building's colour */
+  box-shadow: inset 8px 0 0 var(--accent, var(--sign-outline));
   color: var(--rl-text);
   text-align: left;
 }
 
 .places-menu__place:hover,
 .places-menu__place:focus-visible {
-  background: var(--rl-canvas);
+  background: color-mix(in srgb, var(--accent, #2b2133) 16%, transparent);
+  outline: none;
+}
+
+.places-menu__place:focus-visible {
+  box-shadow:
+    inset 8px 0 0 var(--accent, var(--sign-outline)),
+    inset 0 0 0 2px var(--sign-outline);
 }
 
 .places-menu__name {
-  font-weight: 700;
+  font-family: var(--sign-font);
   font-size: 15px;
+  font-weight: 700;
 }
 
 .places-menu__tab {
-  font-size: 13px;
-  color: var(--rl-muted);
+  padding: 2px 6px;
+  background: var(--accent, var(--sign-outline));
+  font-family: var(--sign-font);
+  font-size: 11px;
+  color: #fff6dc;
 }
 </style>

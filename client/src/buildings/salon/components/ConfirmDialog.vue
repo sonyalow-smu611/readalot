@@ -32,14 +32,14 @@ onMounted(() => stayButton.value?.focus())
         </div>
         <h2 :id="titleId" class="h4 mb-1">{{ title }}</h2>
         <p class="text-muted mb-3">{{ text }}</p>
-        <button v-if="saveLabel" type="button" class="btn leave__save w-100 mb-2" @click="emit('save')">
+        <button v-if="saveLabel" type="button" class="btn btn-primary w-100 mb-2" @click="emit('save')">
           {{ saveLabel }}
         </button>
         <div class="d-flex gap-2">
           <button ref="stayButton" type="button" class="btn btn-outline-primary flex-grow-1" @click="emit('stay')">
             {{ stayLabel }}
           </button>
-          <button type="button" class="btn leave__go flex-grow-1" @click="emit('go')">{{ goLabel }}</button>
+          <button type="button" class="btn btn-danger flex-grow-1" @click="emit('go')">{{ goLabel }}</button>
         </div>
       </div>
     </div>
@@ -47,20 +47,6 @@ onMounted(() => stayButton.value?.focus())
 </template>
 
 <style scoped>
-/* keeping the changes is the go-ahead: green, like the salon's Save look */
-.leave__save {
-  border: 2px solid #2b7a43;
-  background: #3fae5a;
-  color: #fff;
-  font-weight: 700;
-}
-
-.leave__save:hover {
-  border-color: #2b7a43;
-  background: #4cc06a;
-  color: #fff;
-}
-
 .leave {
   position: absolute;
   inset: 0;
@@ -110,18 +96,6 @@ onMounted(() => stayButton.value?.focus())
   width: 30px;
   border: 1px solid var(--rl-line);
   background: #fffdf9;
-}
-
-.leave__go {
-  background: #b42318;
-  border-color: #b42318;
-  color: #fffdf9;
-}
-
-.leave__go:hover {
-  background: #8d2218;
-  border-color: #8d2218;
-  color: #fffdf9;
 }
 
 @keyframes leave-in {

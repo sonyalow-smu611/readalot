@@ -6,6 +6,7 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node scripts/seed.js",
+    "seed:readers": "node scripts/seedReaders.js",
     "verify-works": "node scripts/verifyWorks.js",
     "check": "node tests/compatibility.check.js && node tests/dailyQuote.check.js",
     "import-quotes": "node scripts/importQuotes.js"

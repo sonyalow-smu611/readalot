@@ -1,34 +1,34 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  sampleReaders, getCompatibility, getSharedBooks, getSharedGenres,
-  getCurrentlyReading, isFollowing, toggleFollow,
-} from '../services/peopleDemo.js';
+import { getCurrentlyReading } from '@/lib/readerMatch.js';
+import { usePeopleStore } from '@/stores/people.js';
 
 const router = useRouter();
+const people = usePeopleStore();
 const search = ref('');
-const activeId = ref(sampleReaders[0].id);
-const followed = ref(Object.fromEntries(sampleReaders.map((r) => [r.id, isFollowing(r.id)])));
+const chosenId = ref('');
+const activeId = computed(() => chosenId.value || people.readers[0]?.id || '');
 const error = ref('');
-const readers = computed(() => sampleReaders.filter((reader) => {
+const readers = computed(() => people.readers.filter((reader) => {
   const text = `${reader.displayName} ${reader.username} ${reader.favoriteGenres.join(' ')}`.toLowerCase();
   return text.includes(search.value.trim().toLowerCase());
 }));
-const selected = computed(() => sampleReaders.find((r) => r.id === activeId.value));
+const selected = computed(() => people.find(activeId.value));
+people.load();
 
 // Approximate fictional coordinates, displayed within the fixed OSM map bounds.
 const bounds = { west: 103.68, east: 104.00, south: 1.27, north: 1.47 };
-const pins = computed(() => readers.value.map((reader) => ({
+const pins = computed(() => readers.value.filter((reader) => reader.lat != null && reader.lng != null).map((reader) => ({
   ...reader,
   x: ((reader.lng - bounds.west) / (bounds.east - bounds.west)) * 100,
   y: ((bounds.north - reader.lat) / (bounds.north - bounds.south)) * 100,
 })));
 const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bounds.west}%2C${bounds.south}%2C${bounds.east}%2C${bounds.north}&layer=mapnik`;
-function follow(reader) {
+async function follow(reader) {
   error.value = '';
-  try { followed.value[reader.id] = toggleFollow(reader.id); }
-  catch (err) { error.value = err.message; }
+  try { await people.toggleFollow(reader.id); }
+  catch (err) { error.value = err.message || 'Could not save your follow.'; }
 }
 function openRoom(reader) { router.push(`/people/${encodeURIComponent(reader.id)}`); }
 </script>
@@ -53,39 +53,40 @@ function openRoom(reader) { router.push(`/people/${encodeURIComponent(reader.id)
           :class="{ chosen: activeId === reader.id }"
           :style="{ left: reader.x + '%', top: reader.y + '%' }"
           :aria-label="`Select ${reader.displayName} on map`"
-          @click="activeId = reader.id"
+          @click="chosenId = reader.id"
         >📍</button>
       </div>
       <p class="map-note">Demo only: fictional readers and approximate example locations in Singapore. Pins show general areas, not homes.</p>
       <div v-if="selected" class="selected-reader">
         <strong>{{ selected.displayName }}</strong>
-        <span>{{ selected.neighborhood }} · {{ getCompatibility(selected) }}% match</span>
+        <span>{{ selected.neighborhood }} · {{ people.compatibility(selected) }}% match</span>
         <button type="button" @click="openRoom(selected)">Visit Room →</button>
       </div>
     </section>
 
     <section aria-label="Reader recommendations">
       <div class="heading-row"><h2>Fellow bookworms</h2><span>Based on your books & genres</span></div>
-      <p v-if="!readers.length" class="empty">No readers match your search.</p>
+      <p v-if="people.error" class="error" role="alert">{{ people.error }}</p>
+      <p v-else-if="people.loading" class="empty" role="status">Finding readers…</p>
+      <p v-else-if="!readers.length" class="empty">No readers match your search.</p>
       <article v-for="reader in readers" :key="reader.id" class="reader-card">
         <div class="card-top">
           <div class="avatar">{{ reader.initials }}</div>
           <div class="identity"><h3>{{ reader.displayName }}</h3><span>@{{ reader.username }} · {{ reader.neighborhood }}</span></div>
-          <div class="score"><b>{{ getCompatibility(reader) }}%</b><small>match</small></div>
+          <div class="score"><b>{{ people.compatibility(reader) }}%</b><small>match</small></div>
         </div>
         <p class="tagline">{{ reader.tagline }}</p>
         <div class="tag-row"><span v-for="genre in reader.favoriteGenres" :key="genre" class="tag">{{ genre }}</span></div>
         <p class="details">📖 Reading: <strong>{{ getCurrentlyReading(reader)?.title || 'Not currently reading' }}</strong></p>
-        <p class="details">🤝 {{ getSharedBooks(reader).length }} shared book(s) · {{ getSharedGenres(reader).length }} shared genre(s)</p>
+        <p class="details">🤝 {{ people.sharedBooks(reader).length }} shared book(s) · {{ people.sharedGenres(reader).length }} shared genre(s)</p>
         <div class="card-actions">
-          <button class="secondary" type="button" @click="activeId = reader.id">Show on map</button>
-          <button class="secondary" type="button" :data-tour="reader.id === readers[0]?.id ? 'people-follow' : null" @click="follow(reader)">{{ followed[reader.id] ? '✓ Following' : '+ Follow' }}</button>
+          <button class="secondary" type="button" @click="chosenId = reader.id">Show on map</button>
+          <button class="secondary" type="button" :data-tour="reader.id === readers[0]?.id ? 'people-follow' : null" @click="follow(reader)">{{ people.isFollowing(reader.id) ? '✓ Following' : '+ Follow' }}</button>
           <button class="primary" type="button" @click="openRoom(reader)">Visit Room →</button>
         </div>
       </article>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
     </section>
-    <p class="demo-note">Prototype: sample readers and local follows are stored in this browser only.</p>
   </main>
 </template>
 

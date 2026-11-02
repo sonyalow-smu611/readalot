@@ -1,9 +1,10 @@
-import { expect, test } from "./fixtures.js";
+import { expect, skipMoodCheckIn, test } from "./fixtures.js";
 
 // The town is home. The map is a canvas, so these checks go through the Places list, the
 // same labelled buttons a keyboard or screen reader user would use.
 // Today's tasks already shown, so they don't open over the map (daily.spec.js covers them).
 test.beforeEach(async ({ page, reader }) => {
+  await skipMoodCheckIn(page);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [`readalot-daily:${reader.id}`, JSON.stringify({ day: today, shown: today })]);
   await page.goto("/");
@@ -45,16 +46,14 @@ for (const [place, button, url, owner] of [
   });
 }
 
-test("the library shows the existing Discover page", async ({ page }) => {
-  await page.goto("/library");
-  await expect(page.getByRole("search")).toBeVisible();
-});
-
 test("old addresses open the buildings", async ({ page }) => {
   await page.goto("/profile");
   await expect(page).toHaveURL(/\/salon$/);
   await page.goto("/people");
   await expect(page).toHaveURL(/\/cafe$/);
+  await page.goto("/discover");
+  await expect(page).toHaveURL(/\/library$/);
+  await expect(page.getByRole("search")).toBeVisible();
 });
 
 test("a place card closes with its close button", async ({ page }) => {
@@ -62,17 +61,6 @@ test("a place card closes with its close button", async ({ page }) => {
   await expect(card).toBeVisible();
   await card.getByRole("button", { name: "Close" }).click();
   await expect(card).toBeHidden();
-});
-
-// Friends' houses sit in the town too; each one opens that reader's profile, with the way into
-// their room.
-test("a friend's house opens their profile", async ({ page }) => {
-  const card = await openPlace(page, "Emma's house");
-  await expect(card.getByText("Emma Tan", { exact: false })).toBeVisible();
-  await card.getByRole("button", { name: "Visit Emma" }).click();
-  await expect(page).toHaveURL(/\/people\/reader-emma$/, WALK_IN);
-  await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Visit Emma's room" })).toBeVisible();
 });
 
 // The camera can follow your character; dragging the map lets it go again.
@@ -97,76 +85,6 @@ test("your character walks to a building before going in", async ({ page }) => {
   await expect(page.getByRole("status").filter({ hasText: "Walking to Library…" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Follow my character" })).toHaveAttribute("aria-pressed", "true");
   await expect(page).toHaveURL(/\/library$/, WALK_IN);
-});
-
-// The Friends button counts who is online; its list shows everyone, and leads to their house.
-test("the friends list shows who is online and finds their house", async ({ page }) => {
-  const button = page.getByRole("button", { name: "Friends, 2 online" });
-  await expect(button).toBeVisible();
-  await button.click();
-
-  const list = page.getByRole("navigation", { name: "Friends in town" });
-  await expect(list.getByRole("button", { name: /Emma Tan.*Online now/ })).toBeVisible();
-  await expect(list.getByRole("button", { name: /Ayaan Rahman.*Online now/ })).toBeVisible();
-  await expect(list.getByRole("button", { name: /Sofia.*Last seen 12 days ago/ })).toBeVisible();
-  await expect(list.getByRole("button", { name: /Daniel.*Last seen 3 months ago/ })).toBeVisible();
-
-  await list.getByRole("button", { name: /Noah/ }).click();
-  const card = page.getByRole("dialog", { name: "Noah's house" });
-  await expect(card).toContainText("Last seen");
-  await expect(card.getByRole("button", { name: "Visit Noah" })).toBeVisible();
-});
-
-// Online friends walk the streets; from the friends list you find them, say hi, and chat in a
-// mini chat docked by the zoom buttons without leaving town.
-test("you can find a friend out walking and chat to them", async ({ page }) => {
-  await page.getByRole("button", { name: "Friends, 2 online" }).click();
-  await page.getByRole("navigation", { name: "Friends in town" }).getByRole("button", { name: /Emma Tan/ }).click();
-
-  const card = page.getByRole("dialog", { name: "Emma Tan" });
-  await expect(card).toContainText("Online now");
-  const box = page.getByRole("button", { name: "Chat with Emma Tan", exact: true });
-  await expect(box).toHaveCount(0);
-  await card.getByRole("button", { name: "Say hi" }).click();
-
-  // the chat opens with what you've said before, and her box appears
-  const chat = page.getByRole("region", { name: "Chat with Emma Tan" });
-  await expect(chat).toBeVisible();
-  await expect(chat.getByText("Hey! What's your favourite book lately?")).toBeVisible();
-  await chat.getByRole("textbox", { name: "Message" }).fill("Fancy a walk to the library?");
-  await chat.getByRole("button", { name: "Send" }).click();
-  await expect(chat.getByText("Fancy a walk to the library?")).toBeVisible();
-
-  // tuck it away to her box, and bring it back with the message still there
-  await chat.getByRole("button", { name: "Minimise chat" }).click();
-  await expect(chat).toBeHidden();
-  await box.click();
-  await expect(chat.getByText("Fancy a walk to the library?")).toBeVisible();
-
-  await page.getByRole("button", { name: "Close chat with Emma Tan" }).click();
-  await expect(chat).toBeHidden();
-  await expect(box).toHaveCount(0);
-  await expect(page).toHaveURL(/\/$/);
-});
-
-test("a friend's card leads to their house", async ({ page }) => {
-  await page.getByRole("button", { name: "Friends, 2 online" }).click();
-  await page.getByRole("navigation", { name: "Friends in town" }).getByRole("button", { name: /Ayaan Rahman/ }).click();
-  await page.getByRole("dialog", { name: "Ayaan Rahman" }).getByRole("button", { name: "Visit Ayaan's house" }).click();
-  await expect(page).toHaveURL(/\/people\/reader-ayaan$/, WALK_IN);
-});
-
-test("a friend's place card says when they are online", async ({ page }) => {
-  const card = await openPlace(page, "Emma's house");
-  await expect(card).toContainText("Online now");
-});
-
-test("every friend's house is in the Places list", async ({ page }) => {
-  await page.getByRole("button", { name: "Places" }).click();
-  const places = page.getByRole("navigation", { name: "Places in town" });
-  for (const name of ["Emma's house", "Ayaan's house", "Sofia's house", "Noah's house", "Mei's house", "Daniel's house", "Priya's house"]) {
-    await expect(places.getByRole("button", { name: new RegExp(`^${name}`) })).toBeVisible();
-  }
 });
 
 // The sky follows the live weather; the weather chip steps through a preview of each look.

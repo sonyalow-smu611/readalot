@@ -18,7 +18,7 @@
     </div>
   </div>
 
-  <RouterLink v-else-if="book" class="reading-card" :to="`/books/${book.id}`">
+  <RouterLink v-else-if="book" data-card class="reading-card" :to="`/books/${book.id}`">
     <BookCover class="reading-card__cover" :cover-url="book.coverUrl" :title="book.title" :seed="book.id" />
     <div class="reading-card__body">
       <p class="reading-card__tab">Currently reading</p>
@@ -41,7 +41,7 @@
     </div>
   </RouterLink>
 
-  <RouterLink v-else class="reading-card reading-card--empty" to="/discover">
+  <RouterLink v-else data-card class="reading-card reading-card--empty" to="/discover">
     <div class="reading-card__body">
       <p class="reading-card__tab">Currently reading</p>
       <h2 class="reading-card__title">Nothing on the go</h2>

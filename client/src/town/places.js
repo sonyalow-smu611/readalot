@@ -2,7 +2,7 @@
 // The town's layout in map pixels (public/town/map.png is MAP_W x MAP_H). The boxes come from
 // `npm --workspace client run draw-map`: when a building moves in the art, paste its new box here.
 // The same command writes map-data.json (lamps, windows, water) for the animations; don't edit that.
-import { getCurrentlyReading, getDemoReader } from '@/services/peopleDemo.js'
+import { getCurrentlyReading } from '@/lib/readerMatch.js'
 
 export const MAP_W = 3584
 export const MAP_H = 2560
@@ -59,42 +59,55 @@ export const PLACES = [
   },
 ]
 
-// Friends' houses: each small house in town is the home of a reader you know, and tapping it
-// visits their room. `art` names the house in the picture (public/town/buildings/<art>.png).
-// The readers come from the demo people service until real friends are in the API.
+// Friends' houses: the plots in town, each empty lawn until a friend moves in. The server gives
+// each friend a plot (`spot`, an index into this list; HOUSE_SPOTS in server/src/services/friends.js
+// matches its length). `art` names the house (public/town/buildings/<art>.png).
 const FRIEND_HOMES = [
-  { reader: 'reader-emma', art: 'cottage-white', x: 1094, y: 1452, w: 322, h: 312 },
-  { reader: 'reader-ayaan', art: 'cottage-brick', x: 1554, y: 1460, w: 322, h: 304 },
-  { reader: 'reader-sofia', art: 'cottage-lilac', x: 18, y: 1484, w: 270, h: 280 },
-  { reader: 'reader-noah', art: 'cottage-grey', x: 44, y: 820, w: 309, h: 304 },
-  { reader: 'reader-mei', art: 'cottage-green', x: 3116, y: 840, w: 296, h: 284 },
-  { reader: 'reader-daniel', art: 'cottage-rose', x: 1606, y: 103, w: 309, h: 300 },
-  { reader: 'reader-priya', art: 'cottage-teal', x: 2118, y: 1472, w: 309, h: 292 },
+  { art: 'cottage-white', x: 1094, y: 1452, w: 322, h: 312 },
+  { art: 'cottage-brick', x: 1554, y: 1460, w: 322, h: 304 },
+  { art: 'cottage-lilac', x: 18, y: 1484, w: 270, h: 280 },
+  { art: 'cottage-grey', x: 44, y: 820, w: 309, h: 304 },
+  { art: 'cottage-green', x: 3116, y: 840, w: 296, h: 284 },
+  { art: 'cottage-rose', x: 1606, y: 103, w: 309, h: 300 },
+  { art: 'cottage-teal', x: 2118, y: 1472, w: 309, h: 292 },
 ]
 
-export const FRIEND_HOUSES = FRIEND_HOMES.flatMap(({ reader: id, ...home }) => {
-  const reader = getDemoReader(id)
-  if (!reader) return []
-  const first = reader.displayName.split(' ')[0]
-  const book = getCurrentlyReading(reader)
-  return [
-    {
-      id: `friend-${id}`,
-      name: `${first}'s house`,
-      tab: 'Friend',
-      label: first,
-      accent: '#5f7f4a',
-      blurb: `${reader.displayName}: “${reader.tagline}”${book ? ` Reading ${book.title} right now.` : ''}`,
-      enter: `Visit ${first}`,
-      route: { name: 'reader-room', params: { id } },
-      // whose house it is, to match their online status to it (see friends.js)
-      reader: id,
-      ...home,
-    },
-  ]
-})
+export const FRIEND_HOUSES = FRIEND_HOMES.map((home, spot) => ({
+  id: `friend-spot-${spot}`,
+  name: 'A friend’s house',
+  tab: 'Friend',
+  // the name tag over the roof, once we know whose house it is
+  label: '',
+  accent: '#5f7f4a',
+  blurb: 'A reader you know lives here.',
+  enter: 'Visit',
+  ...home,
+}))
 
-// Everything you can tap on the map.
+// The houses that have someone living in them, from your friends (town/nearbyStore.js). A friend
+// with no plot has no house.
+export function nameFriendHouses(friends) {
+  return friends.flatMap((reader) => {
+    const house = FRIEND_HOUSES[reader.spot]
+    if (!house) return []
+    const first = reader.displayName.split(' ')[0]
+    const book = getCurrentlyReading(reader)
+    return [
+      {
+        ...house,
+        route: { name: 'reader-room', params: { id: reader.id } },
+        // whose house it is, to match their online status to it (see friends.js)
+        reader: reader.id,
+        name: `${first}'s house`,
+        label: first,
+        blurb: `${reader.displayName}${reader.tagline ? `: “${reader.tagline}”` : ''}${book ? ` Reading ${book.title} right now.` : ''}`,
+        enter: `Visit ${first}`,
+      },
+    ]
+  })
+}
+
+// Everything you can tap on the map (the friends' houses not yet named).
 export const ALL_PLACES = [...PLACES, ...FRIEND_HOUSES]
 
 // Where the town opens: on the pavement outside your front door.

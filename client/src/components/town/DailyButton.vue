@@ -1,8 +1,9 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The Daily button on the left of the town, under the weather chip, chunky like the badge: a
-// flame with the streak, and a ring that fills as the day's tasks are done (a tick once the
-// reward is claimed). When the reward is ready it glows gold and a dot bounces on it.
+// The Daily button: a small flame with the streak, on the left of every page. Pointing at it (or
+// tabbing to it) slides out "Daily task" and a ring that fills as the day's tasks are done (a tick
+// once the reward is claimed). A touch screen has no pointing, so there a tap just opens the tasks.
+// When the reward is ready it glows gold and a dot bounces on it.
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -28,7 +29,7 @@ const label = computed(() => {
 <template>
   <button
     type="button"
-    class="daily-button"
+    class="btn btn-secondary px-sign daily-button"
     :class="{ 'is-ready': ready, 'is-lit': streak > 0 }"
     :aria-label="label"
     :aria-expanded="open"
@@ -41,12 +42,14 @@ const label = computed(() => {
       </svg>
       {{ streak }}
     </span>
-    <span class="daily-button__word" aria-hidden="true">Daily</span>
-    <svg class="daily-button__ring" viewBox="0 0 24 24" aria-hidden="true">
-      <circle class="daily-button__track" cx="12" cy="12" :r="RADIUS" />
-      <circle class="daily-button__fill" cx="12" cy="12" :r="RADIUS" :stroke-dasharray="RING" :stroke-dashoffset="filled" />
-      <path v-if="claimed" class="daily-button__tick" d="m8 12.2 2.6 2.6L16 9.4" />
-    </svg>
+    <span class="daily-button__more" aria-hidden="true">
+      <span class="daily-button__word">Daily task</span>
+      <svg class="daily-button__ring" viewBox="0 0 24 24">
+        <circle class="daily-button__track" cx="12" cy="12" :r="RADIUS" />
+        <circle class="daily-button__fill" cx="12" cy="12" :r="RADIUS" :stroke-dasharray="RING" :stroke-dashoffset="filled" />
+        <path v-if="claimed" class="daily-button__tick" d="m8 12.2 2.6 2.6L16 9.4" />
+      </svg>
+    </span>
     <span v-if="ready" class="daily-button__dot" aria-hidden="true"></span>
   </button>
 </template>
@@ -55,23 +58,36 @@ const label = computed(() => {
 .daily-button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0 8px 0 5px;
-  border: 3px solid #2b1d24;
-  border-radius: 999px;
-  background: #fff8ef;
-  box-shadow: 0 3px 0 #2b1d24, 0 6px 14px rgba(43, 29, 36, 0.2);
-  color: #2b1d24;
-  font-weight: 800;
-  font-size: 15px;
+  --bs-btn-padding-x: 8px;
   pointer-events: auto;
-  transition: transform 0.12s ease;
 }
 
-.daily-button:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #2b1d24;
+/* shut until the button is pointed at; max-width is what slides */
+.daily-button__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition: max-width 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.16s ease;
+}
+
+.daily-button__word {
+  padding: 0 2px 0 8px;
+}
+
+.daily-button:focus-visible .daily-button__more {
+  max-width: 130px;
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .daily-button:hover .daily-button__more {
+    max-width: 130px;
+    opacity: 1;
+  }
 }
 
 .daily-button__fire {
@@ -154,6 +170,10 @@ const label = computed(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .daily-button__more {
+    transition: none;
+  }
+
   .daily-button__dot {
     animation: none;
   }

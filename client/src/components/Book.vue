@@ -93,6 +93,7 @@ onBeforeUnmount(endHold)
 <template>
   <button
     ref="root"
+    data-card
     type="button"
     class="book"
     :class="spineClass"

@@ -106,7 +106,7 @@ test("the profile's cards still work in the salon", async ({ page }) => {
 
   // About you: edit one card in place
   await page.getByRole("button", { name: "Edit location" }).click();
-  await page.getByLabel("Location").fill("Tampines");
+  await page.getByRole("textbox", { name: "Location" }).fill("Tampines");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Tampines")).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit location" })).toBeFocused();
@@ -120,8 +120,10 @@ test("the profile's cards still work in the salon", async ({ page }) => {
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("heading", { name: "Robin" })).toBeVisible();
 
-  // Privacy switch
-  const map = page.getByRole("switch", { name: "Show me on the People map" });
+  // Privacy switch: going public asks the browser for the location
+  await page.context().grantPermissions(["geolocation"]);
+  await page.context().setGeolocation({ latitude: 1.2966, longitude: 103.8502 });
+  const map = page.getByRole("switch", { name: "Public profile and location" });
   await expect(map).toHaveAttribute("aria-checked", "false");
   await map.click();
   await expect(map).toHaveAttribute("aria-checked", "true");

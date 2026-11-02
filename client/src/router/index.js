@@ -2,13 +2,11 @@
 // Vue Router — maps URLs to views so every building is deep-linkable and the back button works.
 import { createRouter, createWebHistory } from 'vue-router'
 import BookDetailsView from '@/views/BookDetailsView.vue'
-import DiscoverPeopleView from '@/views/DiscoverPeopleView.vue'
 import GenreShelfView from '@/views/GenreShelfView.vue'
 import MoodView from '@/views/MoodView.vue'
 import PlaygroundView from '@/views/PlaygroundView.vue'
 import ReaderRoomView from '@/views/ReaderRoomView.vue'
 import ReaderShelfView from '@/views/ReaderShelfView.vue'
-import SearchView from '@/views/SearchView.vue'
 import LoginView from '@/views/LoginView.vue'
 import StartView from '@/views/StartView.vue'
 import VerifyView from '@/views/VerifyView.vue'
@@ -25,7 +23,7 @@ const routes = [
   { path: '/house', name: 'house', component: () => import('@/buildings/house/HouseView.vue'), meta: { title: 'My Room', fullBleed: true, wide: true, order: 1 } },
   { path: '/house/shelf', name: 'my-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'My Shelf', fullBleed: true, wide: true, order: 2 } },
   { path: '/library', name: 'library', component: () => import('@/buildings/library/LibraryView.vue'), meta: { title: 'Library', fullBleed: true, wide: true, order: 1 } },
-  { path: '/cafe', name: 'cafe', component: () => import('@/buildings/cafe/CafeView.vue'), meta: { title: 'Cafe', fullBleed: true, order: 1 } },
+  { path: '/cafe', name: 'cafe', component: () => import('@/buildings/cafe/CafeView.vue'), meta: { title: 'Cafe', fullBleed: true, wide: true, order: 1 } },
   { path: '/salon', name: 'salon', component: () => import('@/buildings/salon/SalonView.vue'), meta: { title: 'Hair Salon', fullBleed: true, wide: true, order: 1 } },
   // The old addresses, and the names the pages link to, now open the buildings.
   { path: '/room', name: 'room', redirect: { name: 'house' } },
@@ -34,15 +32,16 @@ const routes = [
   { path: '/profile', name: 'profile', redirect: { name: 'salon' } },
   // Pages opened from inside a building
   { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, wide: true, order: 2 } },
-  { path: '/search', name: 'search', component: SearchView, meta: { title: 'Search', back: true, hideSearch: true, order: 2 } },
-  { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { order: 2 } },
+  // the library's catalogue: full screen, in the library's look
+  { path: '/search', name: 'search', component: () => import('@/buildings/library/SearchView.vue'), meta: { title: 'Search', fullBleed: true, wide: true, order: 2 } },
+  { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { wide: true, order: 2 } },
   // another reader's room, visited from their profile: the house's room in visiting mode
   { path: '/people/:id/room', name: 'reader-house', component: () => import('@/buildings/house/VisitView.vue'), meta: { title: 'Visiting', fullBleed: true, wide: true, order: 3 } },
   { path: '/people/:id/room/shelf', name: 'reader-house-shelf', component: () => import('@/buildings/house/ShelfView.vue'), meta: { title: 'Visiting', fullBleed: true, wide: true, order: 4 } },
   { path: '/people/:id/shelf', name: 'reader-shelf', component: ReaderShelfView, meta: { order: 3 } },
   // the book scanner lives in the library now
   { path: '/scan', name: 'scan-book', redirect: { name: 'library', query: { scan: '1' } } },
-  { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, order: 3 } },
+  { path: '/books/:id', name: 'book-details', component: BookDetailsView, meta: { title: 'Book details', fullBleed: true, wide: true, order: 3 } },
   // A first-time visitor's landing page, before signing in.
   { path: '/start', name: 'start', component: StartView, meta: { title: 'Social media, but for book lovers', bare: true, guest: true, order: 0 } },
   { path: '/login', name: 'login', component: LoginView, meta: { title: 'Sign in', bare: true, guest: true, order: 0 } },

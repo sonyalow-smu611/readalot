@@ -57,6 +57,7 @@
             />
 
             <button
+              data-hit
               class="strip__pin strip__hit"
               data-tour="shelf"
               type="button"
@@ -71,6 +72,7 @@
                 {{ row.label }}<span class="visually-hidden"> shelf, {{ row.count }} {{ row.count === 1 ? "book" : "books" }}</span>
               </span>
               <button
+                data-hit
                 v-for="spine in row.spines"
                 :key="spine.book.id"
                 class="strip__pin strip__hit strip__book"
@@ -101,6 +103,7 @@
             </div>
 
             <button
+              data-hit
               class="strip__pin strip__hit chair__book"
               data-tour="chair"
               type="button"
@@ -113,6 +116,7 @@
               <span class="strip__tip">{{ currentBook ? 'Currently reading' : 'Nothing on the go' }}</span>
             </button>
             <button
+              data-hit
               class="strip__pin strip__hit"
               data-tour="quote"
               type="button"
@@ -126,6 +130,7 @@
 
             <!-- the lamps: a tap switches each one off or on -->
             <button
+              data-hit
               v-for="lamp in LAMPS"
               :key="lamp.id"
               type="button"
@@ -140,6 +145,7 @@
                  button over it (a cat's follows it as it walks) -->
             <template v-for="item in placed" :key="item.uid">
               <button
+                data-hit
                 v-if="artOf(item)"
                 type="button"
                 class="strip__pin strip__hit placed-art"
@@ -150,11 +156,12 @@
                 @click="pickItem(item.uid)"
               >
                 <span v-if="selected === item.uid" class="placed__actions">
-                  <span v-if="standsAnywhere(item.zone)" class="placed__action" @click.stop="startMove(item)">Move</span>
-                  <span class="placed__action placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+                  <span v-if="standsAnywhere(item.zone)" data-button class="btn btn-secondary btn-sm" @click.stop="startMove(item)">Move</span>
+                  <span data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
                 </span>
               </button>
               <button
+                data-hit
                 v-else-if="isPet(item)"
                 type="button"
                 class="strip__pin placed-cat"
@@ -163,21 +170,13 @@
                 :style="catStyle(item)"
                 @click="pickItem(item.uid)"
               >
-                <span v-if="selected === item.uid" class="placed__remove" @click.stop="unplace(item.uid)">Remove</span>
+                <span v-if="selected === item.uid" data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
               </button>
             </template>
 
-            <!-- while placing or dragging a piece: the free spots it can go on -->
-            <button
-              v-for="slot in freeSlots"
-              :key="slot.id"
-              type="button"
-              class="strip__pin strip__slot"
-              :class="{ 'is-wall': slot.zone === 'wall' }"
-              :aria-label="`Put ${movingMeta.name} ${slotName(slot)}`"
-              :style="pointStyle(slot.at)"
-              @click="placeAt(slot)"
-            />
+            <!-- while placing a piece: a tap anywhere in the room puts it there (the keyboard has
+                 "Place in the middle" by the prompt) -->
+            <div v-if="editable && placing" class="strip__pin strip__drop" @click="tapPlace" />
           </div>
         </div>
       </div>
@@ -190,6 +189,7 @@
     <!-- while a book comes off the shelf: a tap skips to it open, and nothing else in the room
          can be tapped or moved -->
     <button
+      data-hit
       v-if="bookPhase === 'opening'"
       class="strip__skip"
       type="button"
@@ -200,21 +200,22 @@
     />
 
     <p v-if="editable && placing" class="strip__placing" role="status">
-      Tap a glowing spot for the {{ placingMeta?.name }}.
-      <button type="button" class="strip__cancel" @click="cancelPlace">Cancel</button>
+      Tap where the {{ placingMeta?.name }} should go.
+      <button type="button" class="btn btn-primary btn-sm" @click="placeInView">Place in the middle</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="cancelPlace">Cancel</button>
     </p>
 
     <!-- moving a placed piece from its card: arrow buttons (or the arrow keys), Done, Cancel -->
     <div v-if="moving" class="strip__placing strip__moving" role="group" :aria-label="`Moving ${moving.name}`">
       <span>Moving {{ moving.name }}</span>
-      <button type="button" class="strip__nudge" aria-label="Move left" @click="nudge(-1, 0)">←</button>
+      <button type="button" class="btn btn-secondary btn-icon" aria-label="Move left" @click="nudge(-1, 0)">←</button>
       <template v-if="moving.zone === 'wall'">
-        <button type="button" class="strip__nudge" aria-label="Move up" @click="nudge(0, -1)">↑</button>
-        <button type="button" class="strip__nudge" aria-label="Move down" @click="nudge(0, 1)">↓</button>
+        <button type="button" class="btn btn-secondary btn-icon" aria-label="Move up" @click="nudge(0, -1)">↑</button>
+        <button type="button" class="btn btn-secondary btn-icon" aria-label="Move down" @click="nudge(0, 1)">↓</button>
       </template>
-      <button type="button" class="strip__nudge" aria-label="Move right" @click="nudge(1, 0)">→</button>
-      <button type="button" class="strip__cancel" @click="stopMove(true)">Done</button>
-      <button type="button" class="strip__cancel" @click="stopMove(false)">Cancel</button>
+      <button type="button" class="btn btn-secondary btn-icon" aria-label="Move right" @click="nudge(1, 0)">→</button>
+      <button type="button" class="btn btn-primary btn-sm" @click="stopMove(true)">Done</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="stopMove(false)">Cancel</button>
     </div>
 
     <PlacesMenu class="strip__menu" :places="PARTS" @go="goTo" />
@@ -232,7 +233,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, toRef,
 import stillArt from '@/buildings/house/assets/room-still.png'
 import WindowView from '@/buildings/house/components/WindowView.vue'
 import PlacesMenu from '@/buildings/house/components/PlacesMenu.vue'
-import { decorMeta, fitsZone, useDecor } from '@/composables/useDecor'
+import { decorMeta, useDecor } from '@/composables/useDecor'
 import { furnitureSprite } from '@/buildings/house/furniture.js'
 import { primaryAuthor } from '@/lib/book'
 import { prefersReducedMotion } from '@/lib/motion'
@@ -243,7 +244,7 @@ import { layoutBooks, spineBox } from '@/buildings/house/strip/books.js'
 import { paintCats, paintRoom, spriteIds } from '@/buildings/house/strip/paint.js'
 import { createScroll } from '@/buildings/house/strip/scroll.js'
 import { createFlight } from '@/buildings/house/strip/flight.js'
-import { SURFACES, boxAt, fits, landingFor, nudged, wallObstacles } from '@/buildings/house/strip/placement.js'
+import { SURFACES, boxAt, landingFor, nudged, wallObstacles } from '@/buildings/house/strip/placement.js'
 
 const ZONE_NAMES = {
   seat: 'on the window seat',
@@ -255,8 +256,6 @@ const SCENE_LABELS = { sunny: 'Clear', cloudy: 'Cloudy', rain: 'Rain' }
 // the most plain wall that may be cut off the top of the room to fill a wide window, in art
 // pixels: the bunting hangs below it
 const CUT = 24
-// spots with room for one piece, which a new one swaps with: never taken
-const ONE_SPOT = new Set(['chair', 'curtains', 'bed'])
 const PET_SPEED = 26 // art pixels a second
 // a cat's steps: how long each frame of its walk shows, in seconds; how often it falls asleep
 // when it stops, and for how long it rests (seconds)
@@ -302,7 +301,7 @@ const props = defineProps({
 // toggle-lamp: a lamp tapped, with its id
 const emit = defineEmits(['open-book', 'pick-book', 'open-shelf', 'quote', 'retry', 'toggle-lamp'])
 
-const { placing, placingMeta, drag, selected, pick, unplace, placeOn, moveTo, cancelPlace, flash } = useDecor()
+const { placing, placingMeta, selected, pick, unplace, placeOn, moveTo, saveRoom, cancelPlace, flash } = useDecor()
 const placed = toRef(props, 'furniture')
 
 const root = ref(null)
@@ -496,17 +495,6 @@ function isPet(item) {
   return Boolean(decorMeta(item.id)?.pet)
 }
 
-// the piece on its way into the room: picked to place, or being dragged out of the inventory
-const movingMeta = computed(() => placingMeta.value ?? (drag.value?.moved ? decorMeta(drag.value.id) : null))
-
-// spots that piece can go on, where it fits (none in someone else's room)
-const freeSlots = computed(() => {
-  const meta = movingMeta.value
-  if (!meta || !props.editable) return []
-  const rules = rulesFor(null)
-  return SLOTS.filter((slot) => fitsZone(meta, slot.zone) && (ONE_SPOT.has(slot.zone) || meta.pet || fits(meta.sprite, slot.zone, slot.at, rules)))
-})
-
 // where a spot is, said the way the room says it ("on the side table", "on the wall by the window")
 function slotName(slot) {
   return slot.name ?? ZONE_NAMES[slot.zone]
@@ -583,10 +571,12 @@ function between([low, high]) {
   return low + Math.random() * (high - low)
 }
 
-// where a pet is and what it's doing: it starts somewhere along the floor, sitting
+// where a pet is and what it's doing: it starts where it was put down (or, put down before it was
+// put anywhere in particular, somewhere along the floor), sitting
 function petState(uid) {
   if (!pets.has(uid)) {
-    const x = WALK.from + Math.random() * (WALK.to - WALK.from)
+    const start = placed.value.find((item) => item.uid === uid)?.at?.x
+    const x = start ?? WALK.from + Math.random() * (WALK.to - WALK.from)
     pets.set(uid, { x, target: x, wait: Math.random() * 2, face: 'right', mode: 'sit', clock: 0 })
   }
   return pets.get(uid)
@@ -664,9 +654,24 @@ function loop(now) {
   drawCats()
 }
 
-function placeAt(slot) {
+// The piece picked to place, put down at screen (x, y), or as near as it fits.
+function putPlacing(x, y) {
   const meta = placingMeta.value
-  if (placeOn(slot.zone, spotOf(slot))) flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${slotName(slot)}.`, 'ok')
+  const spot = dropAt(placing.value, x, y)
+  if (!spot) return
+  if (spot.miss) flash(spot.miss, 'bad')
+  else flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${spot.name}.`, 'ok')
+}
+
+function tapPlace(event) {
+  if (scroll?.wasDrag()) return
+  putPlacing(event.clientX, event.clientY)
+}
+
+// the middle of the room in view
+function placeInView() {
+  const view = scroller.value.getBoundingClientRect()
+  putPlacing(view.left + view.width / 2, view.top + view.height / 2)
 }
 
 // what placing a piece on a slot records: where along its zone, and the point, when it can stand anywhere
@@ -696,10 +701,29 @@ function artPoint(x, y) {
   return { x: (x - stage.left) / unit, y: (y - stage.top) / unit - offset.value }
 }
 
-// A piece dragged out of the inventory and let go at screen (x, y). Wall art, plants and the
-// succulents land there, or as near as they fit (placement.js); a chair, curtains, bedding or a
-// cat goes on the free spot nearest there, if one is close. Returns { name } (where it went), or
-// null when it didn't go anywhere.
+// The room's own pieces a Shop chair, curtains or bedding takes the place of, and what the room
+// says when one is let go anywhere else.
+const SWAP_INTO = {
+  chair: { pieces: ['armchair'], miss: 'Put the chair on the armchair' },
+  curtains: { pieces: ['window', 'curtain-left', 'curtain-right'], miss: 'Hang the curtains at the window' },
+  bed: { pieces: ['bed'], miss: 'Put the bedding on the bed' },
+}
+// how far off those pieces one may be let go and still swap in, in art px
+const SWAP_REACH = 24
+
+function onSwapTarget(surface, point) {
+  return SWAP_INTO[surface].pieces.some((id) => {
+    const box = boxOf(PIECES.find((piece) => piece.id === id))
+    return point.x >= box.x - SWAP_REACH && point.x <= box.x + box.w + SWAP_REACH &&
+      point.y >= box.y - SWAP_REACH && point.y <= box.y + box.h + SWAP_REACH
+  })
+}
+
+// A piece from the inventory put down at screen (x, y). Wall art, plants and the succulents land
+// there, or as near as they fit (placement.js); a chair, curtains or bedding swaps in when it's on
+// (or near) the piece it takes the place of; a cat goes on the free spot nearest there, if one is
+// close. Returns { name } (where it went), { miss } (what to tell the reader when it didn't go
+// anywhere), or null when the room can't take pieces.
 function dropAt(entry, x, y) {
   const meta = decorMeta(entry.id)
   if (!props.editable || !meta || !ready.value) return null
@@ -707,18 +731,20 @@ function dropAt(entry, x, y) {
   const rules = rulesFor(null)
   if (!meta.pet && ['wall', 'floor', 'shelf'].includes(meta.surface)) {
     const landing = landingFor(meta, point.x, point.y, rules)
-    if (!landing || !placeOn(landing.zone, { x: Math.round((landing.at.x / ROOM.width) * 100) / 100, at: landing.at }, entry)) return null
+    if (!landing || !placeOn(landing.zone, { x: Math.round((landing.at.x / ROOM.width) * 100) / 100, at: landing.at }, entry)) {
+      return { miss: 'Not enough room there' }
+    }
     return { name: zoneName(landing.zone) }
   }
-  const { unit } = size.value
-  let best = null
-  for (const slot of SLOTS) {
-    if (!fitsZone(meta, slot.zone)) continue
-    const gap = Math.hypot(slot.at.x - point.x, slot.at.y - point.y) * unit
-    if (gap < 70 && (!best || gap < best.gap)) best = { slot, gap }
+  if (SWAP_INTO[meta.surface]) {
+    const slot = SLOTS.find((one) => one.zone === meta.surface)
+    if (!onSwapTarget(meta.surface, point) || !placeOn(slot.zone, spotOf(slot), entry)) return { miss: SWAP_INTO[meta.surface].miss }
+    return { name: slotName(slot) }
   }
-  if (!best || !placeOn(best.slot.zone, spotOf(best.slot), entry)) return null
-  return { ...best.slot, name: slotName(best.slot) }
+  // a cat: on the floor below where it's let go, within the line it walks along
+  const at = { x: Math.round(Math.max(WALK.from, Math.min(WALK.to, point.x))), y: WALK.y }
+  if (!placeOn('room', { x: Math.round((at.x / ROOM.width) * 100) / 100, at }, entry)) return { miss: `Put the ${meta.name} on the floor` }
+  return { name: ZONE_NAMES.room }
 }
 
 // --- Moving a placed piece by pressing and holding it ----------------------------------------
@@ -784,6 +810,7 @@ function onHoldUp() {
     flash('Not enough room there', 'bad')
     return
   }
+  saveRoom()
   flash(`${meta.name} ${meta.plural ? 'are' : 'is'} ${zoneName(carried.landing.zone)}.`, 'ok')
 }
 
@@ -829,6 +856,7 @@ function stopMove(keep) {
   const current = moving.value
   if (!current) return
   if (!keep) moveTo(current.uid, current.zone, current.at)
+  else saveRoom()
   moving.value = null
   window.removeEventListener('keydown', onMoveKey, true)
 }
@@ -849,11 +877,6 @@ let scroll = null
 // slides so art x `at` is in the middle of the view
 function centreOn(at) {
   scroll.glideTo(at * size.value.unit - scroller.value.clientWidth / 2)
-}
-
-function inView(x) {
-  const left = scroller.value.scrollLeft / size.value.unit
-  return x > left + 10 && x < left + scroller.value.clientWidth / size.value.unit - 10
 }
 
 // The Places menu slides to each part. Before the room has loaded, the places that open
@@ -972,13 +995,6 @@ function setTime() {
     paint()
   }
 }
-
-// Picking a piece to place slides to the first free spot it can go on, unless one is in view.
-watch(placing, async (entry) => {
-  if (!entry || !ready.value) return
-  await nextTick()
-  if (!freeSlots.value.some((slot) => inView(slot.at.x)) && freeSlots.value[0]) centreOn(freeSlots.value[0].at.x)
-})
 
 watch([shelf, lifted, out, extras, () => props.notes, () => props.theme,() => props.weather.scene, () => props.weather.night], () => paint())
 
@@ -1239,19 +1255,8 @@ defineExpose({ dropAt, putBack })
   transform: translateX(-50%);
 }
 
-.placed__action {
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--rl-surface);
-  font-size: 0.68rem;
+.placed__actions .btn {
   white-space: nowrap;
-  color: var(--rl-text);
-  box-shadow: 0 2px 6px rgba(63, 46, 36, 0.2);
-}
-
-.placed__remove {
-  background: #b42318;
-  color: #fff;
 }
 
 /* a piece of furniture from the library: drawn in the room, its button an invisible box under
@@ -1283,29 +1288,11 @@ defineExpose({ dropAt, putBack })
   cursor: pointer;
 }
 
-/* a free spot for the piece being placed */
-.strip__slot {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  transform: translate(-50%, -75%);
-  border: 2px solid rgba(255, 253, 249, 0.9);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(243, 212, 138, 0.85), rgba(243, 212, 138, 0.2) 70%);
-  box-shadow: 0 0 16px 4px rgba(243, 212, 138, 0.7);
-  cursor: pointer;
-  animation: slot-glow 1.4s ease-in-out infinite;
-}
-
-/* a spot on the wall: the piece hangs centred on it */
-.strip__slot.is-wall {
-  transform: translate(-50%, -50%);
-}
-
-@keyframes slot-glow {
-  50% {
-    box-shadow: 0 0 6px 1px rgba(243, 212, 138, 0.4);
-  }
+/* while placing a piece: the whole room takes the tap that puts it down, over the room's buttons */
+.strip__drop {
+  inset: 0;
+  z-index: 3;
+  cursor: crosshair;
 }
 
 /* the weather chip: the town's chips (TownHud), its bottom middle on the point above the rod */
@@ -1423,41 +1410,16 @@ defineExpose({ dropAt, putBack })
   white-space: normal;
 }
 
-.strip__nudge {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  font-size: 14px;
-  line-height: 1;
-  color: var(--rl-text);
-}
-
-.strip__cancel {
-  padding: 3px 10px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: none;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--rl-primary);
-}
-
 /* the Places menu, in the top left corner (the coins are in the top right) */
 .strip__menu {
   position: absolute;
-  top: 10px;
+  top: calc(var(--building-back-space, 0px) + 10px);
   left: 12px;
-  z-index: 7;
+  /* its list opens over the Daily task tab (36), under the room's dialogs (40 and up) */
+  z-index: 37;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .strip__slot {
-    animation: none;
-  }
-
   .strip__hit,
   .strip__tip {
     transition: none;

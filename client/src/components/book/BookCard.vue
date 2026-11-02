@@ -10,7 +10,7 @@
       <div class="book-card__scroll">
         <slot />
       </div>
-      <button type="button" class="book-card__close" :aria-label="closeLabel" @click="$emit('close')">
+      <button type="button" class="btn btn-secondary btn-icon book-card__close" :aria-label="closeLabel" @click="$emit('close')">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     </div>
@@ -37,15 +37,15 @@ defineExpose({ focus: () => root.value?.focus() })
   position: relative;
 }
 
-/* The town's card (the place cards on the map, the cafe's reader cards): a white surface, a
-   fine line, round corners and a deep soft shadow. Where it sits and how big is up to whoever
-   shows it; --book-accent is the colour of the building it was opened in. */
+/* A pixel card (styles/pixel-surfaces.css): a white surface, square, a black outline and a hard
+   shadow. Where it sits and how big is up to whoever shows it; --book-accent is the colour of
+   the building it was opened in. */
 .book-card {
   overflow: hidden;
-  border: 1px solid var(--rl-line);
-  border-radius: var(--rl-radius-modal, 22px);
+  border: var(--px-border);
+  border-radius: 0;
   background: var(--rl-surface);
-  box-shadow: 0 14px 36px rgba(63, 46, 36, 0.25);
+  box-shadow: var(--px-shadow);
 }
 
 .book-card__page {
@@ -53,21 +53,12 @@ defineExpose({ focus: () => root.value?.focus() })
   height: 100%;
 }
 
-/* the place card's close button: a plain cross in a finger-sized circle */
+/* the close button: an Icon pixel button in the corner */
 .book-card__close {
   position: absolute;
   top: 6px;
   right: 6px;
   z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: var(--rl-surface);
-  color: var(--rl-text);
 }
 
 .book-card__close svg {
@@ -79,10 +70,6 @@ defineExpose({ focus: () => root.value?.focus() })
   stroke-linecap: round;
 }
 
-.book-card__close:focus-visible {
-  outline: 2px solid var(--book-accent, var(--rl-primary));
-  outline-offset: 2px;
-}
 
 .book-card__scroll {
   height: 100%;

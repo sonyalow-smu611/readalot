@@ -28,6 +28,9 @@ export const WAINSCOT = 168
 
 // Sizes of the pieces that more than one thing needs to know (the hall's buttons sit on them).
 export const BOOKCASE = { w: 100, h: 156 }
+// the art on the wall behind a bookcase (murals.js): 6 px wider than it on each side, from just
+// under the picture rail down to the panelling
+export const MURAL = { w: BOOKCASE.w + 12, h: WAINSCOT - 34 }
 export const WINDOWS = { window: { w: 34, h: 86 }, 'window-tall': { w: 44, h: 112 } }
 export const DESK = { w: 120, h: 46 }
 export const SCANNER = { w: 50, h: 80 }
@@ -57,11 +60,15 @@ export const PIECES = [
   { sprite: 'scanner', x: 206, y: FEET, layer: 'furniture', action: 'scanner' },
   { sprite: 'plant', x: 268, y: FEET + 2, layer: 'furniture' },
 
-  // --- one bookcase per category, with a window or a lamp in each gap -----------------------
+  // --- one bookcase per category, its genre's art on the wall behind it, and a window or a lamp
+  // in each gap
   ...CATEGORIES.flatMap((category, index) => {
     const x = FIRST + index * STEP
     const gap = x + BOOKCASE.w
-    const pieces = [{ sprite: `bookcase:${category.key}`, x, y: FEET, layer: 'furniture', category: category.key }]
+    const pieces = [
+      { sprite: `mural:${category.key}`, x: x - 6, y: WAINSCOT, layer: 'wall' },
+      { sprite: `bookcase:${category.key}`, x, y: FEET, layer: 'furniture', category: category.key },
+    ]
     if (index === CATEGORIES.length - 1) return pieces
     if (index % 2 === 0) {
       pieces.push(
@@ -84,7 +91,7 @@ export const PIECES = [
     return pieces
   }),
   // the rolling ladder leans on the mystery bookcase
-  { sprite: 'ladder', x: FIRST + 3 * STEP + 78, y: FEET + 2, layer: 'front' },
+  { sprite: 'ladder', x: FIRST + CATEGORIES.findIndex((category) => category.key === 'mystery') * STEP + 78, y: FEET + 2, layer: 'front' },
 
   // --- the reading nook, at the far end -----------------------------------------------------
   { sprite: 'window-tall', x: NOOK + 40, y: 150, layer: 'wall' },
@@ -156,7 +163,7 @@ export function scannerBox() {
   return { x: scanner.x, y: scanner.y - SCANNER.h, w: SCANNER.w, h: SCANNER.h }
 }
 
-// The bar of places along the bottom, left to right. `at` is the x the view centres on.
+// The places in the Places menu, left to right. `at` is the x the view centres on.
 export const PARTS = [
   { id: 'desk', label: 'Help desk', at: 120 },
   { id: 'scanner', label: 'Scanner', at: 231 },

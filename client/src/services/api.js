@@ -37,16 +37,13 @@ export function searchBooks(query, limit) {
   return request(`/books/search?${params}`);
 }
 
+// The library's Bestsellers bookcase: { books, source: "nyt" | "openlibrary", updatedAt }
+export function getBestsellers() {
+  return request("/books/bestsellers");
+}
+
 export function getBook(id) {
   return request(`/books/${id}`);
-}
-
-export function getUser(id) {
-  return request(`/users/${id}`);
-}
-
-export function getUserBooks(id) {
-  return request(`/users/${id}/books`);
 }
 
 export function getMyBooks() {
@@ -77,8 +74,48 @@ export function getWeather(lat, lng) {
   return request(`/weather?lat=${lat}&lng=${lng}`);
 }
 
-export function getNearbyReaders(lat, lng) {
-  return request(`/people/nearby?lat=${lat}&lng=${lng}`);
+// Says you're active, with your rough position if you have one; answers with the readers near you.
+export function checkInNearby(position = {}) {
+  return request("/nearby", { method: "POST", body: JSON.stringify(position) });
+}
+
+// { friends, incoming, outgoing }: see server/src/services/friends.js
+export function getFriendships() {
+  return request("/friends");
+}
+
+export function sendFriendRequest(readerId) {
+  return request("/friends/requests", { method: "POST", body: JSON.stringify({ readerId }) });
+}
+
+export function answerFriendRequest(requestId, accept) {
+  return request(`/friends/requests/${requestId}/${accept ? "accept" : "decline"}`, { method: "POST" });
+}
+
+export function removeFriendship(readerId) {
+  return request(`/friends/${encodeURIComponent(readerId)}`, { method: "DELETE" });
+}
+
+// { visits: [{ id, at, visitor: { id, displayName } or null }] } since the date, newest first
+export function getRoomVisits(since) {
+  return request(`/notifications/visits?since=${encodeURIComponent(since)}`);
+}
+
+// Other readers with their shelves (see stores/people.js); `id` is the reader's username.
+export function getReaders() {
+  return request("/people");
+}
+
+export function getReader(id) {
+  return request(`/people/${encodeURIComponent(id)}`);
+}
+
+export function getFollowing() {
+  return request("/people/following");
+}
+
+export function setFollowing(id, follow) {
+  return request(`/people/${encodeURIComponent(id)}/follow`, { method: follow ? "PUT" : "DELETE" });
 }
 
 export function getCompatibility(userId) {
@@ -108,14 +145,20 @@ export function getReviews(bookId) {
   return request(`/books/${bookId}/reviews`);
 }
 
-// A saved review earns XP, once per book (best effort: a failed XP call doesn't fail the review).
-export async function addReview(bookId, data) {
+// Saves your review of the book (rating 1-5, reviewText up to 500 characters): your first, or
+// an edit of the one you have. A saved review earns XP, once per book (best effort: a failed XP
+// call doesn't fail the review).
+export async function saveReview(bookId, { rating, reviewText }) {
   const saved = await request(`/books/${bookId}/reviews`, {
     method: "POST",
-    body: JSON.stringify(data)
+    body: JSON.stringify({ rating, reviewText })
   });
   earnXp("write_review", bookId).catch(() => {});
   return saved;
+}
+
+export function deleteReview(bookId) {
+  return request(`/books/${bookId}/reviews`, { method: "DELETE" });
 }
 
 export function getQuotes(bookId) {
@@ -131,4 +174,51 @@ export function addQuote(bookId, data) {
 
 export function getTodayQuote() {
   return request("/quote/today");
+}
+
+// The notes on a reader's notice board (readerId: their username, or account id), newest first
+export function getRoomNotes(readerId) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/notes`);
+}
+
+// { text, author }: author is the writer's name, which the server only reads without Supabase
+export function postRoomNote(readerId, data) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/notes`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export function deleteRoomNote(readerId, noteId) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/notes/${encodeURIComponent(noteId)}`, { method: "DELETE" });
+}
+
+// A reader's room furniture: { pieces: [{ uid, id, zone?, x?, at? }] } (no zone: in the inventory)
+export function getRoomFurniture(readerId) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/furniture`);
+}
+
+// Replaces your own room's furniture with `pieces`
+export function saveRoomFurniture(readerId, pieces) {
+  return request(`/rooms/${encodeURIComponent(readerId)}/furniture`, {
+    method: "PUT",
+    body: JSON.stringify({ pieces })
+  });
+}
+
+// The reader's saved mood quotes, newest first: { quotes: [{ id, quoteText, author, work, bookId, sourceUrl, mood, createdAt }] }
+export function getSavedQuotes() {
+  return request("/saved-quotes");
+}
+
+// { quoteText, author, work, bookId, sourceUrl, mood }: saving one already saved returns it as it was
+export function saveQuote(data) {
+  return request("/saved-quotes", {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export function unsaveQuote(id) {
+  return request(`/saved-quotes/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

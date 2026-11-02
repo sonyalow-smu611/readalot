@@ -2,8 +2,11 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { START_LOCATION, useRoute, useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useUserStore } from '@/stores/user'
 import PhoneFrame from '@/components/PhoneFrame.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import DailyDock from '@/components/town/DailyDock.vue'
 import BookOpenOverlay from '@/components/BookOpenOverlay.vue'
 import GuideTour from '@/components/GuideTour.vue'
 import LoadingScreen from '@/components/LoadingScreen.vue'
@@ -23,7 +26,10 @@ const stopWatching = router.afterEach((to, from, failure) => {
   if (to.name !== 'start' && (from === START_LOCATION || from.name === 'start')) booting.value = true
 })
 onBeforeUnmount(stopWatching)
+const { guide } = storeToRefs(useUserStore())
 const showChrome = computed(() => !route.meta.bare)
+// the town has its own Daily button, and the tour shouldn't have anything over it
+const showDaily = computed(() => !booting.value && showChrome.value && route.name !== 'town' && !guide.value)
 
 function resetScroll() {
   main.value?.scrollTo({ top: 0 })
@@ -46,6 +52,7 @@ function resetScroll() {
         </Transition>
       </RouterView>
     </main>
+    <DailyDock v-if="showDaily" />
     <GuideTour />
     <BookOpenOverlay />
     <Toast />

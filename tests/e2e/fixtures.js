@@ -20,9 +20,14 @@ export const test = base.extend({
     },
     { scope: "worker" },
   ],
-  reader: async ({ account }, use, testInfo) => {
+  reader: async ({ account, request }, use, testInfo) => {
     testInfo.skip(!account, NEEDS_SUPABASE);
     await resetProfile(account.id, PROFILE);
+    // the room's furniture is kept on the server, so each test starts with an empty room
+    await request.put(`/api/rooms/${account.id}/furniture`, {
+      headers: { Authorization: `Bearer ${account.session.access_token}` },
+      data: { pieces: [] },
+    });
     await use(account);
   },
   page: async ({ page, reader }, use) => {
@@ -113,6 +118,14 @@ export async function goToPlace(page, place) {
   if (await room.count()) await scrollSettled(room);
 }
 
+// Opens the library's Places menu (unless it's open) and returns its list.
+export async function openPlaces(page) {
+  const list = page.getByRole("navigation", { name: "Places in the library" });
+  if (!(await list.isVisible())) await page.getByRole("button", { name: "Places", exact: true }).click();
+  await expect(list).toBeVisible();
+  return list;
+}
+
 // The colour of the room's picture at an art pixel (x, y), as "r,g,b". Art x is the canvas's own
 // column; the clock, whose top is at art y 166, finds the row (the room grows wall above it on
 // taller screens).
@@ -156,4 +169,54 @@ export async function buy(page, name) {
 
 export async function pickFromInventory(page, name) {
   await inventory(page).getByRole("button", { name: new RegExp(name) }).click();
+}
+
+// Where art point (x, y) of the room is on the screen. Art points: x from the room's left wall, y
+// down from the top of the room as designed; the bookshelf's top is at art y 132.
+export function screenOf(page, x, y) {
+  return page.getByRole("button", { name: /^Bookshelf, \d+ books?$/ }).evaluate((shelf, [ax, ay]) => {
+    const picture = document.querySelector("[data-testid='room-canvas']");
+    const c = picture.getBoundingClientRect();
+    const unit = c.width / picture.width;
+    return { x: c.left + ax * unit, y: shelf.getBoundingClientRect().top + (ay - 132) * unit };
+  }, [x, y]);
+}
+
+// Points in the room to put pieces on, where its glowing spots used to be.
+export const SPOTS = {
+  "by the window": { x: 278, y: 192 },
+  "by the reading chair": { x: 441, y: 188 },
+  "above the corkboard": { x: 745, y: 106 },
+  "over the nightstand": { x: 858, y: 240 },
+  "by the mirror": { x: 1125, y: 182 },
+  "on the window seat": { x: 147, y: 345 },
+  "on the side table": { x: 440, y: 352 },
+  "on the floor": { x: 632, y: 410 },
+  "in the reading nook": { x: 350, y: 330 },
+  "at the window": { x: 146, y: 230 },
+  "on the bed": { x: 1030, y: 350 },
+};
+
+// Taps art point (x, y) in the room, first sliding the room so the point is in view.
+export async function tapRoomAt(page, x, y) {
+  const room = page.getByRole("region", { name: /room\. Swipe/ });
+  const moved = await room.evaluate((el, ax) => {
+    const picture = el.querySelector("[data-testid='room-canvas']");
+    const unit = picture.getBoundingClientRect().width / picture.width;
+    const left = el.scrollLeft / unit;
+    if (ax > left + 40 && ax < left + el.clientWidth / unit - 40) return false;
+    el.scrollLeft = ax * unit - el.clientWidth / 2;
+    return true;
+  }, x);
+  if (moved) await scrollSettled(room);
+  const to = await screenOf(page, x, y);
+  await page.mouse.click(to.x, to.y);
+}
+
+// Picks a piece from the inventory and taps a point in the room (a name from SPOTS, or { x, y }) to
+// put it there.
+export async function placeAt(page, name, where) {
+  await pickFromInventory(page, name);
+  const { x, y } = typeof where === "string" ? SPOTS[where] : where;
+  await tapRoomAt(page, x, y);
 }

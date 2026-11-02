@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Scan Book (T28), Khaleil's feature, now the book scanner machine in the library.
-import { expect, test } from "./fixtures.js";
+import { expect, openPlaces, test } from "./fixtures.js";
 
 const SCANNED = { id: "lib-scanned", title: "The Scanned Book", authors: ["C. Author"], coverUrl: "" };
 // a 1 x 1 PNG, standing in for a photo of a cover
@@ -24,7 +24,7 @@ test("snapping a cover finds the book and opens its preview", async ({ page }) =
   await page.route("**/api/scan-book", (route) =>
     route.fulfill({ json: { book: SCANNED, detectedText: "The Scanned Book C. Author", confidence: 0.9 } }),
   );
-  await page.getByRole("navigation", { name: "Places in the library" }).getByRole("button", { name: "Scanner" }).click();
+  await (await openPlaces(page)).getByRole("button", { name: "Scanner" }).click();
   await page.getByRole("button", { name: "Book scanner: scan a book cover" }).click();
 
   const scanner = page.getByRole("dialog", { name: "Book scanner" });

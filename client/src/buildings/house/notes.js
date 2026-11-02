@@ -1,55 +1,35 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// Notes left on readers' notice boards (the corkboard in their room), kept per reader in this
-// browser, as the Cafe keeps its follows and demo chat: the sample readers aren't real accounts,
-// so nothing goes to the server. Each note: { id, readerId, authorId, author, text, createdAt }, newest
-// first. Only the reader who left a note can take it down.
-const KEY = 'readalot.roomNotes'
+// Notes left on readers' notice boards (the corkboard in their room), kept on the server so the
+// board's owner and every visitor see them on any device. Each note:
+// { id, ownerId, authorId, author, text, createdAt }, newest first. A note comes down when its
+// author or the board's owner takes it down.
+import { deleteRoomNote, getRoomNotes, postRoomNote } from '@/services/api.js'
+
 export const NOTE_MAX = 140
 
-function readAll() {
-  try {
-    const all = JSON.parse(localStorage.getItem(KEY) || '{}')
-    return all && typeof all === 'object' && !Array.isArray(all) ? all : {}
-  } catch {
-    return {}
-  }
-}
-
-function writeAll(all) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(all))
-  } catch {
-    throw new Error("Your note couldn't be saved: this browser isn't letting Readalot store anything.")
-  }
-}
-
-export function notesFor(readerId) {
-  const list = readAll()[readerId]
-  return Array.isArray(list) ? list : []
+// A reader's board (readerId: their username, or account id). Throws when it can't be fetched.
+export async function notesFor(readerId) {
+  const { notes } = await getRoomNotes(readerId)
+  return notes
 }
 
 // Pins a note on a reader's board, signed by its author ({ id, name }), and returns it. Throws
 // when the text is empty or too long, or when it can't be saved.
-export function addNote(readerId, author, text) {
+export async function addNote(readerId, author, text) {
   const clean = String(text ?? '').trim()
   if (!clean || clean.length > NOTE_MAX) throw new Error(`A note needs 1 to ${NOTE_MAX} characters.`)
-  const note = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    readerId,
-    authorId: author?.id ?? '',
-    author: author?.name || 'A reader',
-    text: clean,
-    createdAt: new Date().toISOString(),
+  try {
+    return await postRoomNote(readerId, { text: clean, author: author?.name || '' })
+  } catch {
+    throw new Error("Your note couldn't be pinned. Try again.")
   }
-  const all = readAll()
-  all[readerId] = [note, ...notesFor(readerId)]
-  writeAll(all)
-  return note
 }
 
-// Takes down a note, as long as `authorId` left it.
-export function removeNote(readerId, id, authorId) {
-  const all = readAll()
-  all[readerId] = notesFor(readerId).filter((note) => note.id !== id || !authorId || note.authorId !== authorId)
-  writeAll(all)
+// Takes down a note. Throws when it can't.
+export async function removeNote(readerId, id) {
+  try {
+    await deleteRoomNote(readerId, id)
+  } catch {
+    throw new Error("That note couldn't be taken down. Try again.")
+  }
 }

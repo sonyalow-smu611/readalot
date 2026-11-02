@@ -72,14 +72,14 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     earnFor(bookId, status)
   }
 
-  // Put a removed book back with its shelf, progress and rating. Its place in the shelf
-  // order was never forgotten, so it returns to the same spot.
+  // Put a removed book back with its shelf and progress. Its rating lives in the reviews table,
+  // which removing a book never touched. Its place in the shelf order was never forgotten, so
+  // it returns to the same spot.
   async function restoreBook(book) {
     await saveUserBook({
       bookId: book.id,
       status: book.status,
       progress: book.progress,
-      rating: book.myRating,
     })
     saved.value = [...saved.value, book]
   }
@@ -134,6 +134,15 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     await save(book, { progress: percent }, `Couldn't save your progress in "${book.title}". Try again.`)
   }
 
+  // Your review of a book was saved ({ rating, text }) or deleted (null): a shelved book shows
+  // its rating and whether it has a written review straight away. The reviews table keeps them.
+  function setMyReview(id, review) {
+    const book = findBook(id)
+    if (!book) return
+    book.myRating = review?.rating ?? null
+    book.reviewed = Boolean(review?.text)
+  }
+
   // Take a book off the shelf altogether. It disappears at once; a failed delete puts it back
   // and throws, so the caller can say so. Returns the book, for Undo to put back.
   async function removeBook(id) {
@@ -165,5 +174,6 @@ export const useBookshelfStore = defineStore('bookshelf', () => {
     findBook,
     setStatus,
     setProgress,
+    setMyReview,
   }
 })

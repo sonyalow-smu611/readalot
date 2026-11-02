@@ -7,17 +7,22 @@ import { computed } from 'vue'
 const props = defineProps({
   // how many friends are online now
   online: { type: Number, default: 0 },
+  // how many friend requests are waiting for an answer
+  requests: { type: Number, default: 0 },
   open: { type: Boolean, default: false },
 })
 const emit = defineEmits(['toggle'])
 
-const label = computed(() => `Friends, ${props.online} online`)
+const label = computed(() => {
+  const waiting = props.requests ? `, ${props.requests} friend ${props.requests === 1 ? 'request' : 'requests'}` : ''
+  return `Friends, ${props.online} online${waiting}`
+})
 </script>
 
 <template>
   <button
     type="button"
-    class="friends-button"
+    class="btn btn-secondary px-sign friends-button"
     :aria-label="label"
     :aria-expanded="open"
     aria-controls="town-friends"
@@ -34,6 +39,7 @@ const label = computed(() => `Friends, ${props.online} online`)
       {{ online }}
       <span class="friends-button__dot" :class="{ 'is-off': !online }"></span>
     </span>
+    <span v-if="requests" class="friends-button__badge" aria-hidden="true">{{ requests }}</span>
   </button>
 </template>
 
@@ -42,13 +48,6 @@ const label = computed(() => `Friends, ${props.online} online`)
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 0 8px 0 14px;
-  border: 1px solid var(--rl-line);
-  border-radius: 999px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.15);
-  color: var(--rl-text);
   pointer-events: auto;
 }
 
@@ -85,5 +84,18 @@ const label = computed(() => `Friends, ${props.online} online`)
 .friends-button__dot.is-off {
   background: var(--rl-muted);
   box-shadow: none;
+}
+
+.friends-button__badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #c0392b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 22px;
+  text-align: center;
 }
 </style>

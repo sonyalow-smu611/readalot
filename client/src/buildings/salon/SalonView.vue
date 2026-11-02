@@ -7,8 +7,8 @@
 // Saves throw pixel confetti over the dock.
 // This view holds the state and does the saving; the parts in components/ show it and report
 // what the reader did.
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import AboutYou from '@/buildings/salon/components/AboutYou.vue'
 import CoinsCard from '@/buildings/salon/components/CoinsCard.vue'
@@ -33,6 +33,7 @@ import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 import { saveProfile, signOut } from '@/services/auth.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { useProgressStore } from '@/stores/progress.js'
+import { useNearbyStore } from '@/town/nearbyStore.js'
 import '@/buildings/salon/pixel.css'
 import { useUserStore } from '@/stores/user'
 import { PLACES } from '@/town/places.js'
@@ -47,6 +48,7 @@ const PANELS = [
 const place = PLACES.find((p) => p.id === 'salon')
 const art = drawSalon()
 const router = useRouter()
+const route = useRoute()
 const user = useUserStore()
 const bookshelf = useBookshelfStore()
 const { inventory, placed, shopOpen } = useDecor()
@@ -75,6 +77,7 @@ const confetti = ref(0)
 // phones: whether the dock's sheet is pulled up over the reader
 const sheetOpen = ref(false)
 const progress = useProgressStore()
+const nearby = useNearbyStore()
 // a level-up while in the salon is worth confetti too
 watch(() => progress.levelUps, () => (confetti.value += 1))
 let leaveAnswer = null
@@ -152,8 +155,15 @@ const listStat = computed(() => SHELF_STATS.find((stat) => stat.status === listS
 const listBooks = computed(() => (listStatus.value ? bookshelf.booksByStatus[listStatus.value] : []))
 const decorCount = computed(() => inventory.value.length + placed.value.length)
 
-onMounted(() => {
+onMounted(async () => {
   if (!bookshelf.books.length && !bookshelf.loading) bookshelf.load()
+  // See saved quotes (from the mood check-in) lands on the Saved quotes card in the Profile tab
+  if (route.hash === '#saved-quotes') {
+    panel.value = 'profile'
+    sheetOpen.value = true
+    await nextTick()
+    document.getElementById('saved-quotes')?.scrollIntoView({ block: 'start' })
+  }
 })
 
 onBeforeUnmount(() => {
@@ -190,21 +200,20 @@ async function saveAbout(details) {
   confetti.value += 1
 }
 
+// The same setting as the town's chip: going public also shares your last rough area.
 async function toggleDiscoverable() {
   const next = !user.profile.discoverable
   privacyError.value = ''
   privacyBusy.value = true
-  user.mergeProfile({ discoverable: next })
-  showPrivacyAlert(next ? 'public' : 'private')
-  const result = await saveProfile({ discoverable: next })
-  privacyBusy.value = false
-  if (result.error) {
-    user.mergeProfile({ discoverable: !next })
-    hidePrivacyAlert()
-    privacyError.value = result.error.message
-    return
+  try {
+    await nearby.setPublic(next)
+    showPrivacyAlert(next ? 'public' : 'private')
+    confetti.value += 1
+  } catch (err) {
+    privacyError.value = err.message
+  } finally {
+    privacyBusy.value = false
   }
-  confetti.value += 1
 }
 
 function showPrivacyAlert(mode) {
@@ -267,7 +276,7 @@ async function logout() {
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" :accent="place.accent" flush>
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <div class="salon">
       <SalonBackdrop class="salon__room" :src="art.backdrop" />
 
@@ -299,7 +308,7 @@ async function logout() {
               :key="p.id"
               type="button"
               role="tab"
-              class="dock__tab"
+              class="btn btn-chip dock__tab"
               :aria-selected="panel === p.id"
               aria-controls="salon-panel"
               @click="panel = p.id"
@@ -346,12 +355,13 @@ async function logout() {
                 <PrivacySetting
                   :discoverable="user.profile.discoverable"
                   :busy="privacyBusy"
+                  :locked="nearby.minor"
                   :error="privacyError"
                   :status="PRIVACY_ALERTS[privacyAlert]?.title ?? ''"
                   @toggle="toggleDiscoverable"
                 />
                 <SavedQuotes />
-                <button type="button" class="logout" data-tour="profile-logout" @click="confirmingLogout = true">
+                <button type="button" class="btn btn-secondary logout" data-tour="profile-logout" @click="confirmingLogout = true">
                   Log out
                 </button>
               </template>
@@ -362,6 +372,7 @@ async function logout() {
                 :error="editError"
                 @save="saveEdit"
                 @cancel="editing = false"
+                @change-look="editing = false; panel = 'studio'"
               />
             </div>
           </div>
@@ -465,23 +476,6 @@ async function logout() {
 
 .dock__tab {
   flex: 1 1 0;
-  min-height: 42px;
-  border: 0;
-  border-radius: 2px;
-  background: transparent;
-  color: var(--rl-text);
-  font-weight: 700;
-  transition: transform 0.12s ease;
-}
-
-.dock__tab:hover {
-  transform: translateY(-1px);
-}
-
-.dock__tab[aria-selected='true'] {
-  background: var(--px-pink-dark);
-  color: #fffdf9;
-  box-shadow: inset 0 -4px 0 rgba(43, 29, 36, 0.3);
 }
 
 .dock__saved {
@@ -512,18 +506,7 @@ async function logout() {
 .logout {
   display: block;
   width: 100%;
-  min-height: 48px;
   margin: 16px 0 8px;
-  border: 3px solid var(--px-ink);
-  border-radius: 4px;
-  background: var(--px-paper);
-  color: #b42318;
-  font-weight: 700;
-  box-shadow: var(--px-shadow);
-}
-
-.logout:hover {
-  background: #fbe9e7;
 }
 
 /* Narrow screens: the reader on top, the widgets in a sheet underneath that pulls up over them */
@@ -559,7 +542,7 @@ async function logout() {
     place-items: center;
     flex: none;
     width: 100%;
-    height: 28px;
+    height: 44px;
     border: 0;
     background: none;
   }

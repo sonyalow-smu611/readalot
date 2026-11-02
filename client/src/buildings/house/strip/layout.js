@@ -99,20 +99,19 @@ const WALL = [
   { at: { x: 1125, y: 182 }, name: 'by the mirror' },
 ]
 
-// Where a shop decoration can stand: the same zones and x (0 to 1 along the zone) as the 3D room
-// had, so pieces placed there before stay put. `at` is the point it stands on (or, on the wall,
-// hangs from); `name`, when there is one, says where that is.
+// Where a shop decoration placed before it could stand anywhere stands: the same zones and x (0 to 1
+// along the zone) as the 3D room had, so pieces placed there before stay put. `at` is the point it
+// stands on (or, on the wall, hangs from); `name`, when there is one, says where that is.
 export const SLOTS = [
   ...[0.25, 0.5, 0.75].map((x, k) => ({ id: `seat.${k}`, zone: 'seat', x, at: { x: Math.round(34 + 226 * x), y: 350 } })),
   { id: 'side-table.0', zone: 'side-table', x: 0.5, at: { x: 440, y: 357 } },
   { id: 'nightstand.0', zone: 'nightstand', x: 0.5, at: { x: 898, y: 359 } },
   ...[0.15, 0.33, 0.51, 0.69].map((x, k) => ({ id: `room.${k}`, zone: 'room', x, at: { x: Math.round(ROOM.width * x), y: 416 } })),
-  // the reading nook: a chair from the Shop stands (`base`) where the armchair stands, in its
-  // place; its spot glows on the seat
+  // the reading nook: a chair from the Shop stands (`base`) where the armchair stands, in its place
   { id: 'chair.0', zone: 'chair', x: 0.28, at: { x: 350, y: 350 }, base: FEET, name: 'in the reading nook' },
-  // the window: curtains from the Shop take the place of the pair there; its spot glows on the glass
+  // the window: curtains from the Shop take the place of the pair there
   { id: 'curtains.0', zone: 'curtains', x: 0.12, at: { x: 146, y: 230 }, name: 'at the window' },
-  // the bed: bedding from the Shop takes the place of what's on it; its spot glows on the quilt
+  // the bed: bedding from the Shop takes the place of what's on it
   { id: 'bed.0', zone: 'bed', x: 0.82, at: { x: 1030, y: 360 }, name: 'on the bed' },
   ...WALL.map(({ at, name }, k) => ({ id: `wall.${k}`, zone: 'wall', x: Math.round((at.x / ROOM.width) * 100) / 100, at, name: `on the wall ${name}` })),
 ]

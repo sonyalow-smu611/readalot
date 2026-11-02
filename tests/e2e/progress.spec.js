@@ -27,10 +27,10 @@ test("the map's badge shows the reader's level and coins", async ({ page }) => {
 
 test("visiting a reader's room earns 15 XP, once a day", async ({ page, reader }) => {
   await quietRoom(page);
-  await page.goto("/people/reader-emma/room");
+  await page.goto("/people/emma.reads/room");
   await expect(page.getByRole("heading", { level: 1, name: "Emma's Room" })).toBeVisible();
   await expect.poll(async () => (await readXp(reader.id)).length).toBe(1);
-  expect((await readXp(reader.id))[0]).toMatchObject({ action: "visit_room", target: "reader-emma", xp: 15 });
+  expect((await readXp(reader.id))[0]).toMatchObject({ action: "visit_room", target: "emma.reads", xp: 15 });
 
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Emma's Room" })).toBeVisible();
@@ -45,7 +45,7 @@ test("a level-up gives coins, and the salon shows the new level", async ({ page,
   await expect(badge(page)).toHaveAccessibleName(/level 1, 10 XP to the next level, 480 coins/);
 
   // 90 + 15 reaches level 2, which gives 50 coins
-  await page.goto("/people/reader-emma/room");
+  await page.goto("/people/emma.reads/room");
   await expect.poll(async () => (await readProfile(reader.id)).coins).toBe(530);
 
   await page.goto("/salon");

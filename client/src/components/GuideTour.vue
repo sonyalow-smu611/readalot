@@ -83,7 +83,8 @@ function follow() {
     const selector = guide.value?.target
     const target = selector ? document.querySelector(selector) : null
     if (tries === 0 && target) target.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-    if (measure() || tries >= 24) return
+    // a building stop keeps looking until the camera arrives, however long the glide takes on a slow device
+    if (measure() || (tries >= 24 && !guide.value?.focus)) return
     tries += 1
     hunt = window.setTimeout(step, 150)
   }

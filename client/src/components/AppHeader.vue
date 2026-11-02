@@ -3,7 +3,7 @@
     <div class="app-header__card">
       <button
         v-if="route.meta.back"
-        class="app-header__icon"
+        class="btn btn-secondary btn-icon app-header__icon"
         type="button"
         aria-label="Back"
         @click="router.back()"
@@ -21,7 +21,7 @@
 
       <RouterLink
         v-if="!route.meta.hideSearch"
-        class="app-header__icon"
+        class="btn btn-secondary btn-icon app-header__icon"
         to="/search"
         aria-label="Search books"
       >
@@ -79,16 +79,7 @@ const router = useRouter();
 }
 
 .app-header__icon {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
   flex: none;
-  padding: 0;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-secondary);
-  color: var(--rl-primary);
 }
 
 .app-header__icon svg {

@@ -1,9 +1,11 @@
 // Pure helpers for laying books out on shelves. No API calls here.
 
+// The reading statuses, named and ordered as the shelves in My Room are: the preview's buttons
+// and the toast after adding a book use these names.
 export const STATUSES = [
-  { value: "reading", label: "Currently reading", short: "Reading" },
-  { value: "want_to_read", label: "To be read", short: "Want to Read" },
-  { value: "read", label: "Read", short: "Read" }
+  { value: "want_to_read", label: "To be read", short: "To be read" },
+  { value: "reading", label: "Currently reading", short: "Currently reading" },
+  { value: "read", label: "Finished reading", short: "Finished reading" }
 ];
 
 // The reader's three shelves in the order they're shown, top to bottom: the rows of the bookshelf

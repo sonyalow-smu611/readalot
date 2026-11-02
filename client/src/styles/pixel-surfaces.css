@@ -1,0 +1,43 @@
+/* Scaffolded with AI assistance — see AI_USAGE.md
+   Cards, tags, text boxes and modals in the pixel buttons' look (pixel-buttons.css, whose
+   --px-* colours these use): square corners, a 2 px outline in the room's outline colour (near
+   black) and, for the raised ones, a hard shadow with no blur. Bootstrap's own classes pick it up
+   here; a component that draws its own card or tag uses the same tokens (--px-outline,
+   --px-shadow). Buttons stay in pixel-buttons.css. */
+
+:root {
+  --px-border: 2px solid var(--px-outline);
+
+  /* the town's rounded cards and modals, square */
+  --rl-radius-card: 0;
+  --rl-radius-modal: 0;
+  --bs-border-radius: 0;
+  --bs-border-radius-sm: 0;
+  --bs-border-radius-lg: 0;
+  --bs-border-radius-xl: 0;
+  --bs-border-radius-xxl: 0;
+  --bs-border-radius-pill: 0;
+}
+
+/* raised: cards and modals */
+.card,
+.modal-content {
+  border: var(--px-border);
+  border-radius: 0;
+  box-shadow: var(--px-shadow);
+}
+
+/* flat: tags and text boxes */
+.badge,
+.form-control,
+.form-select {
+  border: var(--px-border);
+  border-radius: 0;
+}
+
+/* the focus ring a text box already has, kept square */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--px-outline);
+  box-shadow: var(--px-shadow);
+}

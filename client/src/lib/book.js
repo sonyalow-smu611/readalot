@@ -99,3 +99,20 @@ export function spineLean(book) {
 export function ratingStars(book) {
   return Math.round(book.rating)
 }
+
+/**
+ * A synopsis as plain paragraphs. Google Books sends HTML (<p>, <br>, <b>, &amp;…): its tags
+ * are dropped and its entities read as the characters they stand for (parsed, never shown as
+ * HTML), a paragraph or blank line starts a new paragraph and <br> keeps its line break.
+ */
+export function synopsisParagraphs(text = '') {
+  if (!text) return []
+  const marked = text
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?p[^>]*>/gi, '\n\n')
+  const plain = new DOMParser().parseFromString(marked, 'text/html').body.textContent ?? ''
+  return plain
+    .split(/\n\s*\n/)
+    .map((part) => part.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').trim())
+    .filter(Boolean)
+}

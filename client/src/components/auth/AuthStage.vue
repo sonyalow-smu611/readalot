@@ -182,46 +182,6 @@ defineExpose({ shake, enterTown })
   box-shadow: 0 0 0 0.2rem rgba(154, 122, 85, 0.25);
 }
 
-.sheet :deep(.btn-primary) {
-  position: relative;
-  overflow: hidden;
-  border-radius: 999px;
-  box-shadow: 0 5px 0 #2c241e;
-  transition: transform 0.16s ease, box-shadow 0.16s ease;
-}
-
-.sheet :deep(.btn-primary::after) {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 28%, rgba(255, 253, 249, 0.5) 50%, transparent 72%);
-  transform: translateX(-130%);
-  pointer-events: none;
-}
-
-.sheet :deep(.btn-primary:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 0 #2c241e, 0 12px 20px rgba(63, 46, 36, 0.16);
-}
-
-.sheet :deep(.btn-primary:hover::after) {
-  transform: translateX(130%);
-  transition: transform 0.5s ease;
-}
-
-.sheet :deep(.btn-primary:active) {
-  transform: translateY(4px);
-  box-shadow: 0 1px 0 #2c241e;
-}
-
-.sheet :deep(.btn-outline-primary) {
-  transition: transform 0.16s ease, background 0.16s ease;
-}
-
-.sheet :deep(.btn-outline-primary:active) {
-  transform: scale(0.96);
-}
-
 @media (max-width: 767px) {
   .stage {
     flex-direction: column;
@@ -267,18 +227,9 @@ defineExpose({ shake, enterTown })
   }
 
   .town,
-  .sheet,
-  .sheet :deep(.btn-primary),
-  .sheet :deep(.btn-primary::after),
-  .sheet :deep(.btn-outline-primary) {
+  .sheet {
     animation: none;
     transition: none;
-  }
-
-  .sheet :deep(.btn-primary:hover),
-  .sheet :deep(.btn-primary:active),
-  .sheet :deep(.btn-outline-primary:active) {
-    transform: none;
   }
 }
 </style>

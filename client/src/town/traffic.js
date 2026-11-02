@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Cars driving the roads (on the left, with headlights after dark) and readers wandering the
-// pavements. Both find their way with a Traveller from roads.js.
+// pavements, who jiggle when tapped. Both find their way with a Traveller from roads.js.
 import Phaser from 'phaser'
 import mapData from './map-data.json'
 import { WALKERS } from './places.js'
@@ -8,14 +8,19 @@ import { JUNCTIONS, LANE, PAVEMENT, ROAD_ENDS, Traveller, startingRoads } from '
 
 const CAR_SPEED = 150 // map px a second
 const CARS = 5
+// a walker's wobble when tapped: the angles it rocks through, and how long it all takes (ms)
+const WOBBLE = [-12, 12, -9, 9, -5, 5, 0]
+const JIGGLE = 560
 const pick = (list) => list[Math.floor(Math.random() * list.length)]
 
 export class Traffic {
-  // `lights` is the sky's container of things that glow at night (see sky.js).
-  constructor(scene, { reducedMotion, lights }) {
+  // `lights` is the sky's container of things that glow at night (see sky.js); `isTap(pointer)`
+  // says whether a pointer-up really was a tap on the map.
+  constructor(scene, { reducedMotion, lights, isTap }) {
     this.scene = scene
     this.reducedMotion = reducedMotion
     this.lights = lights
+    this.isTap = isTap
     // the first cars start out in town, each on its own road, so the roads are not empty
     const starts = startingRoads()
     for (let i = 0; i < CARS; i++) this.addCar(mapData.cars[i % mapData.cars.length], starts[i % starts.length])
@@ -88,7 +93,35 @@ export class Traffic {
     if (this.reducedMotion) return
     // a little bounce in every step
     const step = this.scene.tweens.add({ targets: body, scaleY: 0.94, duration: 170, yoyo: true, repeat: -1 })
-    this.walk({ body, route, speed, step })
+    const walker = { body, route, speed, step }
+    body.setInteractive({ useHandCursor: true })
+    body.on('pointerup', (pointer) => {
+      if (this.isTap(pointer)) this.jiggle(walker)
+    })
+    this.walk(walker)
+  }
+
+  // Tapped: stops, wobbles from the feet with a squash, and carries on the same way.
+  jiggle(walker) {
+    const { body, step } = walker
+    if (walker.jiggling) return
+    walker.jiggling = true
+    const walking = walker.leg?.isPlaying()
+    walker.leg?.pause()
+    step.pause()
+    body.setScale(1)
+    this.scene.tweens.add({ targets: body, scaleX: 1.08, scaleY: 0.92, duration: JIGGLE / 2, ease: 'Sine.easeInOut', yoyo: true, repeat: 1 })
+    this.scene.tweens.chain({
+      targets: body,
+      tweens: WOBBLE.map((angle) => ({ angle, duration: JIGGLE / WOBBLE.length, ease: 'Sine.easeInOut' })),
+      onComplete: () => {
+        body.setScale(1).setAngle(0)
+        walker.jiggling = false
+        if (!walking) return
+        walker.leg.resume()
+        step.resume()
+      },
+    })
   }
 
   walk(walker) {
@@ -96,7 +129,7 @@ export class Traffic {
     const [x, y] = route.next().point
     if (Math.abs(x - body.x) > 1) body.setFlipX(x < body.x)
     step.resume()
-    this.scene.tweens.add({
+    walker.leg = this.scene.tweens.add({
       targets: body,
       x,
       y,

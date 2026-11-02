@@ -27,23 +27,21 @@ test("My Shelf fills the window too, its search kept to a comfortable width", as
   const back = page.getByRole("link", { name: "Back to room" });
   await expect(back).toBeVisible();
 
-  // the house's header runs the whole width of the window, once the page has slid in
-  const header = page.locator("header", { has: back });
-  await expect.poll(async () => (await header.boundingBox()).x).toBe(0);
-  expect((await header.boundingBox()).width).toBe(1440);
+  // the page runs the whole width of the window, once it has slid in
+  await expect.poll(async () => (await page.getByRole("main").boundingBox()).x).toBe(0);
+  expect((await page.getByRole("main").boundingBox()).width).toBe(1440);
 
   const search = await page.getByRole("search").boundingBox();
   expect(search.width).toBeLessThanOrEqual(1320);
   expect(Math.abs(search.x + search.width / 2 - 720)).toBeLessThan(2);
 });
 
-test("the other buildings still open in the phone column", async ({ page }) => {
-  // the library fills the window too now (team review), so the cafe stands in for the rest
-  await page.goto("/cafe");
-  const back = page.getByRole("link", { name: /Back to town/ });
-  await expect(back).toBeVisible();
-  const header = await page.locator("header", { has: back }).boundingBox();
-  expect(header.width).toBeLessThanOrEqual(480);
+test("pages that aren't buildings still open in the phone column", async ({ page }) => {
+  // (search is the library's now, and fills the window like it)
+  await page.goto("/mood");
+  await expect(page.getByRole("banner")).toBeVisible();
+  // the frame fills the window while the app loads, then settles into the column
+  await expect.poll(async () => (await page.getByRole("main").first().boundingBox()).width).toBeLessThanOrEqual(480);
 });
 
 // a card over the room stays a size that reads well, in the middle of the window
@@ -59,7 +57,9 @@ test("a book's card stays a readable width in the middle of the window", async (
   await page.getByRole("button", { name: "Norwegian Wood by Haruki Murakami" }).click();
   const card = page.getByRole("dialog", { name: "Book details" });
   await expect(card).toBeVisible({ timeout: 8000 });
-  await centredAndReadable(card);
+  // the dialog's backdrop fills the window, as the library's does; its full-width Close book
+  // button shows how wide the card itself is
+  await centredAndReadable(card.getByRole("button", { name: "Close book" }));
 });
 
 test("the Currently Reading card stays a readable width, centred", async ({ page }) => {

@@ -17,7 +17,6 @@ import { lampsFor, toggleLamp } from '@/buildings/house/lamps.js'
 import CurrentlyReadingCard from '@/buildings/house/components/CurrentlyReadingCard.vue'
 import MoodCheckInModal from '@/components/modals/MoodCheckInModal.vue'
 import MoodResultModal from '@/components/modals/MoodResultModal.vue'
-import QuoteOfDayModal from '@/components/modals/QuoteOfDayModal.vue'
 import StateView from '@/components/StateView.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
 import VisitorBookDialog from '@/buildings/house/components/VisitorBookDialog.vue'
@@ -77,7 +76,7 @@ const room = ref(null)
 const strip = ref(null)
 let listening = false
 
-const { placed, shopOpen, inventoryOpen, drag, notice, sparkle, moveDrag, endDrag, flash, burst } = useDecor()
+const { placed, shopOpen, inventoryOpen, drag, notice, sparkle, roomStatus, loadRoom, moveDrag, endDrag, flash, burst } = useDecor()
 // the furniture in the room: the reader's own placed pieces, or the visited reader's
 const furniture = computed(() => props.visiting?.furniture ?? placed.value)
 
@@ -96,10 +95,9 @@ function release(entry, clientX, clientY) {
 
   // it goes where it was let go, or as near as it fits
   const spot = strip.value?.dropAt(entry, clientX, clientY)
-  if (!spot) {
-    // wall art, plants and the succulents go anywhere they fit; the rest on a glowing spot
-    if (!meta.pet && ['wall', 'floor', 'shelf'].includes(meta.surface)) flash('Not enough room there', 'bad')
-    else flash(`Drop ${meta.name} on a glowing spot.`, 'bad')
+  if (!spot) return
+  if (spot.miss) {
+    flash(spot.miss, 'bad')
     return
   }
   mark(clientX, clientY)
@@ -152,10 +150,9 @@ async function closeBook({ removed = false } = {}) {
   trigger?.focus?.()
 }
 
-// --- Currently Reading card and Quote of the Day -----------------------------------------
+// --- Currently Reading card ----------------------------------------------------------------
 const readingOpen = ref(false)
 const readingCard = ref(null)
-const quoteOpen = ref(false)
 let readingTrigger = null
 
 async function toggleReading() {
@@ -191,9 +188,14 @@ watch([shopOpen, inventoryOpen, drag], ([shop, bag, dragging]) => {
   if (shop || bag || dragging) closeReading()
 })
 
-// --- Notes on a visited reader's notice board --------------------------------------------
-const notes = ref(props.visiting ? notesFor(props.visiting.id) : [])
+// --- Notes on the notice board: the visited reader's, or the reader's own ------------------
+// whose board it is: the visited reader (their username), or the reader in their own room
+const boardId = computed(() => props.visiting?.id ?? user.profile.id)
+const notes = ref([])
+const notesLoading = ref(false)
+const notesError = ref('')
 const writing = ref(false)
+const posting = ref(false)
 const noteError = ref('')
 const boardOpen = ref(false)
 let noteTrigger = null
@@ -210,33 +212,49 @@ function stopNote() {
   noteTrigger?.focus?.()
 }
 
-function postNote(text) {
+async function loadNotes() {
+  if (!boardId.value) return
+  notesLoading.value = true
+  notesError.value = ''
   try {
-    addNote(props.visiting.id, { id: user.profile.id, name: user.profile.name }, text)
+    notes.value = await notesFor(boardId.value)
+  } catch {
+    notesError.value = "Couldn't load the notes."
+  } finally {
+    notesLoading.value = false
+  }
+}
+
+async function postNote(text) {
+  posting.value = true
+  noteError.value = ''
+  try {
+    const note = await addNote(props.visiting.id, { id: user.profile.id, name: user.profile.name }, text)
+    notes.value = [note, ...notes.value]
   } catch (err) {
     noteError.value = err.message
     return
+  } finally {
+    posting.value = false
   }
-  notes.value = notesFor(props.visiting.id)
   progress.earn('leave_note', props.visiting.id)
   stopNote()
   flash(`Your note is on ${props.visiting.firstName}'s board`, 'ok')
 }
 
-function takeDown(id) {
+async function takeDown(id) {
   try {
-    removeNote(props.visiting.id, id, user.profile.id)
+    await removeNote(boardId.value, id)
   } catch (err) {
     flash(err.message, 'bad')
     return
   }
-  notes.value = notesFor(props.visiting.id)
+  notes.value = notes.value.filter((note) => note.id !== id)
 }
 
-// the corkboard: the visited reader's notice board, or the reader's own Quote of the Day
+// the corkboard: the notice board, with the Quote of the Day on top
 function openBoard() {
-  if (props.visiting) boardOpen.value = true
-  else quoteOpen.value = true
+  boardOpen.value = true
 }
 
 // --- Mood check-in -----------------------------------------------------------------------
@@ -297,7 +315,9 @@ onMounted(() => {
   if (!props.visiting) {
     if (!moodDoneToday()) moodStep.value = 'checkin'
     bookshelf.load()
+    loadRoom(user.profile.id)
   }
+  loadNotes()
   loadWeather()
   weatherTimer = window.setInterval(loadWeather, WEATHER_REFRESH_MS)
 })
@@ -324,7 +344,7 @@ onBeforeUnmount(() => {
         :furniture="furniture"
         :editable="!visiting"
         :room-name="roomName"
-        :board-label="visiting ? 'Notice board' : 'Quote of the day'"
+        :board-label="'Notice board'"
         :notes="notes.length"
         :theme="theme"
         :lamps="lamps"
@@ -337,6 +357,10 @@ onBeforeUnmount(() => {
       />
 
       <CreditChip v-if="!visiting" data-tour="credits" class="home__credits" />
+      <p v-if="!visiting && roomStatus === 'error'" class="home__furniture-error" role="alert">
+        Couldn't load your furniture.
+        <button type="button" class="btn btn-secondary btn-sm" @click="loadRoom(user.profile.id)">Try again</button>
+      </p>
     </div>
 
     <!-- Opened from the book on the chair -->
@@ -356,7 +380,7 @@ onBeforeUnmount(() => {
         <CurrentlyReadingCard v-else :book="currentBook" :owner="visiting?.firstName ?? ''" />
         <button
           type="button"
-          class="home__reading-close"
+          class="btn btn-secondary btn-icon home__reading-close"
           aria-label="Close"
           @click="closeReading({ refocus: true })"
         >
@@ -370,7 +394,7 @@ onBeforeUnmount(() => {
          chair, a drag to look around) can be reached -->
     <template v-if="openedBook">
       <VisitorBookDialog v-if="visiting" :book="openedBook" :owner="visiting.firstName" :accent="accent" @close="closeBook" />
-      <BookDialog v-else :book="openedBook" :accent="accent" @close="closeBook" @leave="openedBook = null" />
+      <BookDialog v-else :book="openedBook" @close="closeBook" />
     </template>
 
     <div v-if="drag?.moved" class="drag-ghost" :style="{ left: `${drag.x}px`, top: `${drag.y}px` }">
@@ -385,18 +409,29 @@ onBeforeUnmount(() => {
 
     <RoomDock v-if="!visiting" @mood="openMood" />
     <!-- in someone else's room, the one thing to do: leave them a note -->
-    <button v-else type="button" class="home__note" @click="startNote">
+    <button v-else type="button" class="btn btn-primary home__note" @click="startNote">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
         <path d="M5 4h14v12l-4 4H5z M15 20v-4h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
         <path d="M8 9h8M8 12.5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
       </svg>
       Leave a note
     </button>
-    <NoticeBoard v-if="boardOpen" :owner="visiting.firstName" :notes="notes" :me="user.profile.id" @remove="takeDown" @write="startNote" @close="boardOpen = false" />
+    <NoticeBoard
+      v-if="boardOpen"
+      :owner="visiting?.firstName ?? ''"
+      :mine="!visiting"
+      :notes="notes"
+      :notes-loading="notesLoading"
+      :notes-error="notesError"
+      :me="user.profile.id"
+      @remove="takeDown"
+      @retry="loadNotes"
+      @write="startNote"
+      @close="boardOpen = false"
+    />
     <!-- after the board, so the card opens over it when it's written from there -->
-    <NoteComposer v-if="writing" :owner="visiting.firstName" :error="noteError" @post="postNote" @cancel="stopNote" />
+    <NoteComposer v-if="writing" :owner="visiting.firstName" :error="noteError" :busy="posting" @post="postNote" @cancel="stopNote" />
 
-    <QuoteOfDayModal v-if="quoteOpen" @close="quoteOpen = false" />
     <MoodCheckInModal v-if="moodStep === 'checkin'" @submit="submitMood" @skip="skipMood" />
     <MoodResultModal v-else-if="moodStep === 'result'" :mood="mood" @close="moodStep = null" />
   </section>
@@ -422,6 +457,24 @@ onBeforeUnmount(() => {
   top: 10px;
   right: 12px;
   z-index: 4;
+}
+
+/* the room's furniture didn't load: under the coins, over the room */
+.home__furniture-error {
+  position: absolute;
+  top: 56px;
+  right: 12px;
+  left: 12px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 6px 6px 12px;
+  border-radius: 12px;
+  background: var(--rl-surface);
+  font-size: 12px;
 }
 
 /* across the bottom of the room on a phone; the same width, centred, on a wide window */
@@ -450,20 +503,8 @@ onBeforeUnmount(() => {
 
 .home__reading-close {
   position: absolute;
-  top: -10px;
-  right: -8px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid var(--rl-line);
-  border-radius: 50%;
-  background: var(--rl-surface);
-  font-size: 12px;
-  line-height: 1;
-  color: var(--rl-primary);
-  box-shadow: 0 2px 6px rgba(63, 46, 36, 0.2);
+  top: -14px;
+  right: -10px;
 }
 
 /* the card rises from the floor, out from under the chair */
@@ -486,23 +527,8 @@ onBeforeUnmount(() => {
   right: 12px;
   bottom: 12px;
   z-index: 20;
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
   min-height: 52px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--house-accent, var(--rl-primary));
-  box-shadow: 0 6px 18px rgba(63, 46, 36, 0.28);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--rl-surface);
-}
-
-.home__note:focus-visible {
-  outline: 3px solid var(--rl-surface);
-  outline-offset: 2px;
 }
 
 .drag-ghost {

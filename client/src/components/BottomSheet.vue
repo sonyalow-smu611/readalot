@@ -20,7 +20,7 @@ function close() {
       <div class="sheet__handle" aria-hidden="true" />
       <div class="sheet__head">
         <h2 v-if="title" class="sheet__title">{{ title }}</h2>
-        <button type="button" class="sheet__close" aria-label="Close" @click="close">✕</button>
+        <button type="button" class="btn btn-secondary btn-icon sheet__close" aria-label="Close" @click="close">✕</button>
       </div>
       <div class="sheet__body">
         <slot />
@@ -82,15 +82,6 @@ function close() {
   flex: 1;
   margin: 0;
   font-size: 1.15rem;
-}
-
-.sheet__close {
-  width: 36px;
-  height: 36px;
-  background: var(--butter);
-  border: var(--outline);
-  border-radius: 999px;
-  cursor: pointer;
 }
 
 .sheet__body {

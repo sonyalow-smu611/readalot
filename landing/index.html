@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Scaffolded with AI assistance — see AI_USAGE.md -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IKDA · Social media, but for book lovers</title>
+  <meta name="description" content="IKDA is a cosy pixel-art town for readers. Meet people who love the books you love, show off your shelf, and level up as you read. Free to try." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- the sky behind everything: morning at the top of the page, night at the bottom -->
+  <div class="sky" aria-hidden="true">
+    <div class="sky__stars"></div>
+  </div>
+
+  <header class="bar">
+    <a class="bar__brand" href="#home" aria-label="IKDA, back to the top">IKDA</a>
+    <nav class="bar__nav" aria-label="Sections">
+      <a href="#problem">Why IKDA</a>
+      <a href="#mia">Meet Mia</a>
+      <a href="#town">The town</a>
+      <a href="#you">Your character</a>
+      <a href="#levels">Levels</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn--small" data-app-link href="http://localhost:5173/register">Try IKDA free</a>
+  </header>
+
+  <main id="main">
+    <!-- 1. The name, the slogan, the point, and the way in -->
+    <section class="scene scene--hero" id="home" aria-labelledby="hero-title">
+      <div class="hero__town" aria-hidden="true">
+        <div class="hero__map"></div>
+      </div>
+      <div class="scene__inner hero">
+        <h1 id="hero-title" class="wordmark">IKDA</h1>
+        <p class="hero__slogan">Social media, but for book lovers.</p>
+        <p class="hero__lede">
+          A cosy pixel-art town where readers find each other. Meet people who love the books you
+          love, show off your shelf, and level up every time you read.
+        </p>
+        <div class="hero__actions">
+          <a class="btn" data-app-link href="http://localhost:5173/register">Try IKDA free</a>
+          <a class="btn btn--ghost" href="#how">See how it works</a>
+        </div>
+        <p class="hero__name">IKDA comes from 읽다, Korean for “to read”.</p>
+      </div>
+    </section>
+
+    <!-- 2. The problem the audience feels -->
+    <section class="scene" id="problem" aria-labelledby="problem-title">
+      <div class="scene__inner">
+        <h2 id="problem-title" class="title">Reading is great. Reading alone gets lonely.</h2>
+        <p class="lede">IKDA is for students and young readers who love books but have no one around who reads them.</p>
+        <ul class="pains">
+          <li class="panel pain">
+            <span class="pain__clock" aria-hidden="true">2:00</span>
+            <h3>The 2am ending</h3>
+            <p>You finish a book at 2am, your head is spinning, and everyone you know is asleep.</p>
+          </li>
+          <li class="panel pain">
+            <span class="pain__clock" aria-hidden="true">3h</span>
+            <h3>The feed wins</h3>
+            <p>You meant to read tonight. Three hours of scrolling later, the book is still on page 40.</p>
+          </li>
+          <li class="panel pain">
+            <span class="pain__clock" aria-hidden="true">🎬</span>
+            <h3>“Just watch the movie”</h3>
+            <p>Your friends would rather wait for the adaptation than talk about chapter twelve.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 3. The persona and her scenario -->
+    <section class="scene" id="mia" aria-labelledby="mia-title">
+      <div class="scene__inner mia">
+        <div class="panel persona">
+          <div class="persona__head">
+            <span class="persona__avatar"><img src="assets/avatar-maya.png" alt="Mia's town character" width="60" height="116" /></span>
+            <div>
+              <h2 id="mia-title" class="title title--small">Meet Mia</h2>
+              <p class="persona__who">19, second-year poly student in Singapore</p>
+            </div>
+          </div>
+          <dl class="persona__facts">
+            <div><dt>Reads</dt><dd>Fantasy and romance, about two books a month</dd></div>
+            <div><dt>Wants</dt><dd>Friends who read what she reads, and a reason to put her phone down</dd></div>
+            <div><dt>Struggles with</dt><dd>Nobody to talk books with, and a reading habit the feed keeps eating</dd></div>
+          </dl>
+        </div>
+        <div class="story">
+          <h3 class="story__title">Mia's Friday night with IKDA</h3>
+          <ol class="timeline">
+            <li><time>9:40pm</time><p>She finishes <em>a fantasy she couldn't put down</em> and moves it to her Finished shelf. That's +100 XP.</p></li>
+            <li><time>9:45pm</time><p>In the cafe, she finds Emma, a 57% reading match who loves the same series.</p></li>
+            <li><time>9:52pm</time><p>She visits Emma's room and pins a note on her board: “Your shelf is goals. Swap books?”</p></li>
+            <li><time>10:05pm</time><p>At the library, she scans the cover of her next read straight onto her shelf.</p></li>
+            <li><time>10:10pm</time><p>Her badge levels up. She spends her new coins on a reading chair for her room.</p></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. The features, as places in town -->
+    <section class="scene" id="town" aria-labelledby="town-title">
+      <div class="scene__inner">
+        <h2 id="town-title" class="title">Explore the town</h2>
+        <p class="lede">Each building is one part of IKDA. Tap one to see what you can do there.</p>
+        <div class="town">
+          <div class="town__street" role="tablist" aria-label="Places in town">
+            <button class="place" role="tab" id="tab-cafe" aria-controls="panel-place" aria-selected="true" data-place="cafe">
+              <img src="assets/cafe.png" alt="" /><span>Cafe</span>
+            </button>
+            <button class="place" role="tab" id="tab-house" aria-controls="panel-place" aria-selected="false" tabindex="-1" data-place="house">
+              <img src="assets/house.png" alt="" /><span>Your house</span>
+            </button>
+            <button class="place" role="tab" id="tab-library" aria-controls="panel-place" aria-selected="false" tabindex="-1" data-place="library">
+              <img src="assets/library.png" alt="" /><span>Library</span>
+            </button>
+            <button class="place" role="tab" id="tab-salon" aria-controls="panel-place" aria-selected="false" tabindex="-1" data-place="salon">
+              <img src="assets/salon.png" alt="" /><span>Hair salon</span>
+            </button>
+          </div>
+          <div class="panel inside" id="panel-place" role="tabpanel" aria-labelledby="tab-cafe" aria-live="polite">
+            <div class="inside__text">
+              <h3 class="inside__title" data-field="title"></h3>
+              <p data-field="body"></p>
+              <ul class="inside__list" data-field="list"></ul>
+            </div>
+            <figure class="inside__shot">
+              <img data-field="shot" src="assets/shot-cafe.jpg" alt="" />
+              <figcaption data-field="caption"></figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. The visitor makes their own character, drawn with the app's own character code -->
+    <section class="scene" id="you" aria-labelledby="you-title">
+      <div class="scene__inner you">
+        <div class="you__copy">
+          <h2 id="you-title" class="title">Now make yourself</h2>
+          <p class="lede">
+            In IKDA, this is you walking around town. Pick a look, change your hair, or let the
+            stylist surprise you. Your character follows you down this page.
+          </p>
+        </div>
+        <div class="you__studio">
+          <div class="panel you__stage">
+            <label class="you__name">
+              <span class="visually-hidden">Your name in town</span>
+              <input data-me-name maxlength="16" placeholder="Your name" autocomplete="given-name" />
+            </label>
+            <canvas class="you__sprite" data-me-big width="30" height="58" role="img"></canvas>
+            <span class="you__floor" aria-hidden="true"></span>
+          </div>
+          <div class="panel you__controls">
+            <div class="you__tabs" role="tablist" aria-label="Style your character">
+              <button role="tab" id="you-tab-looks" aria-controls="you-options" aria-selected="true" data-tab="looks">Looks</button>
+              <button role="tab" id="you-tab-hair" aria-controls="you-options" aria-selected="false" tabindex="-1" data-tab="hair">Hair</button>
+              <button role="tab" id="you-tab-skin" aria-controls="you-options" aria-selected="false" tabindex="-1" data-tab="skin">Skin</button>
+              <button role="tab" id="you-tab-outfit" aria-controls="you-options" aria-selected="false" tabindex="-1" data-tab="outfit">Outfit</button>
+            </div>
+            <div class="you__options" id="you-options" role="tabpanel" aria-labelledby="you-tab-looks"></div>
+            <button class="btn btn--ghost you__surprise" type="button" data-me-random>Surprise me</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Levels, coins, and an XP ring to play with -->
+    <section class="scene" id="levels" aria-labelledby="levels-title">
+      <div class="scene__inner levels">
+        <div class="levels__copy">
+          <h2 id="levels-title" class="title">Read more. Level up. Make it yours.</h2>
+          <p class="lede">
+            Everything you do as a reader earns XP. Each new level drops coins you can spend on
+            furniture, plants and cats for your room. Try it:
+          </p>
+          <div class="xp-actions" role="group" aria-label="Earn XP">
+            <button class="chip" data-xp="10">Add a book <b>+10</b></button>
+            <button class="chip" data-xp="20">Start reading <b>+20</b></button>
+            <button class="chip" data-xp="15">Visit a room <b>+15</b></button>
+            <button class="chip" data-xp="5">Send a message <b>+5</b></button>
+            <button class="chip chip--big" data-xp="100">Finish a book <b>+100</b></button>
+          </div>
+          <button class="reset" type="button" data-xp-reset>Start over</button>
+        </div>
+        <div class="panel badge" aria-live="polite">
+          <div class="badge__ring">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring__track" cx="60" cy="60" r="52" />
+              <circle class="ring__fill" cx="60" cy="60" r="52" />
+            </svg>
+            <canvas class="badge__face" data-me-face width="30" height="25" aria-hidden="true"></canvas>
+            <span class="badge__level" data-level>1</span>
+          </div>
+          <p class="badge__xp"><span data-xp-total>0</span> XP</p>
+          <p class="badge__next" data-xp-next>100 XP to level 2</p>
+          <p class="badge__coins"><span class="coin" aria-hidden="true"></span><span data-coins>480</span> coins</p>
+          <p class="badge__toast" data-toast></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Three steps to start -->
+    <section class="scene" id="how" aria-labelledby="how-title">
+      <div class="scene__inner">
+        <h2 id="how-title" class="title">Start in under two minutes</h2>
+        <ol class="steps">
+          <li class="panel step">
+            <h3>Make your character</h3>
+            <p>Sign up with your email, pick a look, and tell IKDA the genres you love.</p>
+            <div class="step__art" aria-hidden="true">
+              <img src="assets/avatar-rosie.png" alt="" /><img src="assets/avatar-maya.png" alt="" /><img src="assets/avatar-rex.png" alt="" /><img src="assets/avatar-jay.png" alt="" /><img src="assets/avatar-nova.png" alt="" />
+            </div>
+          </li>
+          <li class="panel step">
+            <h3>Fill your shelf</h3>
+            <p>Search the library or scan a cover. Sort books into To read, Reading and Finished.</p>
+            <div class="step__art" aria-hidden="true"><img class="step__building" src="assets/library.png" alt="" /></div>
+          </li>
+          <li class="panel step">
+            <h3>Find your people</h3>
+            <p>Head to the cafe, see your reading match with each reader, and visit their rooms.</p>
+            <div class="step__art" aria-hidden="true"><img class="step__building" src="assets/cafe.png" alt="" /></div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 8. Questions people ask before they sign up -->
+    <section class="scene" id="faq" aria-labelledby="faq-title">
+      <div class="scene__inner faq">
+        <h2 id="faq-title" class="title">Questions before you move in</h2>
+        <details class="panel qa" open>
+          <summary>Is IKDA free?</summary>
+          <p>Yes. Sign up with your email and start reading. Coins are earned in the app, never bought.</p>
+        </details>
+        <details class="panel qa">
+          <summary>Do I need to download anything?</summary>
+          <p>No. IKDA runs in your browser and is made for your phone, so it works on any device.</p>
+        </details>
+        <details class="panel qa">
+          <summary>Who can see my profile?</summary>
+          <p>Only you, until you switch on “Show me on the People map” in the Hair Salon. You can switch it off any time.</p>
+        </details>
+        <details class="panel qa">
+          <summary>What does IKDA mean?</summary>
+          <p>It comes from 읽다 (ikda), the Korean word for “to read”.</p>
+        </details>
+        <details class="panel qa">
+          <summary>I only read a few books a year. Is it for me?</summary>
+          <p>Yes. Adding a book, starting it and visiting a friend all earn XP, so every bit of reading counts.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- 9. The way in, again, under the night sky: the houses light up one by one -->
+    <section class="scene scene--end" id="join" aria-labelledby="join-title">
+      <div class="scene__inner end">
+        <p class="wordmark wordmark--small" aria-hidden="true">IKDA</p>
+        <h2 id="join-title" class="title">Your reading friends are already in town.</h2>
+        <p class="lede">Make your character, fill your shelf, and say hi tonight.</p>
+        <a class="btn btn--large" data-app-link href="http://localhost:5173/register">Try IKDA free</a>
+        <div class="end__town" aria-hidden="true">
+          <div class="home" style="--i: 0"><span class="home__tag">Sofia</span><img src="assets/cottage-lilac.png" alt="" /></div>
+          <div class="home" style="--i: 1"><span class="home__tag">Emma</span><img src="assets/cottage-white.png" alt="" /></div>
+          <div class="home home--me" style="--i: 3">
+            <span class="home__tag home__tag--me" data-me-tag>You</span>
+            <img src="assets/house.png" alt="" />
+            <canvas class="home__me" data-me-small width="30" height="58"></canvas>
+          </div>
+          <div class="home" style="--i: 2"><span class="home__tag">Ayaan</span><img src="assets/cottage-brick.png" alt="" /></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>IKDA is an IS216 group project. Screenshots show the real app with demo readers.</p>
+  </footer>
+
+  <script src="avatar.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

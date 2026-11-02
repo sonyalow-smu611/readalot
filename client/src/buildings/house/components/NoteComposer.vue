@@ -31,7 +31,7 @@
         <p class="note-card__count" aria-live="polite">{{ text.length }}/{{ NOTE_MAX }}</p>
         <p v-if="error" class="note-card__error" role="alert">{{ error }}</p>
         <div class="note-card__actions">
-          <button class="btn btn-primary" type="submit" :disabled="!text.trim()">Post note</button>
+          <button class="btn btn-primary" type="submit" :disabled="busy || !text.trim()">{{ busy ? 'Posting…' : 'Post note' }}</button>
           <button class="btn btn-outline-secondary" type="button" @click="$emit('cancel')">Cancel</button>
         </div>
       </form>
@@ -43,10 +43,12 @@
 import { onMounted, ref } from 'vue'
 import { NOTE_MAX } from '@/buildings/house/notes.js'
 
-defineProps({
+const props = defineProps({
   // the first name of the reader the note is for
   owner: { type: String, required: true },
   error: { type: String, default: '' },
+  // the note is on its way to the board
+  busy: { type: Boolean, default: false },
 })
 const emit = defineEmits(['post', 'cancel'])
 
@@ -54,7 +56,7 @@ const field = ref(null)
 const text = ref('')
 
 function post() {
-  if (!text.value.trim()) return
+  if (props.busy || !text.value.trim()) return
   emit('post', text.value)
 }
 

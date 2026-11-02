@@ -50,7 +50,7 @@ function move(event) {
       :key="option.value"
       type="button"
       role="radio"
-      :class="[variant, { 'is-on': modelValue === option.value }]"
+      :class="['btn', 'btn-chip', variant, { 'is-on': modelValue === option.value }]"
       :aria-checked="modelValue === option.value"
       :aria-label="option.label"
       :tabindex="tabStop(option.value)"
@@ -68,36 +68,17 @@ function move(event) {
   gap: 8px;
 }
 
+/* Chips (pixel-buttons.css): the chosen one fills in */
 .chip {
-  min-height: 44px;
-  padding: 6px 14px;
-  border: 2px solid #ead2de;
-  border-radius: 999px;
-  background: var(--rl-canvas);
-  color: var(--rl-text);
   font-size: 0.875rem;
 }
 
+/* an avatar choice: a square Chip holding its emoji */
 .avatar {
-  display: grid;
-  place-items: center;
+  --bs-btn-padding-x: 0;
   width: 48px;
   height: 48px;
-  border: 2px solid #ead2de;
-  border-radius: 999px;
-  background: #fff7fb;
   font-size: 1.5rem;
   line-height: 1;
-}
-
-.chip.is-on {
-  background: #a84874;
-  border-color: #1e1a24;
-  color: #fffdf9;
-}
-
-.avatar.is-on {
-  border: 2px solid #1e1a24;
-  background: #fbe7f0;
 }
 </style>
