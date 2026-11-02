@@ -776,3 +776,13 @@ Team to review: the server, `database/`, the people store and `services/api.js` 
 | Follows removed | `client/src/stores/people.js`, `client/src/services/api.js`, `server/src/routes/people.js`, `server/src/services/readers.js`, `server/scripts/seed.js` | The follow endpoints (`GET /api/people/following`, `PUT`/`DELETE /api/people/:id/follow`), their service code, the store's following list and the seeded follows. `views/PeopleView.vue` (no route reaches it) still calls the removed store functions |
 | SQL | `database/drop_connections.sql`, `database/schema.sql` | Drops `connections` (re-runnable, no cascade); `schema.sql` no longer makes it |
 | Tests | `tests/e2e/reader-profile.spec.js`, `server/tests/dropConnections.check.js`, `server/tests/dockerPostgres.js` | Add friend sends the request and shows Request sent, or Added as friend when accepted at once, after a reload too; a failed request alerts and keeps Add friend. The SQL check runs in Docker: connections dropped, profiles and friendships kept, safe twice, a fresh schema.sql has no connections. The Docker setup is shared with the usernames check |
+
+### A reader's profile fills the window (AI-generated)
+
+Written by Claude Code at Dylan's request. Team to review: the page and the router are shared.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Page | `client/src/router/index.js`, `client/src/views/ReaderRoomView.vue` | The profile is a full-bleed page: the wall reaches every edge, it has no Readalot bar, it scrolls by itself, and Back to Discover sits in the top left corner |
+| Daily button | `client/src/components/town/DailyDock.vue` | With no title bar on this page, the button sits beside Back to Discover |
+| Tests | `tests/e2e/reader-profile.spec.js` | The page fills the window with Back to Discover in the corner; the Daily button sits beside it; a short phone can still scroll to the cards |

@@ -160,9 +160,10 @@ async function addFriend() {
 </template>
 
 <style scoped>
-/* one readable column on the Library's parchment wall */
+/* one readable column on the Library's parchment wall, which fills the window */
 .reader-room {
-  min-height: 100%;
+  height: 100%;
+  overflow-y: auto;
   padding: 20px 16px 95px;
   background: var(--profile-wall);
   color: var(--px-outline);
@@ -174,8 +175,10 @@ async function addFriend() {
   margin-right: auto;
 }
 
-/* the Daily button's look, at the left of the column */
-.back-row {
+/* the Daily button's look, in the page's top left corner */
+.reader-room > .back-row {
+  max-width: none;
+  margin-left: 0;
   margin-bottom: 18px;
 }
 
@@ -206,7 +209,6 @@ async function addFriend() {
     padding: 20px 32px 95px;
   }
 
-  .reader-room > .back-row,
   .reader-room > .reader-layout,
   .reader-room > .demo-note {
     max-width: 1100px;
