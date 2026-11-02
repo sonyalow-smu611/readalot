@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance (Phase 1) — see AI_USAGE.md
 // Vue Router — maps URLs to views so every building is deep-linkable and the back button works.
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
 import BookDetailsView from '@/views/BookDetailsView.vue'
 import GenreShelfView from '@/views/GenreShelfView.vue'
 import MoodView from '@/views/MoodView.vue'
@@ -76,10 +76,12 @@ router.beforeEach(async (to) => {
 })
 
 // Going deeper (town → building → book) slides the page in from the right; coming back, from the left.
+// The first page of a visit just appears: 'none' has no styles in transitions.css, so nothing moves.
 router.afterEach((to, from) => {
   const toOrder = to.meta.order ?? 0
   const fromOrder = from.meta.order ?? toOrder
-  to.meta.transition = toOrder >= fromOrder ? 'slide-left' : 'slide-right'
+  const slide = toOrder >= fromOrder ? 'slide-left' : 'slide-right'
+  to.meta.transition = from === START_LOCATION ? 'none' : slide
   document.title = `${to.meta.title ?? 'Home'} · Readalot`
 })
 

@@ -1,6 +1,6 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// "Town wakes up": while the app gets ready, the real town map (public/town/map.png) wakes up.
+// "Town wakes up": on the way from the landing page to Sign up or Log in, the real town map (public/town/map.png) wakes up.
 // It starts at night with the lamps and windows lit (positions from town/map-data.json), dawn
 // breaks, the camera glides out over the town, cars drive the main road and townsfolk walk the
 // pavements, and the IKDA sign (with 읽다, the Korean word it comes from, "to read") pops in over a pixel book flipping its pages. Then it fades

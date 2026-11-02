@@ -135,6 +135,25 @@ test("Log in on the start page opens Log in and counts as seen", async ({ page }
   await expect(page).toHaveURL(/\/login$/);
 });
 
+test("opening Log in directly skips the loading screen", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.getByText("Waking up the town…")).toHaveCount(0);
+});
+
+test("Back and Forward don't play the loading screen again", async ({ page }) => {
+  await page.goto("/start");
+  await page.getByRole("link", { name: "Log in" }).first().click();
+  await expect(page.getByText("Waking up the town…")).toBeVisible();
+  await expect(page.getByText("Waking up the town…")).toBeHidden();
+
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: SIGN, level: 1 })).toBeVisible();
+  await page.goForward();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.getByText("Waking up the town…")).toHaveCount(0);
+});
+
 test("a visitor who leaves without choosing sees it again", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/start$/);
@@ -148,6 +167,22 @@ test("the start page fits a phone without sideways scrolling", async ({ page }) 
   await expect(page.getByRole("link", { name: "Sign up" }).first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+signedIn("a signed-in reader goes straight in, with only a quiet note while the page is slow", async ({ page }) => {
+  // the first page can't be known until the profile has loaded
+  await page.route("**/rest/v1/profiles*", async (route) => {
+    await new Promise((done) => setTimeout(done, 1500));
+    await route.continue();
+  });
+  await page.goto("/library");
+  await expect(page.getByText("Opening the town…")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Daily tasks/ })).toHaveCount(0);
+  await expect(page.getByText("Waking up the town…")).toHaveCount(0);
+
+  await expect(page.getByRole("link", { name: "Back to town" })).toBeVisible();
+  await expect(page.getByText("Opening the town…")).toHaveCount(0);
+  await expect(page.getByText("Waking up the town…")).toHaveCount(0);
 });
 
 signedIn("a signed-in reader never sees the start page", async ({ page }) => {

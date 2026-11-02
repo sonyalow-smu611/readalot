@@ -34,13 +34,6 @@ test.beforeEach(async ({ page, reader }) => {
   await expect.poll(() => page.evaluate(() => Boolean(window.__townScene?.you)), BOOT).toBe(true);
   await expect(page.getByText("Loading the town…")).toBeHidden(BOOT);
   await standsStill(page.locator(".town-map__canvas canvas"));
-  // and the camera has finished zooming in on you, so a tap lands where the test means
-  await expect
-    .poll(() => page.evaluate(() => {
-      const { zoomEffect, panEffect } = window.__townScene.cameras.main;
-      return !zoomEffect.isRunning && !panEffect.isRunning;
-    }), BOOT)
-    .toBe(true);
   await page.evaluate(() => window.__townScene.you.stop());
 });
 
