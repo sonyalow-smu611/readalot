@@ -720,3 +720,14 @@ it is recorded here. Team to review: the route, the service and `services/api.js
 | Route | `server/src/routes/books.js` | `GET /api/books/bestsellers`: `{ books, source, updatedAt }`, or 502 with an error (no placeholder books) |
 | Library | `client/src/services/api.js` (`getBestsellers`), `client/src/buildings/library/categories.js`, `LibraryView.vue`, `components/GenreBookcase.vue`, `hall/icons.js` (trophy), `hall/murals.js`, `hall/layout.js`, `fonts.js` (Silkscreen), `README.md` | A Bestsellers bookcase first in the hall: red and gold, a ribbon and trophy on the wall behind it, its sign in Silkscreen; it loads from the route instead of a search, and credits its source under the sign with a link (the NYT's attribution, or Open Library's). The ladder still leans on the Mystery bookcase |
 | Tests | `tests/e2e/library.spec.js` | It stands first, by the help desk, and first in Places; it loads from the route and not a search, with the NYT credit; Open Library's credit; a failed load offers Retry, then shows the books. The route itself was checked live against Open Library, and against a sample NYT reply |
+
+### Green buttons for moving a book along (AI-generated)
+
+Written by Claude Code at Aasim's request; Sonya agreed to the change in My Room. The button that
+adds a book or moves it to its next shelf now uses the app's green "Go" kind (`btn-success`,
+already in `styles/pixel-buttons.css` for confirming or saving) instead of the brown primary, so it
+stands out from "Open full book page".
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Book buttons | `client/src/components/book/FoundBookPreview.vue`, `client/src/components/book/BookDetailsContent.vue`, `client/src/buildings/house/components/OwnBookPreview.vue` | "Add to To be read" (library preview, search, book page) and My Room's "Start reading" / "Mark as finished" switched from `btn-primary` to `btn-success` |

@@ -16,7 +16,7 @@
         <span aria-hidden="true">✓</span> On your {{ shelf }} shelf
         <RouterLink class="found__see" :to="{ name: 'my-shelf' }">See it in My Room</RouterLink>
       </p>
-      <button v-else type="button" class="btn btn-primary found__add" :disabled="adding" @click="$emit('add')">
+      <button v-else type="button" class="btn btn-success found__add" :disabled="adding" @click="$emit('add')">
         {{ adding ? 'Adding…' : 'Add to To be read' }}
       </button>
       <WhereToGet :book="book" />

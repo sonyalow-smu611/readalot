@@ -22,7 +22,7 @@
     <button
       v-if="next"
       type="button"
-      class="btn btn-primary own__next"
+      class="btn btn-success own__next"
       :disabled="moving"
       @click="$emit('status', next.status)"
     >
