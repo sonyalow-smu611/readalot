@@ -1,7 +1,7 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { START_LOCATION, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 import PhoneFrame from '@/components/PhoneFrame.vue'
@@ -17,13 +17,12 @@ const router = useRouter()
 const main = ref(null)
 // nothing is drawn until the first page is known, so the landing page opens straight away
 const ready = ref(false)
-// the town wakes up (LoadingScreen) on the way in: at the first page of a visit, or on leaving
-// the landing page through Sign up or Log in. The landing page itself never waits for it.
+// the town wakes up (LoadingScreen) only on leaving the landing page for Sign up or Log in
 const booting = ref(false)
 const stopWatching = router.afterEach((to, from, failure) => {
   ready.value = true
   if (failure) return
-  if (to.name !== 'start' && (from === START_LOCATION || from.name === 'start')) booting.value = true
+  if (from.name === 'start' && ['login', 'register'].includes(to.name)) booting.value = true
 })
 onBeforeUnmount(stopWatching)
 const { guide } = storeToRefs(useUserStore())

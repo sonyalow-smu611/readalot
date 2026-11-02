@@ -1,5 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, skipMoodCheckIn, test } from "./fixtures.js";
+import { expect, skipMoodCheckIn, standsStill, test } from "./fixtures.js";
 
 // Daily tasks on the map. For now the day is kept in the browser (town/daily.js), so each test
 // sets it up in localStorage before the town loads.
@@ -178,7 +178,7 @@ test.describe("where the Daily button sits", () => {
   test("in a building it stacks under the back button", async ({ page }) => {
     await page.goto("/library");
     await expect(button(page)).toBeVisible({ timeout: 20_000 });
-    const back = await box(page.getByRole("link", { name: "Back to town" }));
+    const back = await standsStill(page.getByRole("link", { name: "Back to town" }));
     await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(back.y + back.height);
     expect((await box(button(page))).x).toBeCloseTo(back.x, 0);
   });
@@ -215,7 +215,7 @@ test.describe("where the Daily button sits", () => {
     await page.goto("/house");
     const places = page.getByRole("button", { name: "Places" });
     await expect(places).toBeVisible({ timeout: 20_000 });
-    const under = await box(places);
+    const under = await standsStill(places);
     await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(under.y + under.height);
     expect((await box(button(page))).x).toBeCloseTo(under.x, 0);
   });
@@ -243,7 +243,7 @@ test.describe("where the Daily button sits", () => {
           await page.goto(path);
           const back = page.getByRole("link", { name });
           await expect(back).toBeVisible({ timeout: 20_000 });
-          const under = await box(back);
+          const under = await standsStill(back);
           await expect.poll(async () => (await box(button(page))).y).toBeGreaterThanOrEqual(under.y + under.height);
           expect((await box(button(page))).x).toBeCloseTo(under.x, 0);
 

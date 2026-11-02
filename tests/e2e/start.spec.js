@@ -31,7 +31,7 @@ test("a first-time visitor lands on the start page and reads about the town", as
   for (const title of SECTIONS) {
     await expect(page.getByRole("heading", { name: title })).toBeAttached();
   }
-  // the landing page opens straight away; the town wakes up only on the way in
+  // the landing page opens straight away; the town wakes up on the way to Sign up or Log in
   await expect(page.getByText("Waking up the town…")).toHaveCount(0);
 
   await page.getByRole("link", { name: "Sign up" }).first().click();

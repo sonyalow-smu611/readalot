@@ -90,6 +90,27 @@ export async function nextPaint(page) {
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
 }
 
+// Waits until something has finished sliding in with its page: in the same place three reads in a
+// row, and not inside a page that is still coming in. Gives back where it rests.
+export async function standsStill(locator) {
+  let last = "";
+  let same = 0;
+  await expect
+    .poll(
+      async () => {
+        const at = await locator.evaluate((el) =>
+          el.closest("[class*='-enter-active']") ? "moving" : JSON.stringify(el.getBoundingClientRect())
+        );
+        same = at !== "moving" && at === last ? same + 1 : 0;
+        last = at;
+        return same;
+      },
+      { intervals: [100], timeout: 5000 }
+    )
+    .toBeGreaterThanOrEqual(2);
+  return locator.boundingBox();
+}
+
 // Waits until something that scrolls sideways (the room, a row of covers) has stopped moving:
 // the same scroll position three reads in a row.
 export async function scrollSettled(locator) {
