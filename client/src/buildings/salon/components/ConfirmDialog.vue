@@ -32,7 +32,7 @@ onMounted(() => stayButton.value?.focus())
         </div>
         <h2 :id="titleId" class="h4 mb-1">{{ title }}</h2>
         <p class="text-muted mb-3">{{ text }}</p>
-        <button v-if="saveLabel" type="button" class="btn btn-primary w-100 mb-2" @click="emit('save')">
+        <button v-if="saveLabel" type="button" class="btn btn-success w-100 mb-2" @click="emit('save')">
           {{ saveLabel }}
         </button>
         <div class="d-flex gap-2">
