@@ -3,7 +3,6 @@
 // Café-only changes: use the shared People store and its existing readers.
 // No database accounts, tables or records are created.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import CafeViewport from './components/CafeViewport.vue'
 import CafeReaderCard from './components/CafeReaderCard.vue'
@@ -18,7 +17,6 @@ import { PLACES } from '@/town/places.js'
 
 const place = PLACES.find((p) => p.id === 'cafe')
 const user = useUserStore()
-const router = useRouter()
 const people = usePeopleStore()
 
 const weather = ref({ scene: 'cloudy', isDay: true, temperature: null })
@@ -107,10 +105,6 @@ function arrived(id) {
   activeId.value = id
   movementError.value = ''
 }
-function visitRoom() {
-  if (!selectedReader.value) return
-  router.push({ name: 'reader-room', params: { id: selectedReader.value.id } })
-}
 
 onMounted(() => {
   updateWeather()
@@ -148,7 +142,7 @@ onBeforeUnmount(() => {
 
       <Transition name="cafe-card">
         <CafeReaderCard v-if="selectedReader" :key="selectedReader.id" class="cafe__card"
-          :reader="selectedReader" @close="activeId = ''" @visit="visitRoom" />
+          :reader="selectedReader" @close="activeId = ''" />
       </Transition>
     </main>
   </BuildingShell>
@@ -160,9 +154,9 @@ onBeforeUnmount(() => {
 .cafe__weather{top:12px;right:12px}.cafe__count{top:calc(var(--building-back-space,0px) + 12px);left:12px}
 .cafe__notice{left:50%;bottom:55px;transform:translateX(-50%);max-width:min(480px,90%);text-align:center}
 .cafe__notice button{margin-left:8px;border:0;border-radius:6px;background:#39735e;color:white;padding:6px 9px;cursor:pointer}
-.cafe__card{position:absolute;z-index:10;right:14px;bottom:14px;width:min(360px,calc(100% - 28px))}
+.cafe__card{position:absolute;z-index:10;inset:0;margin:auto;width:min(660px,calc(100% - 28px));height:fit-content;max-height:calc(100% - 28px)}
 .cafe-card-enter-active,.cafe-card-leave-active{transition:opacity 140ms ease,transform 140ms ease}
 .cafe-card-enter-from,.cafe-card-leave-to{opacity:0;transform:translateY(12px)}
-@media(max-width:640px){.cafe__weather,.cafe__count{font-size:10px;padding:5px 7px}.cafe__weather{top:7px}.cafe__count{top:calc(var(--building-back-space,0px) + 7px)}.cafe__card{left:0;right:0;bottom:0;width:100%}.cafe__notice{bottom:48px;font-size:11px}}
+@media(max-width:640px){.cafe__weather,.cafe__count{font-size:10px;padding:5px 7px}.cafe__weather{top:7px}.cafe__count{top:calc(var(--building-back-space,0px) + 7px)}.cafe__card{top:auto;margin:0;width:100%;max-height:calc(100% - 156px)}.cafe__notice{bottom:48px;font-size:11px}}
 @media(prefers-reduced-motion:reduce){.cafe-card-enter-active,.cafe-card-leave-active{transition:none}}
 </style>

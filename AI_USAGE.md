@@ -786,3 +786,14 @@ Written by Claude Code at Dylan's request. Team to review: the page and the rout
 | Page | `client/src/router/index.js`, `client/src/views/ReaderRoomView.vue` | The profile is a full-bleed page: the wall reaches every edge, it has no Readalot bar, it scrolls by itself, and Back to Discover sits in the top left corner |
 | Daily button | `client/src/components/town/DailyDock.vue` | With no title bar on this page, the button sits beside Back to Discover |
 | Tests | `tests/e2e/reader-profile.spec.js` | The page fills the window with Back to Discover in the corner; the Daily button sits beside it; a short phone can still scroll to the cards |
+
+### A reader's profile as a popup in the Cafe (AI-generated)
+
+Written by Claude Code at Dylan's request. The Cafe is Emiley's part, and the people components are shared, so Emiley should review the pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Shared profile | `client/src/components/people/ReaderProfile.vue`, `profileColours.js`, `client/src/views/ReaderRoomView.vue` | The profile's contents moved out of the page into one component, moved as they were. The page keeps its wall and Back to Discover, and the colours are shared |
+| Popup | `client/src/buildings/cafe/components/CafeReaderCard.vue`, `CafeView.vue` | Reaching a reader opens their whole profile over the Cafe: 660 px wide on a laptop (60% of the page's 1100 px), a sheet from the bottom on a phone. The old short card and its Visit profile button are gone |
+| Tests | `tests/e2e/cafe-profile.spec.js`, `visit-room.spec.js` | The popup opens and closes without leaving the Cafe, its Message opens the chat, its size on a laptop, and it scrolls on a phone |
+

@@ -474,7 +474,7 @@ test.describe("the cafe and its readers", () => {
     await page.goto("/cafe");
     await expect(page.getByRole("button", { name: /^Walk to Emma Tan/ })).toBeVisible();
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
-    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).click();
+    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).press("Enter");
     const card = page.getByRole("dialog", { name: "Meet Emma Tan" });
     await expect(card).toBeVisible({ timeout: 15000 });
     await expect.poll(() => offLook(card)).toEqual([]);

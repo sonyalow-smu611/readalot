@@ -24,14 +24,10 @@ test.describe("getting there", () => {
   test("a reader's profile in the Cafe has a button into their room", async ({ page }) => {
     await page.goto("/cafe");
     // tapping a reader in the café walks over to them; their card opens on arrival
-    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).click();
+    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).press("Enter");
     const card = page.getByRole("dialog", { name: "Meet Emma Tan" });
     await expect(card).toBeVisible({ timeout: 15000 });
-    await card.getByRole("button", { name: "Visit Room →" }).click();
-
-    await expect(page).toHaveURL(/\/people\/emma\.reads$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
-    await page.getByRole("link", { name: "Visit Emma's room" }).click();
+    await card.getByRole("link", { name: "Visit Emma's room" }).click();
 
     await expect(page).toHaveURL(/\/people\/emma\.reads\/room$/);
     await expect(page.getByRole("heading", { level: 1, name: "Emma's Room" })).toBeVisible();
