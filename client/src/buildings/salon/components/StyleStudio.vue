@@ -59,8 +59,8 @@ function surprise() {
         <p v-if="error" class="savebar__error" role="alert">{{ error }}</p>
         <p v-else class="savebar__text">New look ready</p>
         <div class="savebar__actions">
-          <button type="button" class="btn btn-outline-primary" @click="emit('reset')">Reset</button>
-          <button type="button" class="btn btn-primary savebar__save" :disabled="busy" @click="emit('save')">
+          <button type="button" class="btn btn-danger" @click="emit('reset')">Reset</button>
+          <button type="button" class="btn btn-success savebar__save" :disabled="busy" @click="emit('save')">
             {{ busy ? 'Saving…' : 'Save look' }}
           </button>
         </div>
@@ -175,30 +175,6 @@ function surprise() {
 
 .savebar .btn {
   min-height: 44px;
-  border-radius: 999px;
-}
-
-.savebar .btn-outline-primary {
-  border-color: #fffdf9;
-  color: #fffdf9;
-}
-
-.savebar .btn-outline-primary:hover {
-  background: rgba(255, 253, 249, 0.12);
-}
-
-/* saving is the go-ahead: green */
-.savebar__save {
-  border-color: #2b7a43;
-  background: #3fae5a;
-  color: #fff;
-  font-weight: 700;
-}
-
-.savebar__save:hover:not(:disabled) {
-  border-color: #2b7a43;
-  background: #4cc06a;
-  color: #fff;
 }
 
 .bar-enter-active,
