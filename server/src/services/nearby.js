@@ -4,6 +4,7 @@
 // coordinates, area or distance go to another reader.
 import { env } from "./env.js";
 import { friendshipsOf, isDemoReader } from "./friends.js";
+import { lastSeen } from "./readers.js";
 import { supabase } from "./supabase.js";
 
 const CELLS_PER_DEGREE = 100;
@@ -101,7 +102,7 @@ async function readersNear(me) {
     userId: profile.id,
     displayName: profile.display_name || "Reader",
     character: profile.character || null,
-    lastSeenAt: profile.last_active_at || null,
+    lastSeenAt: lastSeen(profile),
     requested: asked.has(profile.id),
   }));
 }

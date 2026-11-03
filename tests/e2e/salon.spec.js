@@ -160,3 +160,12 @@ test("the reader stands by the chair as their town sprite, and shows in the mirr
   await group(page, "Hair colour").getByRole("radio", { name: "Black" }).check();
   await expect(page.locator(".stage__model .pixel-character")).toHaveClass(/is-hopping/);
 });
+
+test("Replay the walkthrough plays it again from the start, in town", async ({ page }) => {
+  await page.getByRole("tab", { name: "Profile" }).click();
+  await page.getByRole("button", { name: "Replay the walkthrough" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator(".guide__count")).toHaveText(/^1 of \d+ · Town$/);
+  await page.getByRole("button", { name: "Skip tour" }).click();
+  await expect(page.locator(".guide__bubble")).toHaveCount(0);
+});

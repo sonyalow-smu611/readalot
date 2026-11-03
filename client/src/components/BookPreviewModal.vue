@@ -55,6 +55,7 @@
             v-if="collapseReviews"
             type="button"
             class="btn btn-secondary preview__reviews-toggle"
+            data-tour="book-reviews"
             :aria-expanded="reviewsShown"
             :aria-controls="reviewsId"
             @click="reviewsShown = !reviewsShown"

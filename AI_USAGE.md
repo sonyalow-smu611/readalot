@@ -821,3 +821,15 @@ Written by Claude Code at Dylan's request, from `docs/superpowers/plans/2026-11-
 | Chat | `client/src/services/chatApi.js`, `client/src/components/people/ReaderChat.vue` | The browser-only chat for readers without an account is gone; such a reader says "This reader can't receive messages yet." |
 | Tests | `tests/e2e/daily.spec.js`, `notifications.spec.js`, `visit-room.spec.js`, `reader-profile.spec.js`, `supabaseUser.js`, `townFriends.js` and the town specs | Daily state is set in Supabase (`setDaily`, `skipDailyPanel`); a claim survives a reload and shows on another device; the town opens without the Daily button when the day can't load; read and cleared notifications on another device; a sample reader's furniture comes from the server; a reader with no account can't be messaged |
 
+### Demo account and the code 111111 (AI-generated)
+
+Written by Claude Code at Aalric's request, for grading and live demos. It touches shared code (`services/auth.js`, `server/`), so a teammate should review the pull request, and the team should agree to the new endpoint before it is merged. How it works: [docs/DEMO.md](docs/DEMO.md).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Sign-in | `client/src/services/auth.js`, `client/src/views/VerifyView.vue` | For an email on a demo domain (default `demo.ikda.app`): no code is emailed, `111111` is accepted, and the password still does the real sign-in. A line on the code screen says so. Other emails are unchanged |
+| API | `server/src/routes/demoAuth.js`, `server/src/app.js`, `server/src/services/env.js` | `POST /api/demo-auth/register` makes an already-confirmed account, only for a demo-domain email. `DEMO_CODE_DOMAINS` sets the domains (empty turns it off) |
+| Seed | `server/scripts/seedDemo.js`, `server/package.json` | `npm run seed:demo -w server`: the demo reader Jordan Lee with a profile, 10 books with reviews, XP and coins, 4 friends and a request, chats, notes, visits, saved quotes and a decorated room. Only writes the demo reader's rows |
+| Tests | `server/tests/demoAuth.check.js`, `tests/e2e/demo-account.spec.js` | The route turns away other emails and bad input, makes one account and refuses a repeat; the demo account logs in with the code and a wrong code is refused |
+| Docs | `README.md`, `docs/DEMO.md`, `.env.example` | The grading guide matches the demo account |
+

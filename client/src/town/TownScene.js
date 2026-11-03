@@ -538,12 +538,16 @@ export default class TownScene extends Phaser.Scene {
   reportSpot(place) {
     const cam = this.cameras.main
     const view = cam.worldView
+    // the building's own picture, so the tour can outline its exact shape
+    const art = place.art ?? place.id
+    const box = mapData.buildings[art] ?? place
     this.onTourSpot?.({
       id: place.id,
-      x: (place.x - view.x) * cam.zoom,
-      y: (place.y - view.y) * cam.zoom,
-      w: place.w * cam.zoom,
-      h: place.h * cam.zoom,
+      art,
+      x: (box.x - view.x) * cam.zoom,
+      y: (box.y - view.y) * cam.zoom,
+      w: box.w * cam.zoom,
+      h: box.h * cam.zoom,
     })
   }
 
