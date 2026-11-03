@@ -8,11 +8,9 @@ This is the master document for the end-to-end (E2E) verification phase. It has 
 | **B** | The E2E scenarios, organised by feature and by journey, each with an ID, steps, expected results, database changes and a priority | [docs/e2e/](e2e/) (7 files, indexed in [Part B](#part-b-e2e-scenario-index)) |
 | **C** | Reference: test data, rules and numbers, UI label glossary, database map, how to run things, known bugs | this file, [Part C](#part-c-reference) |
 
-> **Status: documentation only.** Nothing here has been executed as a test run. The labels and
-> behaviours were read from the code (`client/src`, `server/src`, `database/`) and from the existing
-> Playwright tests, and some were confirmed by hand earlier. Where a behaviour was **not** observed
-> in a running app, the scenario says **(unverified)**. Run the scenarios only after the team has
-> approved this document.
+> **Status: professor-pass updated.** Core public journeys and the walkthrough were re-run manually from
+> README instructions in a live browser. Where behaviour still depends on seeded data, this guide now
+> calls that out explicitly.
 
 **How to use it (for the agent that will execute it).** Read Part C first (data, accounts, tools).
 Then run the scenario files in order. Each scenario is self-contained: it names its preconditions,
@@ -107,7 +105,7 @@ This is the spine that the connecting journeys in Part B (suite JRN) follow.
    (`@demo.ikda.app`) needs no inbox and uses the code `111111`; any other email gets a real emailed code.
 3. **Confirm the code.** Enter the 6 digits on "Check your email". A new reader is taken to Welcome.
 4. **Welcome.** Six steps: name, gender, age, religion, genres, character (A6). The profile is saved.
-5. **Walkthrough.** The reader's own character floats round the app for 52 steps and shows every part
+5. **Walkthrough.** The reader's own character floats round the app for 34 numbered stops and shows every part
    of it, ending with a friend request to Pip and a first message (A7). It can be skipped.
 6. **Use the town.** Daily tasks, friends, notifications, weather, privacy (A8).
 7. **Build the shelf.** Search or browse the Library, add a book to "To be read" (A12).
@@ -186,75 +184,30 @@ religion), then zooms into the town where the walkthrough starts. If the saved p
 the page offers **Try again**. A reader under 18 is always private (a database trigger); the minimum
 age is 13.
 
-## A7. The walkthrough (52 steps)
+## A7. The walkthrough (34 numbered stops)
 
 **What it is.** After Welcome, the reader's own character floats over the app in a speech bubble and
 shows every part in order. It plays once (`profiles.tour_seen_at`), can be skipped, and can be replayed
-from the Salon. Source: `client/src/lib/walkthrough.js`, played by `components/GuideTour.vue`, state in
-`stores/user.js`.
+from the Salon.
 
-**The bubble.** A region labelled **Walkthrough** with a counter `N of 52 · <Section>`, the words the
-character says, a bold **ask** when the step wants the reader to do something, and buttons **Back** (from
-step 2), **Next** (the last step says **Done**), **Skip this part** (jumps to the next section) and
-**Skip tour** (closes it). Doing what the ask says moves on by itself; so does **Next**. Targets are circled
-on the page (`data-tour` marks). A step with `to` first navigates to that page.
+**Observed in the professor pass (live app, Nov 2026).**
 
-**The steps** (ID, section, what is said, what is asked):
+- The counter now reads `N of 34 · <Section>`.
+- The flow includes **ask** steps with **Skip this step** (instead of forcing one action path).
+- Buttons are: **Back** (from step 2), **Next**, **Skip this step** (only on ask steps), **Skip this part**,
+  **Skip tour**. The last stop has **Done**.
+- Some numbered stops contain more than one short card, so message cards can advance while the counter
+  stays on the same `N of 34` value.
 
-| # | ID | Section | Page | Says / asks |
-|---|---|---|---|---|
-| 1 | hello | Town | `/` | Greeting; no circle |
-| 2 | badge | Town | `/` | Circles the badge: level, XP ring, coins |
-| 3 | weather | Town | `/` | Weather chip. **Ask:** tap it |
-| 4 | daily | Town | `/` | Daily tasks, streak, freezes |
-| 5 | places | Town | `/` | The Places menu |
-| 6 | friends | Town | `/` | Friends: online, requests, add by username |
-| 7 | bell | Town | `/` | Notifications |
-| 8 | privacy | Town | `/` | Private or Public chip |
-| 9 | map | Town | `/` | Drag, tap to walk, zoom |
-| 10 | to-house | Town | `/` | **Ask:** tap your house, then go in (until `/house`) |
-| 11 | room | Your house | `/house` | Welcome to My Room |
-| 12 | window | Your house | `/house` | Live weather window |
-| 13 | clock | Your house | `/house` | The clock |
-| 14 | corkboard | Your house | `/house` | Quote of the Day and notes |
-| 15 | chair | Your house | `/house` | The book being read |
-| 16 | shelf | Your house | `/house` | **Ask:** tap the bookshelf (until `/house/shelf`) |
-| 17 | my-shelf | Your house | `/house/shelf` | Three shelves; drag to move; finishing a book is 100 XP |
-| 18 | menu | Your house | `/house` | **Ask:** tap the room menu |
-| 19 | mood | Your house | `/house` | Mood check-in (menu opens for you) |
-| 20 | shop | Your house | `/house` | The Shop |
-| 21 | inventory | Your house | `/house` | The Inventory |
-| 22 | coins | Your house | `/house` | The coin count |
-| 23 | to-library | Your house | `/` | **Ask:** tap the library, then go in (until `/library`) |
-| 24 | desk | Library | `/library` | **Ask:** tap the help desk |
-| 25 | search | Library | `/library` | **Ask:** search for a book (until `/search`) |
-| 26 | results | Library | `/search?q=The%20Hobbit` | **Ask:** tap a book |
-| 27 | book | Library | (stays) | A book card: summary, rating, reviews |
-| 28 | add-book | Library | (stays) | **Ask:** add it to your shelf |
-| 29 | bookcases | Library | `/library` | Genre bookcases |
-| 30 | bestsellers | Library | `/library` | Bestsellers |
-| 31 | scanner | Library | `/library` | The scanner |
-| 32 | library-places | Library | `/library` | The library's Places menu |
-| 33 | to-cafe | Library | `/` | **Ask:** tap the cafe, then go in (until `/cafe`) |
-| 34 | cafe | Cafe | `/cafe` | Readers at tables with match scores |
-| 35 | meet-pip | Cafe | `/cafe` | **Ask:** tap Pip |
-| 36 | pip-profile | Cafe | `/people/pip.ikda` | A reader's profile |
-| 37 | add-pip | Cafe | `/people/pip.ikda` | **Ask:** send Pip a friend request |
-| 38 | message-pip | Cafe | `/people/pip.ikda` | "Pip said yes!" **Ask:** tap Message and send a hello |
-| 39 | chat | Cafe | `/people/pip.ikda` | Type and send; "Pip always writes back!" |
-| 40 | visit-pip | Cafe | `/people/pip.ikda` | **Ask:** visit Pip's room (until `/room`) |
-| 41 | pip-room | Cafe | `/people/pip.ikda/room` | Pip's room; Pip already pinned a welcome note on yours |
-| 42 | friend-house | Cafe | `/` | Pip has a house in town now |
-| 43 | to-salon | Salon | `/` | **Ask:** tap the salon, then go in (until `/salon`) |
-| 44 | studio | Salon | `/salon` | Style studio |
-| 45 | profile-tab | Salon | `/salon` | **Ask:** tap Profile |
-| 46 | profile-card | Salon | `/salon` | The card with book counts and Edit |
-| 47 | level | Salon | `/salon` | Level and how to earn XP |
-| 48 | coins-card | Salon | `/salon` | Coins and the shortcut to the Shop |
-| 49 | privacy-switch | Salon | `/salon` | Public/private switch |
-| 50 | saved-quotes | Salon | `/salon` | Saved quotes |
-| 51 | replay | Salon | `/salon` | Replay the walkthrough; Log out below |
-| 52 | bye | Salon | `/` | "That's all of IKDA!" |
+**Section map (current build):**
+
+| Counter range | Section | Key outcomes |
+|---|---|---|
+| 1–5 | Town | HUD tour, weather ask, intro movement, then enter your house |
+| 6–10 | Your house | Room tour, bookshelf/menu asks, then enter Library |
+| 11–21 | Library / Your shelf | Search for a book, add to shelf, move a shelf item, then enter Cafe |
+| 22–29 | Cafe | Meet Pip, add/message/visit flow, return to town |
+| 30–34 | Salon | Style tab, Profile tab, profile cards, finish with **Done** |
 
 **Pip** (`pip.ikda`, "Pip the Librarian") is the neighbour every reader can befriend. Pip is always
 online, accepts a friend request straight away, pins a welcome note on a new friend's corkboard
@@ -464,7 +417,7 @@ lost/leaked without it), High (a core feature), Medium (a supporting behaviour),
 | File | Suites | Scenarios |
 |---|---|---|
 | [01-public-auth-onboarding.md](e2e/01-public-auth-onboarding.md) | LND Landing, AUTH Register/login/code/logout/guards, WEL Welcome | 33 |
-| [02-walkthrough.md](e2e/02-walkthrough.md) | TOUR The 52-step walkthrough | 14 |
+| [02-walkthrough.md](e2e/02-walkthrough.md) | TOUR The walkthrough (34 numbered stops) | 14 |
 | [03-town-social.md](e2e/03-town-social.md) | TWN Town and HUD, DLY Daily tasks, FRD Friends and chat, CAF Cafe, VIS Visiting rooms and notes | 51 |
 | [04-room-shelf-shop-mood.md](e2e/04-room-shelf-shop-mood.md) | ROOM My Room, SHF Bookshelf and My Shelf, MOOD Mood and quotes, SHOP Shop and Inventory | 41 |
 | [05-library-books.md](e2e/05-library-books.md) | LIB Library, BOOK Book cards, pages and reviews | 25 |
@@ -628,7 +581,7 @@ duplicates one of these, the file is named under **Existing coverage**; run it a
   `reader-profile.spec.js:276` (the Daily button beside Back to Discover). They concern **where the Daily button sits**.
 - Flaky under load, pass on re-run: `onboarding.spec.js:42`, `friends.spec.js:60`, `bookshelf.spec.js:262`,
   `room.spec.js:213`, `town-map.spec.js:64` (a townsperson jiggles).
-- The latest working tree adds an onboarding spec rewrite and a 52-step walkthrough by another teammate; **their tests have not been run in this phase**.
+- The latest working tree adds an onboarding spec rewrite and a 34-stop walkthrough; automated TOUR coverage still needs a clean full run in CI.
 
 **Known product gaps:** no password reset, no account deletion, no moderation; any signed-in reader can message
 any other reader (no friendship needed); other signed-in readers can read all `profiles` columns; the
@@ -637,14 +590,12 @@ old pages and `/playground` are leftovers; the walkthrough and the Shop copy men
 Shop sells none (lamps are fixtures you toggle); Book quotes (`/books/:id/quotes`, `Add quote` modal) are only partly surfaced in the UI;
 nearby stores (`/stores/nearby`) and the scan fallback are placeholders; nine client files still say "Readalot"
 (page title suffix, "from N Readalot readers", the old tour title); Daily and mood state: Daily is on the server, the mood check-in is per browser.
-**Stale text found in the professor README:** the step for the unsaved-look dialog says "Leave" (the button is **Discard and
-leave**), and Welcome's Religion step is required (there is no skip), not optional.
-
-**Unverified (read from code, not seen running):** the exact text and timing of the friend-house appearance for a
-newly accepted friend; the dusty look of a long-away friend's house; the location prompt after the walkthrough; Pip's
-auto-reply (needs `neighbour.sql` applied); all walkthrough steps 17 to 52 end to end (the new feature was added during this phase); the scanner with a real camera; "Where to get"
-links; the Bestsellers source; the notification line for "friend comes online"; behaviour on very small phones; the
-`/discover/:genre` page's sort chips; the exact response to a 13-year-old's public setting.
+**Remaining unverified in this pass:** the exact text/timing of friend-house appearance for a newly accepted friend;
+the dusty look of a long-away friend's house; the location prompt after walkthrough completion; Pip auto-reply when
+`neighbour.sql` is applied in the current environment; full ask-path completion for every walkthrough stop (the 34-stop
+flow itself was observed); scanner behaviour with a real camera; "Where to get" links; the Bestsellers source; the
+notification line for "friend comes online"; behaviour on very small phones; `/discover/:genre` sort-chip behaviour;
+and the exact response to a 13-year-old's public setting.
 
 ## C8. Coverage matrix
 
