@@ -833,3 +833,22 @@ Written by Claude Code at Aalric's request, for grading and live demos. It touch
 | Tests | `server/tests/demoAuth.check.js`, `tests/e2e/demo-account.spec.js` | The route turns away other emails and bad input, makes one account and refuses a repeat; the demo account logs in with the code and a wrong code is refused |
 | Docs | `README.md`, `docs/DEMO.md`, `.env.example` | The grading guide matches the demo account |
 
+### README professor-pass doc corrections (AI-generated)
+
+Written by Codex at Aalric's request during the professor simulation pass.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Scenario numbering | `README.md` | Fixed Scenario 3 numbering so steps run in a continuous sequence (step 8 onward, ending at 33) instead of skipping step 8 |
+| Room weather URL | `README.md` | Corrected the manual weather-preview URL from root `/?scene=...` to `/house?scene=...` so it matches the My Room flow |
+
+
+### README first-time professor simulation pass (AI-generated)
+
+Written by Codex at Aalric's request after a live README-only walkthrough simulation against the running app.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Professor guide reliability | `README.md` | Added a demo-state preflight so shared-account drift does not block grading, updated walkthrough wording from 52 to the observed 34-stop flow, and changed seeded-state-specific lines (counts/match values/coins) to resilient instructions that still work when demo data has changed |
+| Master E2E guide | `docs/E2E_GUIDE.md` | Updated walkthrough documentation to the observed 34-stop structure, refreshed status notes to reflect the professor-pass verification, and aligned the walkthrough index description |
+| Walkthrough scenarios | `docs/e2e/02-walkthrough.md` | Rewrote TOUR scenarios to match the current walkthrough UX (`1 of 34`, `Skip this step`, section boundaries, and completion behaviour) with updated pass criteria |

@@ -17,7 +17,7 @@ time, in three scenarios. The app is full of small animations, so each step also
 
 ---
 
-## 1. Before you start
+## 1. Before you start (Read-Only)
 
 | | |
 |---|---|
@@ -41,7 +41,7 @@ Every demo address ends in **`@demo.ikda.app`**. No email is sent to it, so ther
   example `prof.yourname@demo.ikda.app`, any username you like, and a password of 6 or more characters.
 - **Scenarios 2 and 3 (the demo account).** Log in as Jordan, who already has a full town, shelf and room:
 
-| Demo account | |
+| Demo account Example | |
 |---|---|
 | Email | `demo@demo.ikda.app` |
 | Password | `Ikda-Demo-2026` |
@@ -49,9 +49,20 @@ Every demo address ends in **`@demo.ikda.app`**. No email is sent to it, so ther
 
 > Emails on any other domain still get a real emailed code. Use `@demo.ikda.app` for grading.
 
+### Demo-state preflight (important)
+
+The public demo account is shared. That means counts, requests, chats and room items may have changed
+since this README was last updated.
+
+- If a step expects a specific person/count and you see a different one, do the **same action** with what
+  is visible and continue.
+- If you need the exact seeded baseline for verification, reset Jordan first with
+  `npm run seed:demo -w server` (team/internal flow in [docs/DEMO.md](docs/DEMO.md)).
+
 ### What the demo account already has
 
-So every feature has something to show. Jordan Lee (`@demo.reader`) comes with:
+So every feature has something to show. Jordan Lee (`@demo.reader`) comes with the following **baseline
+after a reset**:
 
 | Where | Already there |
 |---|---|
@@ -91,7 +102,6 @@ Open <https://ikda-rust.vercel.app> in a **new private window** so you are signe
    → The sky behind the page changes with how far you have scrolled.
    - 👀 **Early evening at the top, deep night at the bottom.** The **sun sets**, the clouds thin out,
      the **stars come out and the moon rises**.
-   - 👀 Along the bottom, a far row of houses **darkens and switches its lights on one by one**.
    - 👀 Scroll back up to watch the moon turn back into the sun.
    - 👀 Each section's words **fade in** as they arrive.
 
@@ -113,15 +123,14 @@ Open <https://ikda-rust.vercel.app> in a **new private window** so you are signe
 6. **Section "The town".**
    → Four building tabs on a strip of grass (Your house, Library, Cafe, Hair Salon).
    - **Press** each tab → its scene and a line about what you do there.
+   - 👀 **Your house:** a wooden bookcase. **Hover over the books** and they come half off the shelf.
+     Books being read have a ribbon and a progress bar; finished ones have a star. A black cat sleeps
+     on the Reading shelf.
    - 👀 **Library:** a book is held up and the **scanner scans** it.
    - 👀 **Cafe:** two tables of readers; **speech bubbles take turns** and a **match score pops up**
      between each pair.
    - 👀 **Hair Salon:** every couple of seconds one part (hair, colour, top, shoes) **changes by itself**,
      the reader **hops**, and the tab for it lights up.
-   - 👀 **Your house:** a wooden bookcase. **Hover over the books** and they come half off the shelf.
-     Books being read have a ribbon and a progress bar; finished ones have a star. A black cat sleeps
-     on the Reading shelf.
-   - 👀 **Tap a character or a pile of books** in any scene: it hops.
    - 👀 Click a tab, then use **← → Home End** on the keyboard: the tabs follow the keys.
 
 7. **Section "Your character".**
@@ -169,7 +178,7 @@ Open <https://ikda-rust.vercel.app> in a **new private window** so you are signe
       field you are typing in**.
     - 👀 **Small floating books drift in the air.** Move the cursor over them: they **get shoved aside**
       and drift back. Try to push one across the page.
-    - 👀 Move your cursor over the larger books: they **pop up**.
+    - 👀 Move your cursor over the larger books and cats: they **pop up**.
 
 14. **Press the Register button with the form empty.**
     → The browser asks you to fill in the first field. Nothing is sent.
@@ -214,13 +223,13 @@ Open <https://ikda-rust.vercel.app> in a **new private window** so you are signe
 Each step has a title and a short note. **Next** moves on, **Back** goes back, and the last step says
 **Finish**.
 
-23. **Your name.** **Press Next with the box empty** → it asks for your name.
-    **Type `Mya`** (this is the typo) → **Next**.
-24. **Gender.** Pick one (or **Prefer not to say**) → **Next**.
-25. **Age.** **Type `abc`** (or `12`) → **Next** → it asks for an age from 13 to 120. **Type `21`** → **Next**.
-26. **Religion.** Press **Next** with nothing chosen → it asks you to choose one (**Prefer not to say** counts). Pick one → **Next**.
-27. **Genres you like.** **Press Next with none picked** → it asks for at least one.
-    **Pick Fantasy and Magical Realism** → **Next**.
+23. **Your name.** **Press Next/Enter with the box empty** → it asks for your name.
+    **Type `Mya`** (Enter Mya, we change it later) → **Next**.
+24. **Gender.** Pick one (or **Prefer not to say**) → **Next/Enter**.
+25. **Age.** **Type `abc`** (or `12`) → **Next/Enter** → it asks for an age from 13 to 120. **Type `21`** → **Next**.
+26. **Religion.** Press **Next/Enter** with nothing chosen → it asks you to choose one (**Prefer not to say** counts). Pick one → **Next**.
+27. **Genres you like.** **Press Next/Enter with none picked** → it asks for at least one.
+    **Pick Fantasy and Magical Realism** → **Next/Enter**.
 28. **Pick your character.** Five ready-made characters are shown as pixel sprites.
     - 👀 **Press each one**: the big character in the middle **hops in** and is alive (it breathes and
       blinks).
@@ -229,8 +238,8 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
 
 ### Part F: The guided tour
 
-29. The town opens and **your own character floats over the screen** in a speech bubble labelled
-    **Walkthrough**, with a counter such as **"1 of 52 · Town"**. It shows every part of the app in order
+29. The town opens and **your own character floats over the screen** in a speech bubble with a counter
+    such as **"1 of 34 · Town"**. It shows every part of the app in order
     (Town, Your house, Library, Cafe, Salon). **Press Next** to move on, or **do what it asks** (it
     says, in bold, things like "Tap your house, then go in"; doing it moves on by itself).
     - 👀 It circles the thing it is talking about (the badge, the weather chip, the Daily button, the bell…).
@@ -240,7 +249,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
     - Buttons: **Back**, **Next**, **Skip this part** (jump to the next section) and **Skip tour**.
     → The last step says "That's all of IKDA!" with a **Done** button. A skipped or finished tour does not
     come back by itself; the Salon's **Replay the walkthrough** plays it again.
-    (The full 52-step list is in [docs/E2E_GUIDE.md](docs/E2E_GUIDE.md), section A7.)
+    (The full walkthrough verification guide is in [docs/E2E_GUIDE.md](docs/E2E_GUIDE.md), section A7.)
 
 ### Part G: The town
 
@@ -256,7 +265,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
       always tell which one is you.
 
 31. **Drag the map** to pan. **Pinch** (or scroll the wheel) to zoom. **Press the + and − buttons**
-    (**Zoom in**, **Zoom out**). **Press Follow my character**.
+    (**Zoom in**, **Zoom out**). **Press Follow my character, the GPS icon**.
     → The camera moves, zooms, and returns to your character.
 
 32. **Tap the empty ground** somewhere on the pavement.
@@ -268,7 +277,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
     → The card closes.
 
 34. **Top bar and corner controls.** Go through them one at a time:
-    - **Places** → a list of the buildings. **Press one** → your character walks to its door.
+    - **Places** → a list of the buildings. **Press one later on** → your character walks to its door.
       👀 **The door swings open with lamplight inside** and your character steps in.
     - **Weather chip** (top left) → shows the live weather. **Press it repeatedly** → it steps through
       **day, night, rain and rainy night** previews.
@@ -291,7 +300,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
 
 ### Part H: The Hair Salon
 
-35. **Press the Hair Salon building → Enter the salon.**
+35. **Press the Hair Salon building OR Click your badge → Enter the salon.**
     → 👀 **Pixel clouds cover the screen and part to the sides** to reveal the salon.
     → A pixel salon: **a tall mirror ringed with bulbs**, a counter and barber chair, and your character
     standing beside it **alive** (it breathes, blinks and sometimes walks on the spot). Your
@@ -320,7 +329,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
     - 👀 The XP **counts up** and the bar fills.
     - **Press "How to earn XP"** → it lists the actions and their XP.
 
-39. **Fix the typo.** Your name says `Mya`.
+39. **Change your name.** Your name says `Mya`.
     **Press Edit profile** (the pencil on the reader card).
     → A form: Name, Gender, Age, Religion, Location (optional), Favourite genres, and **Change look**.
     - **Change Name to `Maya`.**
@@ -330,7 +339,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
     - **Press Save.**
     → The new name shows on the card and on your badge in town.
     - **Press Cancel** after changing something else → the changes are dropped.
-    - **Press Change look** → it takes you to the Style studio.
+    - **Press Change look in "Edit"** → it takes you to the Style studio.
 
 40. **About you.** **Press the pencil on a single field** (for example Location) → only that field
     opens. **Edit** and **Save**, then open another and **Cancel**.
@@ -395,7 +404,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
 53. **Press Back to town.** **Press your badge (bottom left)** → the Salon's profile.
     → Your **To be read** count has gone up, and XP and the Daily task have moved on.
 
-**Scenario 1 is complete.** Please write down what confused you.
+**Scenario 1 is complete. Log out now if needed.** Please write down what confused you.
 
 ---
 
@@ -410,35 +419,30 @@ Use the **demo account** (Jordan Lee).
 1. Open <https://ikda-rust.vercel.app> in a **new private window**. If you land on the landing page,
    **press the small "Log in" link** under the Sign up button.
    → **Welcome back** ("Enter your details, then the code from your email.").
-2. **Type `demo@demo.ikda.app` and a wrong password** such as `wrong-pass`. **Press Log in.**
-   → A red error, and 👀 the cats duck.
-3. **Press the eye icon** → 👀 the cats cover their eyes. **Type the right password**,
-   `Ikda-Demo-2026`. **Press Log in.**
-   → **Check your email**, with "Demo account: no email is sent. Enter the code 111111."
-4. **Type `111111`. Press Confirm code.**
-   → **Code accepted**, 👀 the cats hop, and you **drop into the town** with no set-up and no tour (you
-   are a returning reader).
-   → **Jordan Lee** is in the bottom-left badge with a gold **4**, and **600** coins. 👀 **Emma's and
-   Ayaan's houses** stand near yours with a **green dot** on their name tags. The **Daily** panel may open
-   by itself: close it with ✕.
+
+   Use the following demo account details:
+
+   | Field | Login details |
+   |---|---|
+   | Email | `demo@demo.ikda.app` |
+   | Password | `Ikda-Demo-2026` |
+   | Verification code | `111111` |
 
 ### Part B: The bell and the friends list
 
 5. **Look at the top bar.**
-   → The **bell** shows **3**, and **Friends** shows **2 online** and **1 friend request**.
+   → You should see **bell**, **Friends**, **Places**, **Daily**, weather and your badge. In a freshly reset
+   demo state, Friends starts at 2 online and 1 request.
 6. **Press the bell (Notifications).**
-   → "**Emma Tan** visited your room …", "**Noah Koh** sent you a friend request …", "**Ayaan Rahman**
-   visited your room …". **Press Clear all** → the list empties and says what will appear. Close it.
+   → You should see recent friend requests and room visits (exact names/times depend on account state).
+   **Press Clear all** → the list empties and says what will appear. Close it.
 7. **Press Friends.** The panel shows:
-   → **Add friend** and **Remove friends** buttons, **Friend requests** ("Noah Koh wants to be friends" with
-   **Accept** and **Decline**), **Your friends** (Emma Tan, Ayaan Rahman, Sofia Lim, Mei Chen, each with
-   the book they are reading and a **Chat with …** button), and **Readers nearby** (Dylan, Aasim, Priya,
-   Noah, Daniel).
-   - 👀 Emma and Ayaan say **Online now**. Sofia says **Last seen 12 days ago** and Mei **5 weeks ago**.
+   → **Add friend** and **Remove friends** buttons, **Friend requests** (if any), **Your friends** with
+   each friend's reading status and a **Chat with …** button, and **Readers nearby**.
+   - 👀 At least one friend should show **Online now** in a seeded demo state.
 8. **Press "Accept Noah Koh".**
-   → Friend requests now says **"No requests right now."**, and Noah moves into **Your friends** with a
-   grey dot and **Last seen 2 months ago**. His house is given a free plot in the town; look for it on the
-   map. Because he has been away for weeks, it looks neglected.
+   → If Noah's request is present, Friend requests now says **"No requests right now."**, and Noah moves
+   into **Your friends**. If Noah was already accepted earlier, accept any visible request instead.
 9. **Press Chat with Emma.**
    → The panel closes and a **chat box opens** in the bottom corner, **READER MESSAGES**, with the
    conversation already in it: Emma's "Hi Jordan! I saw you just finished Project Hail Mary…" and Jordan's
@@ -467,10 +471,10 @@ Use the **demo account** (Jordan Lee).
 ### Part D: The Cafe
 
 13. **Press the Cafe building → Enter the cafe.**
-    → A cosy pixel cafe, **BREW &amp; BOOKS**, with **8 readers** sitting at tables. A label at the top left
-    says **8 readers in café**, and the weather is in the top right. A hint at the bottom says **"Click a
+    → A cosy pixel cafe, **BREW &amp; BOOKS**, with readers sitting at tables (usually 8 in the seeded demo).
+    A label at the top left says `N readers in café`, and the weather is in the top right. A hint at the bottom says **"Click a
     reader to walk over"**.
-    - 👀 Every reader has a name tag and a **match score** ("Emma Tan **38% match**"): it is how much your
+    - 👀 Every reader has a name tag and a **match score** (for example Emma around 38–40% in the seeded demo): it is how much your
       shelves and genres overlap.
     - 👀 **You** stand by the **WELCOME** mat with a **YOU** tag.
 14. **Click Emma Tan.**
@@ -483,7 +487,7 @@ Use the **demo account** (Jordan Lee).
     → A **Reader messages** chat opens with the same history as before. **Type and send a message.**
     **Close the chat.**
 16. **Press the × (Close reader profile).** You stay in the cafe.
-17. **Click Daniel Ong** (**22% match**).
+17. **Click Daniel Ong** (about **22% match** in the seeded demo).
     → His popup shows **Add friend**. **Press it.**
     → The button changes to **Request sent** (or **Added as friend** straight away for a demo reader).
     **Close the popup.**
@@ -526,10 +530,27 @@ Use the **demo account** (Jordan Lee).
 **Persona.** Jordan wants a cosy corner that shows who they are. Use the **demo account** (still signed
 in from Scenario 2, or log in again: `demo@demo.ikda.app` / `Ikda-Demo-2026` / `111111`).
 
-### Part A: Walk in and look around
+
+### Part A: Mood check-in
+
+8. **On your first visit of the day**, a card opens by itself: **"How are you feeling today?"**, with a
+   step tracker (**1 Check-in, 2 Result, 3 Saved**). If it does not appear, it has been done today: open
+   it from the room menu (the button at the bottom right).
+   → Four moods: **Calm** (Settled, unhurried), **Low** (Could use a lift), **Stressed** (A lot on my
+   mind), **Excited** (Full of energy). **Continue** stays greyed out until you pick one.
+9. **Press a mood → Continue.**
+    → **A book for your mood** with a quote from it. (The quote links back to its source.)
+10. **Press "Save quote".** → It changes to **Saved**.
+11. **Press "Add to To Be Read".** → **Added to To Be Read.**
+12. **Press "Show another recommendation".** → A different book.
+13. **Close it.** (Another day, **Skip for today** keeps it away until tomorrow.)
+14. **Check Saved quotes** in the Salon's Profile tab → your three quotes, plus the new one.
+
+### Part B: Walk in and look around
 
 1. **Press Your house → Go inside.**
-   → My Room: one wide pixel-art picture of a room, side on. **600** coins show at the top right.
+   → My Room: one wide pixel-art picture of a room, side on. Your current coin total shows at the top right
+   (600 in a freshly reset demo state).
    - 👀 The **cats wander** the floor. A **ginger** one is by the armchair, a **black** one near the left.
 2. **Look around.** **Drag, swipe, scroll the wheel, or use ← →.**
    → The room slides sideways: the bay-window nook, the reading chair and coffee table, the bookshelf,
@@ -539,38 +560,23 @@ in from Scenario 2, or log in again: `demo@demo.ikda.app` / `Ikda-Demo-2026` / `
 4. **The window.**
    → The **live Singapore weather**: 👀 the sun with birds flying past, drifting clouds, rain, or the
    moon at night, with the temperature. The town across the street shows through the glass.
-   - Add `?scene=rain` to the address (`https://ikda-rust.vercel.app/?scene=rain`), then `sunny` and
+   - Add `?scene=rain` to the address (`https://ikda-rust.vercel.app/house?scene=rain`), then `sunny` and
      `cloudy`, to preview each sky.
 5. **The clock.** → Singapore time.
 6. **The lamps.** **Tap a lamp** (the floor lamp and the table lamp).
    → 👀 It **switches off and on**, and the room's light changes. At night the lamps light their corners.
 7. **The corkboard.** → The **Quote of the Day**, plus the **notes from Emma and Ayaan**.
 
-### Part B: Mood check-in
-
-9. **On your first visit of the day**, a card opens by itself: **"How are you feeling today?"**, with a
-   step tracker (**1 Check-in, 2 Result, 3 Saved**). If it does not appear, it has been done today: open
-   it from the room menu (the button at the bottom right).
-   → Four moods: **Calm** (Settled, unhurried), **Low** (Could use a lift), **Stressed** (A lot on my
-   mind), **Excited** (Full of energy). **Continue** stays greyed out until you pick one.
-10. **Press a mood → Continue.**
-    → **A book for your mood** with a quote from it. (The quote links back to its source.)
-11. **Press "Save quote".** → It changes to **Saved**.
-12. **Press "Add to To Be Read".** → **Added to To Be Read.**
-13. **Press "Show another recommendation".** → A different book.
-14. **Close it.** (Another day, **Skip for today** keeps it away until tomorrow.)
-15. **Check Saved quotes** in the Salon's Profile tab → your three quotes, plus the new one.
-
 ### Part C: The bookshelf
 
-16. **Look at the bookshelf.**
+15. **Look at the bookshelf.**
     → Three rows, each named on a plate: **To be read, Currently reading, Finished reading**.
     - 👀 **Hover or focus a spine** → it lifts a little out of its row.
-17. **Press a book spine** (for example **Dune** on Currently reading).
+16. **Press a book spine** (for example **Dune** on Currently reading).
     → 👀 **The book lifts out, flies up to the middle of the room as its cover, and swings open on its
     pages.** (Reduced-motion settings skip this.)
     - **Press anywhere while it flies** → it skips straight to open.
-18. **On the card:** cover, title, author, stars (when readers have rated it), synopsis, **Remove from
+17. **On the card:** cover, title, author, stars (when readers have rated it), synopsis, **Remove from
     shelf**, and **Read reviews**. What else shows depends on the shelf:
     - A **Currently reading** book (Dune) has a **progress slider**, and **Mark as finished**. 👀 **Drag the
       slider** (Dune starts at 45%) → the percent saves.
@@ -585,10 +591,10 @@ in from Scenario 2, or log in again: `demo@demo.ikda.app` / `Ikda-Demo-2026` / `
     - Open **The Hobbit** (Finished) and press **Read reviews** → **Jordan's 5-star review** and the
       reviews of **Emma** and **Ayaan**, and the rating **4.7 from 3 readers**.
     - Open **Fourth Wing** (To be read) → **Start reading** and **Where to get**.
-19. **Press "Remove from shelf".**
+18. **Press "Remove from shelf".**
     → It asks first. **Confirm.** → A toast with **Undo**. **Press Undo** → it comes back.
-20. **Close the card.** → The book **flies back onto the shelf** the way it came.
-21. **Press the bookshelf itself** → **My Shelf.**
+19. **Close the card.** → The book **flies back onto the shelf** the way it came.
+20. **Press the bookshelf itself** → **My Shelf.**
     → The Library's bookcase with exactly three shelves, in My Room's colours.
     - **Press Spines / Covers** → changes the look.
     - **Press a genre chip** and **type in "Search your books"** → the books filter.
@@ -602,43 +608,44 @@ in from Scenario 2, or log in again: `demo@demo.ikda.app` / `Ikda-Demo-2026` / `
 
 ### Part D: The shop and decorations
 
-22. **Press the Room menu → Shop** (the button at the bottom right).
+21. **Press the Room menu → Shop** (the button at the bottom right).
     → Groups with prices: **Wall art** (posters, botanical print, gold frame), **Reading chairs**,
-    **Plants**, **Cats**, **Curtains** (five fabrics), **Bedding** (five designs). Your **600** coins are
-    shown at the top right. "Swipe the row. Each card says where that piece can sit."
-23. **Buy a poster.** **Press it.** → **"Buy <name>?"** with the price. **Press Confirm.** (The price comes
+    **Plants**, **Cats**, **Curtains** (five fabrics), **Bedding** (five designs). Your current coin total is
+    shown at the top right (600 in a freshly reset demo state). "Swipe the row. Each card says where that
+    piece can sit."
+22. **Buy a poster.** **Press it.** → **"Buy <name>?"** with the price. **Press Confirm.** (The price comes
     out of your credits, the same coins shown at the top right.)
     → "Tap a piece, then where it should go in the room. Or drag it there."
     - **Tap a spot on the wall** (or drag it there) → it hangs on the wall.
     - **Tap the floor** with a wall piece → it will not go there; the card says where it can sit.
-24. **Buy a plant** (floor) and **a succulent trio** (the window seat, side table or nightstand).
+23. **Buy a plant** (floor) and **a succulent trio** (the window seat, side table or nightstand).
     → Each only fits where its card says.
-25. **Open Inventory.**
+24. **Open Inventory.**
     → Five pieces are waiting: the **Moon poster**, **Rocking chair**, **Calico cat**, **Navy curtains**
     and **Tartan bedding**. **Press the Calico cat, then tap the floor** → 👀 it wanders the floor with
     the other two cats.
-26. **Press the Rocking chair, then tap the reading nook.**
+25. **Press the Rocking chair, then tap the reading nook.**
     → It **swaps with the Wingback chair**, which goes back to the Inventory.
-27. **Place the Navy curtains and the Tartan bedding.**
+26. **Place the Navy curtains and the Tartan bedding.**
     → They replace the sage curtains and the starry bedding, which go back to the Inventory.
-28. **Move a placed piece.** **Tap it.**
+27. **Move a placed piece.** **Tap it.**
     → A card with **arrow buttons** (or the arrow keys), **Done** and **Cancel**.
-29. **Spend until you cannot afford the next piece.**
+28. **Spend until you cannot afford the next piece.**
     → The buy card says **"Not enough credits."**, **Confirm** is greyed out, and your coins do not go
     negative.
-30. **Reload the page.** → Your pieces are still where you put them.
-31. **Open the Salon → Profile → Coins.** → The coins have dropped. **Press Visit the shop** → back to the
+29. **Reload the page.** → Your pieces are still where you put them.
+30. **Open the Salon → Profile → Coins.** → The coins have dropped. **Press Visit the shop** → back to the
     room.
 
 ### Part E: Check your progress and finish up
 
-32. **Open the Salon → Profile.**
+31. **Open the Salon → Profile.**
     → The **Reader level** card shows your new level and XP, **Coins** shows what is left after the shop,
     and **Finished** on the reader card has gone up by one.
-33. **Press the Salon's "Log out".**
+32. **Press the Salon's "Log out".**
     → A dialog with a little book shutting above the title. **Press Stay** to confirm the safe choice
     works. **Press Log out** again, then confirm.
-34. **You are back at the landing/login page.** **Press the browser's Back button.**
+33. **You are back at the landing/login page.** **Press the browser's Back button.**
     → You are **not** let back into the town.
 
 **Scenario 3 is complete.**
@@ -745,7 +752,7 @@ priorities) are in **[docs/E2E_GUIDE.md](docs/E2E_GUIDE.md)** and the seven file
 | File | Covers |
 |---|---|
 | [01-public-auth-onboarding](docs/e2e/01-public-auth-onboarding.md) | Landing page, register, log in, the code, log out, route guard, Welcome |
-| [02-walkthrough](docs/e2e/02-walkthrough.md) | The 52-step walkthrough, Pip, skip and replay |
+| [02-walkthrough](docs/e2e/02-walkthrough.md) | The walkthrough (34 stops), Pip, skip and replay |
 | [03-town-social](docs/e2e/03-town-social.md) | Town and HUD, Daily tasks, friends and chat, Cafe, visiting rooms |
 | [04-room-shelf-shop-mood](docs/e2e/04-room-shelf-shop-mood.md) | My Room, bookshelf and My Shelf, mood check-in, Shop and Inventory |
 | [05-library-books](docs/e2e/05-library-books.md) | Library, search, scanner, book cards, reviews |
