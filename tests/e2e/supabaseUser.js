@@ -205,6 +205,11 @@ export async function readXp(id) {
   return data ?? [];
 }
 
+// A Supabase client with no sign-in: what any visitor's browser can do with the public key.
+export function visitorClient() {
+  return createClient(url, anonKey, quiet);
+}
+
 // A Supabase client signed in as the reader, to check what the database lets them do.
 export function readerClient(session) {
   return createClient(url, anonKey, {
