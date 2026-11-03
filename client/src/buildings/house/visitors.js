@@ -1,43 +1,10 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Other readers' rooms, for visiting: who lives there, the books on their bookshelf and the
-// furniture in the room. The readers come from the people store (stores/people.js); the house
-// only reads them, and turns their books into the shape the room's bookshelf uses.
+// furniture in the room (from the server, like everyone's). The readers come from the people store
+// (stores/people.js); the house only reads them, and turns their books into the shape the room's
+// bookshelf uses.
 import { getRoomFurniture } from '@/services/api.js'
 import { usePeopleStore } from '@/stores/people.js'
-
-// The sample readers' demo furniture, from the furniture library: the same { id, zone, x } as a
-// piece placed in My Room (x along its zone, as the spots in strip/layout.js have it). A reader's
-// own saved furniture comes first; a reader with none saved, and none here, has the plain room.
-const FURNISHINGS = {
-  'emma.reads': [
-    { id: 'chair-wingback', zone: 'chair', x: 0.28 },
-    { id: 'poster-moon', zone: 'wall', x: 0.36 },
-    { id: 'frame-botanical', zone: 'wall', x: 0.91 },
-    { id: 'plant-monstera', zone: 'room', x: 0.15 },
-    { id: 'cat-ginger', zone: 'room', x: 0.5 },
-  ],
-  'ayaan.pages': [
-    { id: 'chair-papasan', zone: 'chair', x: 0.28 },
-    { id: 'poster-mountain', zone: 'wall', x: 0.22 },
-    { id: 'frame-gold', zone: 'wall', x: 0.69 },
-    { id: 'plant-fig', zone: 'room', x: 0.69 },
-    { id: 'cat-black', zone: 'room', x: 0.5 },
-  ],
-  'sofia.shelves': [
-    { id: 'chair-rocking', zone: 'chair', x: 0.28 },
-    { id: 'frame-botanical', zone: 'wall', x: 0.36 },
-    { id: 'frame-gold', zone: 'wall', x: 0.91 },
-    { id: 'plant-succulents', zone: 'seat', x: 0.5 },
-    { id: 'cat-calico', zone: 'room', x: 0.5 },
-  ],
-  'noah.bookmarks': [
-    { id: 'chair-wingback', zone: 'chair', x: 0.28 },
-    { id: 'poster-book-club', zone: 'wall', x: 0.36 },
-    { id: 'poster-mountain', zone: 'wall', x: 0.69 },
-    { id: 'plant-monstera', zone: 'room', x: 0.51 },
-    { id: 'cat-black', zone: 'room', x: 0.5 },
-  ],
-}
 
 // each reader's house's look, from themes.js
 const THEME_OF = {
@@ -58,18 +25,14 @@ function shelfBook(book) {
   }
 }
 
-// The furniture standing in a reader's room: what they've placed, or their demo furniture when
-// they've saved none. Furniture that can't be fetched leaves the demo furniture, so the visit
-// still works.
+// The furniture standing in a reader's room: what they've placed, the sample readers included
+// (the seed saves theirs). Furniture that can't be fetched leaves the room plain, so the visit still works.
 async function furnitureOf(readerId) {
-  let saved = []
   try {
-    saved = (await getRoomFurniture(readerId)).pieces.filter((piece) => piece.zone)
+    return (await getRoomFurniture(readerId)).pieces.filter((piece) => piece.zone)
   } catch {
-    saved = []
+    return []
   }
-  if (saved.length) return saved
-  return (FURNISHINGS[readerId] ?? []).map((item, k) => ({ ...item, uid: `${readerId}-${k}` }))
 }
 
 // A reader's room: { id, name, firstName, books, currentBook, furniture, theme }, or null when there's

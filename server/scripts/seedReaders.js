@@ -1,6 +1,6 @@
 // Puts the demo readers (data/demoReaders.js) in Supabase as real accounts: an auth user each
 // (no one can sign in as them: random passwords), a discoverable profile with their town look,
-// and their shelf. Safe to re-run: fixed ids and upserts. Re-running also resets when each was
+// their shelf and their room's furniture. Safe to re-run: fixed ids and upserts. Re-running also resets when each was
 // last online, so Emma and Ayaan show as online again.
 // Usage: npm run seed:readers -w server
 import { randomBytes } from "node:crypto";
@@ -90,5 +90,17 @@ await ok(
       }))
     ),
     { onConflict: "user_id,book_id" }
+  )
+);
+
+// their room furniture, as if they had placed it themselves
+await ok(
+  "room_furniture",
+  supabase.from("room_furniture").upsert(
+    DEMO_READERS.filter((reader) => reader.furniture).map((reader) => ({
+      owner_id: reader.id,
+      pieces: reader.furniture,
+      updated_at: new Date(now).toISOString()
+    }))
   )
 );

@@ -1,6 +1,7 @@
-import { buy, expect, goToPlace, mockQuote, mockWeather, nextPaint, placeAt, roomCanvas, roomReady, roomRegion, skipMoodCheckIn, test } from "./fixtures.js";
+import { buy, expect, goToPlace, mockQuote, mockWeather, nextPaint, placeAt, roomCanvas, roomReady, roomRegion, skipMoodCheckIn, test, townReady } from "./fixtures.js";
 import { randomUUID } from "node:crypto";
 import { signInPage } from "./supabaseUser.js";
+import { EMMA, mockFriends } from "./townFriends.js";
 
 // Visiting another reader's room: from their profile in the Cafe into a room drawn from the same
 // template as My Room, with their books and furniture. Visitors look around; they can't change it.
@@ -60,6 +61,16 @@ test.describe("getting there", () => {
 });
 
 test.describe("their furniture", () => {
+  test("a sample reader's furniture comes from the server, like anyone's", async ({ page, reader }) => {
+    const answer = await page.request.get("/api/rooms/emma.reads/furniture", {
+      headers: { Authorization: `Bearer ${reader.session.access_token}` },
+    });
+    expect(answer.ok()).toBe(true);
+    const { pieces } = await answer.json();
+    expect(pieces.map((piece) => piece.id)).toEqual(["chair-wingback", "poster-moon", "frame-botanical", "plant-monstera", "cat-ginger"]);
+    expect(pieces.every((piece) => piece.uid && piece.zone)).toBe(true);
+  });
+
   const piece = (page, name) => page.getByRole("button", { name, exact: true });
 
   test("each reader's room has their own furniture, which a visitor can't take down", async ({ page }) => {
@@ -78,6 +89,7 @@ test.describe("their furniture", () => {
   });
 
   test("furniture placed in My Room stays in my room, and theirs in theirs", async ({ page }) => {
+    await mockFriends(page, { friends: [EMMA] });
     await page.goto("/house");
     await roomReady(page);
     await buy(page, "Mountain poster");
@@ -87,7 +99,7 @@ test.describe("their furniture", () => {
     // over to Emma's, through the town, so My Room keeps its furniture for the visit
     await page.getByRole("link", { name: "Back to town" }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText("Loading the town…")).toBeHidden();
+    await townReady(page);
     await page.getByRole("navigation", { name: "Places in the room" }).waitFor({ state: "detached" });
     await page.getByRole("button", { name: "Places" }).click();
     await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Emma's house/ }).click();

@@ -12,7 +12,6 @@ const props = defineProps({
 
 const myId = ref('')
 const recipientId = ref('')
-const demoMode = ref(false)
 const messages = ref([])
 const draft = ref('')
 const loading = ref(true)
@@ -37,7 +36,7 @@ async function refresh({ silent = false } = {}) {
   if (!recipientId.value || !myId.value) return
   const selected = version
   try {
-    const { messages: items } = await getMessages(recipientId.value, myId.value, { demo: demoMode.value })
+    const { messages: items } = await getMessages(recipientId.value, myId.value)
     if (selected !== version) return
     const prevLast = messages.value.at(-1)?.id
     messages.value = items
@@ -54,18 +53,16 @@ async function setup() {
   error.value = ''
   messages.value = []
   recipientId.value = ''
-  demoMode.value = false
   if (interval) clearInterval(interval)
   try {
     const [self, other] = await Promise.all([getChatIdentity(), resolveChatRecipient(props.readerId)])
     if (selected !== version) return
-    if (!other.demo && self === other.id) throw new Error('You cannot message yourself.')
+    if (self === other.id) throw new Error('You cannot message yourself.')
     myId.value = self
     recipientId.value = other.id
-    demoMode.value = other.demo
     await refresh()
     if (selected !== version) return
-    if (!demoMode.value) interval = setInterval(() => {
+    interval = setInterval(() => {
       if (!sending.value && !document.hidden) refresh({ silent: true })
     }, 8000)
   } catch (err) {
@@ -81,7 +78,7 @@ async function send() {
   const text = draft.value
   const selected = version
   try {
-    await sendReaderMessage(recipientId.value, text, myId.value, { demo: demoMode.value })
+    await sendReaderMessage(recipientId.value, text, myId.value)
     if (selected !== version) return
     draft.value = ''
     await refresh()
@@ -101,7 +98,7 @@ onUnmounted(() => { version++; if (interval) clearInterval(interval) })
   <section class="bookworm-chat" aria-label="Private reader messages">
     <div class="chat-heading">
       <span class="heading-badge">✉ READER MESSAGES</span>
-      <span class="private-label">{{ demoMode ? 'DEMO · ONLY ON THIS DEVICE' : 'PRIVATE CONVERSATION' }}</span>
+      <span class="private-label">PRIVATE CONVERSATION</span>
     </div>
 
     <div class="chat-card">
@@ -142,10 +139,7 @@ onUnmounted(() => { version++; if (interval) clearInterval(interval) })
         </button>
       </form>
       <p v-if="error" role="alert" class="chat-error">{{ error }}</p>
-      <p v-if="demoMode" class="chat-note demo-note" role="status">
-        DEMO ONLY: This reader has no linked account. Messages are saved in this browser and are not delivered to anyone.
-      </p>
-      <p v-else class="chat-note">Only you and this reader can view these messages. Be kind and protect your privacy.</p>
+      <p class="chat-note">Only you and this reader can view these messages. Be kind and protect your privacy.</p>
     </div>
   </section>
 </template>
@@ -176,7 +170,6 @@ onUnmounted(() => { version++; if (interval) clearInterval(interval) })
 .composer button:disabled { opacity: .55; cursor: not-allowed; }
 .chat-error { color: #963d35; background: #ffe2d7; border: 2px solid #963d35; padding: 9px; margin-top: 12px; font-size: 12px; }
 .chat-note { color: #6d6057; margin: 14px 0 0; font-size: 10px; line-height: 1.5; }
-.demo-note { background: #fff0c8; border: 2px solid #30252e; padding: 9px; font-weight: 800; }
 @media (max-width: 410px) { .chat-card { padding: 14px 9px 11px; } .message-list { height: 240px; } .composer { flex-direction: column; } .composer button { padding: 11px; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>

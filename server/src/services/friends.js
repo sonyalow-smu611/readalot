@@ -44,7 +44,7 @@ async function giveOutSpots(accepted, me) {
 }
 
 // { friends: readers with their house `spot` (null when the town is full), incoming: requests to
-// you as { requestId, reader }, outgoing: the reader ids you've asked }
+// you as { requestId, reader, at } (when it was sent), outgoing: the reader ids you've asked }
 export async function friendsOf(me) {
   const rows = await friendshipsOf(me);
   const accepted = rows.filter((row) => row.status === "accepted");
@@ -60,7 +60,7 @@ export async function friendsOf(me) {
       .map((row) => ({ ...byId.get(otherOf(row, me)), spot: row[spotColumn(row, me)] })),
     incoming: incoming
       .filter((row) => byId.has(row.requester))
-      .map((row) => ({ requestId: row.id, reader: byId.get(row.requester) })),
+      .map((row) => ({ requestId: row.id, reader: byId.get(row.requester), at: row.created_at })),
     outgoing: outgoing.filter((row) => byId.has(row.addressee)).map((row) => byId.get(row.addressee).id),
   };
 }

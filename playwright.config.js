@@ -14,6 +14,12 @@ export default defineConfig({
       reuseExistingServer: false
     },
     {
+      // the same API with Supabase on, for friends.spec.js and nearby.spec.js (useRealApi in fixtures.js)
+      command: "PORT=3101 GOOGLE_BOOKS_API_KEY= npm --workspace server run dev",
+      url: "http://127.0.0.1:3101/api/health",
+      reuseExistingServer: false
+    },
+    {
       command: "VITE_API_TARGET=http://127.0.0.1:3100 npm --workspace client run dev -- --host 127.0.0.1 --port 5174 --strictPort",
       url: "http://127.0.0.1:5174",
       reuseExistingServer: false

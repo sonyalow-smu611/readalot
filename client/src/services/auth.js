@@ -157,6 +157,28 @@ export async function saveProfile(details) {
   return { data: details, error: null }
 }
 
+// When the reader last read and last cleared their notifications: { readAt, clearedAt }, '' for
+// never (database/notifications_seen.sql).
+export async function loadNotificationTimes(userId) {
+  if (!supabase) return missing()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('notifications_read_at, notifications_cleared_at')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) return { data: null, error }
+  return { data: { readAt: data?.notifications_read_at ?? '', clearedAt: data?.notifications_cleared_at ?? '' }, error: null }
+}
+
+// Saves whichever of the two times is given.
+export async function saveNotificationTimes(userId, { readAt, clearedAt }) {
+  if (!supabase) return missing()
+  const changes = {}
+  if (readAt) changes.notifications_read_at = readAt
+  if (clearedAt) changes.notifications_cleared_at = clearedAt
+  return supabase.from('profiles').update(changes).eq('id', userId)
+}
+
 export async function markTourSeen(userId) {
   if (!supabase) return missing()
   return supabase.from('profiles').update({ tour_seen_at: new Date().toISOString() }).eq('id', userId)

@@ -232,10 +232,10 @@ see them on any device. Without Supabase (local dev, the e2e tests) the server k
 memory until it restarts, and takes the account id from the sign-in token without checking it,
 because it can't.
 
-A visited room shows the furniture that reader saved. A reader who has saved none gets their
-demo furniture from `FURNISHINGS` in `visitors.js`, if they have any (the Cafe's sample readers
-do), or else the plain room. Each demo piece is `{ id, zone, x }`, and stands on the spot in its
-zone nearest `x`. A visit never saves anything.
+A visited room shows the furniture that reader saved, or the plain room if they have saved none.
+The Cafe's sample readers have theirs saved too: their pieces are in `server/data/demoReaders.js`,
+and `npm run seed:readers -w server` puts them in `room_furniture` (without Supabase the server
+serves them from that file). A visit never saves anything.
 
 ## On a laptop
 

@@ -1,6 +1,6 @@
 import { test as signedOut } from "@playwright/test";
 import { EMMA, NOAH, mockFriends } from "./townFriends.js";
-import { SPOTS, buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, tapRoomAt, test } from "./fixtures.js";
+import { SPOTS, buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, tapRoomAt, test, townReady } from "./fixtures.js";
 import { createReader, hasSupabase, NEEDS_SUPABASE, signInPage } from "./supabaseUser.js";
 
 // a brand-new reader, who hasn't filled in Welcome yet
@@ -540,7 +540,7 @@ test.describe("the town", () => {
   test.beforeEach(async ({ page }) => {
     await mockWeather(page);
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Places" })).toBeVisible({ timeout: 15000 });
+    await townReady(page);
   });
 
   test("the map's buttons, the Places menu and a place card have pixel buttons", async ({ page }) => {
