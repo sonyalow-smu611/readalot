@@ -15,7 +15,7 @@ const props = defineProps({
 
 // the same look the town gives them
 const character = computed(() => normaliseCharacter(props.reader.character))
-// the sample readers' neighbourhoods end in "(demo)"; the note at the foot of the page says so
+// the sample readers' neighbourhoods end in "(demo)", which isn't for showing
 const handle = computed(() => {
   const place = String(props.reader.neighborhood ?? '').replace(/\s*\(demo\)\s*$/i, '').trim()
   return place ? `@${props.reader.username} · ${place}` : `@${props.reader.username}`

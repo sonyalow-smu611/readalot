@@ -57,9 +57,10 @@ test("a book's card stays a readable width in the middle of the window", async (
   await page.getByRole("button", { name: "Norwegian Wood by Haruki Murakami" }).click();
   const card = page.getByRole("dialog", { name: "Book details" });
   await expect(card).toBeVisible({ timeout: 8000 });
-  // the dialog's backdrop fills the window, as the library's does; its full-width Close book
-  // button shows how wide the card itself is
-  await centredAndReadable(card.getByRole("button", { name: "Close book" }));
+  // the dialog's backdrop fills the window, as the library's does: the card on it sits in the
+  // middle, the cover beside its words, and Close book runs the width of the words
+  await expect.poll(async () => { const box = await card.locator(".modal-content").boundingBox(); return Math.abs(box.x + box.width / 2 - 720); }).toBeLessThan(2);
+  expect((await card.getByRole("button", { name: "Close book" }).boundingBox()).width).toBeLessThanOrEqual(760);
 });
 
 test("the Currently Reading card stays a readable width, centred", async ({ page }) => {

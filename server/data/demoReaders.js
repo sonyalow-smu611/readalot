@@ -24,6 +24,10 @@ const READ = "read";
 const READING = "reading";
 const WANT = "want_to_read";
 
+// A sample reader's room furniture, as a reader's own placed pieces: { uid, id, zone, x }, with x
+// along its zone (client/src/buildings/house/strip/layout.js). The seed saves it in room_furniture.
+const furnished = (username, pieces) => pieces.map((piece, k) => ({ uid: `demo-${username}-${k}`, ...piece }));
+
 export const DEMO_READERS = [
   {
     id: "00000000-0000-4000-8000-000000000201",
@@ -36,7 +40,14 @@ export const DEMO_READERS = [
     favoriteGenres: ["Fantasy", "Mystery", "Romance"],
     awayMinutes: MINUTE,
     character: { base: "maya", hair: "bun", hairColour: "chestnut", skin: "tone-4", top: "puffer", topColour: "red", bottom: "baggy", bottomColour: "slate", shoes: "trainers", shoeColour: "ink" },
-    shelf: [["book-hobbit", READ], ["book-secret-history", READING], ["book-fourth-wing", WANT]]
+    shelf: [["book-hobbit", READ], ["book-secret-history", READING], ["book-fourth-wing", WANT]],
+    furniture: furnished("emma.reads", [
+      { id: "chair-wingback", zone: "chair", x: 0.28 },
+      { id: "poster-moon", zone: "wall", x: 0.36 },
+      { id: "frame-botanical", zone: "wall", x: 0.91 },
+      { id: "plant-monstera", zone: "room", x: 0.15 },
+      { id: "cat-ginger", zone: "room", x: 0.5 }
+    ])
   },
   {
     id: "00000000-0000-4000-8000-000000000202",
@@ -49,7 +60,14 @@ export const DEMO_READERS = [
     favoriteGenres: ["Science Fiction", "Fantasy", "History"],
     awayMinutes: MINUTE,
     character: { base: "jay", hair: "twists", hairColour: "blonde", skin: "tone-9", top: "fuzzy", topColour: "mustard", bottom: "ripped", bottomColour: "denim", shoes: "skaters", shoeColour: "ink", eyes: "goggles" },
-    shelf: [["book-dune", READING], ["book-hobbit", READ], ["book-project-hail", WANT]]
+    shelf: [["book-dune", READING], ["book-hobbit", READ], ["book-project-hail", WANT]],
+    furniture: furnished("ayaan.pages", [
+      { id: "chair-papasan", zone: "chair", x: 0.28 },
+      { id: "poster-mountain", zone: "wall", x: 0.22 },
+      { id: "frame-gold", zone: "wall", x: 0.69 },
+      { id: "plant-fig", zone: "room", x: 0.69 },
+      { id: "cat-black", zone: "room", x: 0.5 }
+    ])
   },
   {
     id: "00000000-0000-4000-8000-000000000203",
@@ -62,7 +80,14 @@ export const DEMO_READERS = [
     favoriteGenres: ["Literary Fiction", "Poetry", "Mystery"],
     awayMinutes: 12 * DAY,
     character: { base: "rosie", hair: "long", hairColour: "pink", skin: "tone-2", top: "pinafore", topColour: "pink", bottom: "skirt", bottomColour: "cream", shoes: "trainers", shoeColour: "pink" },
-    shelf: [["book-pride", READING], ["book-secret-history", READ], ["book-little-women", WANT]]
+    shelf: [["book-pride", READING], ["book-secret-history", READ], ["book-little-women", WANT]],
+    furniture: furnished("sofia.shelves", [
+      { id: "chair-rocking", zone: "chair", x: 0.28 },
+      { id: "frame-botanical", zone: "wall", x: 0.36 },
+      { id: "frame-gold", zone: "wall", x: 0.91 },
+      { id: "plant-succulents", zone: "seat", x: 0.5 },
+      { id: "cat-calico", zone: "room", x: 0.5 }
+    ])
   },
   {
     id: "00000000-0000-4000-8000-000000000204",
@@ -75,7 +100,14 @@ export const DEMO_READERS = [
     favoriteGenres: ["Thriller", "History", "Science Fiction"],
     awayMinutes: 70 * DAY,
     character: { base: "nova", hair: "puff", hairColour: "ginger", skin: "tone-8", top: "puffer", topColour: "charcoal", bottom: "baggy", bottomColour: "charcoal", shoes: "trainers", shoeColour: "ink", neck: "scarf-grey" },
-    shelf: [["book-dune", READ], ["book-sapiens", READING], ["book-gone-girl", WANT]]
+    shelf: [["book-dune", READ], ["book-sapiens", READING], ["book-gone-girl", WANT]],
+    furniture: furnished("noah.bookmarks", [
+      { id: "chair-wingback", zone: "chair", x: 0.28 },
+      { id: "poster-book-club", zone: "wall", x: 0.36 },
+      { id: "poster-mountain", zone: "wall", x: 0.69 },
+      { id: "plant-monstera", zone: "room", x: 0.51 },
+      { id: "cat-black", zone: "room", x: 0.5 }
+    ])
   },
   {
     id: "00000000-0000-4000-8000-000000000205",

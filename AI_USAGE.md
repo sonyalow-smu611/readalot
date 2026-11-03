@@ -797,3 +797,27 @@ Written by Claude Code at Dylan's request. The Cafe is Emiley's part, and the pe
 | Popup | `client/src/buildings/cafe/components/CafeReaderCard.vue`, `CafeView.vue` | Reaching a reader opens their whole profile over the Cafe: 660 px wide on a laptop (60% of the page's 1100 px), a sheet from the bottom on a phone. The old short card and its Visit profile button are gone |
 | Tests | `tests/e2e/cafe-profile.spec.js`, `visit-room.spec.js` | The popup opens and closes without leaving the Cafe, its Message opens the chat, its size on a laptop, and it scrolls on a phone |
 
+### Fixing the e2e tests that had stopped passing (AI-generated)
+
+Written by Claude Code at Dylan's request. Test code only, apart from one stale comment in `ReaderCard.vue`. Team to review: `playwright.config.js` and the shared test helpers.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Waiting for the town | `tests/e2e/fixtures.js` and the town specs (`town`, `town-map`, `daily`, `friends`, `friends-list`, `nearby`, `notifications`, `visit-room`, `buttons`) | `townReady(page)` waits for the map to start before checking "Loading the town…" is gone. On its own that check could pass before the town had started; the day's tasks then opened and closed the Places menu the test had just opened |
+| A real API for real data | `playwright.config.js`, `tests/e2e/fixtures.js`, `friends.spec.js`, `nearby.spec.js` | A second API on port 3101 with Supabase on. `useRealApi(page)` sends a page's API calls there, so the friends and nearby tests see the friendships and areas they write to Supabase. Every other test keeps the demo API |
+| Test readers | `tests/e2e/supabaseUser.js`, `nearby.spec.js` | Each test reader gets its own username, so readers made at once never race for the same free name; `markActive()`; nearby tests wait for the server's answer after going public |
+| Stale tests | `reader-profile.spec.js`, `house-desktop.spec.js`, `visit-room.spec.js`, `notifications.spec.js`, `town-map.spec.js` | The sample-readers note was removed on purpose; the book card now has its cover beside its words; Emma's house needs her as a friend (mocked); the online pop-up waits for the town's first look; a tapped townsperson is held still and tapped in the middle |
+
+### Daily tasks, notifications and demo furniture kept in Supabase (AI-generated, team-agreed)
+
+Written by Claude Code at Dylan's request, from `docs/superpowers/plans/2026-11-03-browser-data-to-supabase.md`. The team agreed that AI writes this feature, including the database functions in `database/daily_tasks.sql` (`claim_daily()` among them) and the server changes. Team to review: `database/`, `server/`, `services/`, `tests/e2e/supabaseUser.js`, and the parts owned by Sonz (`buildings/house/visitors.js`) and Emiley (`components/people/ReaderChat.vue`, `services/chatApi.js`).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Daily tasks in the database | `database/daily_tasks.sql`, `server/tests/dailyTasks.check.js` | `daily_state`, one row per reader that only its reader can read; `daily_today()`, `daily_done()`, `daily_mark_shown()`, `daily_dismiss_notice()` and `claim_daily()` change it. The day moves on as `town/daily.js` says (freezes, lost streaks); a claim needs three tasks done, happens once a day (a unique index), and pays the coins and XP, with level-up coins as `earn_xp()` gives |
+| Daily tasks in the town | `client/src/services/daily.js`, `client/src/town/daily.js`, `client/src/town/dailyStore.js`, `client/src/views/TownView.vue`, `client/src/components/town/DailyDock.vue` | The store loads the day from Supabase and saves each tick, the panel opening and the notice; the claim's reward and totals come back from the database. No Daily button until the day has loaded. The preview's Next day and Start over change this browser's copy only |
+| Notifications read and cleared | `database/notifications_seen.sql`, `client/src/services/auth.js`, `client/src/town/notificationsStore.js`, `server/src/services/friends.js` | Two times on the profile: read up to, cleared up to. The list is rebuilt from Supabase (requests, with when they were sent; visits in the last week; friends who came online this visit), so another device agrees |
+| Demo furniture | `server/data/demoReaders.js`, `server/scripts/seedReaders.js`, `server/src/services/roomFurniture.js`, `client/src/buildings/house/visitors.js`, `client/src/buildings/house/README.md` | The sample readers' furniture moved from the client to the server's demo data; the seed saves it in `room_furniture`, and without Supabase the server serves it from there |
+| Chat | `client/src/services/chatApi.js`, `client/src/components/people/ReaderChat.vue` | The browser-only chat for readers without an account is gone; such a reader says "This reader can't receive messages yet." |
+| Tests | `tests/e2e/daily.spec.js`, `notifications.spec.js`, `visit-room.spec.js`, `reader-profile.spec.js`, `supabaseUser.js`, `townFriends.js` and the town specs | Daily state is set in Supabase (`setDaily`, `skipDailyPanel`); a claim survives a reload and shows on another device; the town opens without the Daily button when the day can't load; read and cleared notifications on another device; a sample reader's furniture comes from the server; a reader with no account can't be messaged |
+

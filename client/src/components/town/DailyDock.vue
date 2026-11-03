@@ -7,6 +7,7 @@
 // friend's house is in town.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
 import { useUserStore } from '@/stores/user'
 import { MAX_FREEZES } from '@/town/daily.js'
 import { useDailyStore } from '@/town/dailyStore.js'
@@ -35,6 +36,7 @@ const router = useRouter()
 const user = useUserStore()
 const daily = useDailyStore()
 const nearby = useNearbyStore()
+const toast = useToast()
 
 const open = ref(false)
 const tab = ref(null)
@@ -145,9 +147,12 @@ function go(placeId) {
   router.push(PLACES.find((place) => place.id === placeId)?.route ?? { name: 'town' })
 }
 
-function claim() {
-  const claimed = daily.claim()
-  if (!claimed) return
+async function claim() {
+  const claimed = await daily.claim()
+  if (!claimed) {
+    if (daily.error) toast.show(daily.error)
+    return
+  }
   open.value = false
   gift.value = claimed
 }
@@ -176,7 +181,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="daily-dock" :style="panelTop">
+  <div v-if="daily.ready" class="daily-dock" :style="panelTop">
     <DailyButton ref="tab" class="daily-dock__tab" :class="{ 'is-settling': settling }" :style="spotStyle" v-bind="chip" :open="open" @toggle="open = !open" />
     <div v-if="open" class="daily-dock__outside" aria-hidden="true" @click="close"></div>
     <Transition name="daily-dock">

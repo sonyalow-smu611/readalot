@@ -1,4 +1,5 @@
-import { expect, test } from "./fixtures.js";
+import { expect, test, townReady, useRealApi } from "./fixtures.js";
+import { skipDailyPanel } from "./townFriends.js";
 import { befriend } from "./supabaseUser.js";
 
 // Friends in town: a friend has a house and, when online, walks the streets. The map is a canvas,
@@ -6,11 +7,11 @@ import { befriend } from "./supabaseUser.js";
 const WALK_IN = { timeout: 10_000 };
 
 test.beforeEach(async ({ page, reader }) => {
+  await useRealApi(page);
   await befriend(reader.id, ["emma.reads", "ayaan.pages", "noah.bookmarks"], ["emma.reads", "ayaan.pages"]);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
-  await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [`readalot-daily:${reader.id}`, JSON.stringify({ day: today, shown: today })]);
+  await skipDailyPanel(reader.id);
   await page.goto("/");
-  await expect(page.getByText("Loading the town…")).toBeHidden();
+  await townReady(page);
 });
 
 async function openPlace(page, name) {

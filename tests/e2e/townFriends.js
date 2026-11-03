@@ -1,4 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
+import { setDaily, sgDay } from "./supabaseUser.js";
+
 // Friends for the town's tests, answered here so they don't depend on who is in the database.
 // playwright.config.js runs the API without Supabase, where nobody has friends.
 const MINUTE = 60 * 1000;
@@ -45,7 +47,6 @@ export async function mockFriends(page, start = {}) {
 }
 
 // The day's tasks already seen, so they don't open over the town.
-export async function skipDailyPanel(page, readerId) {
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
-  await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [`readalot-daily:${readerId}`, JSON.stringify({ day: today, shown: today })]);
+export async function skipDailyPanel(readerId) {
+  await setDaily(readerId, { shown: sgDay() });
 }

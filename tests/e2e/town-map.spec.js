@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 import { readFileSync } from "node:fs";
-import { expect, skipMoodCheckIn, standsStill, test } from "./fixtures.js";
+import { expect, skipMoodCheckIn, standsStill, test, townReady } from "./fixtures.js";
 import { EMMA, mockFriends, skipDailyPanel } from "./townFriends.js";
 
 // Tapping the map, and coming back out of a building. The map is a canvas with nothing to label,
@@ -27,12 +27,10 @@ async function tapMap(page, [x, y]) {
 
 test.beforeEach(async ({ page, reader }) => {
   await mockFriends(page, { friends: [EMMA] });
-  await skipDailyPanel(page, reader.id);
+  await skipDailyPanel(reader.id);
   await skipMoodCheckIn(page);
   await page.goto("/");
-  // the map has to have started before "Loading the town…" can have gone
-  await expect.poll(() => page.evaluate(() => Boolean(window.__townScene?.you)), BOOT).toBe(true);
-  await expect(page.getByText("Loading the town…")).toBeHidden(BOOT);
+  await townReady(page);
   await standsStill(page.locator(".town-map__canvas canvas"));
   await page.evaluate(() => window.__townScene.you.stop());
 });
@@ -84,7 +82,14 @@ test("tapping a townsperson makes them jiggle, then carry on", async ({ page }) 
     };
     note();
   });
-  await tapMap(page, await page.evaluate(() => [window.__walker.x, window.__walker.y - 50]));
+  // held where they are, so they're still there when the tap lands: the middle of them
+  const middle = await page.evaluate(() => {
+    const walker = window.__walker;
+    for (const tween of window.__townScene.tweens.getTweensOf(walker)) tween.pause();
+    const bounds = walker.getBounds();
+    return [bounds.centerX, bounds.centerY];
+  });
+  await tapMap(page, middle);
   await expect.poll(() => page.evaluate(() => window.__wobble), { timeout: 2000 }).toBeGreaterThan(1);
   await expect.poll(() => page.evaluate(() => window.__walker.angle), { timeout: 2000 }).toBe(0);
   expect(await you(page)).toEqual(before);

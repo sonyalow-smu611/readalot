@@ -379,9 +379,12 @@ function goDo(placeId) {
   go(placeId)
 }
 
-function claimDaily() {
-  const claimed = daily.claim()
-  if (!claimed) return
+async function claimDaily() {
+  const claimed = await daily.claim()
+  if (!claimed) {
+    if (daily.error) showNotice(daily.error)
+    return
+  }
   dailyOpen.value = false
   gift.value = claimed
 }
@@ -501,7 +504,7 @@ function goInside(place) {
       @toggle-notifications="toggleNotifications"
     />
     <!-- today's tasks and the streak, on the left under the weather chip -->
-    <DailyButton class="town__daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
+    <DailyButton v-if="daily.ready" class="town__daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
     <LocationChip
       class="town__location"
       :on="profile.discoverable"
