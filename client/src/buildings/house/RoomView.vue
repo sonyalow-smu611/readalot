@@ -313,7 +313,8 @@ watch(
 onMounted(() => {
   // the check-in and the reader's own shelf belong to their own room
   if (!props.visiting) {
-    if (!moodDoneToday()) moodStep.value = 'checkin'
+    // not over the walkthrough, which shows the room menu's Mood check-in instead
+    if (!moodDoneToday() && !user.guide) moodStep.value = 'checkin'
     bookshelf.load()
     loadRoom(user.profile.id)
   }

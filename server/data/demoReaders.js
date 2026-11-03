@@ -1,4 +1,4 @@
-// The seven demo readers who live in town (the Cafe, the friends' houses). scripts/seedReaders.js
+// The demo readers who live in town (the Cafe, the friends' houses). scripts/seedReaders.js
 // puts them in Supabase as real accounts; without Supabase (the e2e tests) the people route
 // serves them from here. Fictional people, approximate sample locations.
 // awayMinutes: how long ago they were last online when seeded (online within 5 minutes; a house
@@ -18,6 +18,10 @@ export const DEMO_BOOKS = [
   { id: "book-sapiens", title: "Sapiens", author: "Yuval Noah Harari", genre: "History" },
   { id: "book-gone-girl", title: "Gone Girl", author: "Gillian Flynn", genre: "Thriller" }
 ];
+
+// Pip, the neighbour every reader can befriend (the last reader below)
+export const NEIGHBOUR_ID = "00000000-0000-4000-8000-000000000208";
+export const NEIGHBOUR_USERNAME = "pip.ikda";
 
 // shelf statuses as user_books stores them
 const READ = "read";
@@ -147,5 +151,27 @@ export const DEMO_READERS = [
     awayMinutes: 100 * DAY,
     character: { base: "jay", hair: "curly", hairColour: "auburn", skin: "tone-9", top: "pinafore", topColour: "mustard", bottom: "skirt", bottomColour: "grey", shoes: "skaters", shoeColour: "grey", neck: "scarf-grey" },
     shelf: [["book-sapiens", READING], ["book-gone-girl", READ], ["book-pride", WANT]]
+  },
+  // Pip, everyone's neighbour (like Hay Day's Greg): always online, accepts a friend request straight
+  // away, pins a welcome note on your board when you become friends (services/friends.js) and
+  // answers your messages (database/neighbour.sql). The walkthrough introduces them.
+  {
+    id: NEIGHBOUR_ID,
+    username: NEIGHBOUR_USERNAME,
+    displayName: "Pip the Librarian",
+    tagline: "Town librarian. Ask me for a book!",
+    neighborhood: "IKDA Town",
+    lat: 1.3,
+    lng: 103.85,
+    favoriteGenres: ["Fantasy", "Mystery", "Science Fiction", "Romance"],
+    awayMinutes: 0,
+    character: { base: "rex", hair: "bun", hairColour: "auburn", skin: "tone-3", top: "fuzzy", topColour: "sage", bottom: "baggy", bottomColour: "slate", shoes: "trainers", shoeColour: "ink", neck: "scarf-grey" },
+    shelf: [["book-hobbit", READ], ["book-project-hail", READING], ["book-pride", READ], ["book-secret-history", WANT]],
+    furniture: furnished(NEIGHBOUR_USERNAME, [
+      { id: "chair-wingback", zone: "chair", x: 0.28 },
+      { id: "frame-botanical", zone: "wall", x: 0.36 },
+      { id: "plant-monstera", zone: "room", x: 0.15 },
+      { id: "cat-ginger", zone: "room", x: 0.5 }
+    ])
   }
 ];

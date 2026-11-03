@@ -176,12 +176,12 @@ onBeforeUnmount(() => {
 <template>
   <div class="town-map">
     <div ref="host" class="town-map__canvas" aria-hidden="true"></div>
-    <div v-if="spot" class="town-map__spot" :data-tour-spot="spot.id" :style="spotStyle" aria-hidden="true"></div>
+    <div v-if="spot" class="town-map__spot" :data-tour-spot="spot.id" :data-tour-mask="`/town/buildings/${spot.art}.png`" :style="spotStyle" aria-hidden="true"></div>
     <p v-if="state === 'loading'" class="town-map__state">Loading the town…</p>
     <p v-else-if="state === 'error'" class="town-map__state" role="alert">
       The town map could not load. Check your connection and refresh, or use Places to go straight to a building.
     </p>
-    <div v-if="state === 'ready'" class="town-map__zoom">
+    <div v-if="state === 'ready'" class="town-map__zoom" data-tour="town-zoom">
       <button
         type="button"
         class="btn btn-chip btn-icon px-sign town-map__follow"

@@ -12,6 +12,7 @@ const THEME_OF = {
   'ayaan.pages': 'night-sky',
   'sofia.shelves': 'tea-room',
   'noah.bookmarks': 'reading-den',
+  'pip.ikda': 'tea-room',
 }
 
 function shelfBook(book) {

@@ -17,5 +17,11 @@ export const env = {
   NYT_BOOKS_API_KEY: process.env.NYT_BOOKS_API_KEY,
   WIKIMEDIA_ENTERPRISE_USERNAME: process.env.WIKIMEDIA_ENTERPRISE_USERNAME,
   WIKIMEDIA_ENTERPRISE_PASSWORD: process.env.WIKIMEDIA_ENTERPRISE_PASSWORD,
+  // Demo sign-in: emails on these domains skip the emailed code (the code is always 111111). Unset
+  // means the demo domain; set it empty to turn the feature off. See routes/demoAuth.js.
+  DEMO_CODE_DOMAINS: (process.env.DEMO_CODE_DOMAINS ?? "demo.ikda.app")
+    .split(",")
+    .map((domain) => domain.trim().toLowerCase())
+    .filter(Boolean),
   HAS_SUPABASE: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
 };

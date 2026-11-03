@@ -5,7 +5,7 @@
   that shop's search for the book in a new tab (services/bookShops.js).
 -->
 <template>
-  <div class="where">
+  <div class="where" data-tour="book-where">
     <button
       type="button"
       class="btn btn-secondary where__toggle"

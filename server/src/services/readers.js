@@ -1,13 +1,18 @@
 // Other readers, as the Cafe, the town and reader profiles show them: discoverable profiles with
 // the books on their shelves. Without Supabase the demo readers in data/demoReaders.js stand in.
 // Friends are in friends.js (the friendships table).
-import { DEMO_BOOKS, DEMO_READERS } from "../../data/demoReaders.js";
+import { DEMO_BOOKS, DEMO_READERS, NEIGHBOUR_ID } from "../../data/demoReaders.js";
 import { env } from "./env.js";
 import { supabase } from "./supabase.js";
 
 const MINUTE_MS = 60 * 1000;
 // pins show a general area, not a home
 const approximate = (value) => (value == null ? null : Number(Number(value).toFixed(2)));
+
+// When a reader was last online. Pip, the neighbour, is always online.
+export function lastSeen(profile) {
+  return profile.id === NEIGHBOUR_ID ? new Date().toISOString() : profile.last_active_at || null;
+}
 
 // { id, userId, username, displayName, initials, tagline, neighborhood, lat, lng, favoriteGenres,
 //   character, lastSeenAt, books: [{ id, title, author, genre, status }] }. id is what links to
@@ -26,7 +31,7 @@ function toReader(profile, books) {
     lng: approximate(profile.location_lng),
     favoriteGenres: profile.favorite_genres || [],
     character: profile.character || null,
-    lastSeenAt: profile.last_active_at || null,
+    lastSeenAt: lastSeen(profile),
     books
   };
 }

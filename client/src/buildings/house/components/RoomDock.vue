@@ -173,7 +173,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
     </div>
 
     <div v-show="open" ref="menu" class="dock__menu">
-      <button type="button" class="btn btn-secondary dock__item" @click="$emit('mood')">
+      <button type="button" class="btn btn-secondary dock__item" data-tour="menu-mood" @click="$emit('mood')">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
@@ -190,7 +190,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </button>
       <!-- nothing is bought or placed until the room's furniture has loaded, or the load would
            replace it -->
-      <button type="button" class="btn btn-secondary dock__item" :disabled="roomStatus !== 'ready'" @click="showInventory">
+      <button type="button" class="btn btn-secondary dock__item" data-tour="menu-inventory" :disabled="roomStatus !== 'ready'" @click="showInventory">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path
@@ -203,7 +203,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         </span>
         Inventory
       </button>
-      <button type="button" class="btn btn-accent dock__item" :disabled="roomStatus !== 'ready'" @click="showShop">
+      <button type="button" class="btn btn-accent dock__item" data-tour="menu-shop" :disabled="roomStatus !== 'ready'" @click="showShop">
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path

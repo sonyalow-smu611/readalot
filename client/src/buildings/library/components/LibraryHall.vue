@@ -14,6 +14,7 @@
     <div
       ref="scroller"
       class="hall__scroller"
+      data-tour="library-hall"
       role="region"
       tabindex="0"
       aria-label="The library hall. Swipe, drag or use the arrow keys to look around."
@@ -41,6 +42,7 @@
             data-hit
             class="hall__hit"
             data-place="desk"
+            data-tour="library-desk"
             type="button"
             aria-label="Help desk: search for any book"
             :style="boxStyle(desk)"
@@ -56,6 +58,8 @@
             data-hit
             class="hall__hit"
             data-place="scanner"
+            data-tour="library-scanner"
+            data-tour-mask="hall:scanner"
             type="button"
             aria-haspopup="dialog"
             :aria-expanded="scanning"
@@ -75,6 +79,8 @@
             :key="box.category"
             class="hall__hit"
             :data-place="box.category"
+            :data-tour="caseTour(box)"
+            :data-tour-mask="`hall:bookcase:${box.category}`"
             type="button"
             aria-haspopup="dialog"
             :aria-expanded="active === box.category"
@@ -115,7 +121,7 @@
       </div>
     </div>
 
-    <PlacesMenu class="hall__places" :groups="placeGroups" @go="goTo" />
+    <PlacesMenu class="hall__places" data-tour="library-places" :groups="placeGroups" @go="goTo" />
   </div>
 </template>
 
@@ -153,6 +159,8 @@ const canvas = ref(null)
 const drawable = canDraw()
 
 const cases = bookcases().map((box) => ({ ...box, meta: categoryByKey(box.category) }))
+// the walkthrough (lib/walkthrough.js) points at the Bestsellers and at the first genre's bookcase
+const caseTour = (box) => (box.category === 'bestsellers' ? 'library-bestsellers' : box === cases[1] ? 'library-genre' : null)
 const desk = deskBox()
 const scanner = scannerBox()
 

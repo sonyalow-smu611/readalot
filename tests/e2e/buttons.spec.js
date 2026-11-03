@@ -420,11 +420,12 @@ test.describe("shared components", () => {
   });
 });
 
-tourReader("the guide tour's card has pixel buttons", async ({ page }) => {
+tourReader("the walkthrough's speech bubble has pixel buttons", async ({ page }) => {
   await mockWeather(page);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Welcome to Readalot Town" })).toBeVisible({ timeout: 15000 });
-  await expect.poll(() => offLook(page.locator(".guide__card"))).toEqual([]);
+  await expect(page.locator(".guide__bubble")).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect.poll(() => offLook(page.locator(".guide__bubble"))).toEqual([]);
 });
 
 // --- The buildings (pixel-buttons 03-06) -------------------------------------------------------
