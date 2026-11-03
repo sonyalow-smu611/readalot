@@ -58,9 +58,20 @@ export function watchAuth(onSession) {
   return () => data.subscription.unsubscribe()
 }
 
-export async function beginRegister(email, password) {
+// A username a reader may pick: 3 to 20 lowercase letters, numbers, dots and underscores
+// (database/chosen_usernames.sql checks the same).
+export const USERNAME_PATTERN = /^[a-z0-9._]{3,20}$/
+
+// Whether nobody has this username yet: { data: true | false } (database/chosen_usernames.sql).
+export async function usernameFree(username) {
   if (!supabase) return missing()
-  const created = await supabase.auth.signUp({ email, password })
+  return supabase.rpc('readalot_username_free', { name: username })
+}
+
+// The username is kept on the account until Welcome makes the profile, which takes it.
+export async function beginRegister(email, password, username) {
+  if (!supabase) return missing()
+  const created = await supabase.auth.signUp({ email, password, options: { data: { username } } })
   if (created.error) return created
   const identities = created.data.user?.identities
   if (Array.isArray(identities) && identities.length === 0) {

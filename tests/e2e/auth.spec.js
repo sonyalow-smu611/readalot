@@ -31,11 +31,26 @@ test.describe("log in and register", () => {
   test("register checks the two passwords match", async ({ page }) => {
     await page.getByRole("link", { name: "Need a card? Register" }).click();
     await expect(page.getByRole("heading", { name: "Create your card" })).toBeVisible();
+    await page.getByLabel("Username").fill("new.reader");
     await page.getByLabel("Email").fill("new@readalot.test");
     await page.getByLabel("Password", { exact: true }).fill("secret1");
     await page.getByLabel("Confirm password").fill("secret2");
     await page.getByRole("button", { name: "Register" }).click();
     await expect(page.getByRole("alert")).toHaveText("Those passwords do not match.");
+  });
+
+  test("register asks for a username and turns away one that breaks the rules", async ({ page }) => {
+    await page.getByRole("link", { name: "Need a card? Register" }).click();
+    const name = page.getByLabel("Username");
+    // typed in capitals with a space: it becomes lowercase, with a dot
+    await name.fill("Alex Reads");
+    await expect(name).toHaveValue("alex.reads");
+    await name.fill("al");
+    await page.getByLabel("Email").fill("new@readalot.test");
+    await page.getByLabel("Password", { exact: true }).fill("secret1");
+    await page.getByLabel("Confirm password").fill("secret1");
+    await page.getByRole("button", { name: "Register" }).click();
+    await expect(page.getByRole("alert")).toHaveText("Usernames are 3 to 20 lowercase letters, numbers, dots or underscores.");
   });
 
   test("a wrong password is turned away", async ({ page }) => {
