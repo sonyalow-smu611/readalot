@@ -465,3 +465,137 @@ test.describe("notes on the notice board", () => {
     }
   });
 });
+
+test.describe("knocking on the door", () => {
+  const door = (page, state) => page.getByRole("img", { name: `The door is ${state}` });
+
+  // Holds back every request to `url` until the returned function is called.
+  async function holdBack(page, url) {
+    let release;
+    const held = new Promise((resolve) => (release = resolve));
+    await page.route(url, async (route) => {
+      await held;
+      await route.fallback();
+    });
+    return release;
+  }
+
+  // Remembers whether the door was ever open, however briefly.
+  async function watchTheDoor(page) {
+    await page.addInitScript(() => {
+      new MutationObserver(() => {
+        if (document.querySelector('[aria-label="The door is open"]')) window.doorOpened = true;
+      }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-label"] });
+    });
+  }
+  const doorOpened = (page) => page.evaluate(() => window.doorOpened === true);
+
+  test("the door is shut and the words say so while the readers load", async ({ page }) => {
+    await holdBack(page, "**/api/people");
+    await page.goto("/people/emma.reads/room");
+    await expect(door(page, "shut")).toBeVisible();
+    await expect(page.getByRole("status")).toHaveText("Knocking on the door");
+  });
+
+  test("the words use the reader's name when it's already known", async ({ page }) => {
+    await page.goto("/cafe");
+    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).press("Enter");
+    const card = page.getByRole("dialog", { name: "Meet Emma Tan" });
+    await expect(card).toBeVisible({ timeout: 15000 });
+    await holdBack(page, "**/api/rooms/*/furniture");
+    await card.getByRole("link", { name: "Visit Emma's room" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Knocking on" })).toHaveText("Knocking on Emma's door");
+  });
+
+  test("the door fits a narrow phone with no sideways scrolling", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await holdBack(page, "**/api/people");
+    await page.goto("/people/emma.reads/room");
+    await expect(door(page, "shut")).toBeInViewport({ ratio: 1 });
+    const scrollsSideways = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(scrollsSideways).toBe(false);
+  });
+
+  test("the Daily button doesn't cover the way back while knocking", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 780 });
+    await page.goto("/people/emma.reads");
+    const visitRoom = page.getByRole("link", { name: "Visit Emma's room" });
+    await expect(visitRoom).toBeVisible();
+    await holdBack(page, "**/api/rooms/*/furniture");
+    await visitRoom.click();
+
+    const back = page.getByRole("link", { name: "Back to the Cafe" });
+    const daily = page.getByRole("button", { name: /^Daily tasks/ });
+    await expect(door(page, "shut")).toBeVisible();
+    await expect.poll(async () => {
+      const [left, chip] = [await back.boundingBox(), await daily.boundingBox()];
+      return chip.y >= left.y + left.height;
+    }).toBe(true);
+  });
+
+  test("the door opens only once the room is ready, then the room appears", async ({ page }) => {
+    const release = await holdBack(page, "**/api/people");
+    await page.goto("/people/emma.reads/room");
+    await expect(door(page, "shut")).toBeVisible();
+    await expect(door(page, "open")).toHaveCount(0);
+    await expect(roomOf(page, "Emma")).toHaveCount(0);
+
+    release();
+    await expect(door(page, "open")).toBeVisible();
+    await expect(roomOf(page, "Emma")).toBeVisible();
+    await expect(door(page, "open")).toHaveCount(0);
+  });
+
+  test("going back while knocking stays on the Cafe, with no room appearing", async ({ page }) => {
+    const release = await holdBack(page, "**/api/people");
+    await page.goto("/people/emma.reads/room");
+    await page.getByRole("link", { name: "Back to the Cafe" }).click();
+    await expect(page).toHaveURL(/\/cafe$/);
+
+    release();
+    await expect(page.getByRole("button", { name: /^Walk to Emma Tan/ })).toBeAttached({ timeout: 15000 });
+    await expect(roomOf(page, "Emma")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/cafe$/);
+  });
+
+  test("a room that can't be fetched keeps the door shut, and Try again knocks again", async ({ page }) => {
+    await watchTheDoor(page);
+    const fail = (route) => route.fulfill({ status: 500, json: { error: "The readers are out" } });
+    await page.route("**/api/people", fail);
+    await page.route("**/api/people/emma.reads", fail);
+    await page.goto("/people/emma.reads/room");
+    await expect(page.getByRole("alert")).toContainText("The readers are out");
+    expect(await doorOpened(page)).toBe(false);
+
+    await page.unroute("**/api/people", fail);
+    await page.unroute("**/api/people/emma.reads", fail);
+    const release = await holdBack(page, "**/api/people");
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(door(page, "shut")).toBeVisible();
+
+    release();
+    await expect(roomOf(page, "Emma")).toBeVisible();
+    expect(await doorOpened(page)).toBe(true);
+  });
+
+  test("a reader who doesn't exist never opens the door", async ({ page }) => {
+    await watchTheDoor(page);
+    await page.goto("/people/reader-nobody/room");
+    await expect(page.getByText("We couldn't find that reader.")).toBeVisible();
+    expect(await doorOpened(page)).toBe(false);
+  });
+
+  test("with reduced motion the door stays still and the room comes straight in", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await watchTheDoor(page);
+    const release = await holdBack(page, "**/api/people");
+    await page.goto("/people/emma.reads/room");
+    await expect(page.getByRole("status")).toHaveText("Knocking on the door");
+    const moving = await door(page, "shut").evaluate((art) => art.parentElement.getAnimations({ subtree: true }).length);
+    expect(moving).toBe(0);
+
+    release();
+    await expect(roomOf(page, "Emma")).toBeVisible();
+    expect(await doorOpened(page)).toBe(false);
+  });
+});

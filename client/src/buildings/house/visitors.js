@@ -36,6 +36,14 @@ async function furnitureOf(readerId) {
   }
 }
 
+const firstNameOf = (reader) => reader.displayName.split(' ')[0]
+
+// A reader's first name, if the people store already has them: '' when it doesn't yet.
+export function knownFirstName(id) {
+  const reader = usePeopleStore().find(id)
+  return reader ? firstNameOf(reader) : ''
+}
+
 // A reader's room: { id, name, firstName, books, currentBook, furniture, theme }, or null when there's
 // no such reader. Throws when the reader can't be fetched.
 export async function readerRoom(id) {
@@ -45,7 +53,7 @@ export async function readerRoom(id) {
   return {
     id: reader.id,
     name: reader.displayName,
-    firstName: reader.displayName.split(' ')[0],
+    firstName: firstNameOf(reader),
     books,
     currentBook: books.find((book) => book.status === 'reading') ?? null,
     furniture: await furnitureOf(reader.id),
