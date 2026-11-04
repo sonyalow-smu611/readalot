@@ -1,7 +1,7 @@
 <script setup>
 // AI-assisted café viewport scaffold. Review camera and interaction logic with your team.
-// Wide desktop: show the whole world. Narrow windows: NEVER shrink the world;
-// instead show a clipped viewport that can be dragged or followed.
+// Desktop fits the entire cafe. Narrow screens show a full-height, fixed-aspect-ratio
+// scene that scrolls HORIZONTALLY only; click-to-walk scrolls to follow the avatar.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { SPAWN, SEATS, WALK_SPEED, WORLD, findCafePath } from '../cafeNavigation.js'
 
@@ -20,11 +20,19 @@ const camera = ref({ x: 0, y: 0, scaleX: 1, scaleY: 1 })
 const walkingName = ref('')
 const walking = ref(false)
 const facingLeft = ref(false)
-const canPan = ref(false)
+const nativeScroll = ref(false)
 const worldStyle = computed(() => ({
   width: `${WORLD.width}px`,
   height: `${WORLD.height}px`,
-  transform: `translate3d(${camera.value.x}px,${camera.value.y}px,0) scale(${camera.value.scaleX},${camera.value.scaleY})`,
+  transform: nativeScroll.value
+    ? `scale(${camera.value.scaleX})`
+    : `translate3d(${camera.value.x}px,${camera.value.y}px,0) scale(${camera.value.scaleX})`,
+}))
+// CSS transforms do not affect an element's scrollable size, so this wrapper
+// reserves the *scaled* pixel width for native horizontal scrolling.
+const stageStyle = computed(() => ({
+  width: nativeScroll.value ? `${WORLD.width * camera.value.scaleX}px` : '100%',
+  height: nativeScroll.value ? `${WORLD.height * camera.value.scaleX}px` : '100%',
 }))
 const playerStyle = computed(() => ({ left: `${player.value.x}px`, top: `${player.value.y}px` }))
 
@@ -33,7 +41,6 @@ let frameId = 0
 let lastFrame = 0
 let path = []
 let destinationId = ''
-let drag = null
 let reduceMotion = false
 let vw = 0
 let vh = 0
@@ -50,50 +57,48 @@ function clampOffset(x, y) {
   }
 }
 function followPlayer(seconds = 1) {
-  if (!canPan.value || drag) return
-  const target = clampOffset(
-    vw * .5 - player.value.x * camera.value.scaleX,
-    vh * .68 - player.value.y * camera.value.scaleY,
-  )
+  if (!nativeScroll.value) return
+  const el = viewport.value
+  if (!el) return
+  const scale = camera.value.scaleX
+  const targetX = clamp(player.value.x * scale - vw * .5, 0, Math.max(0, WORLD.width * scale - vw))
   const blend = reduceMotion ? 1 : 1 - Math.exp(-Math.min(1, seconds) * 8)
-  camera.value = {
-    ...camera.value,
-    x: camera.value.x + (target.x - camera.value.x) * blend,
-    y: camera.value.y + (target.y - camera.value.y) * blend,
-  }
+  el.scrollLeft += (targetX - el.scrollLeft) * blend
 }
 function measure() {
-  if (!viewport.value) return
-  vw = viewport.value.clientWidth
-  vh = viewport.value.clientHeight
+  const el = viewport.value
+  if (!el) return
+  vw = el.clientWidth
+  vh = el.clientHeight
   if (!vw || !vh) return
 
-  // Once the browser becomes narrower than the scene, preserve the 1200px
-  // world at its normal 1:1 size. Resize the *viewport*, not the furniture.
-  // This prevents horizontal squashing on small laptops and phones.
-  const fitsAtNativeSize = vw >= WORLD.width && vh >= WORLD.height
-  if (fitsAtNativeSize) {
-    // Only enlarge when the entire world can remain visible.
-    // Use one uniform scale for both axes so sprites stay proportional.
+  // Only the available HEIGHT determines mobile scale. Never squeeze the
+  // entire cafe into the phone width; instead reveal more via horizontal swipe.
+  const horizontalMode = vw < 1100
+  const wasHorizontal = nativeScroll.value
+  if (horizontalMode) {
+    const scale = vh / WORLD.height
+    camera.value = { x: 0, y: 0, scaleX: scale, scaleY: scale }
+    nativeScroll.value = true
+    nextTick(() => {
+      const current = viewport.value
+      if (!current) return
+      if (!wasHorizontal) {
+        current.scrollLeft = clamp(player.value.x * scale - current.clientWidth / 2, 0,
+          Math.max(0, WORLD.width * scale - current.clientWidth))
+      }
+      current.scrollTop = 0
+    })
+  } else {
+    // Larger laptops display the entire scene, scaled uniformly.
     const scale = Math.min(vw / WORLD.width, vh / WORLD.height)
+    nativeScroll.value = false
     camera.value = {
       x: (vw - WORLD.width * scale) / 2,
       y: (vh - WORLD.height * scale) / 2,
       scaleX: scale,
       scaleY: scale,
     }
-    canPan.value = false
-  } else {
-    // Any smaller viewport is simply a window into the SAME unscaled world.
-    // On resize, keep the avatar in view rather than zooming the room.
-    const scale = 1
-    camera.value = { ...camera.value, scaleX: scale, scaleY: scale }
-    canPan.value = true
-    const offset = clampOffset(
-      vw * .5 - player.value.x * scale,
-      vh * .68 - player.value.y * scale,
-    )
-    camera.value = { ...camera.value, ...offset }
   }
 }
 function clearWalk() {
@@ -156,29 +161,6 @@ function animationFrame(now) {
   }
   frameId = requestAnimationFrame(animationFrame)
 }
-function startPan(event) {
-  if (event.button !== 0 || event.target.closest('button')) return
-  // Pan whenever the world extends past the viewport, regardless of device.
-  if (!canPan.value) return
-  drag = { id: event.pointerId, x: event.clientX, y: event.clientY }
-  viewport.value?.setPointerCapture(event.pointerId)
-}
-function pan(event) {
-  if (!drag || drag.id !== event.pointerId) return
-  const dx = event.clientX - drag.x
-  const dy = event.clientY - drag.y
-  drag.x = event.clientX
-  drag.y = event.clientY
-  const offset = clampOffset(camera.value.x + dx, camera.value.y + dy)
-  camera.value = { ...camera.value, ...offset }
-}
-function endPan(event) {
-  if (!drag || drag.id !== event.pointerId) return
-  if (viewport.value?.hasPointerCapture(event.pointerId)) {
-    viewport.value.releasePointerCapture(event.pointerId)
-  }
-  drag = null
-}
 watch(() => props.readers.map((r) => r.id).join('|'), () => {
   if (destinationId && !props.readers.some((reader) => reader.id === destinationId)) clearWalk()
 })
@@ -197,8 +179,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section ref="viewport" class="cafe-viewport" aria-label="Reading café. Select a reader to walk to their table. Drag to explore on mobile."
-    @pointerdown="startPan" @pointermove="pan" @pointerup="endPan" @pointercancel="endPan" @lostpointercapture="endPan">
+  <section ref="viewport" class="cafe-viewport" :class="{ 'cafe-viewport--scroll': nativeScroll }" aria-label="Reading café. Select a reader to walk to their table. Scroll to explore on smaller screens.">
+    <div class="cafe-viewport__stage" :style="stageStyle">
     <div class="cafe-viewport__world" :style="worldStyle">
       <img class="cafe-viewport__background" :src="image" alt="" draggable="false" />
       <button v-for="(reader,index) in readers" :key="reader.id" type="button"
@@ -217,14 +199,17 @@ onBeforeUnmount(() => {
         <img :src="playerImage" :style="{ transform: facingLeft ? 'scaleX(-1)' : 'none' }" alt="" draggable="false" />
       </div>
     </div>
+    </div>
     <p v-if="walkingName" class="cafe-viewport__status" role="status">Walking to {{ walkingName }}…</p>
-    <p v-else-if="canPan" class="cafe-viewport__status">Drag to explore · Tap a reader</p>
-    <p v-else class="cafe-viewport__status">Click a reader to walk over</p>
   </section>
 </template>
 
 <style scoped>
-.cafe-viewport{position:relative;width:100%;height:100%;overflow:hidden;background:#cb9667;touch-action:none;user-select:none;cursor:default}
+.cafe-viewport{position:relative;width:100%;height:100%;overflow:hidden;background:#cb9667;user-select:none;cursor:default}
+.cafe-viewport--scroll{overflow-x:auto;overflow-y:hidden;touch-action:pan-x;overscroll-behavior-x:contain;overscroll-behavior-y:none;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cafe-viewport--scroll::-webkit-scrollbar{display:none}
+.cafe-viewport__stage{position:relative;height:100%;width:100%}
+.cafe-viewport--scroll .cafe-viewport__world{position:absolute;inset:0 auto auto 0;will-change:transform}
 .cafe-viewport__world{position:absolute;inset:0 auto auto 0;transform-origin:top left;will-change:transform}
 .cafe-viewport__background,.cafe-viewport__foreground{position:absolute;inset:0;width:1200px;height:600px;image-rendering:pixelated;pointer-events:none}
 .cafe-viewport__foreground{z-index:3}
@@ -240,7 +225,7 @@ onBeforeUnmount(() => {
 .cafe-viewport__you{border:2px solid #654632;background:#fff9e9;border-radius:5px;padding:2px 6px;color:#342922;font:800 11px system-ui,sans-serif}
 .cafe-viewport__player--walking{animation:cafe-steps 240ms ease-in-out infinite alternate}
 @keyframes cafe-steps{from{translate:0 0}to{translate:0 -2px}}
-.cafe-viewport__status{position:absolute;z-index:8;left:50%;bottom:10px;transform:translateX(-50%);margin:0;max-width:90%;padding:7px 12px;border:2px solid #66503d;border-radius:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff9ecf2;color:#493629;font:700 12px system-ui,sans-serif;pointer-events:none}
+.cafe-viewport__status {position: fixed;z-index: 8;bottom: 20px;left: 50%;transform: translateX(-50%);width: max-content;max-width: calc(100% - 32px);margin: 0;padding: 8px 16px;background: #fff9ecf2;color: #493629;border: 2px solid #66503d;border-radius: 9px;font: 700 12px system-ui, sans-serif;text-align: center;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;pointer-events: none;}
 @media(max-width:640px){.cafe-viewport__status{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.cafe-viewport__player--walking{animation:none}}
 </style>
