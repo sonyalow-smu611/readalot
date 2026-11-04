@@ -3,11 +3,12 @@
 // Someone else's room, opened from their profile in the Cafe: the same room as My Room, drawn
 // from the same template, with their books and furniture in it. Visitors look around; they can't
 // change anything.
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import RoomView from './RoomView.vue'
-import { readerRoom } from './visitors.js'
+import KnockingDoor from './components/KnockingDoor.vue'
+import { knownFirstName, readerRoom } from './visitors.js'
 import { PLACES } from '@/town/places.js'
 import { useProgressStore } from '@/stores/progress.js'
 
@@ -17,20 +18,29 @@ const reader = ref(null)
 const loading = ref(true)
 const error = ref('')
 const progress = useProgressStore()
+// true once the door has opened and the room can show
+const entered = ref(false)
+const knockingOn = computed(() => reader.value?.firstName ?? knownFirstName(route.params.id))
 
 async function load(id) {
   loading.value = true
   error.value = ''
+  reader.value = null
+  entered.value = false
+  let room = null
+  let failure = ''
   try {
-    reader.value = await readerRoom(id)
-    // visiting a reader's room earns XP, once per reader a day
-    if (reader.value) progress.earn('visit_room', reader.value.id)
+    room = await readerRoom(id)
   } catch (err) {
-    reader.value = null
-    error.value = err.message || "Couldn't load their room."
-  } finally {
-    loading.value = false
+    failure = err.message || "Couldn't load their room."
   }
+  // they've left, or gone on to someone else's room, while this one loaded
+  if (id !== route.params.id) return
+  reader.value = room
+  error.value = failure
+  loading.value = false
+  // visiting a reader's room earns XP, once per reader a day
+  if (room) progress.earn('visit_room', room.id)
 }
 
 watch(() => route.params.id, load, { immediate: true })
@@ -38,7 +48,8 @@ watch(() => route.params.id, load, { immediate: true })
 
 <template>
   <BuildingShell
-    v-if="reader"
+    v-if="reader && entered"
+    class="visit-arrive"
     :title="`${reader.firstName}'s Room`"
     subtitle="Visiting"
     :owner="reader.name"
@@ -49,8 +60,8 @@ watch(() => route.params.id, load, { immediate: true })
     <RoomView :key="reader.id" :visiting="reader" :style="{ '--house-accent': place.accent }" />
   </BuildingShell>
 
-  <BuildingShell v-else-if="loading" title="Visiting" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
-    <p class="visit-missing" role="status">Knocking on the door…</p>
+  <BuildingShell v-else-if="loading || reader" title="Visiting" :owner="place.owner" flush :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+    <KnockingDoor :name="knockingOn" :ready="Boolean(reader)" @opened="entered = true" />
   </BuildingShell>
 
   <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
@@ -69,6 +80,16 @@ watch(() => route.params.id, load, { immediate: true })
 </template>
 
 <style scoped>
+.visit-arrive {
+  animation: visit-arrive 0.2s ease;
+}
+
+@keyframes visit-arrive {
+  from {
+    opacity: 0;
+  }
+}
+
 .visit-missing {
   padding: 18px;
   border: 1px solid var(--rl-line);

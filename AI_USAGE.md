@@ -852,3 +852,23 @@ Written by Codex at Aalric's request after a live README-only walkthrough simula
 | Professor guide reliability | `README.md` | Added a demo-state preflight so shared-account drift does not block grading, updated walkthrough wording from 52 to the observed 34-stop flow, and changed seeded-state-specific lines (counts/match values/coins) to resilient instructions that still work when demo data has changed |
 | Master E2E guide | `docs/E2E_GUIDE.md` | Updated walkthrough documentation to the observed 34-stop structure, refreshed status notes to reflect the professor-pass verification, and aligned the walkthrough index description |
 | Walkthrough scenarios | `docs/e2e/02-walkthrough.md` | Rewrote TOUR scenarios to match the current walkthrough UX (`1 of 34`, `Skip this step`, section boundaries, and completion behaviour) with updated pass criteria |
+
+### My Shelf header on phones (AI-generated)
+
+Written by Claude at Sonya's request. Layout and styling only; no business logic.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Sign | `client/src/buildings/house/components/ShelfSign.vue`, `client/src/buildings/house/ShelfView.vue`, `client/src/buildings/house/bookcase.js` | A gold board in pixel letters with a pixel book, replacing the plain sign and its room colour. On a phone it lines up with the Daily button, has more room above the search, and a reader's name is smaller and ends in "…" when too long |
+| Back button | `client/src/components/shared/BuildingShell.vue` | An optional `backShort` prop: a shorter label on phones, with the full label still read out. Used only on a friend's shelf |
+| Tests | `tests/e2e/my-shelf.spec.js` | The sign's look, its line-up and spacing on a phone, a friend's Back button, and long names |
+
+### Knocking door before a friend's room (AI-generated)
+
+Written by Claude at Sonya's request. A loading animation; the only logic is when the door opens and which room shows.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Door | `client/src/buildings/house/components/KnockingDoor.vue` | A pixel door on its own that knocks while the room loads, swings open onto a lamplit room, and lasts at least 1.5 seconds. Stays still with reduced motion |
+| Visit page | `client/src/buildings/house/VisitView.vue`, `client/src/buildings/house/visitors.js` | Shows the door until it has opened, then fades in the room. Uses the reader's first name when the people store has it. A load that finishes after the reader has left or moved on is ignored |
+| Tests | `tests/e2e/visit-room.spec.js` | The words, the door opening only when the room is ready, phone fit, the Daily button, going back, failed loads, unknown readers and reduced motion |

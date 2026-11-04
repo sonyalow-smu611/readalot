@@ -222,6 +222,70 @@ test.describe("My Shelf's header, like an opened Library bookcase", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(480);
   });
 
+  test("the sign is a gold board with a pixel book, unlike the buttons around it", async ({ page }) => {
+    await page.goto("/house/shelf");
+    await expect(sign(page).locator("svg")).toBeVisible();
+    await expect(sign(page)).toHaveCSS("background-color", "rgb(242, 201, 76)");
+    await expect(sign(page)).toHaveCSS("color", "rgb(122, 26, 32)");
+    await expect(sign(page)).toHaveCSS("font-family", /Silkscreen/);
+
+    const fill = (part) => part.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const buttons = [back(page), modes(page).getByRole("button", { name: "Spines" }), modes(page).getByRole("button", { name: "Covers" })];
+    for (const button of buttons) expect(await fill(button)).not.toBe("rgb(242, 201, 76)");
+  });
+
+  test("on a phone the sign lines up with the Daily button, and the search has room below them", async ({ page }) => {
+    const daily = page.getByRole("button", { name: /^Daily tasks/ });
+    await page.goto("/house/shelf");
+    await expect(daily).toBeVisible({ timeout: 20_000 });
+    // an iPhone; turning to this size also puts the Daily button in its place
+    await page.setViewportSize({ width: 390, height: 844 });
+    const b = await back(page).boundingBox();
+    await expect.poll(async () => (await daily.boundingBox()).y).toBeGreaterThanOrEqual(b.y + b.height);
+
+    const [d, s, search] = await Promise.all([daily, sign(page), page.getByRole("search")].map((part) => part.boundingBox()));
+    expect(Math.abs(d.y + d.height / 2 - (s.y + s.height / 2))).toBeLessThanOrEqual(2);
+    expect(s.x).toBeGreaterThanOrEqual(d.x + d.width);
+    // past the Daily button's 7 px shadow, with space to spare
+    expect(search.y - (d.y + d.height)).toBeGreaterThanOrEqual(20);
+  });
+
+  test("on a small iPhone a friend's Back button says Back, clear of the switch, and still reads out whose room", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto("/people/sofia.shelves/room/shelf");
+    const link = page.getByRole("link", { name: "Back to Sofia's room" });
+    await expect(link).toHaveText("Back", { useInnerText: true });
+    const [b, m] = await Promise.all([link, modes(page)].map((part) => part.boundingBox()));
+    expect(b.x + b.width).toBeLessThan(m.x);
+
+    // a wider window has room for all of it
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(link).toHaveText("Back to Sofia's room", { useInnerText: true });
+  });
+
+  for (const name of ["Sofia Lim", "Bartholomew Lim", "Maximiliano-Alexander Lim"]) {
+    test(`on a phone ${name}'s sign stays clear of the Daily button`, async ({ page }) => {
+      const first = name.split(" ")[0];
+      await page.route("**/api/people**", async (route) => {
+        const response = await route.fetch();
+        const body = (await response.text()).replaceAll("Sofia Lim", name);
+        await route.fulfill({ response, body });
+      });
+      const daily = page.getByRole("button", { name: /^Daily tasks/ });
+      await page.goto("/people/sofia.shelves/room/shelf");
+      const heading = page.getByRole("heading", { level: 2, name: `${first}'s Shelf` });
+      await expect(heading).toBeVisible();
+      await expect(daily).toBeVisible({ timeout: 20_000 });
+      await page.setViewportSize({ width: 375, height: 667 });
+      await expect.poll(async () => (await daily.boundingBox()).y).toBeGreaterThan(50);
+
+      const [d, s] = await Promise.all([daily, heading].map((part) => part.boundingBox()));
+      expect(s.x).toBeGreaterThanOrEqual(d.x + d.width);
+      expect(s.x + s.width).toBeLessThanOrEqual(375);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    });
+  }
+
   test("opens on Spines; Covers turns the books face out, and Spines turns them back", async ({ page }) => {
     const books = await shelfBooks(page);
     const first = books.find((book) => book.status === "want_to_read");

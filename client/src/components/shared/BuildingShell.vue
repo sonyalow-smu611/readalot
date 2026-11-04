@@ -16,6 +16,8 @@ defineProps({
   // goes back to that building instead
   back: { type: [String, Object], default: () => ({ name: 'town' }) },
   backLabel: { type: String, default: 'Back to town' },
+  // what the button says on a phone when backLabel is too long for it; backLabel is still read out
+  backShort: { type: String, default: '' },
 })
 </script>
 
@@ -25,9 +27,10 @@ defineProps({
       <h1>{{ title }}</h1>
       <p>{{ subtitle ? `${subtitle} · ` : '' }}{{ owner }}</p>
     </div>
-    <RouterLink :to="back" class="btn btn-secondary building-shell__back">
+    <RouterLink :to="back" class="btn btn-secondary building-shell__back" :aria-label="backShort ? backLabel : undefined">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-      {{ backLabel }}
+      <span v-if="backShort" class="d-sm-none">{{ backShort }}</span>
+      <span :class="{ 'd-none d-sm-inline': backShort }">{{ backLabel }}</span>
     </RouterLink>
     <div :class="flush ? 'building-shell__page' : 'container py-3'">
       <slot />

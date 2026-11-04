@@ -16,6 +16,7 @@ import BuildingShell from '@/components/shared/BuildingShell.vue'
 import StateView from '@/components/StateView.vue'
 import BookPreviewModal from '@/components/BookPreviewModal.vue'
 import ShelfBookcase from '@/buildings/house/components/ShelfBookcase.vue'
+import ShelfSign from '@/buildings/house/components/ShelfSign.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
 import { readerRoom } from '@/buildings/house/visitors.js'
 import { bookcaseColours } from '@/buildings/house/bookcase.js'
@@ -57,10 +58,11 @@ const shell = computed(() => {
       owner: reader.name,
       back: { name: 'reader-house', params: { id: reader.id } },
       backLabel: `Back to ${reader.firstName}'s room`,
+      backShort: 'Back',
     }
   }
   if (visitingId) {
-    return { title: 'Shelf', sign: 'Shelf', subtitle: 'Visiting', owner: place.owner, back: { name: 'reader-house', params: { id: visitingId } }, backLabel: 'Back to their room' }
+    return { title: 'Shelf', sign: 'Shelf', subtitle: 'Visiting', owner: place.owner, back: { name: 'reader-house', params: { id: visitingId } }, backLabel: 'Back to their room', backShort: 'Back' }
   }
   return { title: place.name, sign: 'My Shelf', subtitle: 'My Shelf', owner: place.owner, back: { name: 'house' }, backLabel: 'Back to room' }
 })
@@ -156,7 +158,7 @@ onMounted(() => {
   <div
     ref="page"
     class="shelf-page"
-    :style="{ '--house-accent': place.accent, '--shelf-wall': colours.wall, '--shelf-sign': colours.sign }"
+    :style="{ '--house-accent': place.accent, '--shelf-wall': colours.wall }"
   >
     <BuildingShell
       v-if="!missing"
@@ -165,13 +167,14 @@ onMounted(() => {
       :owner="shell.owner"
       :back="shell.back"
       :back-label="shell.backLabel"
+      :back-short="shell.backShort"
       flush
     >
       <div class="my-shelf__frame">
         <header class="my-shelf__head">
           <!-- the shell's Back to room button floats over this cell -->
           <span class="my-shelf__back-space" aria-hidden="true" />
-          <h2 class="my-shelf__sign">{{ shell.sign }}</h2>
+          <ShelfSign class="my-shelf__sign" :text="shell.sign" :compact="Boolean(visitingId)" />
           <div class="my-shelf__modes" role="group" aria-label="Show the books by">
             <button
               v-for="option in MODES"
@@ -317,30 +320,21 @@ onMounted(() => {
   gap: 8px;
 }
 
-.my-shelf__sign {
-  margin: 0;
-  padding: 6px 14px;
-  border: 2px solid #1e1a24;
-  background: var(--shelf-sign, #f3eee0);
-  box-shadow: 3px 3px 0 #1e1a24;
-  color: #1e1a24;
-  font-family: var(--rl-font-title);
-  font-size: 24px;
-  font-weight: 400;
-  line-height: 1;
-  white-space: nowrap;
-}
-
 @media (max-width: 575.98px) {
+  /* the sign's row starts where the Daily button does and is as tall, so the two line up */
   .my-shelf__head {
     grid-template-columns: 1fr auto;
+    grid-template-rows: auto 46px;
+    gap: 8px 12px;
+    padding-bottom: 14px;
   }
 
   .my-shelf__sign {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: center;
-    font-size: 19px;
+    /* centred, and clear of the Daily button on its left */
+    max-width: calc(100% - 164px);
   }
 }
 

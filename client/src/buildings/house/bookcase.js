@@ -89,7 +89,6 @@ function darken(hex, amount) {
 export function bookcaseColours(theme) {
   return {
     wall: theme.wall,
-    sign: theme.skirting,
     wood: {
       frame: theme.floor,
       light: theme.floorLight,
