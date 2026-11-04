@@ -309,6 +309,7 @@ async function logout() {
               type="button"
               role="tab"
               class="btn btn-chip dock__tab"
+              :data-tour="`salon-${p.id}-tab`"
               :aria-selected="panel === p.id"
               aria-controls="salon-panel"
               @click="panel = p.id"
@@ -339,7 +340,7 @@ async function logout() {
                   @edit="startEdit"
                   @open-list="openList"
                 />
-                <LevelCard :xp="progress.xp" :level="progress.level" />
+                <LevelCard data-tour="profile-level" :xp="progress.xp" :level="progress.level" />
                 <FavouriteGenres :genres="user.profile.favouriteGenres" />
                 <CoinsCard :decor-count="decorCount" @shop="visitShop" />
                 <AboutYou
@@ -360,7 +361,10 @@ async function logout() {
                   :status="PRIVACY_ALERTS[privacyAlert]?.title ?? ''"
                   @toggle="toggleDiscoverable"
                 />
-                <SavedQuotes />
+                <SavedQuotes data-tour="profile-quotes" />
+                <button type="button" class="btn btn-secondary replay" data-tour="profile-replay" @click="user.replayGuide()">
+                  Replay the walkthrough
+                </button>
                 <button type="button" class="btn btn-secondary logout" data-tour="profile-logout" @click="confirmingLogout = true">
                   Log out
                 </button>
@@ -501,6 +505,12 @@ async function logout() {
   padding: 2px 6px 1.5rem 2px;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.replay {
+  display: block;
+  width: 100%;
+  margin: 16px 0 0;
 }
 
 .logout {

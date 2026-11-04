@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import AuthStage from '@/components/auth/AuthStage.vue'
-import { authConfigured, readPending, resendCode, verifyEmailCode } from '@/services/auth.js'
+import { DEMO_CODE, authConfigured, isDemoEmail, readPending, resendCode, verifyEmailCode } from '@/services/auth.js'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -133,6 +133,7 @@ async function resend() {
   <AuthStage v-if="pending" ref="stage" gaze="field" :hop="hop">
     <h1 class="h3 mb-1">Check your email</h1>
     <p class="text-muted mb-3">Enter the 6-digit code sent to {{ email }}.</p>
+    <p v-if="isDemoEmail(email)" class="preview-note">Demo account: no email is sent. Enter the code {{ DEMO_CODE }}.</p>
     <p v-if="!authConfigured()" class="preview-note">Any 6-digit code will continue while Supabase is not set up.</p>
     <form @submit.prevent="submit">
       <div class="hand" :class="{ 'is-done': sealed }" role="group" aria-label="Verification code">

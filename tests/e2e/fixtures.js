@@ -90,6 +90,25 @@ export async function nextPaint(page) {
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
 }
 
+// Waits for the town to be up. "Loading the town…" isn't on the page until the town is, so on its
+// own that wait can pass before anything has started: the map has to have started first. The day's
+// tasks open as the map comes up and close whatever else is open, so tests wait before tapping.
+export async function townReady(page) {
+  await expect.poll(() => page.evaluate(() => Boolean(window.__townScene?.you)), { timeout: 20_000 }).toBe(true);
+  await expect(page.getByText("Loading the town…")).toBeHidden({ timeout: 20_000 });
+}
+
+// The API with Supabase on, for the tests that need real friendships and locations (playwright.config.js).
+export const REAL_API = "http://127.0.0.1:3101";
+
+// Sends this page's API calls to it; every other test uses the API with the demo shelf.
+export async function useRealApi(page) {
+  await page.route(/^http:\/\/[^/]+\/api\//, (route) => {
+    const { pathname, search } = new URL(route.request().url());
+    return route.continue({ url: `${REAL_API}${pathname}${search}` });
+  });
+}
+
 // Waits until something has finished sliding in with its page: in the same place three reads in a
 // row, and not inside a page that is still coming in. Gives back where it rests.
 export async function standsStill(locator) {

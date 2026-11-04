@@ -20,10 +20,11 @@ const emit = defineEmits(['toggle-places', 'toggle-friends', 'toggle-notificatio
 <template>
   <header class="town-hud">
     <span class="town-hud__spacer"></span>
-    <NotificationsButton :unread="unread" :open="notificationsOpen" @toggle="emit('toggle-notifications')" />
+    <NotificationsButton data-tour="town-bell" :unread="unread" :open="notificationsOpen" @toggle="emit('toggle-notifications')" />
     <button
       type="button"
       class="btn btn-secondary px-sign town-hud__places"
+      data-tour="town-places"
       :aria-expanded="placesOpen"
       aria-controls="town-places"
       @click="emit('toggle-places')"
@@ -31,7 +32,7 @@ const emit = defineEmits(['toggle-places', 'toggle-friends', 'toggle-notificatio
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14" /></svg>
       Places
     </button>
-    <FriendsButton :online="friendsOnline" :requests="friendRequests" :open="friendsOpen" @toggle="emit('toggle-friends')" />
+    <FriendsButton data-tour="town-friends" :online="friendsOnline" :requests="friendRequests" :open="friendsOpen" @toggle="emit('toggle-friends')" />
   </header>
 </template>
 

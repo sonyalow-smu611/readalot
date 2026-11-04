@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthStage from '@/components/auth/AuthStage.vue'
-import { beginLogin, beginRegister } from '@/services/auth.js'
+import { USERNAME_PATTERN, beginLogin, beginRegister, usernameFree } from '@/services/auth.js'
 import { prefersReducedMotion } from '@/lib/motion'
 import { useUserStore } from '@/stores/user'
 
@@ -12,6 +12,7 @@ const user = useUserStore()
 const stage = ref(null)
 
 const email = ref('')
+const username = ref('')
 const password = ref('')
 const confirm = ref('')
 const showPassword = ref(false)
@@ -69,6 +70,19 @@ function fail(message) {
   stage.value?.shake()
 }
 
+// Lowercase as it is typed; spaces become dots.
+function typeUsername(event) {
+  username.value = event.target.value.toLowerCase().replace(/\s+/g, '.')
+}
+
+// Why this username can't be used, or '' when it can.
+async function usernameProblem(name) {
+  if (!USERNAME_PATTERN.test(name)) return 'Usernames are 3 to 20 lowercase letters, numbers, dots or underscores.'
+  const free = await usernameFree(name)
+  if (free.error) return "Couldn't check that username. Try again."
+  return free.data ? '' : 'That username is taken. Try another.'
+}
+
 async function submit() {
   error.value = ''
   ducked.value = false
@@ -81,8 +95,16 @@ async function submit() {
     return
   }
   busy.value = true
+  if (registerMode.value) {
+    const problem = await usernameProblem(username.value)
+    if (problem) {
+      busy.value = false
+      fail(problem)
+      return
+    }
+  }
   const result = registerMode.value
-    ? await beginRegister(email.value.trim(), password.value)
+    ? await beginRegister(email.value.trim(), password.value, username.value)
     : await beginLogin(email.value.trim(), password.value)
   busy.value = false
   if (result.error) {
@@ -114,6 +136,25 @@ async function submit() {
           @focus="focus('email')"
           @blur="blur('email')"
         />
+      </div>
+      <div v-if="registerMode" class="mb-3">
+        <label class="form-label" for="auth-username">Username</label>
+        <input
+          id="auth-username"
+          :value="username"
+          class="form-control"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
+          maxlength="20"
+          placeholder="e.g. alex.reads"
+          aria-describedby="auth-username-hint"
+          required
+          @input="typeUsername"
+          @focus="focus('username')"
+          @blur="blur('username')"
+        />
+        <p id="auth-username-hint" class="hint">Letters, numbers, dots or underscores. Other readers see it.</p>
       </div>
       <div class="mb-3">
         <label class="form-label" for="auth-password">Password</label>
@@ -172,6 +213,12 @@ async function submit() {
 </template>
 
 <style scoped>
+.hint {
+  margin: 4px 0 0;
+  color: var(--rl-muted);
+  font-size: 0.8rem;
+}
+
 .stage-error {
   margin: 0 0 12px;
   color: #8d2218;

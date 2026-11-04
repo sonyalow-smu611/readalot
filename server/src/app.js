@@ -3,6 +3,7 @@ import express from "express";
 
 import booksRouter from "./routes/books.js";
 import creaturesRouter from "./routes/creatures.js";
+import demoAuthRouter from "./routes/demoAuth.js";
 import friendsRouter from "./routes/friends.js";
 import nearbyRouter from "./routes/nearby.js";
 import peopleRouter from "./routes/people.js";
@@ -34,6 +35,7 @@ app.use("/api/quote", quoteRouter);
 app.use("/api/weather", weatherRouter);
 app.use("/api/time", timeRouter);
 app.use("/api/creatures", creaturesRouter);
+app.use("/api/demo-auth", demoAuthRouter);
 app.use("/api/people", peopleRouter);
 app.use("/api/nearby", nearbyRouter);
 app.use("/api/friends", friendsRouter);

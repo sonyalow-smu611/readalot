@@ -40,6 +40,8 @@ async function signInReader({ id, email, password, profile, tourSeen }) {
   if (profile) {
     const saved = await admin.from("profiles").upsert({
       id,
+      // its own, so readers made at the same moment in parallel never reach for the same free name
+      username: `e2e.${id.slice(0, 8)}`,
       display_name: profile.name,
       favorite_genres: profile.favouriteGenres ?? [],
       character: profile.character ?? null,
@@ -68,6 +70,7 @@ async function signInReader({ id, email, password, profile, tourSeen }) {
 // one reader. A database write, not a sign-in, so it doesn't count towards Supabase's auth limit.
 export async function resetProfile(id, profile) {
   await admin.from("profile_private").delete().eq("id", id);
+  await admin.from("daily_state").delete().eq("reader", id);
   await admin.from("xp_events").delete().eq("reader", id);
   await admin.from("friendships").delete().or(`requester.eq.${id},addressee.eq.${id}`);
   await admin.from("reader_areas").delete().eq("reader", id);
@@ -88,6 +91,29 @@ export async function resetProfile(id, profile) {
     coins: 480,
   });
   if (saved.error) throw saved.error;
+  // nothing read or cleared yet (database/notifications_seen.sql)
+  await admin.from("profiles").update({ notifications_read_at: null, notifications_cleared_at: null }).eq("id", id);
+}
+
+// The date in Singapore, `offset` days on, as the daily tasks count days: 'YYYY-MM-DD'.
+export function sgDay(offset = 0) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date(Date.now() + offset * 24 * 60 * 60 * 1000));
+}
+
+// Sets a reader's daily tasks (database/daily_tasks.sql), as town/daily.js names them:
+// { day, done, streak, lastClaim, freezes, notice, shown }. Anything left out starts fresh, today.
+export async function setDaily(id, state = {}) {
+  const { error } = await admin.from("daily_state").upsert({
+    reader: id,
+    day: state.day ?? sgDay(),
+    done: state.done ?? [],
+    streak: state.streak ?? 0,
+    last_claim: state.lastClaim ?? null,
+    freezes: state.freezes ?? 2,
+    notice: state.notice ?? null,
+    shown: state.shown ?? null,
+  });
+  if (error) throw error;
 }
 
 // Makes demo readers (by username) a reader's friends, each online if `online` lists them.
@@ -105,7 +131,13 @@ export async function befriend(id, usernames, online = []) {
     }))
   );
   if (saved.error) throw saved.error;
-  await admin.from("profiles").update({ last_active_at: new Date().toISOString() }).in("username", online);
+  await markActive(online);
+}
+
+// These readers were active just now. Nearby shows the most recently active first, and only a few.
+export async function markActive(usernames) {
+  const { error } = await admin.from("profiles").update({ last_active_at: new Date().toISOString() }).in("username", usernames);
+  if (error) throw error;
 }
 
 // The prompt after the tour hasn't been answered yet.
@@ -171,6 +203,11 @@ export async function giveXp(id, xp) {
 export async function readXp(id) {
   const { data } = await admin.from("xp_events").select("*").eq("reader", id).order("id", { ascending: false });
   return data ?? [];
+}
+
+// A Supabase client with no sign-in: what any visitor's browser can do with the public key.
+export function visitorClient() {
+  return createClient(url, anonKey, quiet);
 }
 
 // A Supabase client signed in as the reader, to check what the database lets them do.

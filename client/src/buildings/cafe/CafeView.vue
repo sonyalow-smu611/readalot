@@ -8,6 +8,7 @@ import CafeViewport from './components/CafeViewport.vue'
 import CafeReaderCard from './components/CafeReaderCard.vue'
 import { drawCafeWeatherArt } from './cafeWeatherArt.js'
 import { rotateCafeReaders } from './cafeReaders.js'
+import { NEIGHBOUR } from '@/lib/neighbour.js'
 import { usePeopleStore } from '@/stores/people.js'
 import { drawAvatar, makeRnd } from '@/lib/avatar/draw.js'
 import { characterSeed, normaliseCharacter, presetCharacter, toDrawParams } from '@/lib/avatar/catalogue.js'
@@ -87,7 +88,12 @@ async function updateReaders() {
     if (disposed) return
     if (people.error) throw new Error(people.error)
     const available = people.readers.filter((reader) => reader?.id && reader.id !== user.profile?.username)
-    seatedIds.value = rotateCafeReaders(available, 8).map((reader) => reader.id)
+    // Pip, the neighbour, always has a seat, the one in view when the cafe opens (the third of the
+    // first row); the other readers take turns in the rest
+    const pip = available.find((reader) => reader.id === NEIGHBOUR)
+    const others = rotateCafeReaders(available.filter((reader) => reader !== pip), pip ? 7 : 8)
+    const seated = pip ? [...others.slice(0, 2), pip, ...others.slice(2)] : others
+    seatedIds.value = seated.map((reader) => reader.id)
   } catch (err) {
     if (disposed) return
     seatedIds.value = []

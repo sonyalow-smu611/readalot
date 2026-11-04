@@ -1,5 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, test } from "./fixtures.js";
+import { expect, test, townReady } from "./fixtures.js";
 import { EMMA, NOAH, mockFriends, skipDailyPanel } from "./townFriends.js";
 
 // The friends list: who your friends are and what they're reading, chatting, adding by username
@@ -12,7 +12,7 @@ async function openList(page) {
 }
 
 test.beforeEach(async ({ page, reader }) => {
-  await skipDailyPanel(page, reader.id);
+  await skipDailyPanel(reader.id);
 });
 
 test("each friend shows their head, their book and a chat button", async ({ page }) => {
@@ -43,7 +43,7 @@ test("the chat button works for a friend with no house", async ({ page }) => {
 test("a friend online with no character yet is found at their house", async ({ page }) => {
   await mockFriends(page, { friends: [{ ...EMMA, character: null }] });
   await page.goto("/");
-  await expect(page.getByText("Loading the town…")).toBeHidden({ timeout: 20_000 });
+  await townReady(page);
   await openList(page);
   await list(page).getByRole("button", { name: /^Emma Tan/ }).click();
   await expect(page.getByRole("dialog", { name: "Emma's house" })).toBeVisible();

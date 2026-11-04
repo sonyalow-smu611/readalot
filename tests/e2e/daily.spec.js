@@ -1,23 +1,15 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, skipMoodCheckIn, standsStill, test } from "./fixtures.js";
+import { expect, skipMoodCheckIn, standsStill, test, townReady } from "./fixtures.js";
+import { setDaily, signInPage, sgDay } from "./supabaseUser.js";
 
-// Daily tasks on the map. For now the day is kept in the browser (town/daily.js), so each test
-// sets it up in localStorage before the town loads.
-const DAY = 24 * 60 * 60 * 1000;
+// Daily tasks on the map. The day is kept in Supabase (database/daily_tasks.sql), so each test
+// sets the reader's day there before the town loads.
 const EVERY_TASK = ["check-in", "reading", "visit-room", "send-message", "add-book", "leave-note"];
-
-function dayKey(offset = 0) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date(Date.now() + offset * DAY));
-}
-
-async function setDaily(page, readerId, state) {
-  const saved = { day: dayKey(), done: [], streak: 0, lastClaim: null, freezes: 2, notice: null, shown: null, offset: 0, ...state };
-  await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [`readalot-daily:${readerId}`, JSON.stringify(saved)]);
-}
+const dayKey = sgDay;
 
 async function openTown(page) {
   await page.goto("/");
-  await expect(page.getByText("Loading the town…")).toBeHidden();
+  await townReady(page);
   const panel = page.getByRole("region", { name: "Daily tasks" });
   await expect(panel).toBeVisible();
   return panel;
@@ -36,8 +28,49 @@ test("the first visit of the day opens the tasks, with the check-in already tick
   await page.getByRole("button", { name: /Daily tasks/ }).click();
   await expect(panel).toBeHidden();
   await page.reload();
-  await expect(page.getByText("Loading the town…")).toBeHidden();
+  await townReady(page);
   await expect(page.getByRole("region", { name: "Daily tasks" })).toBeHidden();
+});
+
+// The claim is saved in Supabase: the reward, the streak, and the day on any device.
+test("a claimed reward is saved: the coins and streak are there after a reload", async ({ page, reader }) => {
+  await setDaily(reader.id, { done: EVERY_TASK });
+  const panel = await openTown(page);
+  await panel.getByRole("button", { name: "Claim 50 coins" }).click();
+  await page.getByRole("dialog", { name: "Daily reward" }).getByRole("button", { name: "Nice!" }).click();
+  await expect(page.getByRole("link", { name: /^Your profile:/ })).toHaveAccessibleName(/530 coins/);
+
+  await page.reload();
+  await townReady(page);
+  await expect(page.getByRole("button", { name: /Daily tasks, reward claimed, 1-day streak/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Your profile:/ })).toHaveAccessibleName(/530 coins/);
+});
+
+test("the streak is the same on another device", async ({ page, browser, reader }, testInfo) => {
+  await setDaily(reader.id, { done: EVERY_TASK });
+  const panel = await openTown(page);
+  await panel.getByRole("button", { name: "Claim 50 coins" }).click();
+  await expect(page.getByRole("dialog", { name: "Daily reward" })).toBeVisible();
+
+  const device = await browser.newContext({ baseURL: testInfo.project.use.baseURL });
+  try {
+    const other = await device.newPage();
+    await signInPage(other, reader.session);
+    await skipMoodCheckIn(other);
+    await other.goto("/");
+    await townReady(other);
+    await expect(other.getByRole("button", { name: /Daily tasks, reward claimed, 1-day streak/ })).toBeVisible();
+  } finally {
+    await device.close();
+  }
+});
+
+test("with the daily tasks unreachable the town still opens, without the Daily button", async ({ page }) => {
+  await page.route("**/rest/v1/rpc/daily_today", (route) => route.fulfill({ status: 500, json: { message: "down" } }));
+  await page.goto("/");
+  await townReady(page);
+  await expect(page.getByRole("button", { name: "Places" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Daily tasks/ })).toHaveCount(0);
 });
 
 test("a task's Go takes you to its building", async ({ page }) => {
@@ -48,7 +81,7 @@ test("a task's Go takes you to its building", async ({ page }) => {
 });
 
 test("all three done: claim the reward and the streak starts", async ({ page, reader }) => {
-  await setDaily(page, reader.id, { done: EVERY_TASK });
+  await setDaily(reader.id, { done: EVERY_TASK });
   const panel = await openTown(page);
   await panel.getByRole("button", { name: "Claim 50 coins" }).click();
 
@@ -65,7 +98,7 @@ test("all three done: claim the reward and the streak starts", async ({ page, re
 });
 
 test("a missed day uses a streak freeze and keeps the streak", async ({ page, reader }) => {
-  await setDaily(page, reader.id, { day: dayKey(-2), streak: 4, lastClaim: dayKey(-2), freezes: 2 });
+  await setDaily(reader.id, { day: dayKey(-2), streak: 4, lastClaim: dayKey(-2), freezes: 2 });
   const panel = await openTown(page);
   await expect(panel).toContainText("a streak freeze kept your 4-day streak safe");
   await expect(panel).toContainText("4-day streak");
@@ -73,7 +106,7 @@ test("a missed day uses a streak freeze and keeps the streak", async ({ page, re
 });
 
 test("with no freezes left, a missed day ends the streak", async ({ page, reader }) => {
-  await setDaily(page, reader.id, { day: dayKey(-3), streak: 5, lastClaim: dayKey(-3), freezes: 1 });
+  await setDaily(reader.id, { day: dayKey(-3), streak: 5, lastClaim: dayKey(-3), freezes: 1 });
   const panel = await openTown(page);
   await expect(panel).toContainText("Your 5-day streak ended");
   await expect(panel).toContainText("0-day streak");
@@ -84,7 +117,7 @@ test.describe("on other pages", () => {
   const tab = (page) => page.getByRole("button", { name: /^Daily tasks/ });
 
   test("the tab opens today's tasks, with what's left", async ({ page, reader }) => {
-    await setDaily(page, reader.id, { done: ["check-in"] });
+    await setDaily(reader.id, { done: ["check-in"] });
     await page.goto("/library");
     await expect(tab(page)).toHaveAccessibleName(/1 of 3 finished/);
     await expect(page.getByRole("region", { name: "Daily tasks" })).toBeHidden();
@@ -98,7 +131,7 @@ test.describe("on other pages", () => {
   });
 
   test("it closes with Escape or a tap outside, even beside the phone column", async ({ page, reader }) => {
-    await setDaily(page, reader.id, { done: ["check-in"], shown: dayKey() });
+    await setDaily(reader.id, { done: ["check-in"], shown: dayKey() });
     // a page in the phone column (search now fills the window, in the library's look)
     await page.goto("/mood");
     const panel = page.getByRole("region", { name: "Daily tasks" });
@@ -122,7 +155,7 @@ test.describe("on other pages", () => {
   });
 
   test("Go takes you to the task's building", async ({ page, reader }) => {
-    await setDaily(page, reader.id, { done: ["check-in"], shown: dayKey() });
+    await setDaily(reader.id, { done: ["check-in"], shown: dayKey() });
     await page.goto("/search");
     await tab(page).click();
     await page.getByRole("button", { name: "Go: Update your reading progress" }).click();
@@ -131,7 +164,7 @@ test.describe("on other pages", () => {
   });
 
   test("the reward can be claimed there too", async ({ page, reader }) => {
-    await setDaily(page, reader.id, { done: EVERY_TASK, shown: dayKey() });
+    await setDaily(reader.id, { done: EVERY_TASK, shown: dayKey() });
     await page.goto("/search");
     await expect(tab(page)).toHaveAccessibleName(/reward ready to claim/);
     await tab(page).click();
@@ -146,16 +179,16 @@ test.describe("on other pages", () => {
       await expect(tab(page)).toContainText("Daily task");
     }
     await page.goto("/");
-    await expect(page.getByText("Loading the town…")).toBeHidden();
+    await townReady(page);
     await expect(page.getByRole("button", { name: /Daily tasks, / })).toHaveCount(1);
   });
 });
 
 // The button is a small flame; pointing at it opens out "Daily task".
 test("the Daily button stays small until you point at it", async ({ page, reader }) => {
-  await setDaily(page, reader.id, { shown: dayKey() });
+  await setDaily(reader.id, { shown: dayKey() });
   await page.goto("/");
-  await expect(page.getByText("Loading the town…")).toBeHidden({ timeout: 20_000 });
+  await townReady(page);
   const button = page.getByRole("button", { name: /^Daily tasks/ });
   const shut = (await button.boundingBox()).width;
   expect(shut).toBeLessThan(90);
@@ -185,7 +218,7 @@ test.describe("where the Daily button sits", () => {
 
   // it stays out of sight until it's in its place, so it never shows jumping there
   test("going from page to page it only ever shows in the right spot", async ({ page, reader }) => {
-    await setDaily(page, reader.id, { shown: dayKey() });
+    await setDaily(reader.id, { shown: dayKey() });
     await page.goto("/library");
     await expect(button(page)).toBeVisible({ timeout: 20_000 });
     await expect(button(page)).toHaveCSS("opacity", "1");
@@ -200,7 +233,7 @@ test.describe("where the Daily button sits", () => {
     });
     await page.getByRole("link", { name: "Back to town" }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText("Loading the town…")).toBeHidden({ timeout: 20_000 });
+    await townReady(page);
     await page.getByRole("button", { name: "Places" }).click();
     await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Your house/ }).click();
     await page.getByRole("dialog", { name: "Your house" }).getByRole("button", { name: "Go inside" }).click();

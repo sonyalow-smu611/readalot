@@ -4,11 +4,9 @@
 // streak, and the reward grows to its top on day 7. A missed day uses up a streak freeze if the
 // reader has one, like Duolingo; with none left the streak starts again.
 //
-// Front end only for now: the state is kept in this browser (localStorage) until the backend
-// (daily_claims and claim_daily() in the database) is written. Only loadState/saveState and the
-// claim's coins change then.
+// Supabase keeps each reader's day and pays the reward (database/daily_tasks.sql, the same rules);
+// these are the rules the panel shows, and the preview's copy of them.
 const DAY = 24 * 60 * 60 * 1000
-const STORAGE_KEY = 'readalot-daily'
 
 // a reader holds up to this many freezes, starts with them all, and earns one back on each
 // 7th day of a streak
@@ -104,21 +102,16 @@ export function settle(state, today) {
   return next
 }
 
-// The saved state for one reader, or a fresh one. Storage can be missing or blocked.
-export function loadState(readerId, today) {
-  try {
-    const saved = JSON.parse(localStorage.getItem(`${STORAGE_KEY}:${readerId}`) ?? 'null')
-    if (saved && typeof saved.day === 'string') return { ...freshState(today), ...saved }
-  } catch {
-    // fall through to a fresh start
-  }
-  return freshState(today)
-}
-
-export function saveState(readerId, state) {
-  try {
-    localStorage.setItem(`${STORAGE_KEY}:${readerId}`, JSON.stringify(state))
-  } catch {
-    // kept for this visit only
+// The state as the town uses it, from the database's row (services/daily.js).
+export function fromRow(row) {
+  return {
+    day: row.day,
+    done: row.done ?? [],
+    streak: row.streak ?? 0,
+    lastClaim: row.last_claim ?? null,
+    freezes: row.freezes ?? MAX_FREEZES,
+    notice: row.notice ?? null,
+    shown: row.shown ?? null,
+    offset: 0,
   }
 }

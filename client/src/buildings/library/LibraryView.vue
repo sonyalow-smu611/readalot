@@ -220,7 +220,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
         @focusin="onFocusIn"
         @focusout="settle"
       >
-        <button type="button" class="btn btn-secondary btn-icon library__open" aria-label="Search books or authors" @click="askDesk">
+        <button type="button" class="btn btn-secondary btn-icon library__open" data-tour="discover-search" aria-label="Search books or authors" @click="askDesk">
           <span class="library__icon is-glass" aria-hidden="true" />
         </button>
         <div class="library__bar">

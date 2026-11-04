@@ -797,3 +797,58 @@ Written by Claude Code at Dylan's request. The Cafe is Emiley's part, and the pe
 | Popup | `client/src/buildings/cafe/components/CafeReaderCard.vue`, `CafeView.vue` | Reaching a reader opens their whole profile over the Cafe: 660 px wide on a laptop (60% of the page's 1100 px), a sheet from the bottom on a phone. The old short card and its Visit profile button are gone |
 | Tests | `tests/e2e/cafe-profile.spec.js`, `visit-room.spec.js` | The popup opens and closes without leaving the Cafe, its Message opens the chat, its size on a laptop, and it scrolls on a phone |
 
+### Fixing the e2e tests that had stopped passing (AI-generated)
+
+Written by Claude Code at Dylan's request. Test code only, apart from one stale comment in `ReaderCard.vue`. Team to review: `playwright.config.js` and the shared test helpers.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Waiting for the town | `tests/e2e/fixtures.js` and the town specs (`town`, `town-map`, `daily`, `friends`, `friends-list`, `nearby`, `notifications`, `visit-room`, `buttons`) | `townReady(page)` waits for the map to start before checking "Loading the town…" is gone. On its own that check could pass before the town had started; the day's tasks then opened and closed the Places menu the test had just opened |
+| A real API for real data | `playwright.config.js`, `tests/e2e/fixtures.js`, `friends.spec.js`, `nearby.spec.js` | A second API on port 3101 with Supabase on. `useRealApi(page)` sends a page's API calls there, so the friends and nearby tests see the friendships and areas they write to Supabase. Every other test keeps the demo API |
+| Test readers | `tests/e2e/supabaseUser.js`, `nearby.spec.js` | Each test reader gets its own username, so readers made at once never race for the same free name; `markActive()`; nearby tests wait for the server's answer after going public |
+| Stale tests | `reader-profile.spec.js`, `house-desktop.spec.js`, `visit-room.spec.js`, `notifications.spec.js`, `town-map.spec.js` | The sample-readers note was removed on purpose; the book card now has its cover beside its words; Emma's house needs her as a friend (mocked); the online pop-up waits for the town's first look; a tapped townsperson is held still and tapped in the middle |
+
+### Daily tasks, notifications and demo furniture kept in Supabase (AI-generated, team-agreed)
+
+Written by Claude Code at Dylan's request, from `docs/superpowers/plans/2026-11-03-browser-data-to-supabase.md`. The team agreed that AI writes this feature, including the database functions in `database/daily_tasks.sql` (`claim_daily()` among them) and the server changes. Team to review: `database/`, `server/`, `services/`, `tests/e2e/supabaseUser.js`, and the parts owned by Sonz (`buildings/house/visitors.js`) and Emiley (`components/people/ReaderChat.vue`, `services/chatApi.js`).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Daily tasks in the database | `database/daily_tasks.sql`, `server/tests/dailyTasks.check.js` | `daily_state`, one row per reader that only its reader can read; `daily_today()`, `daily_done()`, `daily_mark_shown()`, `daily_dismiss_notice()` and `claim_daily()` change it. The day moves on as `town/daily.js` says (freezes, lost streaks); a claim needs three tasks done, happens once a day (a unique index), and pays the coins and XP, with level-up coins as `earn_xp()` gives |
+| Daily tasks in the town | `client/src/services/daily.js`, `client/src/town/daily.js`, `client/src/town/dailyStore.js`, `client/src/views/TownView.vue`, `client/src/components/town/DailyDock.vue` | The store loads the day from Supabase and saves each tick, the panel opening and the notice; the claim's reward and totals come back from the database. No Daily button until the day has loaded. The preview's Next day and Start over change this browser's copy only |
+| Notifications read and cleared | `database/notifications_seen.sql`, `client/src/services/auth.js`, `client/src/town/notificationsStore.js`, `server/src/services/friends.js` | Two times on the profile: read up to, cleared up to. The list is rebuilt from Supabase (requests, with when they were sent; visits in the last week; friends who came online this visit), so another device agrees |
+| Demo furniture | `server/data/demoReaders.js`, `server/scripts/seedReaders.js`, `server/src/services/roomFurniture.js`, `client/src/buildings/house/visitors.js`, `client/src/buildings/house/README.md` | The sample readers' furniture moved from the client to the server's demo data; the seed saves it in `room_furniture`, and without Supabase the server serves it from there |
+| Chat | `client/src/services/chatApi.js`, `client/src/components/people/ReaderChat.vue` | The browser-only chat for readers without an account is gone; such a reader says "This reader can't receive messages yet." |
+| Tests | `tests/e2e/daily.spec.js`, `notifications.spec.js`, `visit-room.spec.js`, `reader-profile.spec.js`, `supabaseUser.js`, `townFriends.js` and the town specs | Daily state is set in Supabase (`setDaily`, `skipDailyPanel`); a claim survives a reload and shows on another device; the town opens without the Daily button when the day can't load; read and cleared notifications on another device; a sample reader's furniture comes from the server; a reader with no account can't be messaged |
+
+### Demo account and the code 111111 (AI-generated)
+
+Written by Claude Code at Aalric's request, for grading and live demos. It touches shared code (`services/auth.js`, `server/`), so a teammate should review the pull request, and the team should agree to the new endpoint before it is merged. How it works: [docs/DEMO.md](docs/DEMO.md).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Sign-in | `client/src/services/auth.js`, `client/src/views/VerifyView.vue` | For an email on a demo domain (default `demo.ikda.app`): no code is emailed, `111111` is accepted, and the password still does the real sign-in. A line on the code screen says so. Other emails are unchanged |
+| API | `server/src/routes/demoAuth.js`, `server/src/app.js`, `server/src/services/env.js` | `POST /api/demo-auth/register` makes an already-confirmed account, only for a demo-domain email. `DEMO_CODE_DOMAINS` sets the domains (empty turns it off) |
+| Seed | `server/scripts/seedDemo.js`, `server/package.json` | `npm run seed:demo -w server`: the demo reader Jordan Lee with a profile, 10 books with reviews, XP and coins, 4 friends and a request, chats, notes, visits, saved quotes and a decorated room. Only writes the demo reader's rows |
+| Tests | `server/tests/demoAuth.check.js`, `tests/e2e/demo-account.spec.js` | The route turns away other emails and bad input, makes one account and refuses a repeat; the demo account logs in with the code and a wrong code is refused |
+| Docs | `README.md`, `docs/DEMO.md`, `.env.example` | The grading guide matches the demo account |
+
+### README professor-pass doc corrections (AI-generated)
+
+Written by Codex at Aalric's request during the professor simulation pass.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Scenario numbering | `README.md` | Fixed Scenario 3 numbering so steps run in a continuous sequence (step 8 onward, ending at 33) instead of skipping step 8 |
+| Room weather URL | `README.md` | Corrected the manual weather-preview URL from root `/?scene=...` to `/house?scene=...` so it matches the My Room flow |
+
+
+### README first-time professor simulation pass (AI-generated)
+
+Written by Codex at Aalric's request after a live README-only walkthrough simulation against the running app.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Professor guide reliability | `README.md` | Added a demo-state preflight so shared-account drift does not block grading, updated walkthrough wording from 52 to the observed 34-stop flow, and changed seeded-state-specific lines (counts/match values/coins) to resilient instructions that still work when demo data has changed |
+| Master E2E guide | `docs/E2E_GUIDE.md` | Updated walkthrough documentation to the observed 34-stop structure, refreshed status notes to reflect the professor-pass verification, and aligned the walkthrough index description |
+| Walkthrough scenarios | `docs/e2e/02-walkthrough.md` | Rewrote TOUR scenarios to match the current walkthrough UX (`1 of 34`, `Skip this step`, section boundaries, and completion behaviour) with updated pass criteria |

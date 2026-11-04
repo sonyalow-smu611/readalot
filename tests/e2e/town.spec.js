@@ -1,14 +1,14 @@
-import { expect, skipMoodCheckIn, test } from "./fixtures.js";
+import { expect, skipMoodCheckIn, test, townReady } from "./fixtures.js";
+import { skipDailyPanel } from "./townFriends.js";
 
 // The town is home. The map is a canvas, so these checks go through the Places list, the
 // same labelled buttons a keyboard or screen reader user would use.
 // Today's tasks already shown, so they don't open over the map (daily.spec.js covers them).
 test.beforeEach(async ({ page, reader }) => {
   await skipMoodCheckIn(page);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
-  await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [`readalot-daily:${reader.id}`, JSON.stringify({ day: today, shown: today })]);
+  await skipDailyPanel(reader.id);
   await page.goto("/");
-  await expect(page.getByText("Loading the town…")).toBeHidden();
+  await townReady(page);
 });
 
 async function openPlace(page, name) {

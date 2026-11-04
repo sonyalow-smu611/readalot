@@ -78,18 +78,18 @@ async function addFriend() {
 </script>
 
 <template>
-  <div class="reader-profile" :class="{ 'reader-profile--compact': compact }">
+  <div class="reader-profile" data-tour="reader-profile" :class="{ 'reader-profile--compact': compact }">
   <template v-if="reader">
     <!-- on a laptop: the reader on the left, the cards beside them -->
     <div class="reader-layout">
       <div class="reader-side">
         <ReaderCard :reader="reader" :match="people.compatibility(reader)" />
-        <RouterLink class="btn btn-primary visit-room" :to="{ name: 'reader-house', params: { id: reader.id } }">
+        <RouterLink class="btn btn-primary visit-room" data-tour="reader-visit" :to="{ name: 'reader-house', params: { id: reader.id } }">
           Visit {{ firstName }}'s room
         </RouterLink>
         <div class="actions">
-          <button type="button" class="btn btn-primary follow-button" :disabled="friendship !== 'none'" @click="addFriend">{{ friendLabel }}</button>
-          <button ref="messageButton" type="button" class="btn btn-primary message-button" @click="chatOpen = true">Message</button>
+          <button type="button" class="btn btn-primary follow-button" data-tour="reader-add" :disabled="friendship !== 'none'" @click="addFriend">{{ friendLabel }}</button>
+          <button ref="messageButton" type="button" class="btn btn-primary message-button" data-tour="reader-message" @click="chatOpen = true">Message</button>
         </div>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
       </div>

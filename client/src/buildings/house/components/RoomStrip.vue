@@ -24,6 +24,7 @@
     <div
       ref="scroller"
       class="strip__scroller"
+      data-tour="room"
       role="region"
       tabindex="0"
       :aria-label="`${roomName}. Swipe, drag or use the arrow keys to look around.`"
@@ -51,6 +52,7 @@
             <div
               class="strip__pin"
               data-tour="clock"
+              data-tour-mask="room:clock"
               role="img"
               :aria-label="`Singapore time ${time}`"
               :style="boxStyle(spots.clock)"
@@ -60,6 +62,7 @@
               data-hit
               class="strip__pin strip__hit"
               data-tour="shelf"
+              data-tour-mask="room:bookshelf"
               type="button"
               :aria-label="`Bookshelf, ${books.length} books`"
               :style="boxStyle(spots.bookshelf)"
@@ -119,6 +122,7 @@
               data-hit
               class="strip__pin strip__hit"
               data-tour="quote"
+              data-tour-mask="room:corkboard"
               type="button"
               aria-haspopup="dialog"
               :aria-label="boardLabel"

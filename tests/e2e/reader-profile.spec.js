@@ -195,7 +195,6 @@ test.describe("books you both have", () => {
     await expect(page.getByText("One more chapter, always.")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Finished", exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Emma Tan's Bookshelf" })).toHaveCount(0);
-    await expect(page.getByText(/sample readers/)).toBeVisible();
   });
 });
 
@@ -227,6 +226,17 @@ test.describe("on a short phone", () => {
     })).toBeGreaterThan(0);
     await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).not.toBeInViewport();
   });
+});
+
+test("a reader with no account can't be messaged, and says so", async ({ page }) => {
+  const noAccount = { id: "nobody.local", userId: "not-an-account", username: "nobody.local", displayName: "No Body", books: [], favoriteGenres: [] };
+  await page.route("**/api/people/nobody.local", (route) => route.fulfill({ json: { reader: noAccount } }));
+  await page.goto("/people/nobody.local");
+  await page.getByRole("button", { name: "Message", exact: true }).click();
+  const chat = page.getByRole("dialog", { name: "Message No" });
+  await expect(chat.getByRole("alert")).toHaveText("This reader can't receive messages yet.");
+  await expect(chat.getByRole("button", { name: /SEND/ })).toBeDisabled();
+  await expect(chat.getByText(/DEMO/)).toHaveCount(0);
 });
 
 test("an address with no reader says so and leads back to the Cafe", async ({ page }) => {

@@ -154,6 +154,7 @@ onMounted(() => {
       <template v-else>
         <p v-if="!loading" class="search__count">{{ books.length }} {{ books.length === 1 ? 'book' : 'books' }} for “{{ searched }}”</p>
         <BookShelves
+          data-tour="search-results"
           :bookcase="HALL_CASE"
           :books="books"
           :loading="loading"

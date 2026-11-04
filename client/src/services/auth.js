@@ -18,6 +18,26 @@ const PUBLIC_FIELDS = {
 }
 const PRIVATE_FIELDS = ['gender', 'age', 'religion']
 
+// Demo accounts. An email on a demo domain has no inbox, so it never gets an emailed code: its
+// code is always DEMO_CODE, and the password it was registered or logged in with does the real
+// sign-in (server/src/routes/demoAuth.js makes the account). Any other email gets a real code.
+// VITE_DEMO_CODE_DOMAINS= (empty) turns this off; unset means the demo domain.
+export const DEMO_CODE = '111111'
+const DEMO_DOMAINS = String(import.meta.env.VITE_DEMO_CODE_DOMAINS ?? 'demo.ikda.app')
+  .split(',')
+  .map((domain) => domain.trim().toLowerCase())
+  .filter(Boolean)
+
+export function isDemoEmail(email) {
+  const text = String(email || '').trim().toLowerCase()
+  // the domain is what follows the last @, so "a@demo.ikda.app@elsewhere.com" is not a demo email
+  return text.indexOf('@') > 0 && DEMO_DOMAINS.includes(text.slice(text.lastIndexOf('@') + 1))
+}
+
+// The password for a demo account's code step, kept only in memory (never saved), so a reload
+// on the code screen asks for the log in again.
+let demoPassword = ''
+
 export function authConfigured() {
   return Boolean(supabase)
 }
@@ -58,9 +78,21 @@ export function watchAuth(onSession) {
   return () => data.subscription.unsubscribe()
 }
 
-export async function beginRegister(email, password) {
+// A username a reader may pick: 3 to 20 lowercase letters, numbers, dots and underscores
+// (database/chosen_usernames.sql checks the same).
+export const USERNAME_PATTERN = /^[a-z0-9._]{3,20}$/
+
+// Whether nobody has this username yet: { data: true | false } (database/chosen_usernames.sql).
+export async function usernameFree(username) {
   if (!supabase) return missing()
-  const created = await supabase.auth.signUp({ email, password })
+  return supabase.rpc('readalot_username_free', { name: username })
+}
+
+// The username is kept on the account until Welcome makes the profile, which takes it.
+export async function beginRegister(email, password, username) {
+  if (!supabase) return missing()
+  if (isDemoEmail(email)) return beginDemoRegister(email, password, username)
+  const created = await supabase.auth.signUp({ email, password, options: { data: { username } } })
   if (created.error) return created
   const identities = created.data.user?.identities
   if (Array.isArray(identities) && identities.length === 0) {
@@ -71,11 +103,35 @@ export async function beginRegister(email, password) {
   return { data: { email }, error: null }
 }
 
+async function beginDemoRegister(email, password, username) {
+  let reply
+  try {
+    reply = await fetch('/api/demo-auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, username }),
+    })
+  } catch {
+    return { data: null, error: { message: "Couldn't reach the server. Try again." } }
+  }
+  const body = await reply.json().catch(() => ({}))
+  if (!reply.ok) return { data: null, error: { message: body.error || 'Sign up did not work. Try again.' } }
+  demoPassword = password
+  rememberPending(email, 'signup')
+  return { data: { email }, error: null }
+}
+
 export async function beginLogin(email, password) {
   if (!supabase) return missing()
   const signed = await supabase.auth.signInWithPassword({ email, password })
   if (signed.error) return signed
   await supabase.auth.signOut()
+  if (isDemoEmail(email)) {
+    // the password was right: no email is sent, the code is DEMO_CODE
+    demoPassword = password
+    rememberPending(email, 'login')
+    return { data: { email }, error: null }
+  }
   const sent = await supabase.auth.signInWithOtp({
     email,
     options: { shouldCreateUser: false },
@@ -87,6 +143,16 @@ export async function beginLogin(email, password) {
 
 export async function verifyEmailCode(email, token, purpose) {
   if (!supabase) return missing()
+  if (isDemoEmail(email)) {
+    if (token !== DEMO_CODE) return { data: null, error: { message: `That code is not right. The demo code is ${DEMO_CODE}.` } }
+    if (!demoPassword) return { data: null, error: { message: 'Go back and log in again, then enter the code.' } }
+    const signed = await supabase.auth.signInWithPassword({ email, password: demoPassword })
+    if (!signed.error) {
+      demoPassword = ''
+      clearPending()
+    }
+    return signed
+  }
   const type = purpose === 'signup' ? 'signup' : 'email'
   const result = await supabase.auth.verifyOtp({ email, token, type })
   if (!result.error) clearPending()
@@ -95,6 +161,7 @@ export async function verifyEmailCode(email, token, purpose) {
 
 export async function resendCode(email, purpose) {
   if (!supabase) return missing()
+  if (isDemoEmail(email)) return { data: null, error: null }
   if (purpose === 'signup') return supabase.auth.resend({ type: 'signup', email })
   return supabase.auth.signInWithOtp({
     email,
@@ -155,6 +222,28 @@ export async function saveProfile(details) {
     if (savedOwn.error) return savedOwn
   }
   return { data: details, error: null }
+}
+
+// When the reader last read and last cleared their notifications: { readAt, clearedAt }, '' for
+// never (database/notifications_seen.sql).
+export async function loadNotificationTimes(userId) {
+  if (!supabase) return missing()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('notifications_read_at, notifications_cleared_at')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) return { data: null, error }
+  return { data: { readAt: data?.notifications_read_at ?? '', clearedAt: data?.notifications_cleared_at ?? '' }, error: null }
+}
+
+// Saves whichever of the two times is given.
+export async function saveNotificationTimes(userId, { readAt, clearedAt }) {
+  if (!supabase) return missing()
+  const changes = {}
+  if (readAt) changes.notifications_read_at = readAt
+  if (clearedAt) changes.notifications_cleared_at = clearedAt
+  return supabase.from('profiles').update(changes).eq('id', userId)
 }
 
 export async function markTourSeen(userId) {

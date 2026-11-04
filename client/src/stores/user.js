@@ -7,61 +7,11 @@ import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 import { useProgressStore } from '@/stores/progress.js'
 import { usePeopleStore } from '@/stores/people.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
+import { WALKTHROUGH } from '@/lib/walkthrough.js'
 
-// A new reader's first tour, played once in the town after Welcome: Next zooms the camera out and
-// back in on each building in turn (focus: a place id from town/places.js, which TownView glides
-// to). Once there, the map marks where the building is (data-tour-spot) and the card spotlights
-// it and sits below it. A step with no target and no focus shows its card over a dimmed screen. Finishing or
-// skipping saves profiles.tour_seen_at, so it never plays again on any device.
-const GUIDE_STEPS = [
-  {
-    id: 'town-welcome',
-    to: '/',
-    target: null,
-    title: 'Welcome to Readalot Town',
-    copy: 'This is your town. Drag the map to look around, and tap a building to go inside. Each building is a part of Readalot.',
-  },
-  {
-    id: 'town-house',
-    to: '/',
-    target: '[data-tour-spot="house"]',
-    focus: 'house',
-    title: 'Your house',
-    copy: 'This blue house is yours. Inside is My Room: your bookshelf, the window with the live weather, and the chair with the book you are reading.',
-  },
-  {
-    id: 'town-library',
-    to: '/',
-    target: '[data-tour-spot="library"]',
-    focus: 'library',
-    title: 'The library',
-    copy: 'Discover books here: search for a title, browse shelves by genre, and open any book to read about it.',
-  },
-  {
-    id: 'town-cafe',
-    to: '/',
-    target: '[data-tour-spot="cafe"]',
-    focus: 'cafe',
-    title: 'The cafe',
-    copy: 'Meet other readers. See who reads like you, find them on the map, and follow them.',
-  },
-  {
-    id: 'town-salon',
-    to: '/',
-    target: '[data-tour-spot="salon"]',
-    focus: 'salon',
-    title: 'The hair salon',
-    copy: 'Restyle your character here, and edit your profile, your lists and your privacy.',
-  },
-  {
-    id: 'town-friend',
-    to: '/',
-    target: '[data-tour-spot="friend-spot-0"]',
-    focus: 'friend-spot-0',
-    title: 'Friends’ houses',
-    copy: 'This lawn is waiting for a friend. When you add a reader, their house appears in town, and you can tap it to visit their room.',
-  },
-]
+// The walkthrough (lib/walkthrough.js) plays once after Welcome; finishing or skipping saves
+// profiles.tour_seen_at, so it doesn't play again by itself on any device. The salon replays it.
+const GUIDE_STEPS = WALKTHROUGH
 
 function emptyProfile() {
   return {
@@ -190,6 +140,24 @@ export const useUserStore = defineStore('user', () => {
     guideStep.value += 1
   }
 
+  function backGuide() {
+    if (guideStep.value > 0) guideStep.value -= 1
+  }
+
+  // "Skip this part": on to the first step of the next part, or the end
+  function skipGuideSection() {
+    if (guideStep.value < 0) return
+    const section = GUIDE_STEPS[guideStep.value].section
+    const next = GUIDE_STEPS.findIndex((step, index) => index > guideStep.value && step.section !== section)
+    if (next < 0) closeGuide()
+    else guideStep.value = next
+  }
+
+  // the salon's Replay the walkthrough
+  function replayGuide() {
+    guideStep.value = 0
+  }
+
   // Done or Skip. If saving fails the tour stays closed now and shows again next session.
   function closeGuide() {
     guideStep.value = -1
@@ -231,6 +199,9 @@ export const useUserStore = defineStore('user', () => {
     profileSaved,
     openGuideIfNew,
     nextGuide,
+    backGuide,
+    skipGuideSection,
+    replayGuide,
     closeGuide,
     dismissGuide,
     mergeProfile,

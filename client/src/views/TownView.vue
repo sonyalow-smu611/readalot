@@ -309,8 +309,8 @@ watch(friendsOpen, (open) => {
 })
 
 function select(place) {
-  // during the tour the camera's glide outlines the building; its card would cover the tour's
-  if (guide.value || entering.value) return
+  // during the walkthrough only the building it asks the reader to tap opens its card
+  if (entering.value || (guide.value && !(guide.value.kind === 'try' && guide.value.focus === place.id))) return
   friendId.value = null
   // the map hands over the bare place; the card wants it named
   selected.value = allPlaces.value.find((named) => named.id === place.id) ?? place
@@ -379,9 +379,12 @@ function goDo(placeId) {
   go(placeId)
 }
 
-function claimDaily() {
-  const claimed = daily.claim()
-  if (!claimed) return
+async function claimDaily() {
+  const claimed = await daily.claim()
+  if (!claimed) {
+    if (daily.error) showNotice(daily.error)
+    return
+  }
   dailyOpen.value = false
   gift.value = claimed
 }
@@ -501,8 +504,9 @@ function goInside(place) {
       @toggle-notifications="toggleNotifications"
     />
     <!-- today's tasks and the streak, on the left under the weather chip -->
-    <DailyButton class="town__daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
+    <DailyButton v-if="daily.ready" class="town__daily" data-tour="town-daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
     <LocationChip
+      data-tour="town-privacy"
       class="town__location"
       :on="profile.discoverable"
       :busy="privacyBusy"
@@ -550,9 +554,10 @@ function goInside(place) {
         @preview-reset="daily.previewReset"
       />
     </Transition>
-    <WeatherButton v-if="ready" :mode="skyMode" :weather="weather" @change="skyMode = $event" />
+    <WeatherButton v-if="ready" data-tour="town-weather" :mode="skyMode" :weather="weather" @change="skyMode = $event" />
     <!-- you, in the bottom-left corner: level, XP and coins; opens the salon -->
     <PlayerBadge
+      data-tour="town-badge"
       class="town__me"
       :name="profile.name || 'You'"
       :character="profile.character"

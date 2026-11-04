@@ -2,9 +2,10 @@
 // Friends: a request one reader sends and the other accepts (the friendships table). Follows are
 // separate and stay one-way. Without Supabase there are no friends. Demo readers can't answer, so
 // they accept straight away.
-import { DEMO_READERS } from "../../data/demoReaders.js";
+import { DEMO_READERS, NEIGHBOUR_ID } from "../../data/demoReaders.js";
 import { env } from "./env.js";
 import { findReader, readersByIds } from "./readers.js";
+import { addNote } from "./roomNotes.js";
 import { supabase } from "./supabase.js";
 
 // how many friends' houses the town has room for (FRIEND_HOUSES in client/src/town/places.js)
@@ -44,7 +45,7 @@ async function giveOutSpots(accepted, me) {
 }
 
 // { friends: readers with their house `spot` (null when the town is full), incoming: requests to
-// you as { requestId, reader }, outgoing: the reader ids you've asked }
+// you as { requestId, reader, at } (when it was sent), outgoing: the reader ids you've asked }
 export async function friendsOf(me) {
   const rows = await friendshipsOf(me);
   const accepted = rows.filter((row) => row.status === "accepted");
@@ -60,7 +61,7 @@ export async function friendsOf(me) {
       .map((row) => ({ ...byId.get(otherOf(row, me)), spot: row[spotColumn(row, me)] })),
     incoming: incoming
       .filter((row) => byId.has(row.requester))
-      .map((row) => ({ requestId: row.id, reader: byId.get(row.requester) })),
+      .map((row) => ({ requestId: row.id, reader: byId.get(row.requester), at: row.created_at })),
     outgoing: outgoing.filter((row) => byId.has(row.addressee)).map((row) => byId.get(row.addressee).id),
   };
 }
@@ -72,12 +73,21 @@ export async function requestFriend(me, handle) {
   const reader = await findReader(handle, me);
   if (!reader || reader.userId === me || !env.HAS_SUPABASE) return false;
 
+  const accepted = isDemoReader(reader.userId);
   const existing = (await friendshipsOf(me)).find((row) => otherOf(row, me) === reader.userId);
   if (existing) {
     if (existing.status === "pending" && existing.addressee === me) await answerRequest(me, existing.id, true);
+    // a demo reader you removed takes you back straight away too
+    if (existing.status === "closed" && accepted) {
+      const { error } = await supabase
+        .from("friendships")
+        .update({ status: "accepted", accepted_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      if (error) throw error;
+      await welcomeFromPip(me, reader);
+    }
     return true;
   }
-  const accepted = isDemoReader(reader.userId);
   const { error } = await supabase.from("friendships").insert({
     requester: me,
     addressee: reader.userId,
@@ -85,7 +95,19 @@ export async function requestFriend(me, handle) {
     accepted_at: accepted ? new Date().toISOString() : null,
   });
   if (error) throw error;
+  await welcomeFromPip(me, reader);
   return true;
+}
+
+// Pip, the neighbour, pins a welcome note on a new friend's board. A note that can't be pinned
+// doesn't undo the friendship.
+async function welcomeFromPip(me, reader) {
+  if (reader.userId !== NEIGHBOUR_ID) return;
+  try {
+    await addNote(me, { id: NEIGHBOUR_ID, name: reader.displayName }, "Welcome to town, neighbour! Pop by the library any time. — Pip");
+  } catch {
+    // the friendship stands without the note
+  }
 }
 
 // Accept or decline a request sent to you; false when there's no such request.

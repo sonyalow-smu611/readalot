@@ -2,6 +2,7 @@
 // Each reader's room furniture: one row per reader in the room_furniture table
 // (database/room_furniture.sql) holding their pieces. Without Supabase, rooms are kept in memory
 // while the server runs.
+import { DEMO_READERS } from "../../data/demoReaders.js";
 import { env } from "./env.js";
 import { supabase } from "./supabase.js";
 
@@ -39,7 +40,7 @@ const demoRooms = new Map();
 
 // A reader's pieces; [] for a reader who hasn't furnished their room.
 export async function getPieces(ownerId) {
-  if (!env.HAS_SUPABASE) return demoRooms.get(ownerId) ?? [];
+  if (!env.HAS_SUPABASE) return demoRooms.get(ownerId) ?? DEMO_READERS.find((reader) => reader.id === ownerId)?.furniture ?? [];
   const { data, error } = await supabase.from("room_furniture").select("pieces").eq("owner_id", ownerId).maybeSingle();
   if (error) throw error;
   return data?.pieces ?? [];

@@ -1,6 +1,6 @@
 import { test as signedOut } from "@playwright/test";
 import { EMMA, NOAH, mockFriends } from "./townFriends.js";
-import { SPOTS, buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, tapRoomAt, test } from "./fixtures.js";
+import { SPOTS, buy, expect, fromMenu, goToPlace, inventory, mockQuote, mockWeather, openPlaces, openShop, roomReady, skipMoodCheckIn, tapRoomAt, test, townReady } from "./fixtures.js";
 import { createReader, hasSupabase, NEEDS_SUPABASE, signInPage } from "./supabaseUser.js";
 
 // a brand-new reader, who hasn't filled in Welcome yet
@@ -420,11 +420,12 @@ test.describe("shared components", () => {
   });
 });
 
-tourReader("the guide tour's card has pixel buttons", async ({ page }) => {
+tourReader("the walkthrough's speech bubble has pixel buttons", async ({ page }) => {
   await mockWeather(page);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Welcome to Readalot Town" })).toBeVisible({ timeout: 15000 });
-  await expect.poll(() => offLook(page.locator(".guide__card"))).toEqual([]);
+  await expect(page.locator(".guide__bubble")).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect.poll(() => offLook(page.locator(".guide__bubble"))).toEqual([]);
 });
 
 // --- The buildings (pixel-buttons 03-06) -------------------------------------------------------
@@ -540,7 +541,7 @@ test.describe("the town", () => {
   test.beforeEach(async ({ page }) => {
     await mockWeather(page);
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Places" })).toBeVisible({ timeout: 15000 });
+    await townReady(page);
   });
 
   test("the map's buttons, the Places menu and a place card have pixel buttons", async ({ page }) => {

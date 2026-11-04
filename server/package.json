@@ -7,8 +7,9 @@
     "start": "node src/index.js",
     "seed": "node scripts/seed.js",
     "seed:readers": "node scripts/seedReaders.js",
+    "seed:demo": "node scripts/seedDemo.js",
     "verify-works": "node scripts/verifyWorks.js",
-    "check": "node tests/compatibility.check.js && node tests/dailyQuote.check.js",
+    "check": "node tests/compatibility.check.js && node tests/dailyQuote.check.js && node tests/demoAuth.check.js",
     "import-quotes": "node scripts/importQuotes.js"
   },
   "dependencies": {
