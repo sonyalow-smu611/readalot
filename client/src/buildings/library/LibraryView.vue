@@ -211,7 +211,9 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 </script>
 
 <template>
-  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
+  <!-- "‹ Town" on a phone, so the back button, Daily, music, the magnifier and the weather share
+       one line (DailyDock puts Daily and music beside the back button here) -->
+  <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" back-short="Town" flush>
     <section class="library" :style="{ '--library-accent': place.accent }">
       <LibraryHall
         :active="openKey"
@@ -353,10 +355,15 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 }
 
 /* A phone has no room for the whole bar on the top line: it rests as a magnifier button in the
-   middle, and when used it grows into a full-width bar just below the top line. */
+   line, just left of the weather (92px: the weather chip's 72 and its 12px margin, and a gap), after
+   the back button, Daily and music. When used it grows into a full-width bar below that line, with
+   a gap, covering none of its buttons. */
 @media (max-width: 719.98px) {
   .library__search:not(.is-asking) {
+    left: auto;
+    right: 92px;
     width: auto;
+    transform: none;
     border: 0;
     background: none;
     box-shadow: none;
@@ -371,7 +378,7 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
   }
 
   .library__search.is-asking {
-    top: 66px;
+    top: 70px;
     left: 12px;
     width: calc(100% - 24px);
     transform: none;

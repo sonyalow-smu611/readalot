@@ -34,6 +34,8 @@ import FriendCard from '@/components/town/FriendCard.vue'
 import ChatDock from '@/components/town/ChatDock.vue'
 import DailyButton from '@/components/town/DailyButton.vue'
 import MusicToggle from '@/components/MusicToggle.vue'
+import TownMenu from '@/components/town/TownMenu.vue'
+import { useMusicStore } from '@/stores/music.js'
 import DailyPanel from '@/components/town/DailyPanel.vue'
 import DailyReward from '@/components/town/DailyReward.vue'
 import LocationChip from '@/components/town/LocationChip.vue'
@@ -63,6 +65,9 @@ const selected = ref(null)
 const placesOpen = ref(false)
 const friendsOpen = ref(false)
 const dailyOpen = ref(false)
+// a phone's ☰ menu (TownMenu): Daily, the bell, music and public or private, folded away
+const menuOpen = ref(false)
+const music = useMusicStore()
 const notificationsOpen = ref(false)
 // how the last Add friend went, { busy, ok, message }
 const addStatus = ref(null)
@@ -328,7 +333,7 @@ watch(
 
 // Whatever is open over the map.
 function closePanels() {
-  placesOpen.value = friendsOpen.value = dailyOpen.value = notificationsOpen.value = false
+  placesOpen.value = friendsOpen.value = dailyOpen.value = notificationsOpen.value = menuOpen.value = false
   hint.value = false
 }
 
@@ -369,6 +374,23 @@ function toggleFriends() {
   const open = !friendsOpen.value
   closePanels()
   friendsOpen.value = open
+}
+
+// ---- the phone's ☰ menu: each row does what its button does
+function toggleMenu() {
+  const open = !menuOpen.value
+  closePanels()
+  menuOpen.value = open
+}
+
+function menuDaily() {
+  menuOpen.value = false
+  toggleDaily()
+}
+
+function menuNotifications() {
+  menuOpen.value = false
+  toggleNotifications()
 }
 
 function toggleNotifications() {
@@ -490,7 +512,8 @@ function toggleChat(id) {
 // chips), which on a narrow phone wrap onto more rows: the chat window stops above it.
 const townRoot = ref(null)
 const topClear = ref(90)
-const TOP_CONTROLS = '.town-hud > *, [data-tour="town-weather"], [data-tour="town-daily"], .town__daily .music-toggle, [data-tour="town-privacy"]'
+const TOP_CONTROLS =
+  '.town-hud > *, [data-tour="town-weather"], [data-tour="town-daily"], .town__daily .music-toggle, .town__menu .town-menu__toggle, [data-tour="town-privacy"]'
 let topWatcher = null
 
 function measureTop() {
@@ -567,7 +590,7 @@ function goInside(place) {
 </script>
 
 <template>
-  <section ref="townRoot" class="town" aria-label="IKDA Town" :style="{ '--town-top-clear': `${topClear}px` }">
+  <section ref="townRoot" class="town" :class="{ 'is-touring': Boolean(guide) }" aria-label="IKDA Town" :style="{ '--town-top-clear': `${topClear}px` }">
     <TownMap
       :focus="focus"
       :start="arrivingForTour ? 'house' : ''"
@@ -604,6 +627,23 @@ function goInside(place) {
       <DailyButton v-if="daily.ready" data-tour="town-daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
       <MusicToggle />
     </div>
+    <!-- on a phone, Daily, music, the bell and public or private fold into this ☰ menu instead -->
+    <TownMenu
+      class="town__menu"
+      :open="menuOpen"
+      :daily="daily.ready ? dailyChip : null"
+      :unread="notificationsOpen ? 0 : notifications.unread"
+      :music-on="music.enabled"
+      :public="profile.discoverable"
+      :public-busy="privacyBusy"
+      :public-locked="nearby.minor"
+      @toggle="toggleMenu"
+      @close="menuOpen = false"
+      @daily="menuDaily"
+      @notifications="menuNotifications"
+      @music="music.toggle()"
+      @public="choosePublic(!profile.discoverable)"
+    />
     <LocationChip
       data-tour="town-privacy"
       class="town__location"
@@ -736,6 +776,27 @@ function goInside(place) {
 }
 
 /* Daily, under the weather chip */
+/* the ☰ menu shows only on a phone, outside the walkthrough (which points at the buttons it holds) */
+.town .town__menu {
+  display: none;
+  position: absolute;
+  left: 17px;
+  top: 76px;
+  z-index: 11;
+}
+
+@media (max-width: 600px) {
+  .town:not(.is-touring) .town__menu {
+    display: block;
+  }
+
+  .town:not(.is-touring) .town__daily,
+  .town:not(.is-touring) .town__location,
+  .town:not(.is-touring) :deep(.notifications-button) {
+    display: none;
+  }
+}
+
 .town .town__daily {
   position: absolute;
   left: 17px;
@@ -761,6 +822,15 @@ function goInside(place) {
   left: 14px;
   bottom: 24px;
   z-index: 5;
+}
+
+/* a quarter smaller on a phone, all of it, staying in its corner. `scale`, not `transform`: the
+   badge's own hover and level-up pop use transform */
+@media (max-width: 600px) {
+  .town .town__me {
+    scale: 0.75;
+    transform-origin: left bottom;
+  }
 }
 
 .town__hint {

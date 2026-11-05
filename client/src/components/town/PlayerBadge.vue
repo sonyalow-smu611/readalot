@@ -236,6 +236,8 @@ onBeforeUnmount(() => {
 }
 
 .badge__username {
+  /* up a little, so it sits midway between the name and the coins */
+  margin: -1px 0 1px;
   max-width: 9rem;
   overflow: hidden;
   color: var(--rl-muted, #6b5a4e);
