@@ -94,6 +94,6 @@ watch(
 
 .synopsis__toggle {
   margin-top: 6px;
-  padding-inline: 0;
+  padding-inline: 8px;
 }
 </style>
