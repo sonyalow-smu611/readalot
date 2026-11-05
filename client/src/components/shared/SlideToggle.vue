@@ -3,6 +3,8 @@
 // A two-way switch with a thumb that slides between the choices (Spines / Covers): the thumb glides
 // to the choice you press, and the labels change colour with it. Each choice is still a button
 // (pressed or not) for the keyboard and screen readers; the arrow keys move between them.
+// With `home` set, a press anywhere on the switch while it is on another choice slides it home
+// (on Spines, any press turns the books face out); on `home` itself a press chooses the one pressed.
 import { computed, nextTick, ref } from 'vue'
 
 const props = defineProps({
@@ -12,6 +14,8 @@ const props = defineProps({
   options: { type: Array, required: true },
   // what the switch is for, read out with it
   label: { type: String, required: true },
+  // the value a press anywhere on the switch goes to when it is on another value; '' for none
+  home: { type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -20,6 +24,12 @@ const index = computed(() => Math.max(0, props.options.findIndex((option) => opt
 
 function choose(value) {
   if (value !== props.modelValue) emit('update:modelValue', value)
+}
+
+// A press on a choice, or (value null) on the switch's own edge: away from home it goes home.
+function press(value) {
+  if (props.home && props.modelValue !== props.home) choose(props.home)
+  else if (value !== null) choose(value)
 }
 
 // Left and Right choose the neighbour and move the focus with it.
@@ -39,6 +49,7 @@ async function move(event, step) {
     role="group"
     :aria-label="label"
     :style="{ '--count': options.length, '--at': index }"
+    @click="press(null)"
     @keydown.right="move($event, 1)"
     @keydown.left="move($event, -1)"
   >
@@ -50,7 +61,7 @@ async function move(event, step) {
       class="slide-toggle__option"
       :class="{ 'is-on': option.value === modelValue }"
       :aria-pressed="option.value === modelValue"
-      @click="choose(option.value)"
+      @click.stop="press(option.value)"
     >
       {{ option.label }}
     </button>

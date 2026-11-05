@@ -33,7 +33,7 @@
         </a>
       </div>
       <div class="case__modes">
-        <SlideToggle v-model="mode" :options="MODES" label="Show the books by" />
+        <SlideToggle v-model="mode" :options="MODES" label="Show the books by" home="covers" />
       </div>
     </header>
 

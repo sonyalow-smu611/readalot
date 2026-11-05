@@ -188,7 +188,7 @@ onMounted(() => {
           <span class="my-shelf__back-space" aria-hidden="true" />
           <ShelfSign class="my-shelf__sign" :text="shell.sign" :compact="Boolean(visitingId)" />
           <div class="my-shelf__modes">
-            <SlideToggle v-model="mode" :options="MODES" label="Show the books by" />
+            <SlideToggle v-model="mode" :options="MODES" label="Show the books by" home="covers" />
           </div>
         </header>
 

@@ -993,5 +993,5 @@ Written by Claude at Aalric's request. Layout and styling only.
 
 | Area | Files | What AI produced |
 |------|-------|------------------|
-| Switch | `client/src/components/shared/SlideToggle.vue` | A switch with a thumb that glides between the choices (a 0.34 second ease; none with reduced motion), still two buttons for the keyboard and screen readers, with Left and Right moving between them |
+| Switch | `client/src/components/shared/SlideToggle.vue` | A switch with a thumb that glides between the choices (a 0.34 second ease; none with reduced motion), still two buttons for the keyboard and screen readers, with Left and Right moving between them. While it is on Spines, a press anywhere on it (on either side, or its edge) slides it back to Covers (`home`) |
 | Where | `client/src/buildings/house/ShelfView.vue`, `client/src/buildings/library/SearchView.vue`, `client/src/buildings/library/components/GenreBookcase.vue` | The two chips became this switch, and My Shelf and the library's opened bookcases now open on Covers (search already did) |

@@ -283,7 +283,7 @@ arrow keys) or jumps along with **Places** (Window, Chair, Bookshelf, Clock, Cor
 - **Coins** show at the top right.
 
 **My Shelf:** a bookcase with exactly three shelves (the statuses), a search box (**Search your books**),
-genre chips, the **Spines / Covers** sliding switch (opens on Covers), **Back to room**. A book can be dragged (mouse: pull it up or down;
+genre chips, the **Spines / Covers** sliding switch (opens on Covers; press **Spines** to show spines, then a press anywhere on the switch goes back to Covers), **Back to room**. A book can be dragged (mouse: pull it up or down;
 touch: press and hold) to another shelf, which changes its status; **Esc** or letting go elsewhere puts it
 back; holding near the top or bottom edge scrolls the page. Long rows have **Previous / Next**, swipe,
 shift-wheel and arrow keys. Empty shelf: **No books yet** with **Discover books** and **Scan a cover**.

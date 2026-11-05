@@ -130,7 +130,7 @@ onMounted(() => {
       </form>
 
       <div v-if="books.length" class="search__modes">
-        <SlideToggle v-model="mode" :options="MODES" label="Show the books by" />
+        <SlideToggle v-model="mode" :options="MODES" label="Show the books by" home="covers" />
       </div>
     </header>
 
