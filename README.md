@@ -240,7 +240,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
 ### Part F: The guided tour
 
 29. The town opens and **your own character floats over the screen** in a speech bubble with a counter
-    such as **"1 of 33 · Town"**. It shows every part of the app in order
+    such as **"1 of 35 · Town"** (37 on a phone, which adds the ☰ menu). It shows every part of the app in order
     (Town, Your house, Library, Cafe, Salon). **Press Next** to move on, or **do what it asks** (it
     says, in bold, things like "Tap your house, then go in"; doing it moves on by itself).
     - 👀 It circles the thing it is talking about (the badge, the weather chip, the Daily button, the bell…).

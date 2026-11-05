@@ -73,4 +73,16 @@ const shown = computed(() => {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* a phone's top line also holds Places and Friends (about 230px on the right): the chip keeps clear
+   of them, without its label (still read out), and a long reading wraps */
+@media (max-width: 600px) {
+  .weather-chip {
+    max-width: calc(100% - 257px);
+  }
+
+  .weather-chip__kind {
+    display: none;
+  }
+}
 </style>

@@ -200,7 +200,7 @@ from the Salon.
 
 **Observed in the professor pass (live app, Nov 2026).**
 
-- The counter now reads `N of 33 · <Section>`.
+- The counter now reads `N of 35 · <Section>` on a laptop and `N of 37 · <Section>` on a phone (its ☰ menu adds steps).
 - The flow includes **ask** steps with **Skip this step** (instead of forcing one action path).
 - Buttons are: **Back** (from step 2), **Next**, **Skip this step** (only on ask steps), **Skip this part**,
   **Skip tour**. The last stop has **Done**.

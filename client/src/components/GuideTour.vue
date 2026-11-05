@@ -183,12 +183,44 @@ function draw(time) {
 
 // --- Placing the character, the pointer and the shield --------------------------------------------
 
+// What the character would hide if it stood on them: things to read or tap. Big regions (the room,
+// the hall) are left out, as the character always stands somewhere on them.
+const OBSTACLES = 'button, a[href], input, [role="button"], [role="tab"], h1, h2, h3, label, .px-sign-box, .hall__plate'
+// how often they are looked up again, in frames (about four times a second)
+const OBSTACLE_FRAMES = 15
+let obstacles = []
+let obstacleFrame = 0
+
+function readObstacles() {
+  const areaH = host.height - barHeight.value
+  obstacles = [...document.querySelectorAll(OBSTACLES)]
+    .filter((element) => !root.value?.contains(element) && element.getClientRects().length)
+    .map(boxOf)
+    .filter((box) => box.width * box.height < (host.width * areaH) / 4 && box.y < areaH && box.y + box.height > 0)
+}
+
+const overlap = (spot, box) =>
+  Math.max(0, Math.min(spot.x + ME_W, box.x + box.width) - Math.max(spot.x, box.x)) *
+  Math.max(0, Math.min(spot.y + ME_H, box.y + box.height) - Math.max(spot.y, box.y))
+
 // Beside the thing and never over it: below it when it is in the top half, above it when it is in
-// the bottom half, else to a side, and always clear of the text bar.
+// the bottom half, else to a side, and always clear of the text bar. On a small screen those spots
+// can land on the next thing to read (a card's title, the menu's other items, a tab), so the spots
+// along the edges are tried too, and the one hiding the least wins: never what is lit, and as
+// little else as can be.
 function placeAvatar(active) {
   const areaH = host.height - barHeight.value
   const clampX = (x) => Math.min(Math.max(x, EDGE), host.width - ME_W - EDGE)
-  let spot = { x: clampX((host.width - ME_W) / 2), y: Math.max(EDGE, areaH / 2 - ME_H / 2) }
+  const top = EDGE
+  const middle = Math.max(EDGE, areaH / 2 - ME_H / 2)
+  const bottom = Math.max(EDGE, areaH - ME_H - EDGE)
+  const centre = { x: clampX((host.width - ME_W) / 2), y: middle }
+  if (obstacleFrame-- <= 0) {
+    readObstacles()
+    obstacleFrame = OBSTACLE_FRAMES
+  }
+  // with nothing lit (an explaining step, or a thing not on screen yet) it starts from the middle
+  let near = [centre]
   if (active) {
     const { x, y, width, height } = active.box
     const cx = x + width / 2
@@ -198,11 +230,28 @@ function placeAvatar(active) {
     const above = { x: clampX(cx - ME_W / 2), y: y - ME_H - gap }
     const right = { x: x + width + gap, y: cy - ME_H / 2 }
     const left = { x: x - ME_W - gap, y: cy - ME_H / 2 }
-    const order = cy < areaH / 2 ? [below, above, right, left] : [above, below, left, right]
-    const fits = (p) => p.x >= EDGE && p.x + ME_W <= host.width - EDGE && p.y >= EDGE && p.y + ME_H <= areaH - EDGE
-    const chosen = order.find(fits)
-    if (chosen) spot = chosen
-    else spot = { x: clampX(cx < host.width / 2 ? host.width - ME_W - EDGE : EDGE), y: Math.max(EDGE, areaH - ME_H - EDGE) }
+    near = cy < areaH / 2 ? [below, above, right, left] : [above, below, left, right]
+  }
+  const edges = [top, middle, bottom].flatMap((row) => [{ x: EDGE, y: row }, { x: host.width - ME_W - EDGE, y: row }])
+  const fits = (p) => p.x >= EDGE && p.x + ME_W <= host.width - EDGE && p.y >= EDGE && p.y + ME_H <= areaH - EDGE
+  const lit = shapes.filter(Boolean).map((shape) => shape.box)
+  // where a drag goes (the Currently reading shelf) is as much a part of the step as what is dragged
+  const dropOn = isTry.value && guide.value.hintTo ? findTarget(guide.value.hintTo) : null
+  if (dropOn) lit.push(boxOf(dropOn))
+  // what a spot hides: anything lit counts far more than anything else
+  const cost = (p) => lit.reduce((sum, box) => sum + overlap(p, box) * 100, 0) + obstacles.reduce((sum, box) => sum + overlap(p, box), 0)
+  let spot = null
+  let best = Infinity
+  for (const candidate of [...near, ...edges].filter(fits)) {
+    const hides = cost(candidate)
+    if (hides < best) {
+      best = hides
+      spot = candidate
+    }
+  }
+  if (!spot) {
+    const cx = active ? active.box.x + active.box.width / 2 : host.width / 2
+    spot = active ? { x: clampX(cx < host.width / 2 ? host.width - ME_W - EDGE : EDGE), y: bottom } : centre
   }
   const next = { x: Math.round(spot.x), y: Math.round(spot.y) }
   if (next.x !== avatar.value.x || next.y !== avatar.value.y) avatar.value = next
