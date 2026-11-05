@@ -1044,3 +1044,12 @@ Written by Claude at Khaleil's request. End-to-end tests were not updated in thi
 | Steps per screen | `client/src/lib/walkthrough.js`, `client/src/stores/user.js` | A step or stop can say `screen: 'phone'` or `'wide'`; `walkthroughFor(phone)` builds the list, and the store picks it as the walkthrough starts (37 steps on a phone, 35 wider) |
 | The ☰ menu on a phone | `client/src/lib/walkthrough.js`, `client/src/components/town/TownMenu.vue`, `client/src/views/TownView.vue` | The town's step lights the weather, the badge, Places and Friends; then the reader taps ☰ and each row is lit in turn (Daily, the bell, music, public or private), with the same lines the buttons have wider. The menu stays open for that step and shuts after; the walkthrough no longer brings the separate buttons back on a phone |
 | Your profile from the badge | `client/src/lib/walkthrough.js` | On every screen, after the Style studio the walkthrough goes back to town and the reader taps their badge, which opens the Profile tab, instead of tapping the salon's Profile tab |
+
+### npm → pnpm (AI-generated)
+
+Written by Claude at Dylan's request (shared tooling, for review in the pull request). No app code changed.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Workspace | `pnpm-workspace.yaml` (new), `package.json`, `pnpm-lock.yaml` (new, from `pnpm import` so every package keeps the version `package-lock.json` had); removed `package-lock.json` and the stray `client/pnpm-*` files | The repo is a pnpm 12 workspace (`client`, `server`); the root scripts run each part with `pnpm --filter`; `packageManager` pins pnpm for Vercel (Corepack) |
+| Commands | `playwright.config.js`, `AGENTS.md`, `README.md`, `docs/`, usage comments in `server/scripts/`, `server/tests/`, `tests/e2e/`, `client/src/town/places.js`, `client/src/buildings/house/README.md` | Every `npm …` / `npx …` command rewritten for pnpm (`-w server` becomes `--filter readalot-server`) |

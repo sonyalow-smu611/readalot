@@ -3,7 +3,7 @@
 Suites: **TWN** town and HUD (14), **DLY** Daily tasks (9), **FRD** friends, chat and bell (13), **CAF** Cafe (8), **VIS** visiting rooms and
 notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding.md](01-public-auth-onboarding.md) and C2/C3 of
 [../E2E_GUIDE.md](../E2E_GUIDE.md). Unless stated: Desktop, signed in, walkthrough already seen (ACCT-NEW-TOURSEEN or ACCT-DEMO).
-**Reset the demo account** (`npm run seed:demo -w server`) before any scenario that says ACCT-DEMO, and after any that changes it.
+**Reset the demo account** (`pnpm --filter readalot-server seed:demo`) before any scenario that says ACCT-DEMO, and after any that changes it.
 
 ---
 

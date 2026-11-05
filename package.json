@@ -1,15 +1,12 @@
 {
   "name": "readalot",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
+  "packageManager": "pnpm@12.4.1",
   "scripts": {
-    "dev:client": "npm run dev -w client",
-    "dev:server": "npm run dev -w server",
-    "build": "npm run build -w client",
-    "test:e2e": "npx playwright test"
+    "dev:client": "pnpm --filter readalot-client dev",
+    "dev:server": "pnpm --filter readalot-server dev",
+    "build": "pnpm --filter readalot-client build",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"

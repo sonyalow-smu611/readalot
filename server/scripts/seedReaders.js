@@ -2,7 +2,7 @@
 // (no one can sign in as them: random passwords), a discoverable profile with their town look,
 // their shelf and their room's furniture. Safe to re-run: fixed ids and upserts. Re-running also resets when each was
 // last online, so Emma and Ayaan show as online again.
-// Usage: npm run seed:readers -w server
+// Usage: pnpm --filter readalot-server seed:readers
 import { randomBytes } from "node:crypto";
 import { DEMO_BOOKS, DEMO_READERS } from "../data/demoReaders.js";
 import { env } from "../src/services/env.js";

@@ -57,7 +57,7 @@ since this README was last updated.
 - If a step expects a specific person/count and you see a different one, do the **same action** with what
   is visible and continue.
 - If you need the exact seeded baseline for verification, reset Jordan first with
-  `npm run seed:demo -w server` (team/internal flow in [docs/DEMO.md](docs/DEMO.md)).
+  `pnpm --filter readalot-server seed:demo` (team/internal flow in [docs/DEMO.md](docs/DEMO.md)).
 
 ### What the demo account already has
 

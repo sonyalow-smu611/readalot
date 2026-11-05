@@ -1,7 +1,7 @@
 // T02: seed the demo user, ~8 fake readers around Singapore, and a few saved books.
 // SET UP SUPABASE SCHEMA FIRST 
 
-// Idempotent: fixed ids + upserts, safe to re-run. Usage: npm run seed -w server
+// Idempotent: fixed ids + upserts, safe to re-run. Usage: pnpm --filter readalot-server seed
 import { env } from "../src/services/env.js";
 import { searchGoogleBooks } from "../src/services/books.js";
 import { supabase } from "../src/services/supabase.js";

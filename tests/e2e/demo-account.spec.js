@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 import { useRealApi } from "./fixtures.js";
 import { hasSupabase, NEEDS_SUPABASE } from "./supabaseUser.js";
 
-// The demo account (npm run seed:demo -w server): demo@demo.ikda.app, signed in with the code
+// The demo account (pnpm --filter readalot-server seed:demo): demo@demo.ikda.app, signed in with the code
 // 111111 because no email is sent to a demo address. Needs the account seeded in the Supabase
 // project the .env points at. Registering a demo-domain address goes through the API with Supabase
 // on (useRealApi), and every account a test makes is deleted after it.

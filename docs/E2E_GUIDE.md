@@ -436,7 +436,7 @@ lost/leaked without it), High (a core feature), Medium (a supporting behaviour),
 | | **Total** | **215** |
 
 **Order of execution.** Run 01 first (it creates accounts), then 02, then the rest in any order; 06 (JRN) and
-07 last. Scenarios that change the demo account say **Reset: `npm run seed:demo -w server`** and must be followed by it.
+07 last. Scenarios that change the demo account say **Reset: `pnpm --filter readalot-server seed:demo`** and must be followed by it.
 
 ---
 
@@ -447,14 +447,14 @@ lost/leaked without it), High (a core feature), Medium (a supporting behaviour),
 | What | How |
 |---|---|
 | **Live site** | https://ikda-rust.vercel.app (client and API on one Vercel project, `legally1/ikda`) |
-| **Local app** | `npm install`, `cp .env.example .env` (Supabase keys needed), `npm run dev:server` (API on :3000), `npm run dev:client` (http://localhost:5173) |
-| **Existing automated tests** | `npm run test:e2e` (Playwright; it starts its own servers on 3100, 3101 and 5174; if a port is busy, find the process first and don't kill what you don't recognise) |
-| **One file / one test** | `npx playwright test tests/e2e/room.spec.js`, `npx playwright test -g "lamp"`, `--headed`, `--ui`, `--debug` |
-| **Server checks** | `npm run check -w server` (also `node server/tests/*.check.js`; some need Docker) |
-| **Seed readers (once)** | `npm run seed:readers -w server` (Emma, Ayaan, Sofia, Noah, Mei, Priya, Daniel, **Pip**) |
-| **Seed / reset the demo account** | `npm run seed:demo -w server` (rewrites only Jordan's rows; makes Emma and Ayaan "online" for 5 minutes) |
+| **Local app** | `pnpm install`, `cp .env.example .env` (Supabase keys needed), `pnpm dev:server` (API on :3000), `pnpm dev:client` (http://localhost:5173) |
+| **Existing automated tests** | `pnpm test:e2e` (Playwright; it starts its own servers on 3100, 3101 and 5174; if a port is busy, find the process first and don't kill what you don't recognise) |
+| **One file / one test** | `pnpm exec playwright test tests/e2e/room.spec.js`, `pnpm exec playwright test -g "lamp"`, `--headed`, `--ui`, `--debug` |
+| **Server checks** | `pnpm --filter readalot-server check` (also `node server/tests/*.check.js`; some need Docker) |
+| **Seed readers (once)** | `pnpm --filter readalot-server seed:readers` (Emma, Ayaan, Sofia, Noah, Mei, Priya, Daniel, **Pip**) |
+| **Seed / reset the demo account** | `pnpm --filter readalot-server seed:demo` (rewrites only Jordan's rows; makes Emma and Ayaan "online" for 5 minutes) |
 | **Pip's replies** | needs `database/neighbour.sql` applied in Supabase (unverified whether it is applied) |
-| **Build** | `npm --workspace client run build` |
+| **Build** | `pnpm --filter readalot-client build` |
 | **Viewport** | Desktop 1440 × 900 first, then phone 390 × 844 |
 
 **Driving the UI like a user.** Find things the way a reader does: by role and accessible name (`getByRole`,
@@ -479,7 +479,7 @@ API with that reader's access token: `Authorization: Bearer <token>` (get one wi
 |---|---|---|---|
 | **ACCT-NEW** | A fresh reader | Register `qa.<n>@demo.ikda.app`, username `qa.<n>` (digits and letters), password `Maya1234`, code `111111`; finish Welcome with name `Qa Tester`, Woman, age 21, Prefer not to say, genres Fantasy and Mystery & Thriller, any character | Profile complete, walkthrough pending, 480 coins, 0 XP, empty shelf, no friends |
 | **ACCT-NEW-TOURSEEN** | A fresh reader with the walkthrough already done | ACCT-NEW, then **Skip tour** (or `createReader({ profile, tourSeen: true })` in code) | As above, no walkthrough |
-| **ACCT-DEMO** | Jordan Lee | `demo@demo.ikda.app` / `Ikda-Demo-2026` / `111111`, after `npm run seed:demo -w server` | Level 4, 620 XP, 600 coins, 10 books (3 finished and reviewed: The Hobbit 5★, Pride and Prejudice 4★, Project Hail Mary 5★; 2 reading: Dune 45%, The Secret History 20%; 5 to be read: Fourth Wing, Piranesi, The Night Circus, Circe, Gone Girl), friends Emma Tan and Ayaan Rahman (online for 5 minutes after the seed), Sofia Lim (12 days away), Mei Chen (5 weeks away), a pending request from Noah Koh, chats with Emma and Ayaan, notes from Emma and Ayaan on the corkboard, two visits and a request in the bell, three saved quotes, a decorated room (13 placed pieces) and 5 pieces in the Inventory (Moon poster, Rocking chair, Calico cat, Navy curtains, Tartan bedding), tour seen |
+| **ACCT-DEMO** | Jordan Lee | `demo@demo.ikda.app` / `Ikda-Demo-2026` / `111111`, after `pnpm --filter readalot-server seed:demo` | Level 4, 620 XP, 600 coins, 10 books (3 finished and reviewed: The Hobbit 5★, Pride and Prejudice 4★, Project Hail Mary 5★; 2 reading: Dune 45%, The Secret History 20%; 5 to be read: Fourth Wing, Piranesi, The Night Circus, Circe, Gone Girl), friends Emma Tan and Ayaan Rahman (online for 5 minutes after the seed), Sofia Lim (12 days away), Mei Chen (5 weeks away), a pending request from Noah Koh, chats with Emma and Ayaan, notes from Emma and Ayaan on the corkboard, two visits and a request in the bell, three saved quotes, a decorated room (13 placed pieces) and 5 pieces in the Inventory (Moon poster, Rocking chair, Calico cat, Navy curtains, Tartan bedding), tour seen |
 | **ACCT-PROG** | A programmatic reader | `createReader({ profile: {...}, tourSeen })` in `tests/e2e/supabaseUser.js` (needs the service-role key) | Isolated, deleted after the test |
 | **ACCT-DEMO-FRESH** | A second demo-domain reader | Register `qa.b.<n>@demo.ikda.app` | For two-reader scenarios (friend requests between two real accounts) |
 | **Pip** | `pip.ikda`, "Pip the Librarian" | Seeded by `seed:readers` | Always online, accepts requests at once |
@@ -488,7 +488,7 @@ API with that reader's access token: `Authorization: Bearer <token>` (get one wi
 
 **Naming and cleanup.** Make accounts with a unique stamp (`qa.<epoch>`). After a scenario, delete the accounts it
 created (auth user plus `profiles` row; related rows cascade) with the service-role client. Leave ACCT-DEMO
-reset (`npm run seed:demo -w server`) when a scenario changed it.
+reset (`pnpm --filter readalot-server seed:demo`) when a scenario changed it.
 
 **When Google Books refuses the server** (a used-up quota, a limit on a shared host's address, an outage) the
 search falls back to Open Library, so shelves still load: its books have ids like `ol-OL45804W`, covers and

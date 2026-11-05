@@ -5,7 +5,7 @@ Not needed for grading: the professor's guide is [../README.md](../README.md).
 ## What it is
 
 - **Demo account:** `demo@demo.ikda.app` / `Ikda-Demo-2026` / code `111111`. It is **Jordan Lee**
-  (`@demo.reader`), a reader with a full town, shelf and room, made by `npm run seed:demo -w server`.
+  (`@demo.reader`), a reader with a full town, shelf and room, made by `pnpm --filter readalot-server seed:demo`.
 - **The code 111111.** An email on `demo.ikda.app` has no inbox, so `client/src/services/auth.js` accepts
   `111111` for it and signs in with the password the reader typed (Supabase still checks the password).
   Registering with such an address goes through `POST /api/demo-auth/register`
@@ -22,8 +22,8 @@ Not needed for grading: the professor's guide is [../README.md](../README.md).
 Run against the Supabase project in `.env`:
 
 ```bash
-npm run seed:readers -w server   # once: the fictional readers (Emma, Ayaan, Sofia, ...)
-npm run seed:demo -w server      # the demo account: run it again before each demo or grading round
+pnpm --filter readalot-server seed:readers   # once: the fictional readers (Emma, Ayaan, Sofia, ...)
+pnpm --filter readalot-server seed:demo      # the demo account: run it again before each demo or grading round
 ```
 
 `seed:demo` only writes Jordan's rows, plus a few notes, messages, reviews and visits that mention Jordan,
@@ -39,7 +39,7 @@ each browser (localStorage), so it cannot be seeded: it appears the first time M
 
 ## Live demo: an 8-minute order
 
-1. Run `npm run seed:demo -w server`, then log in as `demo@demo.ikda.app` / `Ikda-Demo-2026` / `111111`.
+1. Run `pnpm --filter readalot-server seed:demo`, then log in as `demo@demo.ikda.app` / `Ikda-Demo-2026` / `111111`.
 2. **Town** (1 min): the weather chip, friends walking with their glow, Emma's and Ayaan's houses.
 3. **Bell and Friends** (1 min): visits, Noah's request (accept it), the chat with Emma.
 4. **Cafe** (1 min): match scores, Emma's profile, shared books.

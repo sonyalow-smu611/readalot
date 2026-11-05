@@ -3,7 +3,7 @@
 Suites: **ROOM** (8), **SHF** bookshelf and My Shelf (14), **MOOD** (7), **SHOP** (12) = 41. Format, accounts and rules: header of
 [01-public-auth-onboarding.md](01-public-auth-onboarding.md) and C2/C3 of [../E2E_GUIDE.md](../E2E_GUIDE.md). Unless stated: Desktop,
 signed in as **ACCT-DEMO** just seeded (Jordan: 620 XP level 4, 600 coins, 10 books, decorated room). **Reset after any scenario that
-changes it:** `npm run seed:demo -w server`. Existing room helpers: `roomReady`, `goToPlace`, `fromMenu`, `openShop`, `buy`,
+changes it:** `pnpm --filter readalot-server seed:demo`. Existing room helpers: `roomReady`, `goToPlace`, `fromMenu`, `openShop`, `buy`,
 `pickFromInventory`, `screenOf`, `SPOTS` in `tests/e2e/fixtures.js`.
 
 ---

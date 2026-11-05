@@ -1,0 +1,8 @@
+packages:
+  - client
+  - server
+
+# esbuild (used by Vite) downloads its binary in an install script; pnpm only runs the ones
+# listed here.
+allowBuilds:
+  esbuild: true
