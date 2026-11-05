@@ -916,3 +916,13 @@ Written by Claude at Dylan's request, from the team's testing notes (agreed by t
 | One card per reader | `client/src/town/nearbyStore.js`, `client/src/views/TownView.vue`, `tests/e2e/friends-list.spec.js` | A reader who becomes a friend leaves the nearby list as soon as the friend list reloads, and the friend and nearby cards share one transition (`out-in`), so adding Pip no longer stacks a friend card over the nearby one |
 | Docs | `README.md`, `docs/E2E_GUIDE.md`, `docs/e2e/02-walkthrough.md` | The walkthrough's step count (33) and the weather step |
 | Tests | `tests/e2e/notifications.spec.js`, `tests/e2e/townFriends.js`, `tests/e2e/town-map.spec.js`, `tests/e2e/town.spec.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/visit-room.spec.js`, `tests/e2e/room-furniture.spec.js`, `tests/e2e/buttons.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/room-themes.spec.js`, `tests/e2e/room.spec.js` | Names as page text that grow with zoom; the weather chip can't be changed; the walkthrough without the weather ask; the fourth note and the "+N" tag; the lit armchair, wall and surfaces, and the ✎ outlines; new placing prompts; a new note in the bell opening the board marked New, and the corkboard's glow going once it's read |
+
+### Genre bookcases and the About you drop-down (AI-generated)
+
+Written by Claude at Aalric's request. Layout and interaction only; no business logic.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Genre page | `client/src/views/GenreShelfView.vue` | A favourite genre now opens the library's wooden bookcase in that genre's wood, a dozen books to a bookcase, in a carousel you swipe left and right (scroll-snap), with arrows and numbered dots. Sorting still works |
+| Drop-down | `client/src/buildings/salon/components/PixelSelect.vue`, `AboutYou.vue` | A drop-down drawn in the app's pixel style instead of the browser's: arrow keys, Enter and Escape work, a tap outside closes it, and it opens upward when there is no room below |
+| Tests | `tests/e2e/genre-and-dropdown.spec.js` | The carousel's arrows, dots and swipe, and the drop-down's look and keyboard |
