@@ -1,6 +1,39 @@
 <!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # IKDA
 
+**Group 16 · Bangtan Warriors**
+
+## Links
+
+| | |
+|---|---|
+| **Open the app** | <https://ikda-rust.vercel.app/register> |
+| **Landing page** | <https://ikda-rust.vercel.app/start> |
+| **Pitch video (YouTube)** | <https://www.youtube.com/watch?v=d5RvL3CJkto> |
+| **Code** | <https://github.com/sonyalow-smu611/readalot> |
+
+## Purpose
+
+Young readers often read alone, so it's hard for them to find people with the same taste or to
+keep up a reading habit. Today's reading apps are mostly plain book trackers, and their design
+doesn't keep readers coming back.
+
+IKDA turns reading into a game you play with other readers. You track and find books in a playful
+pixel-art town, meet like-minded readers by visiting each other's rooms, leaving notes and sharing
+recommendations, and earn XP, coins and daily streaks that keep you reading.
+
+## Features at a glance
+
+| | What you can do |
+|---|---|
+| **Connect** | Find friends by username or meet readers nearby on the town map and in the Cafe. See your match score and shared genres, add friends, and chat in a box you can tuck away while you explore. The bell tells you about friend requests, friends coming online and visits to your room. |
+| **Visit** | Walk into a friend's room, browse their To be read, Currently reading and Finished reading shelves, and pin a note on their notice board. |
+| **Discover** | In the Library, search for any book or ask the help desk, scan a cover, or browse genre bookcases and this week's bestsellers. Each book shows its synopsis, reviews and where to get it, and you can add it to To be read. |
+| **Read and progress** | Update how far you are with a slider, or drag a book to another shelf. Finishing a book earns 100 XP, levelling up earns coins, and daily tasks build a streak with rewards to claim. Rate and review what you've read. |
+| **Personalise** | Spend coins in the Shop on cats, plants, posters and furniture, place them in your room, and restyle your character in the Hair Salon (or let **Surprise me** pick a look). |
+
+---
+
 **Social media, but for book lovers.** IKDA (읽다, Korean for "to read") is a mobile-first web app
 (IS216 group project). After signing in you land in a pixel-art **town**. Each building is one part
 of the app:
