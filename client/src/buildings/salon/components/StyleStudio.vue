@@ -2,6 +2,7 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The salon's style studio: start from a ready-made look or roll a surprise one, then change any
 // part. A save bar slides up once the look differs from the saved one. The page saves.
+import LoadButton from '@/components/shared/LoadButton.vue'
 import CharacterPresetPicker from '@/components/shared/CharacterPresetPicker.vue'
 import CharacterCustomiser from '@/buildings/salon/components/CharacterCustomiser.vue'
 import { presetCharacter, randomCharacter } from '@/lib/avatar/catalogue.js'
@@ -60,9 +61,9 @@ function surprise() {
         <p v-else class="savebar__text">New look ready</p>
         <div class="savebar__actions">
           <button type="button" class="btn btn-danger" @click="emit('reset')">Reset</button>
-          <button type="button" class="btn btn-success savebar__save" :disabled="busy" @click="emit('save')">
-            {{ busy ? 'Saving…' : 'Save look' }}
-          </button>
+          <LoadButton class="btn btn-success savebar__save" :busy="busy" :failed="Boolean(error)" busy-text="Saving…" done-text="Saved" @click="emit('save')">
+            Save look
+          </LoadButton>
         </div>
       </div>
     </Transition>
@@ -170,7 +171,7 @@ function surprise() {
 
 .savebar__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 .savebar .btn {

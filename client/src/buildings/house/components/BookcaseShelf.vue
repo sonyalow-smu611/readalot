@@ -456,7 +456,7 @@ watch(
 
 .shelf__pager {
   display: flex;
-  gap: 6px;
+  gap: var(--rl-btn-gap);
 }
 
 .shelf__page {

@@ -7,22 +7,25 @@
 -->
 <template>
   <span class="save-quote">
-    <button
+    <LoadButton
       class="btn btn-sm"
       :class="savedId ? 'btn-secondary' : 'btn-success'"
-      type="button"
       :aria-pressed="Boolean(savedId)"
-      :disabled="busy || !quote"
+      :busy="busy"
+      :failed="Boolean(error)"
+      :disabled="!quote"
+      busy-text="Saving…"
       @click="toggle"
     >
-      {{ busy ? "Saving…" : savedId ? "Unsave" : "Save quote" }}
-    </button>
+      {{ savedId ? "Unsave" : "Save quote" }}
+    </LoadButton>
     <RouterLink v-if="savedId" class="btn btn-secondary btn-sm" to="/salon#saved-quotes">See saved quotes</RouterLink>
     <span v-if="error" class="save-quote__error" role="alert">{{ error }}</span>
   </span>
 </template>
 
 <script setup>
+import LoadButton from "@/components/shared/LoadButton.vue";
 import { ref, watch } from "vue";
 import { getSavedQuotes, saveQuote, unsaveQuote } from "../services/api.js";
 
@@ -81,7 +84,7 @@ watch(() => props.quote, findSaved, { immediate: true });
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 .save-quote__error {

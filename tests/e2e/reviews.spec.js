@@ -40,12 +40,12 @@ test.describe("everyone's reviews", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
   });
 
-  test("the rating is the Readalot readers' average, or Google's when nobody here has rated it", async ({ page }) => {
+  test("the rating is the IKDA readers' average, or Google's when nobody here has rated it", async ({ page }) => {
     // Pride and Prejudice: 5, 4 and 3 stars here; 4.3 on Google
     await page.goto(PRIDE);
     const rating = page.getByRole("region", { name: "Rating" });
     await expect(rating).toContainText("4 / 5");
-    await expect(rating).toContainText("from 3 Readalot readers");
+    await expect(rating).toContainText("from 3 IKDA readers");
 
     // The Great Gatsby: no reviews here; 3.9 on Google
     await page.goto("/books/demo-shelf-9");
@@ -64,7 +64,7 @@ test.describe("everyone's reviews", () => {
     // a found book's card keeps its reviews behind their own button
     await genreCard.getByRole("button", { name: /^Leave\/Read Reviews/ }).click();
     await expect(genreCard.getByRole("region", { name: "Reviews" })).toContainText("Emma Tan");
-    await expect(genreCard).toContainText("from 3 Readalot readers");
+    await expect(genreCard).toContainText("from 3 IKDA readers");
 
     await page.goto("/house/shelf");
     await page.getByRole("region", { name: /^Finished reading/ }).getByRole("button", { name: /^Pride and Prejudice/ }).click();
@@ -72,7 +72,7 @@ test.describe("everyone's reviews", () => {
     // My Shelf's card is laid out like the library's: the reviews wait behind their button too
     await shelfCard.getByRole("button", { name: /^Leave\/Read Reviews/ }).click();
     await expect(shelfCard.getByRole("region", { name: "Reviews" })).toContainText("Emma Tan");
-    await expect(shelfCard).toContainText("from 3 Readalot readers");
+    await expect(shelfCard).toContainText("from 3 IKDA readers");
 
     await page.goto("/house");
     await roomReady(page);
@@ -104,7 +104,7 @@ test.describe("your own review", () => {
     await expect(mine).toContainText("Rated 4 out of 5");
     await expect(mine).toContainText("A cosy read.");
     await expect(mine.getByRole("link", { name: "You" })).toHaveAttribute("href", "/salon");
-    await expect(page.getByRole("region", { name: "Rating" })).toContainText("from 1 Readalot reader");
+    await expect(page.getByRole("region", { name: "Rating" })).toContainText("from 1 IKDA reader");
 
     await mine.getByRole("button", { name: "Edit your review" }).click();
     await reviews(page).getByRole("radio", { name: "2 stars" }).check();

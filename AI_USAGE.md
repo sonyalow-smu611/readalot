@@ -917,12 +917,18 @@ Written by Claude at Dylan's request, from the team's testing notes (agreed by t
 | Docs | `README.md`, `docs/E2E_GUIDE.md`, `docs/e2e/02-walkthrough.md` | The walkthrough's step count (33) and the weather step |
 | Tests | `tests/e2e/notifications.spec.js`, `tests/e2e/townFriends.js`, `tests/e2e/town-map.spec.js`, `tests/e2e/town.spec.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/visit-room.spec.js`, `tests/e2e/room-furniture.spec.js`, `tests/e2e/buttons.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/room-themes.spec.js`, `tests/e2e/room.spec.js` | Names as page text that grow with zoom; the weather chip can't be changed; the walkthrough without the weather ask; the fourth note and the "+N" tag; the lit armchair, wall and surfaces, and the ✎ outlines; new placing prompts; a new note in the bell opening the board marked New, and the corkboard's glow going once it's read |
 
-### Genre bookcases and the About you drop-down (AI-generated)
+### Testing fixes, round 3 (AI-generated)
 
-Written by Claude at Aalric's request. Layout and interaction only; no business logic.
+Written by Claude at Dylan's request, from the team's testing notes (agreed by the team, including the two server changes).
 
 | Area | Files | What AI produced |
 |------|-------|------------------|
-| Genre page | `client/src/views/GenreShelfView.vue` | A favourite genre now opens the library's wooden bookcase in that genre's wood, a dozen books to a bookcase, in a carousel you swipe left and right (scroll-snap), with arrows and numbered dots. Sorting still works |
-| Drop-down | `client/src/buildings/salon/components/PixelSelect.vue`, `AboutYou.vue` | A drop-down drawn in the app's pixel style instead of the browser's: arrow keys, Enter and Escape work, a tap outside closes it, and it opens upward when there is no room below |
-| Tests | `tests/e2e/genre-and-dropdown.spec.js` | The carousel's arrows, dots and swipe, and the drop-down's look and keyboard |
+| Loading, then a tick | `client/src/components/shared/LoadButton.vue` (new), `client/src/lib/loading.js` (new) | A button for anything that waits on the server: a spinner while it's on its way, then a ✓ for a moment once it's done (not when it failed), and it can't be pressed meanwhile |
+| Friend buttons | `client/src/views/TownView.vue`, `client/src/town/nearbyStore.js`, `client/src/components/town/FriendRequestRow.vue`, `FriendsList.vue`, `FriendCard.vue`, `AddFriendForm.vue`, `client/src/components/people/ReaderProfile.vue` | Accept, Decline, Add friend (map card, username, the Cafe's reader profile), Remove friend and Remove friends show Accepting… / Sending… / Removing…, then their tick; the lists change after the tick, so it's seen |
+| Removed friends nearby | `client/src/town/nearbyStore.js`, `server/src/services/nearby.js` | Readers nearby are the server's list less your friends; removing a friend asks the server again (without the browser's location), and the server no longer hides readers you removed or who declined |
+| Asking again | `server/src/services/friends.js` | A request to someone whose friendship was ended reopens it as a new request from you (a demo reader accepts at once), instead of silently doing nothing |
+| Chat | `client/src/views/TownView.vue`, `client/src/components/town/ChatDock.vue` | One thing open at a time: an open chat shuts to its box when any other button is pressed or a list, the bell or a card opens, and opening a chat shuts them. The chat window stops below the controls along the top, measured as they wrap on a phone, so none is covered |
+| Messages in the bell | `client/src/town/notificationsStore.js` | Only messages you receive; not the ones you send |
+| Button spacing | `client/src/assets/theme.css` and 26 components | `--rl-btn-gap` (8 px, the same as Bootstrap's `gap-2`) for every row of buttons |
+| IKDA | `client/index.html`, `client/src/router/index.js`, `AppHeader.vue`, `IntroAnimation.vue`, `TownView.vue`, `CafeView.vue`, `DiscoverView.vue`, `useBookReviews.js`, `server/src/services/books.js`, `server/src/index.js`, `server/src/routes/creatures.js` | Every name the reader sees says IKDA, as the landing page and the town already did; storage keys and package names stay as they were |
+| Tests | `tests/e2e/friends-list.spec.js`, `friends.spec.js`, `notifications.spec.js`, `townFriends.js`, `supabaseUser.js`, `reviews.spec.js`, `onboarding.spec.js` | Spinner and tick on Accept, Remove friends and the Cafe's Add friend; a removed friend nearby staying in town; a closed chat on another button; asking a removed friend again; only received messages in the bell; IKDA |

@@ -1339,7 +1339,7 @@ defineExpose({ dropAt, putBack })
   bottom: 100%;
   left: 50%;
   display: flex;
-  gap: 4px;
+  gap: var(--rl-btn-gap);
   margin-bottom: 4px;
   transform: translateX(-50%);
 }
@@ -1551,7 +1551,7 @@ defineExpose({ dropAt, putBack })
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 6px 8px;
+  gap: var(--rl-btn-gap);
   width: min(560px, calc(100% - var(--places-room) - 12px));
   margin: 0;
   padding: 8px 10px;

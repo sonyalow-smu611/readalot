@@ -2,6 +2,7 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Gender, age, religion and location as small cards, each edited in place on its own.
 // The page saves; this card keeps the draft and moves focus in and out of the field.
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { nextTick, ref, watch } from 'vue'
 import PixelSelect from '@/buildings/salon/components/PixelSelect.vue'
 import ProfileBlock from '@/buildings/salon/components/ProfileBlock.vue'
@@ -100,9 +101,9 @@ function typed() {
           <p v-if="invalid || error" id="about-error" class="field-error" role="alert">{{ invalid || error }}</p>
           <div class="fact__actions">
             <button type="button" class="btn btn-sm btn-secondary" @click="emit('cancel')">Cancel</button>
-            <button type="submit" class="btn btn-sm btn-success" :disabled="busy">
-              {{ busy ? 'Saving…' : 'Save' }}
-            </button>
+            <LoadButton type="submit" class="btn btn-sm btn-success" :busy="busy" :failed="Boolean(error)" busy-text="Saving…" done-text="Saved">
+              Save
+            </LoadButton>
           </div>
         </form>
         <template v-else>
@@ -191,7 +192,7 @@ function typed() {
 .fact__actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
   margin-top: 10px;
 }
 

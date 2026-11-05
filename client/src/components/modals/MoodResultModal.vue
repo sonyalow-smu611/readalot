@@ -55,13 +55,13 @@
             <p v-if="addError" class="result__error" role="alert">{{ addError }}</p>
             <div v-if="added" class="result__added">
               <span class="result__added-text" role="status"><span aria-hidden="true">✓</span> Added to To Be Read</span>
-              <button class="btn btn-secondary btn-sm" type="button" :disabled="adding" @click="undo">
-                {{ adding ? "Undoing…" : "Undo" }}
-              </button>
+              <LoadButton class="btn btn-secondary btn-sm" :busy="adding" :failed="Boolean(addError)" busy-text="Undoing…" @click="undo">
+                Undo
+              </LoadButton>
             </div>
-            <button v-else class="btn btn-success result__action" type="button" :disabled="adding" @click="add">
-              {{ adding ? "Adding…" : "Add to To Be Read" }}
-            </button>
+            <LoadButton v-else class="btn btn-success result__action" :busy="adding" :failed="Boolean(addError)" busy-text="Adding…" @click="add">
+              Add to To Be Read
+            </LoadButton>
             <RouterLink class="btn btn-outline-primary result__action" :to="`/books/${data.book.id}`" @click="$emit('leave', { mood, data })">
               Open book page
             </RouterLink>
@@ -78,6 +78,7 @@
 </template>
 
 <script setup>
+import LoadButton from "@/components/shared/LoadButton.vue";
 import { computed, onMounted, ref } from "vue";
 import { useAsync } from "../../composables/useAsync.js";
 import { getRecommendations } from "../../services/api.js";

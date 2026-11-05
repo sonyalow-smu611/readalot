@@ -4,6 +4,8 @@
 // the ways on (talk to them, visit their house, remove them). A reader nearby: add them as a
 // friend, or see their profile.
 import { onMounted, ref } from 'vue'
+import LoadButton from '@/components/shared/LoadButton.vue'
+
 
 const props = defineProps({
   // { id, displayName, online, lastSeen } (see town/friends.js)
@@ -14,8 +16,9 @@ const props = defineProps({
   nearby: { type: Boolean, default: false },
   // you've already asked this reader
   requested: { type: Boolean, default: false },
-  // your request to this reader is on its way
-  sending: { type: Boolean, default: false },
+  // your request to this reader, and removing this friend: { busy, failed } (see LoadButton)
+  sending: { type: Object, default: () => ({ busy: false, failed: false }) },
+  removing: { type: Object, default: () => ({ busy: false, failed: false }) },
 })
 const emit = defineEmits(['talk', 'visit', 'add', 'profile', 'remove', 'close'])
 
@@ -51,10 +54,17 @@ onMounted(() => card.value?.focus())
     </p>
     <p v-if="house" class="friend-card__blurb">{{ house.blurb }}</p>
     <div v-if="nearby" class="friend-card__actions">
-      <button type="button" class="btn btn-primary friend-card__talk" :disabled="requested || sending" :aria-busy="sending" @click="emit('add', friend)">
-        <span v-if="sending" class="spinner-border spinner-border-sm me-1" aria-hidden="true" />
-        {{ sending ? 'Sending…' : requested ? 'Requested' : 'Add friend' }}
-      </button>
+      <LoadButton
+        class="btn btn-primary friend-card__talk"
+        :busy="sending.busy"
+        :failed="sending.failed"
+        busy-text="Sending…"
+        done-text="Sent"
+        :disabled="requested"
+        @click="emit('add', friend)"
+      >
+        {{ requested ? 'Requested' : 'Add friend' }}
+      </LoadButton>
       <button type="button" class="btn btn-secondary friend-card__visit" @click="emit('profile', friend)">View profile</button>
     </div>
     <template v-else>
@@ -64,14 +74,17 @@ onMounted(() => card.value?.focus())
           Visit {{ first }}'s house
         </button>
       </div>
-      <button
-        type="button"
+      <LoadButton
         class="btn btn-sm friend-card__remove"
         :class="confirmingRemove ? 'btn-danger' : 'btn-secondary'"
+        :busy="removing.busy"
+        :failed="removing.failed"
+        busy-text="Removing…"
+        done-text="Removed"
         @click="confirmingRemove ? emit('remove', friend) : (confirmingRemove = true)"
       >
         {{ confirmingRemove ? `Yes, remove ${first}` : 'Remove friend' }}
-      </button>
+      </LoadButton>
     </template>
   </div>
 </template>
@@ -178,7 +191,7 @@ onMounted(() => card.value?.focus())
 
 .friend-card__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 .friend-card__talk,

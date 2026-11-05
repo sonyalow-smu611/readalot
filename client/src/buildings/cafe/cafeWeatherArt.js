@@ -1,5 +1,5 @@
 // AI-assisted pixel-art layout — review/credit under PROJECT.md and AI_USAGE.md.
-// Drawn entirely with Readalot's existing town/salon pixel helpers (no image assets).
+// Drawn entirely with IKDA's existing town/salon pixel helpers (no image assets).
 // Single 1200 × 600 scene: never rearrange or remove furniture for a narrow viewport.
 import { E, P, R, mk } from '@/lib/avatar/draw.js'
 

@@ -4,6 +4,7 @@
 // sends it and says how it went.
 import { ref, watch } from 'vue'
 import { cleanUsername } from '@/town/username.js'
+import LoadButton from '@/components/shared/LoadButton.vue'
 
 const props = defineProps({
   // { busy, ok, message } for the last try, or null
@@ -42,10 +43,17 @@ watch(
         autocapitalize="none"
         spellcheck="false"
       />
-      <button type="submit" class="btn btn-primary btn-sm" :disabled="status?.busy || !text.trim()" :aria-busy="Boolean(status?.busy)">
-        <span v-if="status?.busy" class="spinner-border spinner-border-sm me-1" aria-hidden="true" />
-        {{ status?.busy ? 'Sending…' : 'Send request' }}
-      </button>
+      <LoadButton
+        type="submit"
+        class="btn btn-primary btn-sm"
+        :busy="Boolean(status?.busy)"
+        :failed="!status?.ok"
+        :disabled="!text.trim()"
+        busy-text="Sending…"
+        done-text="Sent"
+      >
+        Send request
+      </LoadButton>
     </div>
     <p v-if="status?.message" class="add-friend__message" :class="{ 'is-wrong': !status.ok }" role="status">{{ status.message }}</p>
     <p v-if="username" class="add-friend__yours">Your username: {{ username }}</p>

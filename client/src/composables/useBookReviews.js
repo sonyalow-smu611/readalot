@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Every reader's reviews of the book a card is showing, and the rating to show for it: the
-// Readalot readers' average, or Google's when nobody here has rated it. `book` is a getter
+// IKDA readers' average, or Google's when nobody here has rated it. `book` is a getter
 // (() => props.book); the reviews load again whenever its id changes.
 import { computed, ref, watch } from 'vue'
 import { deleteReview, getReviews, saveReview } from '@/services/api.js'
@@ -44,10 +44,10 @@ export function useBookReviews(book) {
   )
   // "4", "3.7"
   const ratingText = computed(() => rating.value.toFixed(1).replace(/\.0$/, ''))
-  // where the rating comes from: "from 3 Readalot readers", "from Google Books", or ''
+  // where the rating comes from: "from 3 IKDA readers", "from Google Books", or ''
   const ratingSource = computed(() => {
     const readers = reviews.value.length
-    if (readers) return `from ${readers} Readalot ${readers === 1 ? 'reader' : 'readers'}`
+    if (readers) return `from ${readers} IKDA ${readers === 1 ? 'reader' : 'readers'}`
     if (!googleRating.value) return ''
     const count = Number(book()?.ratingsCount) || 0
     return count ? `from ${count} ${count === 1 ? 'rating' : 'ratings'} on Google Books` : 'from Google Books'

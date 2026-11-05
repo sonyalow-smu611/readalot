@@ -1,4 +1,5 @@
 <script setup>
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthStage from '@/components/auth/AuthStage.vue'
@@ -201,9 +202,9 @@ async function submit() {
         />
       </div>
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
-      <button class="btn btn-primary w-100" type="submit" :disabled="busy">
-        {{ busy ? 'Sending…' : registerMode ? 'Register' : 'Log in' }}
-      </button>
+      <LoadButton class="btn btn-primary w-100" type="submit" :busy="busy" :failed="Boolean(error)" busy-text="Sending…">
+        {{ registerMode ? 'Register' : 'Log in' }}
+      </LoadButton>
     </form>
     <p class="switch">
       <RouterLink v-if="registerMode" :to="{ name: 'login' }">Already have a card? Log in</RouterLink>

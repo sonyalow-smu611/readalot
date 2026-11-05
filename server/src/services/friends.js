@@ -72,8 +72,8 @@ export async function friendsOf(me) {
 
 // Sends a request to a reader (by reader.id), public or private: a private reader can be asked by
 // their username, though nobody finds them nearby. If they already asked you, you're friends. A
-// decline stays silent: asking again looks the same as asking the first time. False when there's
-// no such reader.
+// decline stays silent; asking again (or asking someone you removed) sends them a new request.
+// False when there's no such reader.
 export async function requestFriend(me, handle) {
   const reader = await findReader(handle, me, { anyone: true });
   if (!reader || reader.userId === me || !env.HAS_SUPABASE) return false;
@@ -82,14 +82,24 @@ export async function requestFriend(me, handle) {
   const existing = (await friendshipsOf(me)).find((row) => otherOf(row, me) === reader.userId);
   if (existing) {
     if (existing.status === "pending" && existing.addressee === me) await answerRequest(me, existing.id, true);
-    // a demo reader you removed takes you back straight away too
-    if (existing.status === "closed" && accepted) {
+    // Asking someone you removed (or who removed or declined you) again: a new request from you,
+    // in the same row, which they answer like any other. A demo reader takes you back straight away.
+    if (existing.status === "closed") {
+      const now = new Date().toISOString();
       const { error } = await supabase
         .from("friendships")
-        .update({ status: "accepted", accepted_at: new Date().toISOString() })
+        .update({
+          requester: me,
+          addressee: reader.userId,
+          status: accepted ? "accepted" : "pending",
+          created_at: now,
+          accepted_at: accepted ? now : null,
+          requester_spot: null,
+          addressee_spot: null,
+        })
         .eq("id", existing.id);
       if (error) throw error;
-      await welcomeFromPip(me, reader);
+      if (accepted) await welcomeFromPip(me, reader);
     }
     return true;
   }

@@ -80,7 +80,7 @@ function go(id) {
 }
 
 onMounted(() => {
-  // the router names every page "… · Readalot"; the landing page goes by IKDA
+  // the router names every page "… · IKDA"; the landing page has its own title
   document.title = 'IKDA · Social media, but for book lovers'
   measure()
   scroller.value.addEventListener('scrollend', arrive)

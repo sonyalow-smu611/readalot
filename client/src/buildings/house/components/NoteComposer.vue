@@ -31,7 +31,7 @@
         <p class="note-card__count" aria-live="polite">{{ text.length }}/{{ NOTE_MAX }}</p>
         <p v-if="error" class="note-card__error" role="alert">{{ error }}</p>
         <div class="note-card__actions">
-          <button class="btn btn-primary" type="submit" :disabled="busy || !text.trim()">{{ busy ? 'Posting…' : 'Post note' }}</button>
+          <LoadButton class="btn btn-primary" type="submit" :busy="busy" :failed="Boolean(error)" :disabled="!text.trim()" busy-text="Posting…">Post note</LoadButton>
           <button class="btn btn-outline-secondary" type="button" @click="$emit('cancel')">Cancel</button>
         </div>
       </form>
@@ -40,6 +40,7 @@
 </template>
 
 <script setup>
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { onMounted, ref } from 'vue'
 import { NOTE_MAX } from '@/buildings/house/notes.js'
 
@@ -99,7 +100,7 @@ onMounted(() => field.value?.focus())
 
 .note-card__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
   margin-top: 14px;
 }
 </style>

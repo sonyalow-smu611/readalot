@@ -107,7 +107,7 @@ router.afterEach((to, from) => {
   const fromOrder = from.meta.order ?? toOrder
   const slide = toOrder >= fromOrder ? 'slide-left' : 'slide-right'
   to.meta.transition = from === START_LOCATION ? 'none' : slide
-  document.title = `${to.meta.title ?? 'Home'} · Readalot`
+  document.title = `${to.meta.title ?? 'Home'} · IKDA`
 })
 
 export default router

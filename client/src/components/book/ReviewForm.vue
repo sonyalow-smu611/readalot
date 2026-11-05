@@ -25,7 +25,7 @@
 
     <p v-if="error" class="review-form__error" role="alert">{{ error }}</p>
     <div class="review-form__actions">
-      <button class="btn btn-primary" type="submit" :disabled="saving || !rating">Post Review</button>
+      <LoadButton class="btn btn-primary" type="submit" :busy="saving" :failed="Boolean(error)" :disabled="!rating" busy-text="Posting…" done-text="Posted">Post Review</LoadButton>
       <button v-if="review" class="btn btn-secondary" type="button" :disabled="saving" @click="$emit('cancel')">
         Cancel
       </button>
@@ -34,6 +34,7 @@
 </template>
 
 <script setup>
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { ref, useId } from 'vue'
 
 // as the reviews table's limit (database/reviews.sql)
@@ -132,6 +133,6 @@ function submit() {
 
 .review-form__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 </style>
