@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 import { expect, test, townReady } from "./fixtures.js";
-import { EMMA, NOAH, mockFriends, skipDailyPanel } from "./townFriends.js";
+import { EMMA, NOAH, friend, mockFriends, skipDailyPanel } from "./townFriends.js";
 
 // The friends list: who your friends are and what they're reading, chatting, adding by username
 // and removing several at once.
@@ -142,4 +142,30 @@ test("removing friends asks first, then removes the ones ticked", async ({ page 
   await expect(list(page).locator(".friend-row").filter({ hasText: "Noah Lim" })).toHaveCount(0);
   await expect(list(page).locator(".friend-row").filter({ hasText: "Emma Tan" })).toBeVisible();
   expect(town.removed).toEqual(["noah.bookmarks"]);
+});
+
+// A reader nearby who says yes at once (Pip) becomes a friend straight away: one card, the
+// friend's, and they leave the nearby list, with no second card over the first.
+test("adding a nearby reader who accepts at once leaves just their friend card", async ({ page }) => {
+  const pip = friend("pip.librarian", "Pip the Librarian", 2);
+  const town = await mockFriends(page);
+  await page.route("**/api/nearby", (route) => route.fulfill({ json: { readers: [pip] } }));
+  await page.route("**/api/friends/requests", (route) => {
+    town.friends.push(pip);
+    return route.fulfill({ status: 201, json: { requested: true } });
+  });
+  await page.goto("/");
+  await townReady(page);
+  await openList(page);
+  await list(page).getByRole("button", { name: /^Pip the Librarian/ }).click();
+  const cards = page.getByRole("dialog", { name: "Pip the Librarian" });
+  await expect(cards).toHaveCount(1);
+  await expect(cards).toContainText("Reader nearby");
+
+  await cards.getByRole("button", { name: "Add friend" }).click();
+  await expect(cards).toHaveCount(1);
+  await expect(cards).toContainText("Friend");
+  await expect(cards).not.toContainText("Reader nearby");
+  await openList(page);
+  await expect(list(page).getByRole("heading", { name: "Readers nearby" })).toHaveCount(0);
 });

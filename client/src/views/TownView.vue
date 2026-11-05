@@ -592,10 +592,12 @@ function goInside(place) {
       />
     </Transition>
 
-    <Transition name="town-card">
+    <!-- one reader's card at a time: a reader nearby you've just added (a demo reader says yes at
+         once) swaps to their friend card, the old one gone before the new one comes in -->
+    <Transition name="town-card" mode="out-in">
       <FriendCard
         v-if="selectedFriend"
-        :key="selectedFriend.id"
+        :key="`friend-${selectedFriend.id}`"
         :friend="selectedFriend"
         :house="selectedFriendHouse"
         @talk="sayHi"
@@ -603,12 +605,9 @@ function goInside(place) {
         @remove="removeFriend"
         @close="friendId = null"
       />
-    </Transition>
-
-    <Transition name="town-card">
       <FriendCard
-        v-if="selectedNearby"
-        :key="selectedNearby.id"
+        v-else-if="selectedNearby"
+        :key="`nearby-${selectedNearby.id}`"
         :friend="selectedNearby"
         :requested="selectedNearby.requested || nearby.outgoing.includes(selectedNearby.id)"
         :sending="sendingTo === selectedNearby.id"

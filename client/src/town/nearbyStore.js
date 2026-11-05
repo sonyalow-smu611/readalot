@@ -34,6 +34,10 @@ export const useNearbyStore = defineStore('nearby', () => {
     friends.value = data.friends
     incoming.value = data.incoming
     outgoing.value = data.outgoing
+    // a friend is a friend, not a reader nearby: someone just added (a demo reader like Pip says yes
+    // at once) leaves the nearby list now, not at the next full refresh, so they don't show twice
+    const friendIds = new Set(data.friends.map((reader) => reader.id))
+    nearby.value = nearby.value.filter((reader) => !friendIds.has(reader.id))
   }
 
   // The town's refresh. Throws when it can't reach the server; what's on screen stays.
@@ -53,7 +57,8 @@ export const useNearbyStore = defineStore('nearby', () => {
     const saved = await saveProfile(details)
     if (saved.error) throw new Error(saved.error.message)
     user.mergeProfile(details)
-    nearby.value = on ? (await checkInNearby(position)).readers : []
+    const friendIds = new Set(friends.value.map((reader) => reader.id))
+    nearby.value = on ? (await checkInNearby(position)).readers.filter((reader) => !friendIds.has(reader.id)) : []
   }
 
   // Each of these throws when it isn't saved. They reload only the friend list, not the whole
