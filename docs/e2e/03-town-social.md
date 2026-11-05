@@ -77,7 +77,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 ### TWN-11 · Friends' houses and walking friends · High
 **Pre:** ACCT-DEMO (Emma and Ayaan online right after the seed).
 1. Find Emma's and Ayaan's houses: name tag with a **green dot**; Sofia's tag has none; Mei's house looks dusty 📸.
-2. Online friends walk the streets with an **orange glow**. Tap one → a **friend card** slides up: name, what they are doing, **Visit <name>'s house**, **Remove friend**. At most five made-up townsfolk wander the pavements besides the real readers out walking.
+2. Online friends walk the streets with an **orange glow**. Tap one → the Cafe's reader card opens (**Meet <name>**): **Visit <name>'s room**, **Add friend** / **Added as friend**, **Message**, what they are reading. At most five made-up townsfolk wander the pavements besides the real readers out walking.
 3. Tap a friend's house → its card offers to go in.
 **DB:** none. **Pass:** online/away/dusty states are visually distinct. **Existing coverage:** `friends.spec.js`.
 
@@ -194,9 +194,9 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 2. A can send again later (status `closed` then re-requestable) **(unverified)**.
 **DB:** `friendships.status = closed`. **Pass:** neither is told why (no notification to A).
 
-### FRD-06 · Remove a friend from the friend card · High
-1. Tap a walking friend (or their house) → **Remove friend** → the button changes to **Yes, remove <name>**; press ✕ first to cancel → nothing removed.
-2. Press **Remove friend** then **Yes, remove <name>** → the card closes; the friend leaves **Your friends**; the house disappears.
+### FRD-06 · Remove one friend from the Friends list · High
+1. **Friends → Remove friends** → tick one friend → **Remove** → the button changes to **Yes, remove 1 friend**; press **Cancel** first → nothing removed.
+2. Press **Remove** then **Yes, remove 1 friend** → the friend leaves **Your friends** and the map at once; the house disappears. (The reader card on the map has no remove button.)
 **DB:** `friendships.status = closed`, spots cleared. **Pass:** the friend is gone after reload; the chat history remains in `reader_messages` but the box is gone.
 
 ### FRD-07 · Remove several friends · Medium
@@ -241,7 +241,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 ### FRD-13 · Readers nearby and adding one · High
 **Pre:** two public readers whose rough areas are in the same cell (ACCT-A, ACCT-B; or sample readers near SMU).
 1. **Friends → Readers nearby** lists B ("Last seen around here"); never an exact location.
-2. Tap B on the map (blue glow) or in the list → a card with **Add friend** and **Visit <name>'s room**; pressing the room button opens their room directly, and **Back to town** brings you back to the same card.
+2. Tap B on the map (blue glow) or in the list → the same reader card with **Add friend** and **Visit <name>'s room**; pressing the room button opens their room directly, and **Back to town** brings you back to the same card.
 3. Press **Add friend** → "Requested"; B accepts (FRD-04 steps 2 to 4).
 4. Make B private → B vanishes from A's nearby list.
 **DB:** `reader_areas` rows; `profiles.discoverable`. **Pass:** nearby respects privacy; the API never returns coordinates. **Existing coverage:** `nearby.spec.js`.

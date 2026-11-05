@@ -244,7 +244,7 @@ The reader's character has a glow and a green diamond.
 
 **Friends in town.** Friends' houses stand on plots (seven at most), with a name tag and a green dot when
 online; a friend away a long time has a dusty house. Online friends walk the streets with an orange
-glow, readers nearby (if you are public) with a blue glow; tapping one opens a **friend card**.
+glow, readers nearby (if you are public) with a blue glow; tapping one opens the Cafe's reader card (**Meet <name>**).
 
 ### A8a. Daily tasks
 
@@ -347,8 +347,7 @@ requests right now."), **Your friends** (each shows the book being read, **Onlin
 and a **Chat with …** button; pressing the row finds them on the map), **Readers nearby** (public readers
 close to your last rough area; pressing opens a card). Adding a sample reader (Pip, the demo readers) is
 accepted straight away. Errors: `Couldn't find <name>. Check the spelling.`, already friends, etc.
-**Friend card** (tap a walking friend): Add friend / Requested, **Visit <name>'s room** (straight to their room; **Back to town** returns to the same card), **Visit <name>'s house**,
-**Remove friend** (asks again: **Yes, remove <name>**).
+**Reader card** (tap anyone walking on the map, a friend or a reader nearby): the same card as tapping a reader in the Cafe (**Meet <name>**): who they are, **Visit <name>'s room** (**Back to town** returns to the same card), **Add friend** / **Added as friend**, **Message**, what they are reading and your shared books and genres. Friends are removed from the Friends list (**Remove friends**).
 **Chat** (a **Reader messages** box): the conversation, a **Your message** box, **SEND →**, **Minimise chat**,
 **Close chat with <name>**; 1 to 1000 characters; one message per 1.5 seconds per reader; private to the two readers. Sending can earn 5 XP.
 **Bell:** entries such as "Emma Tan visited your room 46 minutes ago", "Noah Koh sent you a friend request",
