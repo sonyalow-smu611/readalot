@@ -161,7 +161,7 @@ onMounted(() => dialog.value.focus());
 }
 
 .mood__skip {
-  margin-top: 6px;
+  margin-top: var(--rl-btn-gap);
 }
 
 </style>

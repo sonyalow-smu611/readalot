@@ -125,7 +125,7 @@ onBeforeUnmount(() => {
 
 <template>
   <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
-    <main class="cafe" aria-label="Readalot cafe" data-tour="people-map">
+    <main class="cafe" aria-label="IKDA cafe" data-tour="people-map">
       <CafeViewport :image="image" :foreground="foreground" :readers="guests" :player-image="selfImage" :selected-id="activeId"
         @walking="startWalking" @arrive="arrived" @route-error="movementError = $event" />
 

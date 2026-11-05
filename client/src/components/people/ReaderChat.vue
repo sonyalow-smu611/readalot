@@ -1,5 +1,6 @@
 <script setup>
 // AI-assisted scaffold — team review and AI_USAGE.md documentation required.
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   getChatIdentity, resolveChatRecipient, getMessages, sendReaderMessage,
@@ -134,9 +135,9 @@ onUnmounted(() => { version++; if (interval) clearInterval(interval) })
           placeholder="Write a message about books…" :disabled="loading || sending || !recipientId"
           @keydown.enter.exact.prevent="send"
         />
-        <button type="submit" :disabled="loading || sending || !draft.trim() || !recipientId">
-          {{ sending ? 'SENDING…' : 'SEND →' }}
-        </button>
+        <LoadButton type="submit" :busy="sending" :failed="Boolean(error)" :disabled="loading || !draft.trim() || !recipientId" busy-text="SENDING…" done-text="SENT">
+          SEND →
+        </LoadButton>
       </form>
       <p v-if="error" role="alert" class="chat-error">{{ error }}</p>
       <p class="chat-note">Only you and this reader can view these messages. Be kind and protect your privacy.</p>

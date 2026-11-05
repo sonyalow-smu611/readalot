@@ -11,6 +11,8 @@ import ReaderCard from './ReaderCard.vue'
 import ReaderChatDialog from './ReaderChatDialog.vue'
 import { getCurrentlyReading } from '@/lib/readerMatch.js'
 import { sendFriendRequest } from '@/services/api.js'
+import LoadButton from '@/components/shared/LoadButton.vue'
+import { waitForTick } from '@/lib/loading.js'
 import { usePeopleStore } from '@/stores/people.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
 
@@ -66,14 +68,23 @@ function closeChat() {
   messageButton.value?.focus()
 }
 
+// Add friend: a spinner while the request goes, then its tick before it says Request sent (or,
+// for a reader who says yes at once, Added as friend)
+const adding = ref(false)
+
 async function addFriend() {
   error.value = ''
+  adding.value = true
   try {
     await sendFriendRequest(reader.value.id)
-    await nearby.loadFriends()
   } catch (err) {
     error.value = err.message || "Couldn't send your friend request."
+    return
+  } finally {
+    adding.value = false
   }
+  await waitForTick()
+  await nearby.loadFriends().catch(() => {})
 }
 </script>
 
@@ -88,7 +99,18 @@ async function addFriend() {
           Visit {{ firstName }}'s room
         </RouterLink>
         <div class="actions">
-          <button type="button" class="btn btn-primary follow-button" data-tour="reader-add" :disabled="friendship !== 'none'" @click="addFriend">{{ friendLabel }}</button>
+          <LoadButton
+            class="btn btn-primary follow-button"
+            data-tour="reader-add"
+            :busy="adding"
+            :failed="Boolean(error)"
+            :disabled="friendship !== 'none'"
+            busy-text="Sending…"
+            done-text="Sent"
+            @click="addFriend"
+          >
+            {{ friendLabel }}
+          </LoadButton>
           <button ref="messageButton" type="button" class="btn btn-primary message-button" data-tour="reader-message" @click="chatOpen = true">Message</button>
         </div>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
@@ -186,7 +208,7 @@ async function addFriend() {
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: var(--rl-btn-gap);
   margin: 12px auto 18px;
 }
 

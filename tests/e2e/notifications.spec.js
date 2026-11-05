@@ -133,23 +133,26 @@ test("a friend coming online turns the bell red, once", async ({ page }) => {
 
 const ACCEPTED = { id: "a1", at: new Date().toISOString(), reader: { id: "emma.reads", displayName: "Emma Tan" } };
 const SENT = { id: "s1", at: new Date().toISOString(), reader: { id: "sofia.stories", displayName: "Sofia Rossi" } };
-const MESSAGE = { id: "m1", at: new Date().toISOString(), direction: "sent", reader: { id: "emma.reads", displayName: "Emma Tan" } };
+const MESSAGE = { id: "m1", at: new Date().toISOString(), direction: "received", reader: { id: "emma.reads", displayName: "Emma Tan" } };
+// a message you sent yourself: never a notification
+const MESSAGE_SENT = { id: "m2", at: new Date().toISOString(), direction: "sent", reader: { id: "emma.reads", displayName: "Emma Tan" } };
 
 test("requests sent, requests accepted and messages are in the bell, and each goes to its screen", async ({ page }) => {
   await mockFriends(page, {
     friends: [EMMA],
     sent: [{ requestId: "request-9", reader: friend("sofia.stories", "Sofia Rossi", null), at: SENT.at }],
-    activity: { sent: [SENT], accepted: [ACCEPTED], messages: [MESSAGE] },
+    activity: { sent: [SENT], accepted: [ACCEPTED], messages: [MESSAGE, MESSAGE_SENT] },
   });
   await page.goto("/");
   await expect(bell(page)).toHaveAccessibleName("Notifications, 3 new");
   await bell(page).click();
   await expect(panel(page)).toContainText("You sent Sofia Rossi a friend request");
   await expect(panel(page)).toContainText("Emma Tan accepted your friend request");
-  await expect(panel(page)).toContainText("You sent Emma Tan a message");
+  await expect(panel(page)).toContainText("Emma Tan sent you a message");
+  await expect(panel(page)).not.toContainText("You sent Emma Tan a message");
 
   // a message opens the chat with them
-  await panel(page).getByRole("button", { name: /You sent Emma Tan a message/ }).click();
+  await panel(page).getByRole("button", { name: /Emma Tan sent you a message/ }).click();
   await expect(page.getByRole("button", { name: "Close chat with Emma Tan" })).toBeVisible();
 
   // a sent request opens the friends list, which says who is still to answer

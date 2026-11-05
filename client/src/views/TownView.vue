@@ -10,6 +10,7 @@
 // anything new for the bell (town/notificationsStore.js), which pops up once.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { waitForTick } from '@/lib/loading.js'
 import { storeToRefs } from 'pinia'
 import { FRIEND_HOUSES, PLACES } from '@/town/places.js'
 import { presence } from '@/town/friends.js'
@@ -167,17 +168,34 @@ async function choosePublic(on) {
 }
 
 // the nearby reader whose Add friend is on its way, for the card's Sending… button
-const sendingTo = ref(null)
+// The friend action on its way, for its button's spinner and then tick (LoadButton):
+// { key, busy, failed }, keyed like `add-<reader id>`, `accept-<request id>`, `remove-<reader id>`.
+const action = ref(null)
+const actionOf = (key) => ({
+  busy: action.value?.key === key && action.value.busy,
+  failed: action.value?.key === key && action.value.failed,
+})
+
+// Runs a friend action: busy until it's saved, then its tick for a moment before the lists
+// change (a request that's answered leaves the list, so the tick is seen first). A failure says
+// why over the map. Returns whether it worked.
+async function runAction(key, task) {
+  action.value = { key, busy: true, failed: false }
+  try {
+    await task(async () => {
+      action.value = { key, busy: false, failed: false }
+      await waitForTick()
+    })
+    return true
+  } catch (err) {
+    action.value = { key, busy: false, failed: true }
+    showNotice(err.message)
+    return false
+  }
+}
 
 async function addFriend(reader) {
-  sendingTo.value = reader.id
-  try {
-    await nearby.addFriend(reader.id)
-  } catch (err) {
-    showNotice(err.message)
-  } finally {
-    sendingTo.value = null
-  }
+  await runAction(`add-${reader.id}`, (saved) => nearby.addFriend(reader.id, saved))
 }
 
 // Add friend, by username: says how it went in the form.
@@ -201,31 +219,26 @@ async function addByUsername(username) {
 }
 
 async function answerRequest(requestId, accept) {
-  try {
-    await nearby.answer(requestId, accept)
+  if (await runAction(`${accept ? 'accept' : 'decline'}-${requestId}`, (saved) => nearby.answer(requestId, accept, saved))) {
     notifications.rebuild()
-  } catch (err) {
-    showNotice(err.message)
   }
 }
 
+// The card shows its spinner, then its tick, then closes.
 async function removeFriend(friend) {
-  friendId.value = null
   closeChat(friend.id)
-  try {
-    await nearby.removeFriend(friend.id)
-  } catch (err) {
-    showNotice(err.message)
-  }
+  const removed = await runAction(`remove-${friend.id}`, (saved) =>
+    nearby.removeFriend(friend.id, async () => {
+      await saved()
+      if (friendId.value === friend.id) friendId.value = null
+    }),
+  )
+  if (!removed && friendId.value === friend.id) friendId.value = null
 }
 
 async function removeFriends(friends) {
   for (const { id } of friends) closeChat(id)
-  try {
-    await nearby.removeFriends(friends.map(({ id }) => id))
-  } catch (err) {
-    showNotice(err.message)
-  }
+  await runAction('remove-several', (saved) => nearby.removeFriends(friends.map(({ id }) => id), saved))
 }
 
 async function loadWeather() {
@@ -237,6 +250,7 @@ async function loadWeather() {
 }
 
 onMounted(() => {
+  document.addEventListener('pointerdown', shutChatOnOtherButtons, true)
   refreshNearby()
   loadWeather()
   weatherTimer = setInterval(loadWeather, WEATHER_EVERY)
@@ -251,6 +265,8 @@ onBeforeRouteLeave((to) => {
 })
 
 onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', shutChatOnOtherButtons, true)
+  topWatcher?.disconnect()
   clearInterval(weatherTimer)
   clearInterval(nearbyTimer)
   clearTimeout(noticeTimer)
@@ -421,14 +437,65 @@ function findFriend(friend) {
 
 // Say hi: their box joins the dock and the chat opens, with everything you've said before.
 function sayHi(friend) {
-  friendId.value = null
-  friendsOpen.value = false
   chatIds.value = [friend.id, ...chatIds.value.filter((id) => id !== friend.id)]
-  openChat.value = friend.id
+  showChat(friend.id)
 }
 
+// One thing open at a time: a chat that opens shuts the lists, the bell and any card over the map.
+function showChat(id) {
+  closePanels()
+  selected.value = null
+  friendId.value = null
+  openChat.value = id
+}
+
+// ...and a list, the bell or a card that opens shuts the chat, however it was opened (a button, a
+// pop-up's View, the walkthrough)
+watch([placesOpen, friendsOpen, dailyOpen, notificationsOpen, selected, friendId], (open) => {
+  if (open.some(Boolean)) openChat.value = null
+})
+
 function toggleChat(id) {
-  openChat.value = openChat.value === id ? null : id
+  if (openChat.value === id) openChat.value = null
+  else showChat(id)
+}
+
+// An open chat shuts (down to its box by the zoom buttons) when any other button or link is
+// pressed: the HUD, a list, a card, the map's own buttons. One that opens a chat opens it again.
+// How far down the controls along the top reach (the HUD, the weather, Daily and Private/Public
+// chips), which on a narrow phone wrap onto more rows: the chat window stops above it.
+const townRoot = ref(null)
+const topClear = ref(90)
+const TOP_CONTROLS = '.town-hud > *, [data-tour="town-weather"], [data-tour="town-daily"], [data-tour="town-privacy"]'
+let topWatcher = null
+
+function measureTop() {
+  const root = townRoot.value
+  if (!root) return
+  const top = root.getBoundingClientRect().top
+  const middle = root.clientHeight / 2
+  const bottoms = [...root.querySelectorAll(TOP_CONTROLS)]
+    .map((el) => el.getBoundingClientRect())
+    .filter((box) => box.height && box.top - top < middle)
+    .map((box) => box.bottom - top)
+  // the pixel buttons' hard shadow hangs 7px below them
+  topClear.value = Math.ceil(Math.max(60, ...bottoms) + 10)
+}
+
+watch(ready, async (on) => {
+  if (!on || topWatcher || !window.ResizeObserver) return
+  await nextTick()
+  topWatcher = new ResizeObserver(measureTop)
+  topWatcher.observe(townRoot.value)
+  for (const el of townRoot.value.querySelectorAll(TOP_CONTROLS)) topWatcher.observe(el)
+  measureTop()
+})
+
+function shutChatOnOtherButtons(event) {
+  if (!openChat.value) return
+  const pressed = event.target.closest?.('button, a, [role="button"]')
+  if (!pressed || pressed.closest('.chat-dock')) return
+  openChat.value = null
 }
 
 function closeChat(id) {
@@ -476,7 +543,7 @@ function goInside(place) {
 </script>
 
 <template>
-  <section class="town" aria-label="Readalot Town">
+  <section ref="townRoot" class="town" aria-label="IKDA Town" :style="{ '--town-top-clear': `${topClear}px` }">
     <TownMap
       :focus="focus"
       :start="arrivingForTour ? 'house' : ''"
@@ -525,6 +592,7 @@ function goInside(place) {
       :nearby="nearbyInTown"
       :open="friendsOpen"
       :add-status="addStatus"
+      :action="action"
       :username="yourUsername(profile)"
       @go="findFriend"
       @go-nearby="friendFocus = { id: $event.id, key: Date.now() }"
@@ -601,6 +669,7 @@ function goInside(place) {
         :key="`friend-${selectedFriend.id}`"
         :friend="selectedFriend"
         :house="selectedFriendHouse"
+        :removing="actionOf(`remove-${selectedFriend.id}`)"
         @talk="sayHi"
         @visit="visitFriend"
         @remove="removeFriend"
@@ -611,7 +680,7 @@ function goInside(place) {
         :key="`nearby-${selectedNearby.id}`"
         :friend="selectedNearby"
         :requested="selectedNearby.requested || nearby.outgoing.includes(selectedNearby.id)"
-        :sending="sendingTo === selectedNearby.id"
+        :sending="actionOf(`add-${selectedNearby.id}`)"
         nearby
         @add="addFriend"
         @profile="router.push({ name: 'reader-room', params: { id: $event.id } })"

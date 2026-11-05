@@ -252,7 +252,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 .dock__menu {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 .dock__item,
@@ -469,7 +469,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 
 .confirm__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 .confirm__btn {

@@ -61,6 +61,6 @@ defineEmits(['remove'])
 .saved__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 </style>

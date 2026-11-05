@@ -59,7 +59,7 @@ const shelf = computed(() => (props.book?.status ? shelfName(props.book.status) 
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 10px;
+  gap: var(--rl-btn-gap);
   min-height: 44px;
   margin: 0;
   padding: 8px 12px;

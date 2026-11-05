@@ -154,6 +154,12 @@ export async function befriend(id, usernames, online = []) {
   await markActive(online);
 }
 
+// Makes two readers friends (by account id), with no house spot given out yet.
+export async function makeFriends(id, otherId) {
+  const { error } = await admin.from("friendships").insert({ requester: id, addressee: otherId, status: "accepted", accepted_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
 // These readers were active just now. Nearby shows the most recently active first, and only a few.
 export async function markActive(usernames) {
   const { error } = await admin.from("profiles").update({ last_active_at: new Date().toISOString() }).in("username", usernames);

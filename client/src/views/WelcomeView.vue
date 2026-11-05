@@ -1,4 +1,5 @@
 <script setup>
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthStage from '@/components/auth/AuthStage.vue'
@@ -222,9 +223,9 @@ async function retryLoad() {
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
       <div class="d-flex gap-2">
         <button v-if="step > 0" type="button" class="btn btn-outline-primary" @click="back">Back</button>
-        <button class="btn btn-primary flex-grow-1" type="submit" :disabled="busy">
-          {{ step === last ? (busy ? 'Saving…' : 'Finish') : 'Next' }}
-        </button>
+        <LoadButton class="btn btn-primary flex-grow-1" type="submit" :busy="busy" :failed="Boolean(error)" busy-text="Saving…">
+          {{ step === last ? 'Finish' : 'Next' }}
+        </LoadButton>
       </div>
     </form>
   </AuthStage>

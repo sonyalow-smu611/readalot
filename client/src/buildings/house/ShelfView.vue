@@ -414,7 +414,7 @@ onMounted(() => {
 .my-shelf__empty-links {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: var(--rl-btn-gap);
   font-weight: 700;
 }
 
