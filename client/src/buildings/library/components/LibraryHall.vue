@@ -278,13 +278,27 @@ function measure() {
 }
 
 // Where the hall opens (px scrolled): its left end, unless the screen is too narrow for the help
-// desk and the scanner both; then just far enough along that the whole desk is in view, with
-// the scanner beside it.
+// desk's sign and the scanner's sign both; then just far enough along that both signs are whole.
+// When even the two signs don't fit, the desk's sign is centred, or left of centre so the scanner's
+// sign is wholly off to the right rather than cut in two (the desk's sign always stays whole).
 const MARGIN = 8
 function startLeft() {
-  const { unit } = size.value
-  const toScanner = (scanner.x + scanner.w + MARGIN) * unit - scroller.value.clientWidth
-  return Math.max(0, Math.min(toScanner, (desk.x - MARGIN) * unit))
+  const el = scroller.value
+  const view = el.clientWidth
+  // a sign's left and right edges along the hall, in px scrolled
+  const edges = (place) => {
+    const sign = el.querySelector(`[data-place="${place}"] .hall__plate`).getBoundingClientRect()
+    const from = el.getBoundingClientRect().left - el.scrollLeft
+    return { left: sign.left - from, right: sign.right - from }
+  }
+  const deskSign = edges('desk')
+  const scannerSign = edges('scanner')
+  const toScanner = scannerSign.right + MARGIN - view
+  if (toScanner <= deskSign.left - MARGIN) return Math.max(0, toScanner)
+  const centred = (deskSign.left + deskSign.right) / 2 - view / 2
+  const scannerOff = scannerSign.left - view
+  const deskWhole = deskSign.right + MARGIN - view
+  return Math.max(0, deskWhole, Math.min(centred, scannerOff))
 }
 
 function paint() {

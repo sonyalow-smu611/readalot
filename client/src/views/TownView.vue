@@ -791,18 +791,6 @@ function goInside(place) {
   z-index: 11;
 }
 
-@media (max-width: 600px) {
-  .town .town__menu {
-    display: block;
-  }
-
-  .town .town__daily,
-  .town .town__location,
-  .town :deep(.notifications-button) {
-    display: none;
-  }
-}
-
 .town .town__daily {
   position: absolute;
   left: 17px;
@@ -820,6 +808,19 @@ function goInside(place) {
   left: 17px;
   top: 138px;
   z-index: 10;
+}
+
+/* after the rules above, so it wins over their display: on a phone the ☰ menu holds these */
+@media (max-width: 600px) {
+  .town .town__menu {
+    display: block;
+  }
+
+  .town .town__daily,
+  .town .town__location,
+  .town :deep(.notifications-button) {
+    display: none;
+  }
 }
 
 /* your badge, bottom left (the weather chip has the top-left corner) */

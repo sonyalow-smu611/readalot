@@ -1,10 +1,10 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The "Your bookshelf" stop's scene: a big wooden bookcase with the three shelves a reader has
-// (Want to read, Reading, Finished), each full of books that come half off when hovered. The
+// (To be read, Currently reading, Finished reading), each full of books that come half off when hovered. The
 // books being read have a ribbon and how far through they are; finished ones have a star.
 // Dressed up to feel lived in: bunting along the top, fairy lights on a ledge, a black cat asleep
-// on the Reading shelf, a little cactus in flower, a candle, a photo and plants.
+// on the Currently reading shelf, a little cactus in flower, a candle, a photo and plants.
 import StartBookRow from './StartBookRow.vue'
 
 // one of the room's sprites at 3x (public/room/strip/<name>.png, w x h in art pixels)
@@ -12,7 +12,7 @@ const sprite = (name, w, h) => ({ src: `/room/strip/${name}.png`, w: w * 3, h: h
 
 const SHELVES = [
   {
-    label: 'Want to read',
+    label: 'To be read',
     books: [
       { title: 'Circe', colour: '#d0a64a', w: 30, h: 112 },
       { title: 'Educated', colour: '#4f6f8f', w: 34, h: 124 },
@@ -26,7 +26,7 @@ const SHELVES = [
     decor: [sprite('photo-small', 15, 17), sprite('plant-pot-small', 18, 22)],
   },
   {
-    label: 'Reading',
+    label: 'Currently reading',
     books: [
       { title: 'Dune', colour: '#c98a3a', w: 40, h: 128, mark: 'reading' },
       { title: 'The Hobbit', colour: '#3d6a4a', w: 36, h: 120, mark: 'reading' },
@@ -38,7 +38,7 @@ const SHELVES = [
     decor: [{ cat: true }, sprite('mug', 12, 11)],
   },
   {
-    label: 'Finished',
+    label: 'Finished reading',
     books: [
       { title: 'Pride & Prejudice', colour: '#8c3b3b', w: 34, h: 126, mark: 'finished' },
       { title: 'Little Women', colour: '#4f6f8f', w: 32, h: 120, mark: 'finished' },

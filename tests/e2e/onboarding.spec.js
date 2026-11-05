@@ -182,7 +182,7 @@ test.describe("the walkthrough, done by the reader", () => {
   test("the search bar works while the walkthrough asks for a search", async ({ page }) => {
     test.slow();
     await page.goto("/");
-    await skipTo(page, "Type it in and press Search.");
+    await skipTo(page, "Tap search, type it in and press Search.");
     // the bar can be clicked and typed in, and Search finishes the step
     await page.locator("input.library__input").click({ timeout: 5000 });
     await page.locator("input.library__input").fill("The Hobbit");

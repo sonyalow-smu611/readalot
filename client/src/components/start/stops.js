@@ -41,7 +41,7 @@ const COPY = {
   house: {
     heading: 'Your bookshelf',
     line: 'Every book you want to read, are reading and have finished, on one shelf in your room.',
-    points: ['Sort books into Want to read, Reading and Finished', 'Track how far through each book you are', 'Decorate the room around it; friends can visit'],
+    points: ['Sort books into To be read, Currently reading and Finished reading', 'Track how far through each book you are', 'Decorate the room around it; friends can visit'],
   },
   library: {
     heading: 'Find your next book',

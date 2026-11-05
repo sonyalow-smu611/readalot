@@ -11,7 +11,7 @@ const CHARACTERS = PRESETS.map((p) => ({ id: p.id, character: presetCharacter(p.
 
 const STEPS = [
   { title: 'Make your character', body: 'Sign up with your email, pick a look, and tell us the genres you love.' },
-  { title: 'Fill your shelf', body: 'Search the Library or scan a cover. Sort books into Want to read, Reading and Finished.', building: 'library' },
+  { title: 'Fill your shelf', body: 'Search the Library or scan a cover. Sort books into To be read, Currently reading and Finished reading.', building: 'library' },
   { title: 'Find your people', body: 'Head to the Cafe, see your reading match with each reader, and visit their rooms.', building: 'cafe' },
 ]
 </script>

@@ -53,6 +53,13 @@ const emit = defineEmits(['toggle-places', 'toggle-friends', 'toggle-notificatio
   flex: 1;
 }
 
+/* closer together on a phone, leaving room for the weather chip on the left */
+@media (max-width: 600px) {
+  .town-hud {
+    gap: 8px;
+  }
+}
+
 .town-hud__chip {
   display: inline-flex;
   align-items: center;
