@@ -1,13 +1,13 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { gsap, prefersReducedMotion } from '@/lib/motion'
-import { useDecor } from '@/composables/useDecor'
-import DecorArt from '@/buildings/house/components/DecorArt.vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { useDecor } from "@/composables/useDecor";
+import DecorArt from "@/buildings/house/components/DecorArt.vue";
 
-defineEmits(['mood'])
+defineEmits(["mood"]);
 
-const menu = ref(null)
-const panel = ref(null)
+const menu = ref(null);
+const panel = ref(null);
 
 const {
   catalog,
@@ -26,77 +26,88 @@ const {
   cancelBuy,
   startDrag,
   beginPlace,
-} = useDecor()
+} = useDecor();
 
 function grab(event, entry) {
-  if (event.button != null && event.button !== 0) return
-  startDrag(entry, event.clientX, event.clientY)
+  if (event.button != null && event.button !== 0) return;
+  startDrag(entry, event.clientX, event.clientY);
 }
 
 // placing a piece: the menu gets out of the way of the room, where it lights up where to tap
 watch(placing, (piece) => {
-  if (piece) open.value = false
-})
+  if (piece) open.value = false;
+});
 
 // the menu starts shut each time the room opens, as it did when it was this component's own
 onBeforeUnmount(() => {
-  open.value = false
-})
+  open.value = false;
+});
 
 function meta(id) {
-  return catalog.find((item) => item.id === id)
+  return catalog.find((item) => item.id === id);
 }
 
 // the Shop's items by group (Wall art, Reading chairs, Plants, Cats), in catalog order
 const groups = computed(() => {
-  const byName = new Map()
+  const byName = new Map();
   for (const item of catalog) {
-    if (!byName.has(item.group)) byName.set(item.group, [])
-    byName.get(item.group).push(item)
+    if (!byName.has(item.group)) byName.set(item.group, []);
+    byName.get(item.group).push(item);
   }
-  return [...byName].map(([name, items]) => ({ name, items }))
-})
+  return [...byName].map(([name, items]) => ({ name, items }));
+});
 
 function toggleDock() {
-  open.value = !open.value
+  open.value = !open.value;
   if (!open.value) {
-    shopOpen.value = false
-    inventoryOpen.value = false
-    pending.value = null
+    shopOpen.value = false;
+    inventoryOpen.value = false;
+    pending.value = null;
   }
 }
 
 function showShop() {
-  inventoryOpen.value = false
-  pending.value = null
-  shopOpen.value = !shopOpen.value
+  inventoryOpen.value = false;
+  pending.value = null;
+  shopOpen.value = !shopOpen.value;
 }
 
 function showInventory() {
-  shopOpen.value = false
-  pending.value = null
-  inventoryOpen.value = !inventoryOpen.value
+  shopOpen.value = false;
+  pending.value = null;
+  inventoryOpen.value = !inventoryOpen.value;
 }
 
 watch(open, async (isOpen) => {
-  await nextTick()
-  const items = menu.value?.querySelectorAll('.dock__item')
-  if (!items?.length || prefersReducedMotion()) return
+  await nextTick();
+  const items = menu.value?.querySelectorAll(".dock__item");
+  if (!items?.length || prefersReducedMotion()) return;
   if (isOpen) {
     gsap.fromTo(
       items,
       { y: 22, autoAlpha: 0, scale: 0.7 },
-      { y: 0, autoAlpha: 1, scale: 1, stagger: 0.08, duration: 0.42, ease: 'back.out(2.4)' },
-    )
+      {
+        y: 0,
+        autoAlpha: 1,
+        scale: 1,
+        stagger: 0.08,
+        duration: 0.42,
+        ease: "back.out(2.4)",
+      },
+    );
   }
-})
+});
 
 watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
-  if (!shop && !bag) return
-  await nextTick()
-  if (!panel.value || prefersReducedMotion()) return
-  gsap.fromTo(panel.value, { y: 28, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.4, ease: 'power3.out' })
-})
+  if (!shop && !bag) return;
+  await nextTick();
+  if (!panel.value || prefersReducedMotion()) return;
+  gsap.fromTo(
+    panel.value,
+    { y: 28, autoAlpha: 0 },
+    { y: 0, autoAlpha: 1, duration: 0.4, ease: "power3.out" },
+  );
+});
 </script>
 
 <template>
@@ -113,14 +124,33 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       <span class="dock__bars" aria-hidden="true"></span>
     </button>
 
-    <section v-if="shopOpen && !placing" ref="panel" class="panel" aria-label="Decoration shop">
+    <section
+      v-if="shopOpen && !placing"
+      ref="panel"
+      class="panel"
+      aria-label="Decoration shop"
+    >
       <header class="panel__bar">
         <h2 class="panel__title">Shop</h2>
-        <button type="button" class="btn btn-secondary btn-sm" @click="shopOpen = false">Close</button>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          @click="shopOpen = false"
+        >
+          Close
+        </button>
       </header>
-      <p class="panel__note">Swipe the row. Each card says where that piece can sit.</p>
+      <p class="panel__note">
+        Swipe the row. Each card says where that piece can sit.
+      </p>
       <div class="panel__row">
-        <div v-for="group in groups" :key="group.name" class="panel__group" role="group" :aria-label="group.name">
+        <div
+          v-for="group in groups"
+          :key="group.name"
+          class="panel__group"
+          role="group"
+          :aria-label="group.name"
+        >
           <p class="panel__group-name" aria-hidden="true">{{ group.name }}</p>
           <div class="panel__group-items">
             <button
@@ -132,8 +162,12 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               @click="askBuy(item)"
             >
               <span class="dock-card__art"><DecorArt :kind="item.id" /></span>
-              <span class="dock-card__name" data-testid="card-name">{{ item.name }}</span>
-              <span class="dock-card__price" data-testid="card-price">${{ item.price }}</span>
+              <span class="dock-card__name" data-testid="card-name">{{
+                item.name
+              }}</span>
+              <span class="dock-card__price" data-testid="card-price"
+                >${{ item.price }}</span
+              >
               <span class="dock-card__where">{{ item.blurb }}</span>
             </button>
           </div>
@@ -141,26 +175,44 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </div>
     </section>
 
-    <section v-if="inventoryOpen && !placing" ref="panel" class="panel" aria-label="Inventory">
+    <section
+      v-if="inventoryOpen && !placing"
+      ref="panel"
+      class="panel"
+      aria-label="Inventory"
+    >
       <header class="panel__bar">
         <h2 class="panel__title">Inventory</h2>
-        <button type="button" class="btn btn-secondary btn-sm" @click="inventoryOpen = false">Close</button>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          @click="inventoryOpen = false"
+        >
+          Close
+        </button>
       </header>
-        <p v-if="placed.length" class="panel__note">Pieces with a ✎ are already in the room: tap one to move or remove it.</p>
-        <p v-if="!inventory.length" class="panel__empty">Buy something in the shop, then place it in the room.</p>
-        <template v-else>
-          <p class="panel__note">Tap a piece, then where it should go in the room (it lights up). Or drag it there.</p>
-          <div class="panel__row">
-            <button
-              v-for="entry in inventory"
-              :key="entry.uid"
-              type="button"
-              class="dock-card dock-card--drag"
-              data-card
-              @pointerdown="grab($event, entry)"
-              @dragstart.prevent
-              @click="beginPlace(entry)"
-            >
+      <p v-if="placed.length" class="panel__note">
+        Pieces with a ✎ are already in the room: tap one to move or remove it.
+      </p>
+      <p v-if="!inventory.length" class="panel__empty">
+        Buy something in the shop, then place it in the room.
+      </p>
+      <template v-else>
+        <p class="panel__note">
+          Tap a piece, then where it should go in the room (it lights up). Or
+          drag it there.
+        </p>
+        <div class="panel__row">
+          <button
+            v-for="entry in inventory"
+            :key="entry.uid"
+            type="button"
+            class="dock-card dock-card--drag"
+            data-card
+            @pointerdown="grab($event, entry)"
+            @dragstart.prevent
+            @click="beginPlace(entry)"
+          >
             <span class="dock-card__art"><DecorArt :kind="entry.id" /></span>
             <span class="dock-card__name">{{ meta(entry.id)?.name }}</span>
             <span class="dock-card__where">{{ meta(entry.id)?.blurb }}</span>
@@ -169,27 +221,53 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </template>
     </section>
 
-    <div v-if="pending" class="confirm" role="dialog" aria-labelledby="buy-title">
+    <div
+      v-if="pending"
+      class="confirm"
+      role="dialog"
+      aria-labelledby="buy-title"
+    >
       <p id="buy-title" class="confirm__title">Buy {{ pending.name }}?</p>
       <p class="confirm__copy">
         ${{ pending.price }} comes out of your credits. {{ pending.blurb }}.
       </p>
       <p v-if="!canAfford" class="confirm__warn">Not enough credits.</p>
       <div class="confirm__actions">
-        <button type="button" class="btn btn-success confirm__btn" :disabled="!canAfford" @click="confirmBuy">
+        <button
+          type="button"
+          class="btn btn-success confirm__btn"
+          :disabled="!canAfford"
+          @click="confirmBuy"
+        >
           Confirm
         </button>
-        <button type="button" class="btn btn-secondary confirm__btn" @click="cancelBuy">
+        <button
+          type="button"
+          class="btn btn-secondary confirm__btn"
+          @click="cancelBuy"
+        >
           Cancel
         </button>
       </div>
     </div>
 
     <div v-show="open" ref="menu" class="dock__menu">
-      <button type="button" class="btn btn-secondary dock__item" data-tour="menu-mood" @click="$emit('mood')">
+      <button
+        type="button"
+        class="btn btn-secondary dock__item"
+        data-tour="menu-mood"
+        @click="$emit('mood')"
+      >
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
-            <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <circle
+              cx="12"
+              cy="12"
+              r="8.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+            />
             <path
               d="M8.5 14.2a4.2 4.2 0 0 0 7 0M9 10h.01M15 10h.01"
               fill="none"
@@ -203,7 +281,13 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </button>
       <!-- nothing is bought or placed until the room's furniture has loaded, or the load would
            replace it -->
-      <button type="button" class="btn btn-secondary dock__item" data-tour="menu-inventory" :disabled="roomStatus !== 'ready'" @click="showInventory">
+      <button
+        type="button"
+        class="btn btn-secondary dock__item"
+        data-tour="menu-inventory"
+        :disabled="roomStatus !== 'ready'"
+        @click="showInventory"
+      >
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path
@@ -216,7 +300,13 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         </span>
         Inventory
       </button>
-      <button type="button" class="btn btn-accent dock__item" data-tour="menu-shop" :disabled="roomStatus !== 'ready'" @click="showShop">
+      <button
+        type="button"
+        class="btn btn-accent dock__item"
+        data-tour="menu-shop"
+        :disabled="roomStatus !== 'ready'"
+        @click="showShop"
+      >
         <span class="dock__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path
@@ -226,7 +316,12 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
               stroke-width="1.7"
               stroke-linejoin="round"
             />
-            <path d="M9 8V7a3 3 0 0 1 6 0v1" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <path
+              d="M9 8V7a3 3 0 0 1 6 0v1"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+            />
           </svg>
         </span>
         Shop
@@ -295,7 +390,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 
 .dock__bars::before,
 .dock__bars::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
 }
@@ -368,6 +463,8 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 /* each group in the Shop's row: its name over its cards */
 .panel__group {
   flex-shrink: 0;
+  display: flex; /* new: lets the cards stretch to the tallest one */
+  flex-direction: column;
 }
 
 .panel__group-name {
@@ -380,6 +477,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 }
 
 .panel__group-items {
+  flex: 1; /* new */
   display: flex;
   gap: 10px;
 }
@@ -397,7 +495,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px; /* was 2px */
   padding: 8px 6px 10px;
   border: 1px solid var(--rl-line);
   border-radius: var(--rl-radius-card);
@@ -407,14 +505,14 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 }
 
 .dock-card__art {
-  display: grid;
-  place-items: end center;
+  display: flex; /* was grid */
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
   width: 100%;
   height: 64px;
-}
-
-.dock-card__art :deep(.art) {
-  height: 58px;
+  margin-bottom: 6px; /* gap between picture and text */
+  overflow: hidden;
 }
 
 .dock-card__name,
