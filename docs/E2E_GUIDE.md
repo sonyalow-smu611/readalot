@@ -152,14 +152,18 @@ when a code is accepted; floating books are pushed by the cursor.
   `POST /api/demo-auth/register`, which creates a confirmed account. An address already registered shows
   `That email is already registered. Log in instead.`
 
-**Log in (`/login`).** Heading **Welcome back**. **Email**, **Password** (+ eye), **Log in**, link
+**Log in (`/login`).** Heading **Welcome back**. **Email**, **Password** (+ eye), a **Remember me for 30 days**
+checkbox (ticked at the start; its tick draws itself), **Log in**, link
 **Need a card? Register**. The password is checked first (a wrong one shows Supabase's error and stays on
 the page); then a code is emailed (or, for demo addresses, none is sent).
 
 **Check your email (`/verify`).** Six digit boxes (typing moves on, Backspace goes back, a pasted code
-fills all six), **Confirm code**, and a **Resend** link that starts as `Resend in 30s`, counts down, then
-becomes **Resend code**. A demo address shows **"Demo account: no email is sent. Enter the code 111111."**
+fills all six), **Confirm code**, and a **Resend** button (the same width and padding as Confirm code, a gap
+below it) that starts as `Resend in 30s`, counts down, then becomes **Resend code**. A demo address shows **"Demo account: no email is sent. Enter the code 111111."**
 A wrong code shows an error and the cats duck (demo: `That code is not right. The demo code is 111111.`).
+With **Remember me for 30 days** ticked the reader stays signed in for 30 days on that browser (the session is kept
+in `localStorage` with its end date, `readalot-remember`); unticked, the session lasts until the browser is closed
+(`sessionStorage`). Readers who signed in before this existed stay signed in as before.
 A correct code shows **Code accepted**, the cats hop, then a returning reader zooms into the town and a
 new reader goes to Welcome. A reload on the code screen of a demo address asks to log in again
 (`Go back and log in again, then enter the code.`).
@@ -526,7 +530,7 @@ Striped 55, Floral 65, Starry 70, Tartan 65.
 Use these exact names. (Labels are from the code; a handful were also seen in a running app.)
 
 - **Landing:** IKDA, Meet Maya, The town, Your character, Levels, How it works, FAQ, Sign up, See how it works, Log in, Surprise me, Start over.
-- **Auth:** Create your card, Welcome back, Email, Username, Password, Confirm password, Show password, Hide password, Register, Log in, Already have a card? Log in, Need a card? Register, Check your email, Verification code, Digit 1…6, Confirm code, Resend code, Resend in Ns, Code accepted.
+- **Auth:** Create your card, Welcome back, Email, Username, Password, Confirm password, Show password, Hide password, Register, Log in, Already have a card? Log in, Need a card? Register, Check your email, Verification code, Digit 1…6, Confirm code, Resend code, Resend in Ns, Code accepted, Remember me for 30 days.
 - **Welcome:** Name, Gender, Age, Religion, Genres, Characters, Back, Next, Finish, Try again.
 - **Walkthrough:** Walkthrough (region), Back, Next, Done, Skip this part, Skip tour, Replay the walkthrough.
 - **Town:** Follow my character, Zoom in, Zoom out, Notifications, Clear all, Places, Friends, Daily tasks, Dismiss, Claim N coins, Go, Nice!, Weather: …, Go inside, Enter the library, Enter the cafe, Enter the salon, Close.

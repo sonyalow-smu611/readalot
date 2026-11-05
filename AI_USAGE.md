@@ -995,3 +995,14 @@ Written by Claude at Aalric's request. Layout and styling only.
 |------|-------|------------------|
 | Switch | `client/src/components/shared/SlideToggle.vue` | A switch with a thumb that glides between the choices (a 0.34 second ease; none with reduced motion), still two buttons for the keyboard and screen readers, with Left and Right moving between them. While it is on Spines, a press anywhere on it (on either side, or its edge) slides it back to Covers (`home`) |
 | Where | `client/src/buildings/house/ShelfView.vue`, `client/src/buildings/library/SearchView.vue`, `client/src/buildings/library/components/GenreBookcase.vue` | The two chips became this switch, and My Shelf and the library's opened bookcases now open on Covers (search already did) |
+
+### Verification screen, remember me, and the walkthrough (AI-generated)
+
+Written by Claude at Aalric's request. Remember me changes how the sign-in session is kept (shared `services/`), asked for by Aalric.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Code screen | `client/src/views/VerifyView.vue` | Resend code is a button the same width and padding as Confirm code, with a gap below it (it had no padding, so its words touched the box) |
+| Remember me | `client/src/services/supabase.js`, `services/auth.js`, `client/src/views/LoginView.vue`, `client/src/components/shared/TickCheckbox.vue` | A "Remember me for 30 days" checkbox on Log in (ticked to start) whose tick draws itself. Ticked: the session is kept in `localStorage` with an end date 30 days away and the reader is signed out after it. Unticked: it is kept in `sessionStorage`, so closing the browser signs out. Readers already signed in are not signed out |
+| Walkthrough steps | `client/src/lib/walkthrough.js`, `GenreBookcase.vue`, `FavouriteGenres.vue`, `TownView.vue`, `SalonView.vue` | A stop for the music button in the town; in the salon's Profile, a stop for the favourite genres, a step that asks the reader to tap one, and two stops in the library bookcase it opens (35 steps in all). A step marked `optional` is skipped if its target never shows |
+| Walkthrough text | `client/src/components/GuideTour.vue`, `client/src/composables/useBarHeight.js`, `App.vue` | The words are centred and bigger; on a phone the bar is 232 px tall (200 px on a laptop) so the longest lines fit. Checked all 35 steps at 360, 390 and 1280 px wide |

@@ -24,6 +24,7 @@
 //   hint          try: 'tap', 'slide' or 'drag', the pointer's motion (default: from `until`)
 //   hintTo        try: where a drag ends (a selector); the pointer carries the thing there
 //   allow         try: more selectors that work as well as the target (a card that opens)
+//   optional      try: if the target is not on the page (a reader with nothing to tap), the step is skipped
 //   until         try: what counts as doing it:
 //                   'tap'                 tapping the target
 //                   'slide'               sliding along the whole of the target (a swipe, if it has
@@ -55,6 +56,7 @@ const RAW = [
       { target: t('town-weather'), say: "The weather: the town's sky follows the real weather where you are." },
       { target: t('town-badge'), say: 'You! The number is your level, the ring fills with XP, and the coin is your coins.' },
       { target: t('town-daily'), say: 'Daily tasks: finish three a day to claim coins and XP, and keep your streak going.' },
+      { target: t('town-music'), say: 'The music button: tap it to play or mute the background music, whenever you like.' },
       { target: t('town-places'), say: 'Places lists every building, so you can go straight to one.' },
       { target: t('town-friends'), say: "Friends: see who's online, answer requests, and add someone by username." },
       { target: t('town-bell'), say: 'The bell: friend requests, friends coming online and readers visiting your room.' },
@@ -357,14 +359,39 @@ const RAW = [
   {
     id: 'profile-cards',
     section: 'Salon',
-    to: '/salon',
+    to: '/salon?tab=profile',
     stops: [
       { target: t('profile-edit'), say: 'Your card: books reading, to read and finished. Edit changes your name, details and genres.' },
+      { target: t('profile-genres'), say: "Your favourite genres. Each one is a button that opens that genre's bookcase in the library." },
       { target: t('profile-level'), say: 'Your level, and every way to earn XP.' },
       { target: t('profile-shop'), say: 'Your coins, and a shortcut to the Shop.' },
       { target: t('profile-map'), say: 'Switch between public and private any time.' },
       { target: t('profile-quotes'), say: 'Quotes you saved from your mood check-ins are kept here.' },
       { target: t('profile-replay'), say: 'Want this tour again? Replay it from here. Log out is just below.' },
+    ],
+  },
+  {
+    id: 'profile-genre',
+    section: 'Salon',
+    to: '/salon?tab=profile',
+    kind: 'try',
+    target: t('profile-genre'),
+    say: 'Try one of your favourite genres: it takes you to that genre\'s bookcase, so you can browse books you will like.',
+    ask: 'Tap a genre.',
+    until: /^\/library/,
+    // a profile with no favourite genre has nothing to tap
+    optional: true,
+  },
+  {
+    id: 'genre-case',
+    section: 'Salon',
+    to: '/library?shelf=fantasy',
+    stops: [
+      {
+        target: t('genre-case'),
+        say: 'Your genre, open as a bookcase. Browse it like the library: tap a book to open it, read about it and add it to your To be read.',
+      },
+      { target: t('genre-modes'), say: 'Slide here to see the books face out or by their spines.' },
     ],
   },
   {
@@ -383,5 +410,8 @@ export const WALKTHROUGH = RAW.map((step) => {
 })
 
 // The text bar's height. The app shrinks by this while the walkthrough plays, so the bar never
-// covers anything and stays in the same place on every step.
+// covers anything and stays in the same place on every step. Taller on a phone (up to PHONE_MAX
+// px wide), where the words wrap onto more lines: see composables/useBarHeight.js.
 export const BAR_HEIGHT = 200
+export const BAR_HEIGHT_PHONE = 232
+export const PHONE_MAX = 575

@@ -87,6 +87,14 @@ let savedTimer = null
 
 const changed = computed(() => JSON.stringify(draft.value) !== JSON.stringify(user.profile.character))
 
+// an address that names a tab (the walkthrough's ?tab=profile) switches to it
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (PANELS.some((p) => p.id === tab)) panel.value = tab
+  },
+)
+
 // keeps the address in step with the tab, replacing the entry so the tab isn't a step of its own
 watch([panel, sheetOpen], ([tab, sheet]) => {
   const query = { ...route.query, tab, sheet: sheet ? '1' : undefined }

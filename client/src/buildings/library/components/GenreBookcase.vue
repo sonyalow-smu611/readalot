@@ -13,6 +13,7 @@
     class="case"
     role="dialog"
     aria-modal="true"
+    data-tour="genre-case"
     :aria-labelledby="headingId"
     tabindex="-1"
     :style="theme"
@@ -32,7 +33,7 @@
           {{ credit.text }}<span class="visually-hidden"> (opens in a new tab)</span>
         </a>
       </div>
-      <div class="case__modes">
+      <div class="case__modes" data-tour="genre-modes">
         <SlideToggle v-model="mode" :options="MODES" label="Show the books by" home="covers" />
       </div>
     </header>

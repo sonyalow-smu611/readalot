@@ -172,7 +172,7 @@ async function resend() {
       </LoadButton>
     </form>
     <p class="resend">
-      <button type="button" class="btn btn-link p-0" :disabled="wait > 0" @click="resend">
+      <button type="button" class="btn btn-secondary w-100" :disabled="wait > 0" @click="resend">
         {{ wait > 0 ? `Resend in ${wait}s` : 'Resend code' }}
       </button>
     </p>
@@ -255,10 +255,10 @@ async function resend() {
   font-size: 0.875rem;
 }
 
+/* under Confirm code, the same width and padding, with a clear gap between them */
 .resend {
   margin: 12px 0 0;
   text-align: center;
-  font-size: 0.875rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

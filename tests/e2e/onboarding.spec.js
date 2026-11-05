@@ -19,7 +19,7 @@ const test = base.extend({
   },
 });
 
-// the walkthrough's speech bubble, and its "n of 52 · Part" line
+// the walkthrough's speech bubble, and its "n of 35 · Part" line
 const bubble = (page) => page.locator(".guide__bubble");
 const stepLine = (page) => page.locator(".guide__count");
 // the bar's own buttons (the app has Next and Back buttons of its own)

@@ -611,7 +611,7 @@ function goInside(place) {
          beside it: in one row, so the music button slides along as Daily widens to show its words -->
     <div class="town__daily">
       <DailyButton v-if="daily.ready" data-tour="town-daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
-      <MusicToggle />
+      <MusicToggle data-tour="town-music" />
     </div>
     <LocationChip
       data-tour="town-privacy"
