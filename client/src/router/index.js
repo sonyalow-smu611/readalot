@@ -75,6 +75,31 @@ router.beforeEach(async (to) => {
   return true
 })
 
+// A tab left open across a redeploy still asks for page files that are gone, so opening a building
+// would do nothing at all. Load the page again once, from the address it was going to; the flag
+// stops that repeating if the files really are missing.
+const STALE = /dynamically imported module|Importing a module script failed|Loading chunk|Unable to preload|Failed to fetch/i
+const RELOADED = 'readalot.reloadedFor'
+
+router.onError((error, to) => {
+  if (!STALE.test(String(error?.message ?? ''))) return
+  try {
+    if (sessionStorage.getItem(RELOADED) === to.fullPath) return
+    sessionStorage.setItem(RELOADED, to.fullPath)
+  } catch {
+    // no storage: reload once anyway
+  }
+  window.location.assign(to.fullPath)
+})
+
+router.afterEach(() => {
+  try {
+    sessionStorage.removeItem(RELOADED)
+  } catch {
+    // nothing was kept
+  }
+})
+
 // Going deeper (town → building → book) slides the page in from the right; coming back, from the left.
 // The first page of a visit just appears: 'none' has no styles in transitions.css, so nothing moves.
 router.afterEach((to, from) => {
