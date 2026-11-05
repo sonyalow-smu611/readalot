@@ -44,9 +44,14 @@ const returns = computed(() => {
   if (areaOf(previous.value) === areaOf(route.path)) return false
   return pathOf(previous.value) !== pathOf(router.resolve(props.back).fullPath)
 })
+// true when the page before is the very page this button goes to (a visited room, from its shelf):
+// going back to it, instead of opening it again, keeps the history from going round in circles
+const backIsPrevious = computed(
+  () => Boolean(previous.value) && pathOf(previous.value) === pathOf(router.resolve(props.back).fullPath),
+)
 
 function goBack(event, navigate) {
-  if (!returns.value) return navigate(event)
+  if (!returns.value && !backIsPrevious.value) return navigate(event)
   event.preventDefault()
   router.back()
 }
