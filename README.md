@@ -239,7 +239,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
 ### Part F: The guided tour
 
 29. The town opens and **your own character floats over the screen** in a speech bubble with a counter
-    such as **"1 of 34 · Town"**. It shows every part of the app in order
+    such as **"1 of 33 · Town"**. It shows every part of the app in order
     (Town, Your house, Library, Cafe, Salon). **Press Next** to move on, or **do what it asks** (it
     says, in bold, things like "Tap your house, then go in"; doing it moves on by itself).
     - 👀 It circles the thing it is talking about (the badge, the weather chip, the Daily button, the bell…).
@@ -752,7 +752,7 @@ priorities) are in **[docs/E2E_GUIDE.md](docs/E2E_GUIDE.md)** and the seven file
 | File | Covers |
 |---|---|
 | [01-public-auth-onboarding](docs/e2e/01-public-auth-onboarding.md) | Landing page, register, log in, the code, log out, route guard, Welcome |
-| [02-walkthrough](docs/e2e/02-walkthrough.md) | The walkthrough (34 stops), Pip, skip and replay |
+| [02-walkthrough](docs/e2e/02-walkthrough.md) | The walkthrough (33 stops), Pip, skip and replay |
 | [03-town-social](docs/e2e/03-town-social.md) | Town and HUD, Daily tasks, friends and chat, Cafe, visiting rooms |
 | [04-room-shelf-shop-mood](docs/e2e/04-room-shelf-shop-mood.md) | My Room, bookshelf and My Shelf, mood check-in, Shop and Inventory |
 | [05-library-books](docs/e2e/05-library-books.md) | Library, search, scanner, book cards, reviews |

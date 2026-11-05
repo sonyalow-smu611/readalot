@@ -102,11 +102,12 @@ export function tintFor({ scene, night }) {
 //          weather, spines, lifted (book id), out (book id taken off the shelf), time,
 //          extras (furniture the reader has put in the room, as pieces: { sprite, x, y, layer },
 //          and `replaces`: the id of a piece of the room's it stands in for, drawn in its place),
-//          notes (how many visitors' notes to pin on the corkboard, three at most),
+//          notes (how many visitors' notes to pin on the corkboard: up to eight, then a "+N" tag),
+//          newNotes (how many of them are new: the newest, highlighted),
 //          theme (the house's look, from themes.js: its wall and floor colours),
 //          lamps (each lamp on or off: { 'floor-lamp': true, … }) }
 export function paintRoom(ctx, state) {
-  const { images, offset, weather, spines, lifted, out, time, extras = [], notes = 0, theme = PALETTE, lamps = {} } = state
+  const { images, offset, weather, spines, lifted, out, time, extras = [], notes = 0, newNotes = 0, theme = PALETTE, lamps = {} } = state
   const instead = new Map(extras.filter((piece) => piece.replaces).map((piece) => [piece.replaces, piece]))
   const pieces = [
     ...PIECES.filter((piece) => !instead.has(piece.with)).map((piece) => instead.get(piece.id) ?? piece),
@@ -179,7 +180,7 @@ export function paintRoom(ctx, state) {
       ctx.drawImage(image, x, y)
       if (piece.id === 'bookshelf') paintBooks(ctx, spines, offset, lifted, out)
       if (piece.id === 'clock') paintHands(ctx, offset, time)
-      if (piece.id === 'corkboard') paintNotes(ctx, x, y, notes)
+      if (piece.id === 'corkboard') paintNotes(ctx, x, y, notes, newNotes)
     }
   }
 
@@ -271,32 +272,115 @@ function paintBooks(ctx, spines, offset, lifted, out) {
 
 // Visitors' notes, pinned on the corkboard over what's already there: a small paper note each,
 // with its shadow on the cork, two lines of writing and a pin. `x`, `y` are the corkboard's top
-// left; the newest note goes up first.
-const NOTE_SPOTS = [
-  { x: 26, y: 27, paper: '#fbe7a1', edge: '#e2c46f', pin: '#c8553d' },
-  { x: 56, y: 52, paper: '#f6d3cb', edge: '#dfaea3', pin: '#3f7fa8' },
-  { x: 86, y: 30, paper: '#fdf7ec', edge: '#e2d7c3', pin: '#3d9a8b' },
+// left (it is 114 x 82). The board fills up as notes come in, in this order, so each note keeps
+// its spot; past the last spot a "+N" tag says how many more there are. `tilt` leans a note one
+// pixel to the left (-1) or right (1) every five rows.
+export const NOTE_SPOTS = [
+  { x: 26, y: 27, tilt: 0, paper: '#fbe7a1', edge: '#e2c46f', pin: '#c8553d' },
+  { x: 56, y: 52, tilt: 1, paper: '#f6d3cb', edge: '#dfaea3', pin: '#3f7fa8' },
+  { x: 86, y: 30, tilt: -1, paper: '#fdf7ec', edge: '#e2d7c3', pin: '#3d9a8b' },
+  { x: 7, y: 62, tilt: 1, paper: '#d6ead2', edge: '#b3cfae', pin: '#e0a72e' },
+  { x: 92, y: 52, tilt: -1, paper: '#d4e4f2', edge: '#adc4da', pin: '#c8553d' },
+  { x: 8, y: 35, tilt: -1, paper: '#e6dcef', edge: '#c7b8d6', pin: '#3d9a8b' },
+  { x: 71, y: 63, tilt: 0, paper: '#fbdcbc', edge: '#e5b98f', pin: '#7a5ca8' },
+  { x: 90, y: 8, tilt: 1, paper: '#fbe7a1', edge: '#e2c46f', pin: '#3f7fa8' },
 ]
 const NOTE = { w: 16, h: 14 }
+// where the "+N" tag goes: the open cork below the photo, bottom left
+const MORE_AT = { x: 28, y: 69 }
 
-function paintNotes(ctx, x, y, count) {
-  for (const spot of NOTE_SPOTS.slice(0, Math.min(count, NOTE_SPOTS.length))) {
-    const nx = x + spot.x
-    const ny = y + spot.y
+// 3 x 5 pixel figures for the "+N" tag, a row of three bits each
+const FIGURES = {
+  '+': ['000', '010', '111', '010', '000'],
+  0: ['111', '101', '101', '101', '111'],
+  1: ['010', '110', '010', '010', '111'],
+  2: ['111', '001', '111', '100', '111'],
+  3: ['111', '001', '111', '001', '111'],
+  4: ['101', '101', '111', '001', '001'],
+  5: ['111', '100', '111', '001', '111'],
+  6: ['111', '100', '111', '101', '111'],
+  7: ['111', '001', '010', '010', '010'],
+  8: ['111', '101', '111', '101', '111'],
+  9: ['111', '101', '111', '001', '111'],
+}
+
+function paintNote(ctx, nx, ny, spot) {
+  // row by row, so a tilted note leans
+  const lean = (row) => spot.tilt * Math.floor(row / 5)
+  for (let row = 0; row < NOTE.h; row += 1) {
+    const sx = nx + lean(row)
     ctx.fillStyle = '#a9824f'
-    ctx.fillRect(nx + 1, ny + 1, NOTE.w, NOTE.h)
-    ctx.fillStyle = spot.paper
-    ctx.fillRect(nx, ny, NOTE.w, NOTE.h)
+    ctx.fillRect(sx + 1, ny + row + 1, NOTE.w, 1)
+  }
+  for (let row = 0; row < NOTE.h; row += 1) {
+    const sx = nx + lean(row)
+    ctx.fillStyle = row === NOTE.h - 1 ? spot.edge : spot.paper
+    ctx.fillRect(sx, ny + row, NOTE.w, 1)
     ctx.fillStyle = spot.edge
-    ctx.fillRect(nx, ny + NOTE.h - 1, NOTE.w, 1)
-    ctx.fillRect(nx + NOTE.w - 1, ny, 1, NOTE.h)
-    ctx.fillStyle = '#9a958c'
-    ctx.fillRect(nx + 3, ny + 5, NOTE.w - 6, 1)
-    ctx.fillRect(nx + 3, ny + 8, NOTE.w - 9, 1)
-    ctx.fillStyle = spot.pin
-    ctx.fillRect(nx + 7, ny - 1, 2, 2)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(nx + 7, ny - 1, 1, 1)
+    ctx.fillRect(sx + NOTE.w - 1, ny + row, 1, 1)
+  }
+  ctx.fillStyle = '#9a958c'
+  ctx.fillRect(nx + lean(5) + 3, ny + 5, NOTE.w - 6, 1)
+  ctx.fillRect(nx + lean(8) + 3, ny + 8, NOTE.w - 9, 1)
+  ctx.fillStyle = spot.pin
+  ctx.fillRect(nx + 7, ny - 1, 2, 2)
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(nx + 7, ny - 1, 1, 1)
+}
+
+// a dark tag with "+N" in light pixel figures
+function paintMore(ctx, x, y, more) {
+  const text = `+${more > 99 ? 99 : more}`
+  const w = text.length * 4 + 3
+  ctx.fillStyle = '#4a3527'
+  ctx.fillRect(x, y, w, 9)
+  ctx.fillStyle = '#fdf7ec'
+  ;[...text].forEach((figure, i) => {
+    FIGURES[figure].forEach((bits, row) => {
+      ;[...bits].forEach((bit, col) => {
+        if (bit === '1') ctx.fillRect(x + 2 + i * 4 + col, y + 2 + row, 1, 1)
+      })
+    })
+  })
+}
+
+// A new note: a warm glow round it (under the note) and a red dot in its top corner (over it).
+function paintGlow(ctx, nx, ny, spot) {
+  const lean = spot.tilt * 2
+  const left = nx + Math.min(0, lean)
+  const w = NOTE.w + Math.abs(lean)
+  ctx.fillStyle = 'rgba(255, 224, 102, 0.45)'
+  ctx.fillRect(left - 2, ny - 2, w + 4, NOTE.h + 4)
+  ctx.fillStyle = '#ffd84d'
+  ctx.fillRect(left - 1, ny - 1, w + 2, NOTE.h + 2)
+}
+
+function paintDot(ctx, x, y) {
+  ctx.fillStyle = '#7a1f14'
+  ctx.fillRect(x - 1, y - 1, 5, 5)
+  ctx.fillStyle = '#e63946'
+  ctx.fillRect(x, y, 3, 3)
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(x, y, 1, 1)
+}
+
+// The oldest note takes the first spot, so the newest are the last ones drawn (or, past eight,
+// counted on the "+N" tag, which then glows).
+function paintNotes(ctx, x, y, count, fresh = 0) {
+  const shown = NOTE_SPOTS.slice(0, Math.min(count, NOTE_SPOTS.length))
+  const isNew = (index) => index >= count - fresh
+  shown.forEach((spot, index) => {
+    if (isNew(index)) paintGlow(ctx, x + spot.x, y + spot.y, spot)
+    paintNote(ctx, x + spot.x, y + spot.y, spot)
+    if (isNew(index)) paintDot(ctx, x + spot.x + NOTE.w - 3, y + spot.y - 2)
+  })
+  if (count > NOTE_SPOTS.length) {
+    const more = count - NOTE_SPOTS.length
+    if (fresh > 0) {
+      ctx.fillStyle = '#ffe066'
+      ctx.fillRect(x + MORE_AT.x - 2, y + MORE_AT.y - 2, `+${more}`.length * 4 + 7, 13)
+    }
+    paintMore(ctx, x + MORE_AT.x, y + MORE_AT.y, more)
   }
 }
 

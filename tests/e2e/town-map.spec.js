@@ -123,3 +123,14 @@ test("refreshing the page starts you from your front door again", async ({ page 
   await page.goto("/");
   await expect.poll(() => page.evaluate(() => window.__townScene?.you?.stayPut), BOOT).toBe(false);
 });
+
+// Names over friends' houses are page text over the map, not canvas pixels, so they stay sharp
+// on a phone's screen and follow the house as the camera moves.
+test("a friend's name over their house is sharp page text that moves with the map", async ({ page }) => {
+  const name = page.locator(".town-map__labels .town-label--house").getByText("Emma", { exact: true });
+  await expect(name).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("names.png") });
+  const before = await name.boundingBox();
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  await expect.poll(async () => (await name.boundingBox()).height).toBeGreaterThan(before.height);
+});

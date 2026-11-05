@@ -103,7 +103,7 @@ test.describe("curtains and bedding from the Shop", () => {
       // the first set goes where it's tapped in and changes how it looks
       await buy(page, kind.first);
       await pickFromInventory(page, kind.first);
-      await expect(page.getByRole("status")).toContainText(`Tap where the ${kind.first} should go`);
+      await expect(page.getByRole("status")).toContainText(`to put the ${kind.first} there`);
       await tapRoomAt(page, SPOTS[kind.spot].x, SPOTS[kind.spot].y);
       await expect(page.getByRole("status")).toHaveText(new RegExp(`^${kind.first} ${kind.is} ${kind.spot}`));
       await expect.poll(looks).not.toBe(own);

@@ -22,9 +22,9 @@ export const REACH = 40
 const SURFACE_REACH = 60
 
 // the wall between the bunting (its bottom edge) and the skirting, inside the room's end walls
-const WALL = { left: 4, right: ROOM.width - 4, top: 44, bottom: ROOM.floor - 8 }
+export const WALL = { left: 4, right: ROOM.width - 4, top: 44, bottom: ROOM.floor - 8 }
 // the line floor pieces stand on, and how far along it they may go
-const FLOOR = { y: 416, left: 4, right: ROOM.width - 4 }
+export const FLOOR = { y: 416, left: 4, right: ROOM.width - 4 }
 // the small surfaces: their top (where the slots on them stand) and the stretch along it a piece's
 // middle may be on, a little in from the ends
 const INSET = 6

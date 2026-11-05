@@ -12,6 +12,7 @@ import Phaser from 'phaser'
 import mapData from './map-data.json'
 import { ALL_PLACES, AVATARS, FRIEND_HOUSES, MAP_W, MAP_H, PLACES, SPAWN, TOWNSFOLK } from './places.js'
 import { somewhereToWalk } from './roads.js'
+import { NameLabels } from './labels.js'
 import { SKY_DEPTH, Sky } from './sky.js'
 import { Traffic } from './traffic.js'
 import { Water } from './water.js'
@@ -45,7 +46,6 @@ const DOOR_ZOOM = 1.4
 // ones where nobody has been home long enough for the lights to stay off.
 const AGED = ['dusty', 'neglected', 'derelict']
 const DARK = ['neglected', 'derelict']
-const ONLINE_GREEN = 0x3fae5a
 
 export default class TownScene extends Phaser.Scene {
   // onSelect(place) runs when a building is tapped, onReady() once the map is on screen and
@@ -58,8 +58,10 @@ export default class TownScene extends Phaser.Scene {
   // camera has settled on it.
   // comingFrom: the id of the place you just left: you start outside its door, the camera on you.
   // onWalk() says a tap on the ground has sent you walking.
-  constructor({ character, start, comingFrom, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, onTourSpot, onWalk, reducedMotion }) {
+  constructor({ character, start, comingFrom, onSelect, onReady, onError, onFollow, onInside, onSelectFriend, onTourSpot, onWalk, reducedMotion, labelLayer }) {
     super('town')
+    // the names over friends' houses and readers out walking, as sharp page text (labels.js)
+    this.labels = new NameLabels(labelLayer)
     this.character = character
     this.start = start
     this.comingFrom = comingFrom
@@ -88,7 +90,6 @@ export default class TownScene extends Phaser.Scene {
     this.nearby = []
     // each place's tap zone, by place id
     this.zones = {}
-    this.tags = {}
     // the big signs over the four main buildings, by place id
     this.signs = {}
     this.aged = {}
@@ -123,6 +124,13 @@ export default class TownScene extends Phaser.Scene {
     cam.setBackgroundColor('#6fb14b')
     // whole-pixel drawing makes slow movement (the signs' bob) jump a pixel at a time
     cam.setRoundPixels(false)
+    // the names move with the camera; they're placed once each frame has been drawn
+    const drawLabels = () => this.drawLabels()
+    this.game.events.on('postrender', drawLabels)
+    this.events.once('shutdown', () => {
+      this.game.events.off('postrender', drawLabels)
+      this.labels.destroy()
+    })
     this.fitZoom()
     const first = this.start && ALL_PLACES.find((p) => p.id === this.start)
     const left = !first && ALL_PLACES.find((p) => p.id === this.comingFrom)
@@ -163,6 +171,11 @@ export default class TownScene extends Phaser.Scene {
     this.water?.update(delta)
     this.you?.sync()
     for (const walker of Object.values(this.walkers)) walker.sync()
+  }
+
+  // After each frame is drawn the camera's view is final: the names go where it put the town.
+  drawLabels() {
+    this.labels.draw(this.cameras.main)
   }
 
   // May come before the map has loaded; it is used as soon as it has.
@@ -375,38 +388,16 @@ export default class TownScene extends Phaser.Scene {
   }
 
   // A name tag floating over a building's roof, readable at night too; `online` puts a green
-  // dot before a friend's name. Calling it again replaces the tag.
+  // dot before a friend's name. Calling it again replaces the tag. Page text, not canvas
+  // (labels.js), so it stays sharp; it bobs in CSS (TownMap.vue).
   addNameTag(place, online = false) {
-    this.clearNameTag(place.id)
-    const text = this.add.text(0, 0, place.label, {
-      fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-      fontSize: '26px',
-      fontStyle: 'bold',
-      color: '#3f2e24',
-    })
-    text.setOrigin(0.5).setResolution(2)
-    text.texture.setFilter(Phaser.Textures.FilterMode.LINEAR)
-    const dot = online ? 22 : 0
-    const w = text.width + 32 + dot
-    const h = 42
-    text.setX(dot / 2)
-    const accent = Phaser.Display.Color.HexStringToColor(place.accent).color
-    const pill = this.add.graphics()
-    pill.fillStyle(0xfffdf9, 0.96).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2)
-    pill.lineStyle(4, accent, 1).strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2)
-    if (online) pill.fillStyle(ONLINE_GREEN, 1).fillCircle(-w / 2 + 22, 0, 7)
-    // above the chosen building's glow, which would otherwise wash over the name
-    const tag = this.add.container(place.x + place.w / 2, place.y + 4, [pill, text]).setDepth(SKY_DEPTH + 30)
-    if (!this.reducedMotion) this.tweens.add({ targets: tag, y: tag.y - 8, duration: 1400, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
-    this.tags[place.id] = tag
+    const key = `house:${place.id}`
+    this.labels.set(key, { text: place.label, look: 'house', accent: place.accent, online })
+    this.labels.move(key, place.x + place.w / 2, place.y + 4)
   }
 
   clearNameTag(id) {
-    const old = this.tags[id]
-    if (!old) return
-    this.tweens.killTweensOf(old)
-    old.destroy()
-    delete this.tags[id]
+    this.labels.remove(`house:${id}`)
   }
 
   select(place) {

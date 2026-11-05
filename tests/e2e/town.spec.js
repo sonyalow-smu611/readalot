@@ -87,18 +87,13 @@ test("your character walks to a building before going in", async ({ page }) => {
   await expect(page).toHaveURL(/\/library$/, WALK_IN);
 });
 
-// The sky follows the live weather; the weather chip steps through a preview of each look.
-test("the weather chip previews day, night and rain", async ({ page }) => {
-  const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  const chip = page.getByRole("button", { name: /^Weather:/ });
+// The sky follows the live weather, and the chip only says what it is: it isn't a button.
+test("the weather chip shows the live weather and can't be changed", async ({ page }) => {
+  const chip = page.getByRole("status", { name: /^Live weather:/ });
   await expect(chip).toContainText("Live weather");
-  for (const look of ["Day", "Night", "Rain", "Rainy night"]) {
-    await chip.click();
-    await expect(chip).toContainText("Preview");
-    await expect(chip).toContainText(look);
-  }
-  await chip.click();
-  await expect(chip).toContainText("Live weather");
-  expect(errors).toEqual([]);
+  await expect(page.getByRole("button", { name: /Weather/i })).toHaveCount(0);
+  const sky = () => page.evaluate(() => ({ ...window.__townScene.skyState }));
+  const before = await sky();
+  await chip.click({ force: true });
+  expect(await sky()).toEqual(before);
 });

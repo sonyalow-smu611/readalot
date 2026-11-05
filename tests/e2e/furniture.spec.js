@@ -446,7 +446,7 @@ test.describe("tapping a piece, then the room", () => {
     await goToPlace(page, "Bed");
     await buy(page, "Mountain poster");
     await pickFromInventory(page, "Mountain poster");
-    await expect(page.getByRole("status")).toContainText("Tap where the Mountain poster should go");
+    await expect(page.getByRole("status")).toContainText("Tap anywhere on the lit wall for the Mountain poster");
     await expect(page.getByRole("button", { name: /^Put / })).toHaveCount(0);
     await tapRoomAt(page, 1000, 220);
     await expect(page.getByRole("status")).toHaveText(/^Mountain poster is on the wall/);

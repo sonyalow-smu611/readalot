@@ -1,5 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The town's notifications: friend requests, friends coming online and visits to your room, each
+// The town's notifications: friend requests, friends coming online, visits to your room and notes
+// left on your notice board, each
 // of which shows once as a pop-up (TownView) and stays in the bell's list. The town calls check()
 // after every refresh, so they arrive while you're in town and catch up when you come back.
 // The list is built from Supabase each time: requests waiting for you, visits in the last week, and
@@ -8,7 +9,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { loadNotificationTimes, saveNotificationTimes } from '@/services/auth.js'
-import { getRoomVisits } from '@/services/api.js'
+import { getRoomNotes, getRoomVisits } from '@/services/api.js'
+import { useNotesSeenStore } from '@/stores/notesSeen.js'
 import { presence } from '@/town/friends.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
 
@@ -19,14 +21,17 @@ const time = (at) => Date.parse(at) || 0
 
 export const useNotificationsStore = defineStore('notifications', () => {
   const nearby = useNearbyStore()
+  // a note already read on the board itself is read here too
+  const notesSeen = useNotesSeenStore()
   const readerId = ref('')
-  // [{ id, kind: 'request' | 'online' | 'visit', text, at, read, requestId?, friendId?, visitorId? }]
+  // [{ id, kind: 'request' | 'online' | 'visit' | 'note', text, at, read, requestId?, friendId?, visitorId? }]
   const items = ref([])
   // anything at or before readAt is read; anything at or before clearedAt is gone from the list
   const readAt = ref('')
   const clearedAt = ref('')
   let loaded = Promise.resolve()
   let visits = []
+  let notes = []
   let online = []
   // what has popped up this visit, so nothing pops up twice
   let popped = new Set()
@@ -58,11 +63,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
     readAt.value = ''
     clearedAt.value = ''
     visits = []
+    notes = []
     online = []
     popped = new Set()
     greeted = new Set()
     knownFriends = null
-    loaded = loadTimes(id)
+    loaded = Promise.all([loadTimes(id), notesSeen.start(id)])
   }
 
   function requests() {
@@ -103,12 +109,27 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }))
   }
 
+  // Notes left on your board in the last week (since you last cleared the bell).
+  async function recentNotes() {
+    const since = Math.max(Date.now() - WEEK, time(clearedAt.value))
+    const { notes: found } = await getRoomNotes(readerId.value)
+    return found
+      .filter((note) => time(note.createdAt) > since)
+      .map((note) => ({
+        id: `note-${note.id}`,
+        kind: 'note',
+        text: `${note.author} left a note on your board`,
+        at: note.createdAt,
+        seen: !notesSeen.isNew(note),
+      }))
+  }
+
   function build() {
-    items.value = [...requests(), ...online, ...visits]
+    items.value = [...requests(), ...online, ...visits, ...notes]
       .filter((item) => time(item.at) > time(clearedAt.value))
       .sort((a, b) => time(b.at) - time(a.at))
       .slice(0, KEEP)
-      .map((item) => ({ ...item, read: time(item.at) <= time(readAt.value) }))
+      .map(({ seen, ...item }) => ({ ...item, read: Boolean(seen) || time(item.at) <= time(readAt.value) }))
   }
 
   // Rebuilds the list and returns what's new since the last look. A failed look at the visits
@@ -117,6 +138,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     if (!readerId.value) return []
     await loaded
     visits = await recentVisits().catch(() => visits)
+    notes = await recentNotes().catch(() => notes)
     online = [...newlyOnline(), ...online].slice(0, KEEP)
     build()
     const fresh = items.value.filter((item) => !item.read && !popped.has(item.id))

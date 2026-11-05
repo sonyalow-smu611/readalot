@@ -38,6 +38,8 @@ const props = defineProps({
 const emit = defineEmits(['select', 'select-friend', 'ready', 'inside', 'walk'])
 
 const host = ref(null)
+// the names over houses and walkers, as page text over the canvas (town/labels.js)
+const labels = ref(null)
 const state = ref('loading') // loading | ready | error
 // whether the camera keeps your character in the middle of the screen
 const following = ref(false)
@@ -127,6 +129,7 @@ watch(
 onMounted(() => {
   scene = new TownScene({
     reducedMotion,
+    labelLayer: labels.value,
     character: props.character,
     start: props.start,
     comingFrom: props.comingFrom,
@@ -176,6 +179,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="town-map">
     <div ref="host" class="town-map__canvas" aria-hidden="true"></div>
+    <div ref="labels" class="town-map__labels" :class="{ 'is-still': reducedMotion }" aria-hidden="true"></div>
     <div v-if="spot" class="town-map__spot" :data-tour-spot="spot.id" :data-tour-mask="`/town/buildings/${spot.art}.png`" :style="spotStyle" aria-hidden="true"></div>
     <p v-if="state === 'loading'" class="town-map__state">Loading the town…</p>
     <p v-else-if="state === 'error'" class="town-map__state" role="alert">
@@ -211,6 +215,78 @@ onBeforeUnmount(() => {
 .town-map__canvas {
   position: absolute;
   inset: 0;
+}
+
+.town-map__labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  --z: 1;
+}
+
+/* One name: its middle sits on the point the scene gives (labels.js). Sizes are map pixels times
+   the camera's zoom, and set as font sizes rather than scaled, so the text is drawn sharp. */
+.town-map__labels :deep(.town-label) {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.town-map__labels :deep(.town-label--house) {
+  z-index: 1;
+}
+
+.town-map__labels :deep(.town-label__pill) {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--z));
+  height: calc(var(--height) * 1px * var(--z));
+  padding: 0 calc(var(--pad) * 1px * var(--z));
+  border: calc(var(--border) * 1px * var(--z)) solid var(--accent);
+  border-radius: 999px;
+  background: rgb(255 253 249 / 96%);
+  color: #3f2e24;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: calc(var(--font) * 1px * var(--z));
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+.town-map__labels :deep(.town-label__dot) {
+  display: none;
+  flex: none;
+  width: calc(var(--dot) * 1px * var(--z));
+  height: calc(var(--dot) * 1px * var(--z));
+  border-radius: 50%;
+  background: #3fae5a;
+}
+
+.town-map__labels :deep(.is-online .town-label__dot) {
+  display: block;
+}
+
+/* a house's name bobs gently over its roof */
+.town-map__labels :deep(.town-label--house .town-label__pill) {
+  animation: town-label-bob 1.4s ease-in-out infinite alternate;
+}
+
+.town-map__labels.is-still :deep(.town-label__pill) {
+  animation: none;
+}
+
+@keyframes town-label-bob {
+  to {
+    transform: translate(-50%, calc(-50% - 8px * var(--z)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .town-map__labels :deep(.town-label__pill) {
+    animation: none;
+  }
 }
 
 .town-map__spot {

@@ -1,7 +1,8 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The bell's list, newest first: friend requests, friends coming online and visits to your room.
-// Tapping one goes to it: the friends list, the friend on the map, or the visitor's profile.
+// The bell's list, newest first: friend requests, friends coming online, visits to your room and
+// notes left on your board. Tapping one goes to it: the friends list, the friend on the map, the
+// visitor's profile, or your notice board.
 import { presence } from '@/town/friends.js'
 
 defineProps({
@@ -22,7 +23,7 @@ const leadsNowhere = (item) => item.kind === 'visit' && !item.visitorId
       <h2 class="notifications__title">Notifications</h2>
       <button v-if="items.length" type="button" class="btn btn-secondary btn-sm" @click="emit('clear')">Clear all</button>
     </header>
-    <p v-if="!items.length" class="notifications__empty">Nothing yet. Friend requests, friends coming online and visits to your room will show here.</p>
+    <p v-if="!items.length" class="notifications__empty">Nothing yet. Friend requests, friends coming online, visits to your room and notes on your board will show here.</p>
     <button
       v-for="item in items"
       :key="item.id"

@@ -48,20 +48,11 @@ const RAW = [
     say: "Hi, it's you! I'm your character in IKDA Town. Let me show you round everything.",
   },
   {
-    id: 'weather',
-    section: 'Town',
-    to: '/',
-    kind: 'try',
-    target: t('town-weather'),
-    say: "The town's sky follows the real weather where you are.",
-    ask: 'Tap it to try another sky.',
-    until: 'tap',
-  },
-  {
     id: 'hud',
     section: 'Town',
     to: '/',
     stops: [
+      { target: t('town-weather'), say: "The weather: the town's sky follows the real weather where you are." },
       { target: t('town-badge'), say: 'You! The number is your level, the ring fills with XP, and the coin is your coins.' },
       { target: t('town-daily'), say: 'Daily tasks: finish three a day to claim coins and XP, and keep your streak going.' },
       { target: t('town-places'), say: 'Places lists every building, so you can go straight to one.' },

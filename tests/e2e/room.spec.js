@@ -232,7 +232,7 @@ test.describe("decorating", () => {
 
     // pick the succulents, then tap the window seat
     await pickFromInventory(page, "Succulent trio");
-    await expect(page.getByRole("status")).toContainText("Tap where the Succulent trio should go");
+    await expect(page.getByRole("status")).toContainText("Tap the window seat, side table or nightstand for the Succulent trio");
     await goToPlace(page, "Window");
     await tapRoomAt(page, SPOTS["on the window seat"].x, SPOTS["on the window seat"].y);
 

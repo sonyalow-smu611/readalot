@@ -270,7 +270,7 @@ test.describe("the house", () => {
     await buy(page, "Mountain poster");
     await fromMenu(page, "Inventory");
     await inventory(page).getByRole("button", { name: /Mountain poster/ }).click();
-    const placing = page.getByRole("status").filter({ hasText: "Tap where the Mountain poster should go" });
+    const placing = page.getByRole("status").filter({ hasText: "Tap anywhere on the lit wall for the Mountain poster" });
     await expect(placing).toBeVisible();
     expect(await offLook(placing)).toEqual([]);
 

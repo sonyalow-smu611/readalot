@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
 import { useDecor } from '@/composables/useDecor'
 import DecorArt from '@/buildings/house/components/DecorArt.vue'
@@ -8,13 +8,15 @@ defineEmits(['mood'])
 
 const menu = ref(null)
 const panel = ref(null)
-const open = ref(false)
 
 const {
   catalog,
   inventory,
+  placed,
   shopOpen,
   inventoryOpen,
+  // shared, so the room can show which pieces can be tapped while it's open
+  menuOpen: open,
   pending,
   placing,
   canAfford,
@@ -30,6 +32,16 @@ function grab(event, entry) {
   if (event.button != null && event.button !== 0) return
   startDrag(entry, event.clientX, event.clientY)
 }
+
+// placing a piece: the menu gets out of the way of the room, where it lights up where to tap
+watch(placing, (piece) => {
+  if (piece) open.value = false
+})
+
+// the menu starts shut each time the room opens, as it did when it was this component's own
+onBeforeUnmount(() => {
+  open.value = false
+})
 
 function meta(id) {
   return catalog.find((item) => item.id === id)
@@ -134,9 +146,10 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
         <h2 class="panel__title">Inventory</h2>
         <button type="button" class="btn btn-secondary btn-sm" @click="inventoryOpen = false">Close</button>
       </header>
+        <p v-if="placed.length" class="panel__note">Pieces with a ✎ are already in the room: tap one to move or remove it.</p>
         <p v-if="!inventory.length" class="panel__empty">Buy something in the shop, then place it in the room.</p>
         <template v-else>
-          <p class="panel__note">Tap a piece, then where it should go in the room. Or drag it there.</p>
+          <p class="panel__note">Tap a piece, then where it should go in the room (it lights up). Or drag it there.</p>
           <div class="panel__row">
             <button
               v-for="entry in inventory"

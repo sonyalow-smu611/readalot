@@ -1,5 +1,5 @@
 import {
-  buy, expect, fromMenu, goToPlace, inventory, mockWeather, placeAt, roomReady, skipMoodCheckIn, test,
+  buy, expect, fromMenu, goToPlace, inventory, mockWeather, pickFromInventory, placeAt, roomReady, skipMoodCheckIn, test,
 } from "./fixtures.js";
 import { signInPage } from "./supabaseUser.js";
 
@@ -258,4 +258,67 @@ test("a piece bought in the Shop is still in the inventory after a reload", asyn
   await reload(page);
   await fromMenu(page, "Inventory");
   await expect(inInventory(page, "Mountain poster")).toHaveCount(1);
+});
+
+// --- Showing where a piece can go ------------------------------------------------------------------
+
+test("placing a reading chair lights up the armchair it takes the place of", async ({ page }) => {
+  await buy(page, "Wingback chair");
+  await pickFromInventory(page, "Wingback chair");
+  await expect(page.getByRole("status")).toContainText("Tap the armchair to put the Wingback chair there.");
+  const target = page.locator('[data-target="chair"]');
+  await expect(target).toBeVisible();
+  await expect(target).toContainText("Put it on the armchair");
+  // only the armchair is lit, not the wall or the floor
+  await expect(page.locator("[data-target]")).toHaveCount(1);
+  // the room menu is out of the way while placing
+  await expect(page.getByRole("button", { name: "Room menu" })).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(target).toHaveCount(0);
+});
+
+// On a phone the prompt sits beside the Places button, not under it, and fits the screen.
+test("the placing prompt stays clear of the Places button on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 700 });
+  await buy(page, "Wingback chair");
+  await pickFromInventory(page, "Wingback chair");
+  const prompt = page.getByRole("status").filter({ hasText: "Tap the armchair" });
+  await expect(prompt).toBeVisible();
+  const places = await page.getByRole("button", { name: "Places", exact: true }).boundingBox();
+  const box = await prompt.boundingBox();
+  expect(box.x).toBeGreaterThanOrEqual(places.x + places.width);
+  expect(box.x + box.width).toBeLessThanOrEqual(375);
+});
+
+test("placing wall art lights up the wall, and a shelf piece the small surfaces", async ({ page }) => {
+  await buy(page, "Mountain poster");
+  await pickFromInventory(page, "Mountain poster");
+  await expect(page.locator('[data-target="wall"]')).toBeAttached();
+  await expect(page.getByRole("status")).toContainText("Tap anywhere on the lit wall");
+  await page.getByRole("button", { name: "Cancel" }).click();
+
+  await buy(page, "Succulent trio");
+  await pickFromInventory(page, "Succulent trio");
+  for (const surface of ["seat", "side-table", "nightstand"]) await expect(page.locator(`[data-target="${surface}"]`)).toBeAttached();
+  await expect(page.locator("[data-target]")).toHaveCount(3);
+});
+
+test("with the room menu or the inventory open, the pieces in the room show they can be tapped", async ({ page }) => {
+  await buy(page, "Mountain poster");
+  await placeAt(page, "Mountain poster", "by the reading chair");
+  const poster = placed(page, "Mountain poster");
+  await expect(poster).toHaveCount(1);
+  // placing it shut the room menu; open again, every piece shows it can be tapped
+  const menu = page.getByRole("button", { name: "Room menu" });
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(poster).not.toContainText("✎");
+  await menu.click();
+  await expect(poster).toContainText("✎");
+  // shut, the room is back to normal
+  await menu.click();
+  await expect(poster).not.toContainText("✎");
+
+  await fromMenu(page, "Inventory");
+  await expect(inventory(page)).toContainText("Pieces with a ✎ are already in the room");
+  await expect(poster).toContainText("✎");
 });
