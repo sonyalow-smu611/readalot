@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 
 import booksRouter from "./routes/books.js";
+import { checkGoogleBooks } from "./services/books.js";
 import creaturesRouter from "./routes/creatures.js";
 import demoAuthRouter from "./routes/demoAuth.js";
 import friendsRouter from "./routes/friends.js";
@@ -25,8 +26,10 @@ export const app = express();
 app.use(cors());
 app.use(express.json({ limit: "8mb" }));
 
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true });
+app.get("/api/health", async (req, res) => {
+  // ?deep=1 also tests Google Books (see checkGoogleBooks)
+  if (!req.query.deep) return res.json({ ok: true });
+  res.json({ ok: true, googleBooks: await checkGoogleBooks() });
 });
 
 app.use("/api/books", booksRouter);

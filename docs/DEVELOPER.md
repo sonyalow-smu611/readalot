@@ -227,7 +227,7 @@ All under `/api`, served by `server/src/app.js`.
 
 | Route | Purpose |
 |-------|---------|
-| `GET /health` | Server is up |
+| `GET /health` | Server is up. `?deep=1` also tests Google Books and says what it answered (status and reason, never the key) |
 | `GET /user-books`, `POST /user-books`, `PATCH /user-books/:id`, `DELETE /user-books/:id` | The reader's shelf. Each book carries `status`, `progress` (0-100), `myRating` and `reviewed`; `PATCH` takes `status` and/or `progress` |
 | `GET /books/search?q=&limit=`, `GET /books/:id`, reviews and quotes under `/books/:id` | Book search and details. Search returns a placeholder book when Google Books cannot be reached; a book page answers 404 or 502 |
 | `GET /recommendations?mood=calm\|low\|stressed\|excited[&exclude=<work id>]` | A book for the mood with a quote from it: `book`, `workId`, `category` (or null), `quote` (`quoteText`, `author`, `work`, `sourceUrl`) |

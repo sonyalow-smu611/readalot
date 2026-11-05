@@ -412,6 +412,6 @@ export const WALKTHROUGH = RAW.map((step) => {
 // The text bar's height. The app shrinks by this while the walkthrough plays, so the bar never
 // covers anything and stays in the same place on every step. Taller on a phone (up to PHONE_MAX
 // px wide), where the words wrap onto more lines: see composables/useBarHeight.js.
-export const BAR_HEIGHT = 200
-export const BAR_HEIGHT_PHONE = 232
+export const BAR_HEIGHT = 216
+export const BAR_HEIGHT_PHONE = 248
 export const PHONE_MAX = 575

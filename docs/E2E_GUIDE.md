@@ -163,7 +163,10 @@ below it) that starts as `Resend in 30s`, counts down, then becomes **Resend cod
 A wrong code shows an error and the cats duck (demo: `That code is not right. The demo code is 111111.`).
 With **Remember me for 30 days** ticked the reader stays signed in for 30 days on that browser (the session is kept
 in `localStorage` with its end date, `readalot-remember`); unticked, the session lasts until the browser is closed
-(`sessionStorage`). Readers who signed in before this existed stay signed in as before.
+(`sessionStorage`). Readers who signed in before this existed stay signed in as before. A device that has accepted a
+code with the box ticked is remembered for 30 days (`localStorage` key `readalot-trusted`): logging out and back
+in there needs the password only, with no emailed code. Unticking the box at a log in asks for the code again and
+forgets the device.
 A correct code shows **Code accepted**, the cats hop, then a returning reader zooms into the town and a
 new reader goes to Welcome. A reload on the code screen of a demo address asks to log in again
 (`Go back and log in again, then enter the code.`).
@@ -486,6 +489,10 @@ API with that reader's access token: `Authorization: Bearer <token>` (get one wi
 **Naming and cleanup.** Make accounts with a unique stamp (`qa.<epoch>`). After a scenario, delete the accounts it
 created (auth user plus `profiles` row; related rows cascade) with the service-role client. Leave ACCT-DEMO
 reset (`npm run seed:demo -w server`) when a scenario changed it.
+
+**When Google Books refuses the server** (a used-up quota, a limit on a shared host's address, an outage) the
+search falls back to Open Library, so shelves still load: its books have ids like `ol-OL45804W`, covers and
+subjects but often no synopsis. `GET /api/health?deep=1` shows what Google answered.
 
 **Books for tests.** Use titles that Google Books returns reliably: The Hobbit, Dune, Circe, Piranesi. Book
 search can be slow or rate-limited; retry once before calling it a failure.

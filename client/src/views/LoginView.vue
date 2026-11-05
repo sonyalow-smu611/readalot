@@ -115,6 +115,13 @@ async function submit() {
     fail(result.error.message)
     return
   }
+  // a device remembered from an earlier code: the password was enough, so straight in
+  if (result.data?.trusted) {
+    await user.applySession(result.data.session)
+    if (user.profileComplete) await stage.value?.enterTown()
+    router.push({ name: user.profileComplete ? 'town' : 'welcome' })
+    return
+  }
   user.applySession(null)
   router.push({ name: 'verify' })
 }
