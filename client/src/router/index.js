@@ -31,7 +31,7 @@ const routes = [
   { path: '/people', name: 'discover-people', redirect: { name: 'cafe' } },
   { path: '/profile', name: 'profile', redirect: { name: 'salon' } },
   // Pages opened from inside a building
-  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, wide: true, order: 2 } },
+  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, wide: true, wall: true, order: 2 } },
   // the library's catalogue: full screen, in the library's look
   { path: '/search', name: 'search', component: () => import('@/buildings/library/SearchView.vue'), meta: { title: 'Search', fullBleed: true, wide: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { fullBleed: true, wide: true, order: 2 } },
@@ -73,6 +73,31 @@ router.beforeEach(async (to) => {
     return { name: 'welcome' }
   }
   return true
+})
+
+// A tab left open across a redeploy still asks for page files that are gone, so opening a building
+// would do nothing at all. Load the page again once, from the address it was going to; the flag
+// stops that repeating if the files really are missing.
+const STALE = /dynamically imported module|Importing a module script failed|Loading chunk|Unable to preload|Failed to fetch/i
+const RELOADED = 'readalot.reloadedFor'
+
+router.onError((error, to) => {
+  if (!STALE.test(String(error?.message ?? ''))) return
+  try {
+    if (sessionStorage.getItem(RELOADED) === to.fullPath) return
+    sessionStorage.setItem(RELOADED, to.fullPath)
+  } catch {
+    // no storage: reload once anyway
+  }
+  window.location.assign(to.fullPath)
+})
+
+router.afterEach(() => {
+  try {
+    sessionStorage.removeItem(RELOADED)
+  } catch {
+    // nothing was kept
+  }
 })
 
 // Going deeper (town → building → book) slides the page in from the right; coming back, from the left.

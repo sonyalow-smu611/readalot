@@ -142,3 +142,18 @@ test("Back from My Room goes to the town even after visiting its shelf", async (
   await page.getByRole("link", { name: "Back to town" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
+
+test("a page file that has gone missing (a tab left open across a redeploy) loads the page again instead of doing nothing", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  // the building's file fails once, as it does when the site was redeployed under an open tab
+  let failed = 0;
+  await page.route("**/buildings/salon/SalonView.vue*", (route) => {
+    failed += 1;
+    return failed === 1 ? route.abort() : route.continue();
+  });
+  await page.getByRole("link", { name: /^Your profile/ }).click();
+  await expect(page).toHaveURL(/\/salon/);
+  await expect(page.getByRole("tab", { name: "Profile" })).toBeVisible();
+  expect(failed).toBeGreaterThan(1);
+});
