@@ -638,6 +638,8 @@ const handCells = HAND.flatMap((row, y) =>
   align-items: center;
   justify-content: center;
   margin: 0;
+  /* the words sit a little above the middle, clear of the buttons below */
+  padding-bottom: 14px;
   overflow: hidden;
   text-align: center;
   font-size: 1.2rem;
@@ -647,7 +649,7 @@ const handCells = HAND.flatMap((row, y) =>
 }
 
 .guide__ask {
-  margin: 0;
+  margin: 0 0 8px;
   text-align: center;
   font-size: 1.1rem;
   font-weight: 800;
@@ -668,6 +670,17 @@ const handCells = HAND.flatMap((row, y) =>
 
   .guide__ask {
     font-size: 1rem;
+  }
+}
+
+/* the narrowest phones: a touch smaller still */
+@media (max-width: 380px) {
+  .guide__say {
+    font-size: 0.95rem;
+  }
+
+  .guide__ask {
+    font-size: 0.92rem;
   }
 }
 

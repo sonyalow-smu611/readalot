@@ -1006,7 +1006,7 @@ Written by Claude at Aalric's request. Remember me changes how the sign-in sessi
 | Code screen | `client/src/views/VerifyView.vue` | Resend code is a button the same width and padding as Confirm code, with a gap below it (it had no padding, so its words touched the box) |
 | Remember me | `client/src/services/supabase.js`, `services/auth.js`, `client/src/views/LoginView.vue`, `client/src/components/shared/TickCheckbox.vue` | A "Remember me for 30 days" checkbox on Log in (ticked to start) whose tick draws itself. Ticked: the session is kept in `localStorage` with an end date 30 days away and the reader is signed out after it. Unticked: it is kept in `sessionStorage`, so closing the browser signs out. Readers already signed in are not signed out |
 | Walkthrough steps | `client/src/lib/walkthrough.js`, `GenreBookcase.vue`, `FavouriteGenres.vue`, `TownView.vue`, `SalonView.vue` | A stop for the music button in the town; in the salon's Profile, a stop for the favourite genres, a step that asks the reader to tap one, and two stops in the library bookcase it opens (35 steps in all). A step marked `optional` is skipped if its target never shows |
-| Walkthrough text | `client/src/components/GuideTour.vue`, `client/src/composables/useBarHeight.js`, `App.vue` | The words are centred and bigger; on a phone the bar is 232 px tall (200 px on a laptop) so the longest lines fit. Checked all 35 steps at 360, 390 and 1280 px wide |
+| Walkthrough text | `client/src/components/GuideTour.vue`, `client/src/composables/useBarHeight.js`, `App.vue` | The words are centred and bigger; on a phone the bar is 232 px tall (200 px on a laptop) so the longest lines fit (later 248 px and 216 px, with a gap under the words so they sit clear of the buttons). Checked all 35 steps at 360, 390 and 1280 px wide |
 =======
 | Badge to Profile | `client/src/components/town/PlayerBadge.vue`, `client/src/views/TownView.vue` | The badge in the town's corner opens the salon on the Profile tab with the sheet pulled up (`?tab=profile&sheet=1`), and shows your @username under your name |
 | Username in the profile | `client/src/services/auth.js`, `client/src/stores/user.js` | The profile loads `profiles.username` into `profile.username` (as `town/username.js` asked for), and `saveProfile` can save it; a name taken in the meantime says so |
@@ -1024,3 +1024,13 @@ Written by Claude at Khaleil's request (changes to Dylan's town and Aasim's libr
 | Badge | `client/src/views/TownView.vue`, `client/src/components/town/PlayerBadge.vue` | A quarter smaller on a phone (`scale`, so the badge's own pop still works), kept in its corner; the @username sits midway between the name and the coins |
 | Library's top line | `client/src/buildings/library/LibraryView.vue`, `client/src/components/town/DailyDock.vue` | On a phone: "‹ Town", Daily and music, the magnifier and the weather share one line, and the search bar opens below it with a gap instead of over Daily and music |
 >>>>>>> origin/main
+
+### Books load when Google Books refuses the server; trusted devices (AI-generated)
+
+Written by Claude at Aalric's request. The server change is to a shared service and was asked for by Aalric.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Books fallback (backend) | `server/src/services/books.js` | When Google Books cannot be had (a refusal from this server, a used-up quota, an outage), a search falls back to Open Library and a book page for an `ol-` book is read from it, so the library's shelves, search and genre pages still show real books with covers. Google is left alone for a minute after it fails, so searches are not slowed down. An Open Library stand-in is never saved as the match for a title |
+| Health check (backend) | `server/src/app.js`, `server/src/services/books.js` (`checkGoogleBooks`) | `/api/health?deep=1` tests Google Books and says what it answered (status and reason, never the key), since the search route hides a bad key, a quota and an outage behind the same placeholder book |
+| Log in again | `client/src/services/auth.js`, `client/src/views/LoginView.vue` | A browser that accepted a code with Remember me ticked is trusted for 30 days: logging out and back in there needs the password only. Unticking the box asks for the code again and forgets the browser |

@@ -2,7 +2,7 @@
 // Email sign-in and the reader's saved profile, through the Supabase client.
 // The profile lives in two tables: `profiles` (what other readers may see) and `profile_private`
 // (gender, age, religion: only the reader). See database/profiles_and_tour.sql.
-import { MISSING_KEYS, setRemember, supabase } from '@/services/supabase.js'
+import { MISSING_KEYS, REMEMBER_DAYS, setRemember, supabase } from '@/services/supabase.js'
 import { cleanGenres } from '@/lib/genreShelves.js'
 
 const PENDING_KEY = 'readalot-pending-auth'
@@ -125,10 +125,58 @@ async function beginDemoRegister(email, password, username) {
   return { data: { email }, error: null }
 }
 
+// Devices that have already confirmed a reader's email with a code and were asked to remember them:
+// { email: the day it stops counting (ms) }, kept on this browser for 30 days. Logging back in there
+// needs the password only, not another emailed code. Logging out leaves it as it is.
+const TRUSTED_KEY = 'readalot-trusted'
+const TRUST_MS = REMEMBER_DAYS * 24 * 60 * 60 * 1000
+
+function readTrusted() {
+  try {
+    return JSON.parse(localStorage.getItem(TRUSTED_KEY) || '{}') || {}
+  } catch {
+    return {}
+  }
+}
+
+function writeTrusted(list) {
+  try {
+    localStorage.setItem(TRUSTED_KEY, JSON.stringify(list))
+  } catch {
+    // no storage: the code is asked for next time
+  }
+}
+
+const trustName = (email) => String(email || '').trim().toLowerCase()
+
+export function isTrustedDevice(email) {
+  return Number(readTrusted()[trustName(email)]) > Date.now()
+}
+
+function trustDevice(email, on) {
+  const list = readTrusted()
+  const now = Date.now()
+  // forget the ones whose 30 days are over while we are here
+  for (const [name, until] of Object.entries(list)) if (Number(until) <= now) delete list[name]
+  if (on) list[trustName(email)] = now + TRUST_MS
+  else delete list[trustName(email)]
+  writeTrusted(list)
+}
+
 export async function beginLogin(email, password, remember = true) {
   if (!supabase) return missing()
   const signed = await supabase.auth.signInWithPassword({ email, password })
   if (signed.error) return signed
+  // a device the reader confirmed and asked to remember: the password was enough, straight in
+  if (remember && isTrustedDevice(email) && signed.data.session) {
+    setRemember(true)
+    // saved again, now that it is kept for 30 days
+    await supabase.auth.setSession({
+      access_token: signed.data.session.access_token,
+      refresh_token: signed.data.session.refresh_token,
+    })
+    return { data: { email, session: signed.data.session, trusted: true }, error: null }
+  }
   await supabase.auth.signOut()
   if (isDemoEmail(email)) {
     // the password was right: no email is sent, the code is DEMO_CODE
@@ -148,7 +196,8 @@ export async function beginLogin(email, password, remember = true) {
 export async function verifyEmailCode(email, token, purpose) {
   if (!supabase) return missing()
   // where the session is kept (30 days, or until the browser closes) is decided before it is made
-  setRemember(readPending()?.remember !== false)
+  const remember = readPending()?.remember !== false
+  setRemember(remember)
   if (isDemoEmail(email)) {
     if (token !== DEMO_CODE) return { data: null, error: { message: `That code is not right. The demo code is ${DEMO_CODE}.` } }
     if (!demoPassword) return { data: null, error: { message: 'Go back and log in again, then enter the code.' } }
@@ -156,12 +205,16 @@ export async function verifyEmailCode(email, token, purpose) {
     if (!signed.error) {
       demoPassword = ''
       clearPending()
+      trustDevice(email, remember)
     }
     return signed
   }
   const type = purpose === 'signup' ? 'signup' : 'email'
   const result = await supabase.auth.verifyOtp({ email, token, type })
-  if (!result.error) clearPending()
+  if (!result.error) {
+    clearPending()
+    trustDevice(email, remember)
+  }
   return result
 }
 

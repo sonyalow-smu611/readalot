@@ -116,5 +116,5 @@ uses **Skip this step** on ask cards, and still supports **Skip this part** / **
 3. `33 of 35 · Salon` asks you to **Tap a genre** (the first genre button is circled). Tap it → the library opens on that genre's bookcase (`/library?shelf=…`) and the tour moves on by itself. **Skip this step** also works, and a profile with no genre button skips the step after a few seconds.
 4. `34 of 35 · Salon` lights the open bookcase ("browse it like the library: tap a book to open it…"), then the **Spines / Covers** switch. Next → `35 of 35`, the closing line, back in town.
 5. Back from `35 of 35` returns to the open bookcase (`/library?shelf=fantasy`).
-6. On a phone (390 × 780) the bar is taller (232 px), the words are centred and larger, and none of the 35 steps is cut off.
+6. On a phone (390 × 780) the bar is taller (248 px; 216 px on a laptop), the words are centred, larger and clear of the buttons below, and none of the 35 steps is cut off (also at 360 px and 320 px wide).
 **DB:** none. **Pass:** each step reads in full, the genre tap opens its bookcase, and the tour carries on.

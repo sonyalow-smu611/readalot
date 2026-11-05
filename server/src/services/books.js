@@ -76,6 +76,133 @@ async function googleBooks(path, params = {}) {
   throw error;
 }
 
+// One test search, for /api/health?deep=1: whether a key is set, what Google answered and why it
+// refused (never the key itself). It is how to tell a bad key, a used-up quota and an outage apart,
+// since the search route hides all three behind the placeholder book.
+export async function checkGoogleBooks() {
+  const url = new URL(`${API_URL}/volumes`);
+  url.searchParams.set("q", "dune");
+  url.searchParams.set("maxResults", "1");
+  if (env.GOOGLE_BOOKS_API_KEY) url.searchParams.set("key", env.GOOGLE_BOOKS_API_KEY);
+  const started = Date.now();
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const body = await response.json().catch(() => ({}));
+    const problem = body.error;
+    return {
+      keySet: Boolean(env.GOOGLE_BOOKS_API_KEY),
+      status: response.status,
+      ok: response.ok,
+      reason: problem?.errors?.[0]?.reason ?? problem?.status ?? null,
+      message: problem?.message ? String(problem.message).replace(/key=[^\s&]+/g, "key=…").slice(0, 200) : null,
+      ms: Date.now() - started
+    };
+  } catch (err) {
+    return { keySet: Boolean(env.GOOGLE_BOOKS_API_KEY), status: 0, ok: false, reason: err?.name ?? "error", message: err?.message ?? null, ms: Date.now() - started };
+  }
+}
+
+// ---- Open Library: the answer when Google Books cannot be had ----------------------------------
+// Google Books can refuse this server (a used-up daily quota, a limit on a shared host's address, an
+// outage), and then no shelf in the library loads. Open Library needs no key and has covers and
+// subjects, so searches and book pages fall back to it. Its books have ids like "ol-OL45804W"
+// (the "ol-" marks them, and getGoogleBook knows how to fetch one again).
+const OPEN_LIBRARY = "https://openlibrary.org";
+// after Google Books has failed, it is left alone this long and Open Library answers straight away,
+// so a refusing Google doesn't slow every search down
+const GOOGLE_RESTS_MS = 60 * 1000;
+let googleRestsUntil = 0;
+const OPEN_LIBRARY_TIMEOUT_MS = 8000;
+const OPEN_LIBRARY_FIELDS =
+  "key,title,author_name,cover_i,first_publish_year,subject,number_of_pages_median,publisher,isbn,language,ratings_average,ratings_count";
+
+async function openLibrary(path, params = {}) {
+  const url = new URL(`${OPEN_LIBRARY}${path}`);
+  for (const [name, value] of Object.entries(params)) url.searchParams.set(name, value);
+  const response = await fetch(url, {
+    headers: { "User-Agent": "IKDA reading app (student project)", Accept: "application/json" },
+    signal: AbortSignal.timeout(OPEN_LIBRARY_TIMEOUT_MS)
+  });
+  if (!response.ok) {
+    const error = new Error(response.status === 404 ? "Book not found." : "Open Library is unavailable. Try again.");
+    error.status = response.status === 404 ? 404 : 502;
+    throw error;
+  }
+  return response.json();
+}
+
+const coverOf = (coverId) => (coverId ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg` : "");
+
+// an Open Library search result as a book, in the shape a Google Books book has
+function fromOpenLibrary(doc) {
+  const workId = String(doc.key || "").replace("/works/", "");
+  return {
+    id: `ol-${workId}`,
+    googleBooksId: `ol-${workId}`,
+    title: doc.title,
+    authors: doc.author_name || [],
+    coverUrl: coverOf(doc.cover_i),
+    description: "",
+    genres: (doc.subject || []).slice(0, 4),
+    publisher: doc.publisher?.[0] || "",
+    publishedDate: doc.first_publish_year ? String(doc.first_publish_year) : "",
+    isbn: doc.isbn?.[0] || "",
+    language: doc.language?.[0] || "",
+    averageRating: Math.round((doc.ratings_average || 0) * 10) / 10,
+    ratingsCount: doc.ratings_count || 0,
+    pageCount: doc.number_of_pages_median || 0,
+    buyUrl: ""
+  };
+}
+
+async function searchOpenLibrary(query, maxResults) {
+  const data = await openLibrary("/search.json", {
+    q: query,
+    limit: String(Math.min(maxResults, MAX_SEARCH_RESULTS)),
+    fields: OPEN_LIBRARY_FIELDS
+  });
+  return (data.docs || []).filter((doc) => doc.key?.startsWith("/works/") && doc.title).map(fromOpenLibrary);
+}
+
+// One Open Library book on its own (a book's page, or saving it): the work, with its authors' names.
+async function getOpenLibraryBook(id) {
+  const workId = String(id).slice(3);
+  if (!/^OL\d+W$/.test(workId)) {
+    const error = new Error("Book not found.");
+    error.status = 404;
+    throw error;
+  }
+  const work = await openLibrary(`/works/${workId}.json`);
+  // a redirect or an empty record has no title: not a book to show
+  if (!work.title) {
+    const error = new Error("Book not found.");
+    error.status = 404;
+    throw error;
+  }
+  const authorKeys = (work.authors || []).map((entry) => entry.author?.key).filter(Boolean).slice(0, 3);
+  const names = await Promise.all(
+    authorKeys.map((key) => openLibrary(`${key}.json`).then((author) => author.name).catch(() => null))
+  );
+  const description = typeof work.description === "string" ? work.description : work.description?.value || "";
+  return {
+    id,
+    googleBooksId: id,
+    title: work.title,
+    authors: names.filter(Boolean),
+    coverUrl: coverOf(work.covers?.[0]),
+    description: plainText(description),
+    genres: (work.subjects || []).slice(0, 4),
+    publisher: "",
+    publishedDate: work.first_publish_date || "",
+    isbn: "",
+    language: "",
+    averageRating: 0,
+    ratingsCount: 0,
+    pageCount: 0,
+    buyUrl: ""
+  };
+}
+
 // Discover calls this with a result count. The demo shelf calls it with { maxResults, language }.
 function searchOptions(options) {
   if (typeof options === "number") return { maxResults: options, language: "" };
@@ -95,8 +222,18 @@ export async function searchGoogleBooks(query, options = {}) {
   const params = { q: query, maxResults: String(maxResults), printType: "books" };
   if (language) params.langRestrict = language;
 
-  const data = await googleBooks("/volumes", params);
-  const books = (data.items || []).map(toBook);
+  let books;
+  try {
+    if (Date.now() < googleRestsUntil) throw new Error("Google Books is resting.");
+    const data = await googleBooks("/volumes", params);
+    books = (data.items || []).map(toBook);
+  } catch (err) {
+    // Google Books can't be had just now: Open Library answers instead, so the shelves still load
+    googleRestsUntil = Date.now() + GOOGLE_RESTS_MS;
+    books = await searchOpenLibrary(query, maxResults).catch(() => {
+      throw err;
+    });
+  }
 
   // only cache real results, so a failed or empty search is tried again next time
   if (books.length) {
@@ -131,8 +268,9 @@ export async function findGoogleBook(title, author) {
     const editions = exact.length ? exact : matches;
     const book = editions.find((item) => item.coverUrl && item.description) || editions[0] || null;
 
-    // only a match is kept: a miss may be Google failing, and is asked for again next time
-    if (book) {
+    // only a match is kept: a miss may be Google failing, and is asked for again next time; an Open
+    // Library stand-in isn't, so the real Google Books edition is found once it is back
+    if (book && !String(book.id).startsWith("ol-")) {
       matched[key] = book;
       writeCache("googleMatches", matched);
       remember(seenBooks, book.id, book, SEEN_BOOKS_LIMIT);
@@ -152,6 +290,14 @@ export async function getGoogleBook(id) {
     const error = new Error("Book not found.");
     error.status = 404;
     throw error;
+  }
+
+  // an Open Library book (see searchOpenLibrary), from this server's memory or from Open Library
+  if (String(id).startsWith("ol-")) {
+    if (seenBooks.has(id)) return seenBooks.get(id);
+    const book = await getOpenLibraryBook(id);
+    remember(seenBooks, book.id, book, SEEN_BOOKS_LIMIT);
+    return book;
   }
 
   // a recommended work that had no Google Books match keeps its own id
