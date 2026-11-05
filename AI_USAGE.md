@@ -957,9 +957,9 @@ Written by Claude at Khaleil's request. Khaleil chose every track and sound by e
 | Weather sounds | `client/src/lib/ambience.js` (new), `client/src/stores/music.js`, `client/public/ambience/` (new) | Loops cut to repeat without a seam, following the live weather: rain or a thunderstorm, birds when sunny, a breeze when cloudy, crickets at night in town; rain on the window inside the room, library and cafe; cups clinking now and then in the cafe. About 12 dB under the music, and the music button turns them off too |
 | Docs | `README.md` | Music and sound credits |
 
-### Real readers only, and a sliding notification (AI-generated)
+### Profile shortcut, usernames and the music button beside Daily (AI-generated)
 
-Written by Claude at Aalric's request.
+Written by Claude at Khaleil's request (changes to Aalric's salon and Dylan's town agreed for review in the pull request).
 
 | Area | Files | What AI produced |
 |------|-------|------------------|

@@ -13,7 +13,6 @@ import GuideTour from '@/components/GuideTour.vue'
 import { BAR_HEIGHT } from '@/lib/walkthrough.js'
 import LoadingScreen from '@/components/LoadingScreen.vue'
 import Toast from '@/components/Toast.vue'
-import MusicToggle from '@/components/MusicToggle.vue'
 import { useMusicStore } from '@/stores/music.js'
 
 const route = useRoute()
@@ -32,7 +31,8 @@ const { guide, signedIn } = storeToRefs(useUserStore())
 const showChrome = computed(() => ready.value && !route.meta.bare)
 
 // Background music plays only for a signed-in reader, never on the landing or sign-in pages, and
-// each building has its own track (stores/music.js).
+// each building has its own track (stores/music.js). Its button sits beside the Daily task button
+// (DailyDock, and the town's own Daily button).
 const music = useMusicStore()
 watch(
   () => [ready.value, signedIn.value, route.name, Boolean(route.meta.bare)],
@@ -41,8 +41,6 @@ watch(
   },
   { immediate: true },
 )
-// the toggle stays out of the way of the loading screen and the tour's bar
-const showMusicToggle = computed(() => showChrome.value && signedIn.value && !booting.value && !guide.value)
 // the town has its own Daily button, and the tour shouldn't have anything over it
 const showDaily = computed(() => showChrome.value && route.name !== 'town' && !guide.value)
 
@@ -71,7 +69,6 @@ function resetScroll() {
       </RouterView>
     </main>
     <DailyDock v-if="showDaily" />
-    <MusicToggle v-if="showMusicToggle" />
     <GuideTour />
     <BookOpenOverlay />
     <Toast />

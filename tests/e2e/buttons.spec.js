@@ -520,7 +520,7 @@ test.describe("the salon", () => {
     await page.getByRole("button", { name: "Save" }).click();
 
     await page.getByRole("button", { name: "Edit profile" }).click();
-    await expect(page.getByLabel("Name")).toBeVisible();
+    await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
     await expect.poll(() => offLook(page.locator("body"))).toEqual([]);
     await page.getByRole("button", { name: "Cancel" }).click();
 

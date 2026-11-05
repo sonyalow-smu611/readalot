@@ -36,12 +36,13 @@ const label = computed(() => `Notifications, ${props.unread} new`)
   pointer-events: auto;
 }
 
-/* a phone's top bar has no room beside the weather chip: it sits next to the Daily button instead */
+/* a phone's top bar has no room beside the weather chip: it sits in the Daily button's row instead,
+   after Daily and the music button (TownView's .town__daily) */
 @media (max-width: 600px) {
   .notifications-button {
     position: absolute;
     top: 62px;
-    left: 82px;
+    left: 134px;
   }
 }
 

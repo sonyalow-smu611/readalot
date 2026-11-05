@@ -100,6 +100,8 @@ export async function resetProfile(id, profile) {
   }
   const saved = await admin.from("profiles").upsert({
     id,
+    // the salon can change it (profile-username.spec.js): back to the one signInReader gave
+    username: `e2e.${id.slice(0, 8)}`,
     display_name: profile.name,
     avatar: null,
     favorite_genres: profile.favouriteGenres ?? [],

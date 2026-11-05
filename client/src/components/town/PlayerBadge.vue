@@ -3,7 +3,8 @@
 // You, in the corner of the map, like a trainer badge: your character's face in a ring that
 // fills with XP toward the next level, the level on a gold tab, and your name and coins beside
 // it. The face bobs and blinks; earning XP floats a "+15 XP" up and makes the ring shine, and a
-// level-up pops the badge. Tapping it opens the Hair Salon.
+// level-up pops the badge. Tapping it opens the Hair Salon on the Profile tab (the sheet pulled up
+// on a phone), and your @username sits under your name.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CharacterSprite from '@/components/shared/CharacterSprite.vue'
 import CountUp from '@/components/shared/CountUp.vue'
@@ -11,6 +12,8 @@ import { prefersReducedMotion } from '@/lib/motion'
 
 const props = defineProps({
   name: { type: String, default: 'You' },
+  // '' until the profile has loaded
+  username: { type: String, default: '' },
   character: { type: Object, required: true },
   // from lib/levels.js: { level, progress 0-1, toNext }
   level: { type: Object, required: true },
@@ -36,7 +39,7 @@ let still = true
 
 const filled = computed(() => RING * (1 - Math.min(1, Math.max(0, props.level.progress))))
 const spoken = computed(
-  () => `Your profile: ${props.name}, level ${props.level.level}, ${props.level.toNext} XP to the next level, ${props.coins} coins`,
+  () => `Your profile: ${props.name}${props.username ? ` (@${props.username})` : ''}, level ${props.level.level}, ${props.level.toNext} XP to the next level, ${props.coins} coins`,
 )
 
 function blinkSoon() {
@@ -87,7 +90,7 @@ onBeforeUnmount(() => {
 
 <template>
   <RouterLink
-    :to="{ name: 'salon' }"
+    :to="{ name: 'salon', query: { tab: 'profile', sheet: '1' } }"
     class="badge"
     :class="{ 'is-shining': shining, 'is-popping': popping }"
     :aria-label="spoken"
@@ -111,6 +114,7 @@ onBeforeUnmount(() => {
     </span>
     <span class="badge__text" aria-hidden="true">
       <span class="badge__name">{{ name }}</span>
+      <span v-if="username" class="badge__username">@{{ username }}</span>
       <span class="badge__coins">
         <span class="badge__coin" />
         <CountUp :value="coins" />
@@ -226,6 +230,16 @@ onBeforeUnmount(() => {
   overflow: hidden;
   font-family: var(--rl-font-title);
   font-size: 16px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge__username {
+  max-width: 9rem;
+  overflow: hidden;
+  color: var(--rl-muted, #6b5a4e);
+  font-size: 12px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;

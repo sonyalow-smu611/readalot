@@ -1,33 +1,21 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The music on/off button, in the top-right corner of every signed-in page. A note when music is
-// on; the same note struck through when it's off.
+// The music on/off button: a note when music is on, the same note struck through when it's off.
+// It sits beside the Daily task button wherever that is (the town's corner, or DailyDock on every
+// other page), in the same row, so it slides along as the Daily button widens. The row places it.
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
 import { useMusicStore } from '@/stores/music.js'
 
 const music = useMusicStore()
-const route = useRoute()
 
 const label = computed(() => (music.enabled ? 'Turn music off' : 'Turn music on'))
-
-// pages whose top-right corner is laid out differently (see the styles)
-// a Back button alone in the top row: the note joins that row
-const TOP_ROW_PAGES = ['book-details', 'search', 'reader-room']
-// pages with the shared title bar (AppHeader): the note sits just under it
-const HEADER_PAGES = ['genre-shelf', 'reader-shelf', 'mood', 'playground']
-const place = computed(() => {
-  if (TOP_ROW_PAGES.includes(route.name)) return 'music-toggle--top-row'
-  if (HEADER_PAGES.includes(route.name)) return 'music-toggle--under-header'
-  return null
-})
 </script>
 
 <template>
   <button
     type="button"
     class="btn btn-secondary btn-icon px-sign music-toggle"
-    :class="[place, { 'music-toggle--off': !music.enabled }]"
+    :class="{ 'music-toggle--off': !music.enabled }"
     :aria-label="label"
     :aria-pressed="music.enabled"
     :title="label"
@@ -54,23 +42,9 @@ const place = computed(() => {
 </template>
 
 <style scoped>
-/* top right, under what each page already keeps in that corner (the town's Friends button, a
-   building's weather or coins) */
 .music-toggle {
-  position: absolute;
-  top: 70px;
-  right: 16px;
-  z-index: 35;
+  flex: none;
   pointer-events: auto;
-}
-
-/* in line with the page's Back button (on a book, above the card and clear of its close button) */
-.music-toggle--top-row {
-  top: 18px;
-}
-
-.music-toggle--under-header {
-  top: 94px;
 }
 
 .music-toggle svg {
