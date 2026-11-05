@@ -1,4 +1,7 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # E2E scenarios 06: Hair Salon, XP/coins/levels, connecting journeys
+
+> Manual verification plan. The legacy automation citations have been removed; see the [active Playwright suite](../../tests/e2e/features/README.md) for current executable coverage.
 
 Suites: **SAL** Salon (15), **PRG** progression (6), **JRN** connecting journeys (8) = 29. Format, accounts and rules: header of
 [01-public-auth-onboarding.md](01-public-auth-onboarding.md) and C2/C3 of [../E2E_GUIDE.md](../E2E_GUIDE.md). Unless stated: Desktop,
@@ -12,7 +15,7 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 ### SAL-01 · Enter the salon · High
 1. Town → **Hair Salon** → **Enter the salon** → pixel clouds cover the screen then part to the sides, revealing the salon: a tall bulb-ringed mirror, counter, barber chair, your character standing beside it (breathing, blinking, sometimes walking on the spot) and its reflection in the mirror 📸.
 2. A dock with two tabs **Style studio** and **Profile**; **Back to town** top left.
-**DB:** none. **Pass:** the stage shows the saved look. **Existing coverage:** `salon.spec.js`.
+**DB:** none. **Pass:** the stage shows the saved look.
 
 ### SAL-02 · Ready-made looks · High
 1. **Style studio → Looks** → five presets (drawn as the town's pixel sprites); press each → the stage character changes and hops; the save bar **New look ready** slides up.
@@ -23,7 +26,7 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 1. Tabs **Hair, Skin, Outfit, Extras** (arrow keys move between tabs). In **Hair** change style and colour; **Skin** tone; **Outfit** top, top colour, bottoms, bottoms colour, shoes, shoe colour; **Extras** glasses, hat, hair accessory, scarf, earrings, bag.
 2. Each tile shows your character wearing that part; colours are named swatches; the stage updates live.
 3. Choose **None** for an optional extra → it is removed.
-**DB:** none until Save. **Pass:** every slot changes the stage; selection is a radio group (one per part). **Existing coverage:** `salon.spec.js`.
+**DB:** none until Save. **Pass:** every slot changes the stage; selection is a radio group (one per part).
 
 ### SAL-04 · Surprise me and Reset · Medium
 1. **Surprise me** → a random free look is applied.
@@ -34,7 +37,7 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 1. Change hair and top, press **Save look** → "Saving…", then a status (look saved), pixel confetti bursts, the character hops.
 2. Leave to the town and return → the saved look persists; the town character and the player badge use it 📸.
 3. Reload and log out/in → the same look.
-**DB:** `profiles.character` = the new look JSON (all keys valid). **Pass:** the same look in the Salon, the town and the badge. **Existing coverage:** `salon.spec.js`.
+**DB:** `profiles.character` = the new look JSON (all keys valid). **Pass:** the same look in the Salon, the town and the badge.
 
 ### SAL-06 · Locked parts and clashes · Medium
 1. Parts with a price show a lock ("Locked ones open up with coins soon"); pressing one does not select it.
@@ -52,7 +55,7 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 1. **Profile** → the reader card (name, email, counts **Reading / To read / Finished**, **Edit**), **Reader level** (+ **How to earn XP**), **Favourite genres**, **Coins** (+ **Visit the shop**), **About you**, **Privacy**, **Saved quotes**, **Replay the walkthrough**, **Log out** 📸.
 2. For Jordan: `Jordan Lee`, `demo@demo.ikda.app`, 2 / 5 / 3, level 4, 620 XP with "80 XP to level 5, which gives 125 coins", genres Fantasy / Sci-Fi / Mystery & Thriller / Memoir, 600 coins.
 3. On a phone-size window the panel is a sheet with a handle: **Show more / Show less**.
-**DB:** none. **Pass:** numbers match `my_progress` and `user_books`. **Existing coverage:** `salon.spec.js`, `progress.spec.js`.
+**DB:** none. **Pass:** numbers match `my_progress` and `user_books`.
 
 ### SAL-09 · Edit profile (happy path) · Critical
 1. Press **Edit** → a form: **Name**, **Gender**, **Age**, **Religion**, **Location** (optional), **Favourite genres**, **Change look**, **Save**, **Cancel**.
@@ -81,7 +84,7 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 2. On → off → a pop-up: the character puts on a mask ("hidden").
 3. For an under-18 reader the switch is locked with an explanation.
 4. The town chip mirrors the switch (TWN-09).
-**DB:** `profiles.discoverable`; going private removes `reader_areas`. **Pass:** the two controls always agree. **Existing coverage:** `nearby.spec.js`, `salon.spec.js`.
+**DB:** `profiles.discoverable`; going private removes `reader_areas`. **Pass:** the two controls always agree.
 
 ### SAL-13 · Book counts open the lists · Medium
 1. Press **Reading**, **To read** or **Finished** on the card → a sheet with those books, each with a remove button ("Remove <title> from <shelf>").
@@ -120,12 +123,12 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 ### PRG-03 · Level thresholds and level-up coins · Critical
 1. From 0 XP reach 100 → level 2, +50 coins (25 × 2); 250 → level 3, +75; 450 → level 4, +100; 700 → level 5, +125.
 2. A jump over two levels in one action pays both levels' coins.
-**DB:** `profiles.coins` increases by the sum 25 × level. **Pass:** the level shown is `max L with threshold ≤ XP`; coins correct. **Existing coverage:** `progress.spec.js`.
+**DB:** `profiles.coins` increases by the sum 25 × level. **Pass:** the level shown is `max L with threshold ≤ XP`; coins correct.
 
 ### PRG-04 · Coins sources and sinks · High
 1. Start at 480. Claim day-1 Daily (+50) → 530; level up (+50) → 580; buy a $30 succulent trio → 550.
 2. Every place that shows coins agrees (badge, room, Salon).
-**DB:** `profiles.coins` equals start + rewards − purchases. **Pass:** arithmetic exact. **Existing coverage:** `progress.spec.js`, `furniture.spec.js`.
+**DB:** `profiles.coins` equals start + rewards − purchases. **Pass:** arithmetic exact.
 
 ### PRG-05 · Message XP cap · Low
 1. Send 11 messages to friends in one day (wait at least 1.5 seconds between sends, or the API refuses with 429) → XP awarded for 10 only (+50), the 11th gives 0.
@@ -137,7 +140,7 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 2. Try `update profiles set coins = 99999` through the browser client → refused (coins are not writable).
 3. `rpc('spend_coins', { p_amount: -5 })` → refused ("A price must be more than 0.").
 4. The public (anon) key reading `user_books` → refused.
-**DB:** no change. **Pass:** every forgery fails. **Existing coverage:** `database-access.spec.js`, `progress.spec.js`.
+**DB:** no change. **Pass:** every forgery fails.
 
 ---
 

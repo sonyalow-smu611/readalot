@@ -1,4 +1,7 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # E2E scenarios 03: town, Daily tasks, friends, Cafe, visiting rooms
+
+> Manual verification plan. The legacy automation citations have been removed; see the [active Playwright suite](../../tests/e2e/features/README.md) for current executable coverage.
 
 Suites: **TWN** town and HUD (14), **DLY** Daily tasks (9), **FRD** friends, chat and bell (13), **CAF** Cafe (8), **VIS** visiting rooms and
 notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding.md](01-public-auth-onboarding.md) and C2/C3 of
@@ -15,31 +18,31 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 2. Read the badge → `Jordan Lee`, level 4, `600` coins.
 3. Read the top bar button names → `Friends, 2 online, 1 friend request`; `Daily tasks, N of 3 finished, 0-day streak`; `Weather: … live. Change the sky`; the bell label shows `0 new` at first and `3 new` after about 10 seconds.
 4. Emma's and Ayaan's houses show a **green dot** on the name tag; Sofia's and Mei's do not.
-**DB:** none (reads `profiles`, `friendships`, `xp_events`, `daily_state`). **Pass:** all controls present and labelled; counts as above. **Existing coverage:** `town.spec.js`.
+**DB:** none (reads `profiles`, `friendships`, `xp_events`, `daily_state`). **Pass:** all controls present and labelled; counts as above.
 
 ### TWN-02 · Pan, zoom and follow · High
 1. Drag the map left/right/up/down → the map pans; release stops it.
 2. Press **Zoom in** twice, **Zoom out** once → the scale changes each time; keyboard wheel/pinch also zooms.
 3. Pan away from the character, press **Follow my character** → the camera returns and stays on the character as it moves.
-**DB:** none. **Pass:** zoom is bounded (cannot zoom to nothing); follow recenters. **Existing coverage:** `town-map.spec.js`.
+**DB:** none. **Pass:** zoom is bounded (cannot zoom to nothing); follow recenters.
 
 ### TWN-03 · Tap the ground to walk; water and buildings stop the walk · Medium
 1. Tap an empty pavement point → the character walks there along the pavement and stops.
 2. Tap the lake → it walks to the shore, not into the water. Tap a building body → it walks as near as it can.
 3. Tap a townsperson → they jiggle and then carry on.
-**DB:** none. **Pass:** the character never ends on water or inside a building. **Existing coverage:** `town-map.spec.js`.
+**DB:** none. **Pass:** the character never ends on water or inside a building.
 
 ### TWN-04 · Place card and entering each building · Critical
 1. Tap **Your house** once → a card slides up: the building's name on a coloured sign, a one-line blurb, an enter button **Go inside**, and **Close** 📸.
 2. Press **Close** → the card closes.
 3. Tap **Library** → **Enter the library**; **Cafe** → **Enter the cafe**; **Hair Salon** → **Enter the salon**. For each: press the enter button → the character walks to the door, the door opens with lamplight, the page becomes `/house`, `/library`, `/cafe`, `/salon`.
 4. In each building press **Back to town** → `/`, the character stands at that building's door.
-**DB:** none. **Pass:** four routes correct; the browser Back button from a building also returns to the town. **Existing coverage:** `town.spec.js`, `back-button.spec.js`.
+**DB:** none. **Pass:** four routes correct; the browser Back button from a building also returns to the town.
 
 ### TWN-05 · Places menu · High
 1. Press **Places** → a list named "Places in town" shows Your house, Library, Cafe, Hair Salon.
 2. Press **Library** → the character walks to its door and the place card/enters as in TWN-04; the menu closes.
-**DB:** none. **Pass:** each item leads to its building. **Existing coverage:** `town.spec.js`.
+**DB:** none. **Pass:** each item leads to its building.
 
 ### TWN-06 · Weather chip previews · Medium
 **Pre:** `mockWeather` or live weather available.
@@ -72,14 +75,14 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 1. After the tour closes → a prompt "Find readers near you?" with **Go public** and **Stay private**.
 2. Press **Stay private** → closes; chip stays **PRIVATE**; `location_asked_at` is set; no prompt on reload.
 3. (Fresh reader) press **Go public** → the browser asks for location. **Allow** → chip **PUBLIC**, a rough area is stored. **Block** → a polite message; the chip stays private.
-**DB:** `profiles.location_asked_at` set; on public + allow: `reader_areas` row (a 1 km cell) and `discoverable = true`; never the exact position. **Pass:** never asked twice; under-18s are never asked. **Existing coverage:** `nearby.spec.js`.
+**DB:** `profiles.location_asked_at` set; on public + allow: `reader_areas` row (a 1 km cell) and `discoverable = true`; never the exact position. **Pass:** never asked twice; under-18s are never asked.
 
 ### TWN-11 · Friends' houses and walking friends · High
 **Pre:** ACCT-DEMO (Emma and Ayaan online right after the seed).
 1. Find Emma's and Ayaan's houses: name tag with a **green dot**; Sofia's tag has none; Mei's house looks dusty 📸.
 2. Online friends walk the streets with an **orange glow**. Tap one → the Cafe's reader card opens (**Meet <name>**): **Visit <name>'s room**, **Add friend** / **Added as friend**, **Message**, what they are reading. At most five made-up townsfolk wander the pavements besides the real readers out walking.
 3. Tap a friend's house → its card offers to go in.
-**DB:** none. **Pass:** online/away/dusty states are visually distinct. **Existing coverage:** `friends.spec.js`.
+**DB:** none. **Pass:** online/away/dusty states are visually distinct.
 
 ### TWN-12 · Ambient animation · Low
 1. Watch 30 seconds → water flows, fish swim, the campfire flickers, cars drive on the left, townsfolk walk, signs bob and sparkle.
@@ -116,7 +119,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 ### DLY-03 · Go takes the reader to the right building · High
 1. Press **Go** on "Update your reading progress" → the camera/route goes to the house (`/house`).
 2. Press **Go** on the rotating task (e.g. Add a book to your shelf → `/library`; Say hi to a reader → `/cafe`; Visit a friend's room / Leave a note → a friend's house).
-**DB:** none. **Pass:** each Go lands in the building named by the hint. **Existing coverage:** `daily.spec.js:76` (currently **failing**, see C7).
+**DB:** none. **Pass:** each Go lands in the building named by the hint.
 
 ### DLY-04 · Reading progress ticks the task · High
 **Pre:** a reader with a Reading book (ACCT-DEMO: Dune 45%).
@@ -136,7 +139,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 2. Press it → a chest bounces in and opens, coins fly out; it shows streak day 1 and "+50 coins, +20 XP" 📸; press **Nice!**.
 3. The badge counts the coins up by 50; the status reads `Claimed. New tasks tomorrow`; the streak reads `1-day streak`.
 **DB:** `profiles.coins` +50; `xp_events` row `daily_claim` (20 XP; unique per day); `daily_state.streak = 1`, `last_claim = today`.
-**Pass:** coins and XP match the day-1 reward ([master C3](../E2E_GUIDE.md)). **Existing coverage:** `daily.spec.js` (claim).
+**Pass:** coins and XP match the day-1 reward ([master C3](../E2E_GUIDE.md)).
 
 ### DLY-07 · A claim cannot be repeated or lost · High
 1. After DLY-06 reload and press the status again → disabled; no second reward.
@@ -150,7 +153,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 2. Last claim 2 days ago with 2 freezes → a notice "a freeze saved your streak" (freezes 2 → 1) dismissable with ×.
 3. Last claim 5 days ago with 0 freezes → notice "Your N-day streak ended. Finish today's tasks to start a new one."; streak 0.
 4. Day 7 → the reward is 300 coins + 75 XP and refills one freeze.
-**DB:** `daily_state.streak`, `freezes`, `notice`. **Pass:** each notice shows once, then is cleared. **Existing coverage:** `daily.spec.js`.
+**DB:** `daily_state.streak`, `freezes`, `notice`. **Pass:** each notice shows once, then is cleared.
 
 ### DLY-09 · Preview buttons exist only in development · Low
 1. On the live site open the panel → **Next day**, **Skip a day**, **Reset** are **not** shown.
@@ -165,7 +168,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 **Pre:** ACCT-DEMO.
 1. Press **Friends** → the panel: **Add friend**, **Remove friends**; **Friend requests** ("Noah Koh wants to be friends" with **Accept**, **Decline**); **Your friends** (Emma Tan, Ayaan Rahman, Sofia Lim, Mei Chen: each with the book they read and a **Chat with …** button); **Readers nearby** (e.g. Dylan, Aasim, Priya, Daniel: "Last seen around here") 📸.
 2. Emma and Ayaan read **Online now**; Sofia **Last seen 12 days ago**; Mei **Last seen 5 weeks ago**.
-**DB:** none. **Pass:** the lists match the seed. **Existing coverage:** `friends-list.spec.js`.
+**DB:** none. **Pass:** the lists match the seed.
 
 ### FRD-02 · Add a sample reader by username · High
 **Pre:** ACCT-DEMO; Priya not yet a friend.
@@ -187,7 +190,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 2. B (second context): the bell shows `1 new` and the Friends button `1 friend request`; open the bell → "<A> sent you a friend request".
 3. B: **Friends** → **Friend requests** shows A with **Accept** and **Decline** → press **Accept**.
 4. Both: A appears in B's **Your friends** and vice versa; each gets a house plot; B's request list says "No requests right now."
-**DB:** `friendships` row `pending` then `accepted`, `accepted_at` set, both spot columns assigned. **Pass:** both sides agree after reload. **Existing coverage:** `friends.spec.js`, `nearby.spec.js`.
+**DB:** `friendships` row `pending` then `accepted`, `accepted_at` set, both spot columns assigned. **Pass:** both sides agree after reload.
 
 ### FRD-05 · Decline a request · Medium
 1. B presses **Decline** on A's request → the row disappears; A's panel no longer shows "Request sent".
@@ -216,7 +219,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 3. Type `Tell me when you finish it!`, **SEND →** → the message appears at the bottom with a time.
 4. Type 1000 characters → sent; 1001 → refused (the API answers 400 `Message must contain 1–1000 characters`; whether the UI also stops typing is **unverified**). Send two messages within 1.5 seconds → the second is refused (API 429 `Please wait before sending another message`; a per-server-instance limit); wait and resend → accepted.
 5. Reload, open the chat → the new message is still there.
-**DB:** `reader_messages` row (sender = demo, receiver = Emma); `xp_events` `send_message` +5 (max 10 a day). **Pass:** history persists. **Existing coverage:** `friends.spec.js`, `reader-profile.spec.js`. **Reset the demo account.**
+**DB:** `reader_messages` row (sender = demo, receiver = Emma); `xp_events` `send_message` +5 (max 10 a day). **Pass:** history persists. **Reset the demo account.**
 
 ### FRD-10 · Chat boxes dock · Medium
 1. Open chats with two friends → two boxes appear by the zoom buttons (one per friend).
@@ -230,7 +233,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 2. Open it → "Emma Tan visited your room …", "Noah Koh sent you a friend request …", "Ayaan Rahman visited your room …"; opening marks them read (count drops to 0).
 3. Press **Clear all** → the list says "Nothing yet. Friend requests, friends coming online and visits to your room will show here."
 4. Reload and use a second browser → still cleared.
-**DB:** `profiles.notifications_read_at` and `notifications_cleared_at` set. **Pass:** state agrees on every device. **Existing coverage:** `notifications.spec.js`. **Reset the demo account.**
+**DB:** `profiles.notifications_read_at` and `notifications_cleared_at` set. **Pass:** state agrees on every device. **Reset the demo account.**
 
 ### FRD-12 · Online, away and dusty · Medium
 1. Within 5 minutes of the seed → Emma/Ayaan: green dot, **Online now**.
@@ -244,7 +247,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 2. Tap B on the map (blue glow) or in the list → the same reader card with **Add friend** and **Visit <name>'s room**; pressing the room button opens their room directly, and **Back to town** brings you back to the same card.
 3. Press **Add friend** → "Requested"; B accepts (FRD-04 steps 2 to 4).
 4. Make B private → B vanishes from A's nearby list.
-**DB:** `reader_areas` rows; `profiles.discoverable`. **Pass:** nearby respects privacy; the API never returns coordinates. **Existing coverage:** `nearby.spec.js`.
+**DB:** `reader_areas` rows; `profiles.discoverable`. **Pass:** nearby respects privacy; the API never returns coordinates.
 
 ---
 
@@ -252,7 +255,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 
 ### CAF-01 · The cafe loads with readers · Critical
 **Pre:** ACCT-DEMO. 1. Enter the cafe → "Loading readers…", then a scene **BREW & BOOKS** with up to 8 readers at tables, each with a name tag and a `N% match`; top-left `N readers in café`; weather top right; the hint "Click a reader to walk over"; your character by the WELCOME mat labelled **YOU** 📸.
-**DB:** none. **Pass:** Emma shows 38% and Ayaan 38% for the demo account; matches are plausible integers. **Existing coverage:** `cafe-profile.spec.js`.
+**DB:** none. **Pass:** Emma shows 38% and Ayaan 38% for the demo account; matches are plausible integers.
 
 ### CAF-02 · Clicking a reader walks you over and opens the profile · High
 1. Click Emma Tan → your character walks across to her table; then a profile popup opens (a side panel on a laptop, a bottom sheet on a phone).
@@ -286,7 +289,7 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 1. Block `GET /api/people` → **Readers unavailable** with **Retry**; unblock and press **Retry** → readers load.
 2. With no other readers → **No other readers available yet.**
 3. Slow network → **Loading readers…** persists without a blank screen.
-**DB:** none. **Pass:** each state shown. **Existing coverage:** `cafe-profile.spec.js` (partly).
+**DB:** none. **Pass:** each state shown.
 
 ---
 
@@ -296,12 +299,12 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 **Pre:** ACCT-DEMO. 1. Tap Emma's house (or **Visit Emma's room**) → "Knocking on the door…", then her room in her own colours, with **Back to Emma's profile** and **Places** 📸.
 2. Look around (drag, wheel, ←/→) → her furniture, cats, lamps, window weather are present.
 3. Try to place or move anything → you cannot (no Shop/Inventory menu in visiting mode).
-**DB:** `xp_events` `visit_room` (target = Emma's username) +15 once per day; the visit appears in Emma's bell. **Pass:** read-only. **Existing coverage:** `visit-room.spec.js`.
+**DB:** `xp_events` `visit_room` (target = Emma's username) +15 once per day; the visit appears in Emma's bell. **Pass:** read-only.
 
 ### VIS-02 · A friend's shelf is read-only · High
 1. Tap her bookshelf → her shelf (`/people/emma.reads/room/shelf`): no search box, no status buttons; the books are theirs.
 2. Open a book → a card with nothing to edit (no Start reading, no Remove).
-**DB:** none. **Pass:** no write control anywhere. **Existing coverage:** `visit-room.spec.js`.
+**DB:** none. **Pass:** no write control anywhere.
 
 ### VIS-03 · Lamps toggle only for your visit · Low
 1. Tap a lamp in Emma's room → it switches; leave and return → back to the default (on).
@@ -325,10 +328,10 @@ notes (7) = 51. Format, accounts and rules: header of [01-public-auth-onboarding
 1. On Emma's board, your own note shows a remove control → remove it → it disappears.
 2. Other people's notes on Emma's board show no remove control for you.
 3. On **your** corkboard (My Room) you may remove any note left there.
-**DB:** `room_notes` row deleted. **Pass:** permissions as listed. **Existing coverage:** `visit-room.spec.js`.
+**DB:** `room_notes` row deleted. **Pass:** permissions as listed.
 
 ### VIS-07 · Visiting someone who doesn't exist or is private · High
 1. Open `/people/nobody/room` → **We couldn't find that reader.** with **Find readers in the Cafe**.
 2. Visit a **private** non-friend reader's profile by URL (get the username from the database) → not found or limited **(unverified)**; their coordinates/details are never shown.
 3. Press **Find readers in the Cafe** → `/cafe`.
-**DB:** none. **Pass:** a clean message, no crash, no data leak. **Existing coverage:** `visit-room.spec.js`.
+**DB:** none. **Pass:** a clean message, no crash, no data leak.

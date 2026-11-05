@@ -1,3 +1,4 @@
+// Scaffolded with AI assistance — see AI_USAGE.md
 import { defineConfig, devices } from "@playwright/test";
 
 const apiPort = process.env.PLAYWRIGHT_API_PORT || "3110";
@@ -9,53 +10,43 @@ const clientUrl = `http://127.0.0.1:${clientPort}`;
 
 export default defineConfig({
   testDir: "tests/e2e",
+  testMatch: "**/features/*.spec.js",
+  workers: 1,
+  timeout: 60_000,
+  reporter: [["list"], ["html", { open: "never" }], ["json", { outputFile: process.env.FEATURE_RESULTS_FILE || "test-results/features-results.json" }]],
   use: {
     baseURL: clientUrl,
+    actionTimeout: 10_000,
     screenshot: "only-on-failure",
-    trace: "retain-on-failure"
+    trace: "retain-on-failure",
+    video: "retain-on-failure"
   },
   projects: [
     {
-      name: "desktop-chromium",
+      name: "desktop",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }
     },
     {
-      name: "iphone-13",
-      use: { ...devices["iPhone 13"] }
+      name: "iphone",
+      use: { ...devices["iPhone 13"], defaultBrowserType: "chromium" }
     }
   ],
   webServer: [
     {
-      // no Google Books key and no Supabase: the tests rely on the built-in demo shelf, held in
-      // memory. Sign-in still uses the real Supabase project, from the browser.
-<<<<<<< HEAD
-      command: `PORT=${apiPort} GOOGLE_BOOKS_API_KEY= SUPABASE_URL= SUPABASE_SERVICE_ROLE_KEY= npm --workspace server run dev`,
+      // Demo shelf API; browser sign-in still uses the configured Supabase project.
+      command: `PORT=${apiPort} GOOGLE_BOOKS_API_KEY= SUPABASE_URL= SUPABASE_SERVICE_ROLE_KEY= pnpm --filter readalot-server start`,
       url: `${apiUrl}/api/health`,
-=======
-      command: "PORT=3100 GOOGLE_BOOKS_API_KEY= SUPABASE_URL= SUPABASE_SERVICE_ROLE_KEY= pnpm --filter readalot-server dev",
-      url: "http://127.0.0.1:3100/api/health",
->>>>>>> 22089cbc926a5705b6acaa2bb48b9d8071474b86
       reuseExistingServer: false
     },
     {
-      // the same API with Supabase on, for friends.spec.js and nearby.spec.js (useRealApi in fixtures.js)
-<<<<<<< HEAD
-      command: `PORT=${realApiPort} GOOGLE_BOOKS_API_KEY= npm --workspace server run dev`,
+      // Supabase-backed API for persistent friendships and personal-space tests.
+      command: `PORT=${realApiPort} GOOGLE_BOOKS_API_KEY= pnpm --filter readalot-server start`,
       url: `${realApiUrl}/api/health`,
       reuseExistingServer: false
     },
     {
-      command: `VITE_API_TARGET=${apiUrl} npm --workspace client run dev -- --host 127.0.0.1 --port ${clientPort} --strictPort`,
+      command: `VITE_API_TARGET=${apiUrl} pnpm --filter readalot-client dev --host 127.0.0.1 --port ${clientPort} --strictPort`,
       url: clientUrl,
-=======
-      command: "PORT=3101 GOOGLE_BOOKS_API_KEY= pnpm --filter readalot-server dev",
-      url: "http://127.0.0.1:3101/api/health",
-      reuseExistingServer: false
-    },
-    {
-      command: "VITE_API_TARGET=http://127.0.0.1:3100 pnpm --filter readalot-client dev --host 127.0.0.1 --port 5174 --strictPort",
-      url: "http://127.0.0.1:5174",
->>>>>>> 22089cbc926a5705b6acaa2bb48b9d8071474b86
       reuseExistingServer: false
     }
   ]
