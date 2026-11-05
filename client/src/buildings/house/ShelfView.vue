@@ -192,7 +192,11 @@ onMounted(() => {
 
         <section class="my-shelf" :aria-label="visiting ? shell.title : 'My Shelf'">
           <form v-if="!visitingId" class="my-shelf__search" role="search" @submit.prevent>
-            <span aria-hidden="true">🔍</span>
+            <svg class="my-shelf__search-icon" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true">
+              <path fill="#1e1a24" d="M1 0h4v1h-4zM0 1h1v4h-1zM5 1h1v4h-1zM1 5h4v1h-4zM5 5h2v2h-2zM7 7h2v2h-2z" />
+              <path fill="#7fb6d9" d="M1 1h4v4h-4z" />
+              <path fill="#fdf7ec" d="M2 2h1v1h-1z" />
+            </svg>
             <input
               v-model="query"
               class="my-shelf__input"
@@ -288,9 +292,24 @@ onMounted(() => {
 
 .shelf-page {
   position: relative;
+  isolation: isolate;
   background: var(--shelf-wall);
   height: 100%;
   min-height: 0;
+}
+
+/* the My Shelf sign's book, faintly tiled behind the whole shelf like the Library's open cases */
+.shelf-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' shape-rendering='crispEdges'%3E%3Crect x='1' y='1' width='8' height='8' fill='%23b5472f'/%3E%3Crect x='1' y='1' width='2' height='8' fill='%237a1a20'/%3E%3Crect x='4' y='3' width='4' height='1' fill='%23fff4c7'/%3E%3Crect x='4' y='5' width='3' height='1' fill='%23fff4c7'/%3E%3C/svg%3E");
+  background-repeat: space;
+  background-size: 36px 36px;
+  opacity: 0.12;
+  image-rendering: pixelated;
+  pointer-events: none;
 }
 
 /* the header above, and the search, chips and bookcase scrolling under it */
@@ -361,11 +380,21 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-  padding: 11px 14px;
-  border: 1px solid var(--rl-line);
-  border-radius: 12px;
-  background: var(--rl-surface);
-  box-shadow: 0 4px 14px rgba(63, 46, 36, 0.08);
+  min-height: 42px;
+  padding: 4px 12px;
+  border: var(--px-border);
+  background: var(--px-paper);
+  box-shadow: var(--px-shadow);
+}
+
+.my-shelf__search:focus-within {
+  box-shadow: 0 0 0 3px rgba(63, 107, 120, 0.35), var(--px-shadow);
+}
+
+.my-shelf__search-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
 }
 
 .my-shelf__input {
@@ -374,7 +403,7 @@ onMounted(() => {
   border: 0;
   outline: none;
   background: none;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--rl-text);
 }
 
