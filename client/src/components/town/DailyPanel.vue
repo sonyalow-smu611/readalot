@@ -234,7 +234,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--rl-btn-gap);
   padding-top: 10px;
   border-top: 1px dashed var(--rl-line);
   font-size: 12px;

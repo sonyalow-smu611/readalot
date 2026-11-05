@@ -3,6 +3,7 @@
 // Asked once, after the first tour: go public, or stay private. Public means both being listed in
 // the Cafe and showing your last rough area, so the question spells out both.
 import { onMounted, ref } from 'vue'
+import LoadButton from '@/components/shared/LoadButton.vue'
 
 defineProps({
   busy: { type: Boolean, default: false },
@@ -12,6 +13,13 @@ defineProps({
 const emit = defineEmits(['choose'])
 
 const card = ref(null)
+
+// which was pressed, so only that one shows it's on its way
+const chosen = ref(null)
+function pick(on) {
+  chosen.value = on
+  emit('choose', on)
+}
 
 // keyboard and screen reader users land on the question
 onMounted(() => card.value?.focus())
@@ -36,8 +44,8 @@ onMounted(() => card.value?.focus())
       </p>
       <p v-if="error" class="location-prompt__error" role="alert">{{ error }}</p>
       <div class="location-prompt__actions">
-        <button type="button" class="btn btn-primary" :disabled="busy" @click="emit('choose', true)">Go public</button>
-        <button type="button" class="btn btn-secondary" :disabled="busy" @click="emit('choose', false)">Stay private</button>
+        <LoadButton class="btn btn-primary" :busy="busy && chosen === true" :failed="Boolean(error)" :disabled="busy" busy-text="Going public…" @click="pick(true)">Go public</LoadButton>
+        <LoadButton class="btn btn-secondary" :busy="busy && chosen === false" :failed="Boolean(error)" :disabled="busy" busy-text="Saving…" @click="pick(false)">Stay private</LoadButton>
       </div>
     </div>
   </div>
@@ -89,7 +97,7 @@ onMounted(() => card.value?.focus())
 
 .location-prompt__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 .location-prompt__actions .btn {

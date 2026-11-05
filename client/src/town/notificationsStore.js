@@ -117,13 +117,16 @@ export const useNotificationsStore = defineStore('notifications', () => {
         at,
         readerId: reader.id,
       })),
-      ...(found.messages ?? []).map(({ id, at, direction, reader }) => ({
-        id: `message-${id}`,
-        kind: 'message',
-        text: direction === 'sent' ? `You sent ${reader.displayName} a message` : `${reader.displayName} sent you a message`,
-        at,
-        readerId: reader.id,
-      })),
+      // only messages you were sent: one you sent yourself isn't news
+      ...(found.messages ?? [])
+        .filter(({ direction }) => direction === 'received')
+        .map(({ id, at, reader }) => ({
+          id: `message-${id}`,
+          kind: 'message',
+          text: `${reader.displayName} sent you a message`,
+          at,
+          readerId: reader.id,
+        })),
     ]
   }
 

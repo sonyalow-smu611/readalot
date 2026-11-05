@@ -605,7 +605,7 @@ const handCells = HAND.flatMap((row, y) =>
 
 .guide__skips {
   display: flex;
-  gap: 4px;
+  gap: var(--rl-btn-gap);
 }
 
 .guide__skips .btn {
@@ -647,7 +647,7 @@ const handCells = HAND.flatMap((row, y) =>
 
 .guide__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 /* how far along the section they have slid */

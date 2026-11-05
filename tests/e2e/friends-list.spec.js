@@ -1,5 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 import { expect, test, townReady } from "./fixtures.js";
+import { setDiscoverable } from "./supabaseUser.js";
 import { EMMA, NOAH, friend, mockFriends, skipDailyPanel } from "./townFriends.js";
 
 // The friends list: who your friends are and what they're reading, chatting, adding by username
@@ -168,4 +169,136 @@ test("adding a nearby reader who accepts at once leaves just their friend card",
   await expect(cards).not.toContainText("Reader nearby");
   await openList(page);
   await expect(list(page).getByRole("heading", { name: "Readers nearby" })).toHaveCount(0);
+});
+
+// Anything that waits on the server shows it's on its way, then a tick once it's done.
+test("accepting a request shows it's on its way, then a tick, then they're a friend", async ({ page }) => {
+  const sofia = friend("sofia.stories", "Sofia Rossi", 2);
+  const town = await mockFriends(page, { incoming: [{ requestId: "r1", reader: sofia, at: new Date().toISOString() }] });
+  let letGo;
+  const held = new Promise((resolve) => (letGo = resolve));
+  await page.route("**/api/friends/requests/r1/accept", async (route) => {
+    await held;
+    town.incoming = [];
+    town.friends = [sofia];
+    return route.fulfill({ json: { accepted: true } });
+  });
+  await page.goto("/");
+  await openList(page);
+  const accept = list(page).getByRole("button", { name: "Accept Sofia Rossi" });
+  await accept.click();
+  await expect(accept).toHaveAttribute("aria-busy", "true");
+  await expect(accept).toContainText("Accepting…");
+  await expect(accept).toBeDisabled();
+  letGo();
+  await expect(accept).toContainText("✓");
+  await expect(list(page)).toContainText("No requests right now.");
+  await expect(list(page).locator(".friend-row").filter({ hasText: "Sofia Rossi" })).toBeVisible();
+});
+
+test("removing friends shows it's on its way, then a tick", async ({ page }) => {
+  await mockFriends(page, { friends: [EMMA, NOAH] });
+  let letGo;
+  const held = new Promise((resolve) => (letGo = resolve));
+  await page.route("**/api/friends/*", async (route) => {
+    if (route.request().method() === "DELETE") await held;
+    return route.fallback();
+  });
+  await page.goto("/");
+  await openList(page);
+  await list(page).getByRole("button", { name: "Remove friends" }).click();
+  await list(page).getByRole("checkbox", { name: "Select Noah Lim" }).check();
+  await list(page).getByRole("button", { name: "Remove", exact: true }).click();
+  const confirm = list(page).getByRole("button", { name: "Yes, remove 1 friend" });
+  await confirm.click();
+  await expect(list(page).getByRole("button", { name: /Removing…/ })).toBeVisible();
+  letGo();
+  await expect(list(page).getByRole("button", { name: /Removed/ })).toContainText("✓");
+  await expect(list(page).locator(".friend-row").filter({ hasText: "Noah Lim" })).toHaveCount(0);
+});
+
+// A friend you remove who is near you is still in town: on the map and in the list, as a reader
+// nearby, who you can ask again.
+test("a friend you remove who is near you stays in town as a reader nearby", async ({ page, reader }) => {
+  await setDiscoverable(reader.id, true);
+  try {
+    const town = await mockFriends(page, { friends: [EMMA, NOAH] });
+    // the server leaves friends out of who is nearby
+    await page.route("**/api/nearby", (route) =>
+      route.fulfill({ json: { readers: town.friends.some((one) => one.id === EMMA.id) ? [] : [{ ...EMMA, requested: false }] } })
+    );
+    await page.goto("/");
+    await townReady(page);
+    await openList(page);
+    await list(page).getByRole("button", { name: "Remove friends" }).click();
+    await list(page).getByRole("checkbox", { name: "Select Emma Tan" }).check();
+    await list(page).getByRole("button", { name: "Remove", exact: true }).click();
+    await list(page).getByRole("button", { name: "Yes, remove 1 friend" }).click();
+
+    await expect(list(page).getByRole("heading", { name: "Readers nearby" })).toBeVisible();
+    await expect(list(page).getByRole("button", { name: /^Emma Tan/ })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__townScene.walkers["emma.reads"]?.kind)).toBe("nearby");
+  } finally {
+    await setDiscoverable(reader.id, false);
+  }
+});
+
+// The chat by the zoom buttons gets out of the way when anything else is pressed.
+test("an open chat closes when another button is pressed", async ({ page }) => {
+  await mockFriends(page, { friends: [EMMA] });
+  await page.goto("/");
+  await openList(page);
+  await list(page).locator(".friend-row").filter({ hasText: "Emma Tan" }).getByRole("button", { name: "Chat with Emma" }).click();
+  const chat = page.getByRole("region", { name: "Chat with Emma Tan" });
+  await expect(chat).toBeVisible();
+  await page.getByRole("button", { name: "Places" }).click();
+  await expect(chat).toBeHidden();
+  // its box is still there, to open it again
+  await expect(page.getByRole("button", { name: "Close chat with Emma Tan" })).toBeVisible();
+});
+
+// One thing at a time on a phone: the bell shuts the chat, and the chat shuts the bell.
+test("the chat and the bell never cover each other", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockFriends(page, { friends: [EMMA] });
+  await page.goto("/");
+  await openList(page);
+  await list(page).locator(".friend-row").filter({ hasText: "Emma Tan" }).getByRole("button", { name: "Chat with Emma" }).click();
+  const chat = page.getByRole("region", { name: "Chat with Emma Tan" });
+  const bellPanel = page.getByRole("region", { name: "Notifications" });
+  await expect(chat).toBeVisible();
+  // the chat stops below every button along the top, so they can all still be pressed
+  const chatTop = (await chat.boundingBox()).y;
+  for (const name of [/^Notifications,/, "Places", /^Friends,/]) {
+    const box = await page.getByRole("button", { name }).boundingBox();
+    expect(box.y + box.height).toBeLessThanOrEqual(chatTop);
+  }
+
+  await page.getByRole("button", { name: /^Notifications,/ }).click();
+  await expect(bellPanel).toBeVisible();
+  await expect(chat).toBeHidden();
+
+  // opening the chat from its box shuts the bell
+  await page.locator(".chat-dock__name").filter({ hasText: "Emma" }).click();
+  await expect(chat).toBeVisible();
+  await expect(bellPanel).toBeHidden();
+});
+
+test("Add friend on a reader's profile shows it's sending, then a tick", async ({ page }) => {
+  await mockFriends(page);
+  let letGo;
+  const held = new Promise((resolve) => (letGo = resolve));
+  await page.route("**/api/friends/requests", async (route) => {
+    await held;
+    return route.fallback();
+  });
+  await page.goto("/people/sofia.shelves");
+  const add = page.locator('[data-tour="reader-add"]');
+  await expect(add).toHaveText("Add friend");
+  await add.click();
+  await expect(add).toContainText("Sending…");
+  await expect(add).toHaveAttribute("aria-busy", "true");
+  letGo();
+  await expect(add).toContainText("✓");
+  await expect(add).toContainText("Request sent");
 });

@@ -109,6 +109,6 @@ onMounted(load)
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 </style>

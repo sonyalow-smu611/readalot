@@ -64,7 +64,7 @@ onBeforeUnmount(() => {
   <div ref="root" class="intro grain">
     <AppButton variant="cream" class="intro__skip" @click="finish">Skip ⏭</AppButton>
 
-    <p class="intro__logo mb-0"><span aria-hidden="true">📖</span> Readalot</p>
+    <p class="intro__logo mb-0"><span aria-hidden="true">📖</span> IKDA</p>
 
     <div class="intro__room" aria-hidden="true">
       <div class="intro__wall">

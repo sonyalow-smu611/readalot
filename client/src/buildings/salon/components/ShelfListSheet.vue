@@ -201,7 +201,7 @@ function escape() {
   flex: 0 0 calc(100% - 16px);
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
   margin: 0 0 10px 16px;
   padding: 8px 10px;
   border-radius: 12px;

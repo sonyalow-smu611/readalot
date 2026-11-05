@@ -916,3 +916,14 @@ Written by Claude at Dylan's request, from the team's testing notes (agreed by t
 | One card per reader | `client/src/town/nearbyStore.js`, `client/src/views/TownView.vue`, `tests/e2e/friends-list.spec.js` | A reader who becomes a friend leaves the nearby list as soon as the friend list reloads, and the friend and nearby cards share one transition (`out-in`), so adding Pip no longer stacks a friend card over the nearby one |
 | Docs | `README.md`, `docs/E2E_GUIDE.md`, `docs/e2e/02-walkthrough.md` | The walkthrough's step count (33) and the weather step |
 | Tests | `tests/e2e/notifications.spec.js`, `tests/e2e/townFriends.js`, `tests/e2e/town-map.spec.js`, `tests/e2e/town.spec.js`, `tests/e2e/onboarding.spec.js`, `tests/e2e/visit-room.spec.js`, `tests/e2e/room-furniture.spec.js`, `tests/e2e/buttons.spec.js`, `tests/e2e/furniture.spec.js`, `tests/e2e/room-themes.spec.js`, `tests/e2e/room.spec.js` | Names as page text that grow with zoom; the weather chip can't be changed; the walkthrough without the weather ask; the fourth note and the "+N" tag; the lit armchair, wall and surfaces, and the ✎ outlines; new placing prompts; a new note in the bell opening the board marked New, and the corkboard's glow going once it's read |
+
+### Leaving a visited room, and knocking only on the way in (AI-generated)
+
+Written by Claude Code at Aasim's request, with Sonya's OK for her visit page. Team to review:
+`BuildingShell.vue` is shared, so every building's back button is affected.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Back button | `client/src/components/shared/BuildingShell.vue` | When the page before is the very page the button goes to, Back goes back to it instead of opening it again, so the history doesn't go round in circles (a visited room → its shelf → back to the room no longer forgets the Cafe) |
+| Visiting a room | `client/src/buildings/house/VisitView.vue` | The room's back button goes to where the visit started: the town, the reader's profile page, or the Cafe. "Knocking on the door" plays only on the way in: back from their shelf or profile, the room shows as soon as it has loaded |
+| Tests | `tests/e2e/visit-room.spec.js` | "coming back and leaving": the Cafe → room → shelf → room → Cafe, and a visit from the profile page |

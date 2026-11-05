@@ -44,7 +44,7 @@ const DOGS = [
   },
 ]
 
-const HEADERS = { 'User-Agent': 'Readalot/1.0 (school project)' }
+const HEADERS = { 'User-Agent': 'IKDA/1.0 (school project)' }
 const urls = new Map()
 
 async function wikiImage(page) {

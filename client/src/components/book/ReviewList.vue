@@ -127,7 +127,7 @@ a.reviews__name {
 
 .reviews__mine {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
   margin-top: 8px;
 }
 

@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
   z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--rl-btn-gap);
 }
 
 .town-map__round svg,

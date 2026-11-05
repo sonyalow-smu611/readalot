@@ -7,6 +7,8 @@
 import { computed, ref, watch } from 'vue'
 import AddFriendForm from './AddFriendForm.vue'
 import FriendRequestRow from './FriendRequestRow.vue'
+import LoadButton from '@/components/shared/LoadButton.vue'
+import { DONE_FOR } from '@/lib/loading.js'
 import FriendRow from './FriendRow.vue'
 
 const props = defineProps({
@@ -21,6 +23,9 @@ const props = defineProps({
   open: { type: Boolean, default: false },
   // how the last Add friend went, { busy, ok, message }, or null
   addStatus: { type: Object, default: null },
+  // the friend action on its way: { key, busy, failed } (TownView), for the Accept, Decline and
+  // Remove buttons' spinner and tick
+  action: { type: Object, default: null },
   // your own username; '' until you have one
   username: { type: String, default: '' },
 })
@@ -61,8 +66,21 @@ function toggleChosen(id) {
 
 function remove() {
   emit('remove', toRemove.value)
-  stopSelecting()
 }
+
+// { busy, failed } for the action with that key
+function stateOf(key) {
+  const now = props.action?.key === key ? props.action : null
+  return { busy: Boolean(now?.busy), failed: Boolean(now?.failed) }
+}
+
+// removed: the tick shows, then the list is back to normal
+watch(
+  () => props.action,
+  (now) => {
+    if (now?.key === 'remove-several' && !now.busy && !now.failed) window.setTimeout(stopSelecting, DONE_FOR)
+  },
+)
 
 // shutting the list puts it back as it was
 watch(
@@ -88,6 +106,8 @@ watch(
         v-for="request in requests"
         :key="request.requestId"
         :request="request"
+        :accepting="stateOf(`accept-${request.requestId}`)"
+        :declining="stateOf(`decline-${request.requestId}`)"
         @answer="(id, accept) => emit('answer', id, accept)"
       />
       <p v-if="!requests.length" class="friends-list__empty">No requests right now.</p>
@@ -116,14 +136,17 @@ watch(
       </p>
       <div class="friends-list__tools">
         <button type="button" class="btn btn-secondary btn-sm" @click="stopSelecting">Cancel</button>
-        <button
-          type="button"
+        <LoadButton
           class="btn btn-danger btn-sm"
           :disabled="!toRemove.length"
+          :busy="stateOf('remove-several').busy"
+          :failed="stateOf('remove-several').failed"
+          busy-text="Removing…"
+          done-text="Removed"
           @click="confirming ? remove() : (confirming = true)"
         >
           {{ confirming ? `Yes, remove ${removeLabel}` : 'Remove' }}
-        </button>
+        </LoadButton>
       </div>
     </div>
     <template v-if="nearby.length && !selecting">
@@ -165,7 +188,7 @@ watch(
 
 .friends-list__tools {
   display: flex;
-  gap: 6px;
+  gap: var(--rl-btn-gap);
   padding: 2px;
 }
 

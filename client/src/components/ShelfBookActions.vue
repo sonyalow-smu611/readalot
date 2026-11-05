@@ -132,6 +132,6 @@ watch(
 
 .actions__pair {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 </style>

@@ -1,6 +1,6 @@
 import { expect, test, townReady, useRealApi } from "./fixtures.js";
 import { skipDailyPanel } from "./townFriends.js";
-import { befriend, createPrivateReader } from "./supabaseUser.js";
+import { befriend, createPrivateReader, makeFriends } from "./supabaseUser.js";
 
 // Friends in town: a friend has a house and, when online, walks the streets. The map is a canvas,
 // so these go through the Friends and Places lists.
@@ -119,5 +119,30 @@ test("a private reader can be added by their username", async ({ page }) => {
     await expect(list.getByRole("status")).toHaveText(`Friend request sent to ${priya.username}.`);
   } finally {
     await priya.remove();
+  }
+});
+
+// Someone you removed isn't gone for good: asking them again sends a new request.
+test("someone you removed can be asked to be friends again", async ({ page, reader }) => {
+  const rae = await createPrivateReader("Rae Again");
+  try {
+    await makeFriends(reader.id, rae.id);
+    await page.reload();
+    await townReady(page);
+    await page.getByRole("button", { name: /^Friends,/ }).click();
+    const list = page.getByRole("navigation", { name: "Friends in town" });
+    await list.getByRole("button", { name: "Remove friends" }).click();
+    await list.getByRole("checkbox", { name: "Select Rae Again" }).check();
+    await list.getByRole("button", { name: "Remove", exact: true }).click();
+    await list.getByRole("button", { name: "Yes, remove 1 friend" }).click();
+    await expect(list.locator(".friend-row").filter({ hasText: "Rae Again" })).toHaveCount(0, WALK_IN);
+
+    await list.getByRole("button", { name: "Add friend" }).click();
+    await list.getByRole("textbox", { name: "Friend's username" }).fill(rae.username);
+    await list.getByRole("button", { name: "Send request" }).click();
+    await expect(list.getByRole("status")).toHaveText(`Friend request sent to ${rae.username}.`);
+    await expect(list).toContainText("You asked Rae Again to be friends");
+  } finally {
+    await rae.remove();
   }
 });
