@@ -28,7 +28,7 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 
 ### LIB-04 · Open a genre bookcase; Spines and Covers · High
 1. Press the **Fantasy** bookcase → it opens showing its books (loading placeholders first, then books).
-2. Press **Spines / Covers** → the look changes; hover a book → it slides out of the shelf.
+2. Slide the **Spines / Covers** switch (it opens on Covers; the thumb glides across) → the look changes; hover a book → it slides out of the shelf.
 3. Close the bookcase.
 **DB:** none. **Pass:** books load (about a dozen); both looks render. **Existing coverage:** `library.spec.js`.
 

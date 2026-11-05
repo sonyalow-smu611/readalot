@@ -986,3 +986,12 @@ Written by Claude at Aalric's request. Layout and navigation only.
 | Fewer walkers | `client/src/town/places.js` | At most five made-up townsfolk walk the pavements (`MAX_NPCS`), so the readers really out walking (friends online, readers nearby) are easy to see |
 | Street card | `client/src/views/TownView.vue` (`FriendCard.vue` removed) | Tapping anyone walking on the map, a friend or a reader nearby, opens the Cafe's own reader card (`CafeReaderCard`): Visit <name>'s room, Add friend, Message and the shared cards. There is no profile page in between, and Back to town reopens the same card |
 | Coming back | `client/src/lib/returnState.js`, `TownView.vue`, `client/src/buildings/cafe/CafeView.vue`, `components/CafeViewport.vue` | Back from a visit lands on the same card: the town glides to that reader and opens their card, and the Cafe brings back the same seats, stands you beside them and opens their card |
+
+### A sliding Spines / Covers switch, opening on Covers (AI-generated)
+
+Written by Claude at Aalric's request. Layout and styling only.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Switch | `client/src/components/shared/SlideToggle.vue` | A switch with a thumb that glides between the choices (a 0.34 second ease; none with reduced motion), still two buttons for the keyboard and screen readers, with Left and Right moving between them |
+| Where | `client/src/buildings/house/ShelfView.vue`, `client/src/buildings/library/SearchView.vue`, `client/src/buildings/library/components/GenreBookcase.vue` | The two chips became this switch, and My Shelf and the library's opened bookcases now open on Covers (search already did) |

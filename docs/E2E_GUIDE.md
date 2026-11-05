@@ -283,7 +283,7 @@ arrow keys) or jumps along with **Places** (Window, Chair, Bookshelf, Clock, Cor
 - **Coins** show at the top right.
 
 **My Shelf:** a bookcase with exactly three shelves (the statuses), a search box (**Search your books**),
-genre chips, **Spines / Covers**, **Back to room**. A book can be dragged (mouse: pull it up or down;
+genre chips, the **Spines / Covers** sliding switch (opens on Covers), **Back to room**. A book can be dragged (mouse: pull it up or down;
 touch: press and hold) to another shelf, which changes its status; **Esc** or letting go elsewhere puts it
 back; holding near the top or bottom edge scrolls the page. Long rows have **Previous / Next**, swipe,
 shift-wheel and arrow keys. Empty shelf: **No books yet** with **Discover books** and **Scan a cover**.
@@ -321,7 +321,7 @@ keys). Lit by the live weather (rain on the windows), lamps that toggle on tap. 
 with its own sign, colours and wall: **Bestsellers** (this week's list, credited under the sign), Romance,
 Romantasy, Fantasy, Mystery & Thriller, Horror, Sci-Fi, Historical Fiction, Young Adult, Memoir, Graphic
 Novels. The **Places** menu (bottom right, "Places in the library") has two groups: *Around the library* and *Shelves*.
-- **Opening a bookcase** shows its books; **Spines / Covers** switches the look; a book slides out on hover.
+- **Opening a bookcase** shows its books; the **Spines / Covers** sliding switch (opens on Covers) changes the look; a book slides out on hover.
 - **Book card** (a found book): cover, title, author, rating, synopsis, **Add to To be read** (becomes a shelf
   label; after adding, **See it in my room** (a button, with **Undo** beside it for a book just added)), **Where to get** (shops, downloads, borrowing), **Leave/Read Reviews**,
   **Open full book page**.

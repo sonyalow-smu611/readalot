@@ -14,6 +14,7 @@ import { clearSearches, loadSearches, rememberSearch } from '@/lib/searchHistory
 import { useBookshelfStore } from '@/stores/bookshelf'
 import { useUserStore } from '@/stores/user'
 import { HALL_CASE } from './categories.js'
+import SlideToggle from '@/components/shared/SlideToggle.vue'
 import BookShelves from './components/BookShelves.vue'
 import { iconUrl } from './hall/icons.js'
 
@@ -128,18 +129,8 @@ onMounted(() => {
         <button type="submit" class="btn btn-primary btn-sm search__go">Search</button>
       </form>
 
-      <div v-if="books.length" class="search__modes" role="group" aria-label="Show the books by">
-        <button
-          v-for="option in MODES"
-          :key="option.value"
-          type="button"
-          class="btn btn-chip btn-sm"
-          :class="{ active: mode === option.value }"
-          :aria-pressed="mode === option.value"
-          @click="mode = option.value"
-        >
-          {{ option.label }}
-        </button>
+      <div v-if="books.length" class="search__modes">
+        <SlideToggle v-model="mode" :options="MODES" label="Show the books by" />
       </div>
     </header>
 

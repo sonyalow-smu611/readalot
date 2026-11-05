@@ -376,7 +376,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
 
 49. **Press the Fantasy bookcase.**
     → It opens with its books.
-    - **Press Spines / Covers** → the books change between spines and cover-out.
+    - **Slide the Spines / Covers switch** (it opens on Covers) → the thumb glides across and the books change between cover-out and spines.
     - 👀 **Hover or focus a book** → it **slides up out of the shelf**.
     - **Press a book.**
     → A card: cover, title, author, stars, genres, synopsis, a shelf button, and **Where to get**.
@@ -596,7 +596,7 @@ in from Scenario 2, or log in again: `demo@demo.ikda.app` / `Ikda-Demo-2026` / `
 19. **Close the card.** → The book **flies back onto the shelf** the way it came.
 20. **Press the bookshelf itself** → **My Shelf.**
     → The Library's bookcase with exactly three shelves, in My Room's colours.
-    - **Press Spines / Covers** → changes the look.
+    - **Slide the Spines / Covers switch** (it opens on Covers) → changes the look.
     - **Press a genre chip** and **type in "Search your books"** → the books filter.
     - 👀 **Drag a book up or down out of its shelf** (on a touch screen, press and hold). The book is
       carried under the pointer, the shelf below **lights up**, and letting go over another shelf **moves
