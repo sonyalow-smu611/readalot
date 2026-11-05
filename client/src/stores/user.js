@@ -7,11 +7,12 @@ import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
 import { useProgressStore } from '@/stores/progress.js'
 import { usePeopleStore } from '@/stores/people.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
-import { WALKTHROUGH } from '@/lib/walkthrough.js'
+import { WALKTHROUGH, isPhone, walkthroughFor } from '@/lib/walkthrough.js'
 
 // The walkthrough (lib/walkthrough.js) plays once after Welcome; finishing or skipping saves
 // profiles.tour_seen_at, so it doesn't play again by itself on any device. The salon replays it.
-const GUIDE_STEPS = WALKTHROUGH
+// A phone has its own steps for the town's ☰ menu: the list is chosen as the walkthrough starts and
+// kept for the whole of it.
 
 function emptyProfile() {
   return {
@@ -55,8 +56,9 @@ export const useUserStore = defineStore('user', () => {
 
   const signedIn = computed(() => Boolean(profile.value.id))
   const profileComplete = computed(() => hasProfile.value)
-  const guide = computed(() => (guideStep.value >= 0 ? GUIDE_STEPS[guideStep.value] : null))
-  const guideCount = computed(() => GUIDE_STEPS.length)
+  const guideSteps = ref(WALKTHROUGH)
+  const guide = computed(() => (guideStep.value >= 0 ? guideSteps.value[guideStep.value] : null))
+  const guideCount = computed(() => guideSteps.value.length)
   // a new reader on their way to the town for the first time: the tour is about to start
   const tourPending = computed(() => hasProfile.value && !tourSeen.value)
 
@@ -130,12 +132,13 @@ export const useUserStore = defineStore('user', () => {
   function openGuideIfNew() {
     if (guideStep.value >= 0) return
     if (!hasProfile.value || tourSeen.value) return
+    guideSteps.value = walkthroughFor(isPhone())
     guideStep.value = 0
   }
 
   function nextGuide() {
     if (guideStep.value < 0) return
-    if (guideStep.value >= GUIDE_STEPS.length - 1) {
+    if (guideStep.value >= guideSteps.value.length - 1) {
       closeGuide()
       return
     }
@@ -149,14 +152,15 @@ export const useUserStore = defineStore('user', () => {
   // "Skip this part": on to the first step of the next part, or the end
   function skipGuideSection() {
     if (guideStep.value < 0) return
-    const section = GUIDE_STEPS[guideStep.value].section
-    const next = GUIDE_STEPS.findIndex((step, index) => index > guideStep.value && step.section !== section)
+    const section = guideSteps.value[guideStep.value].section
+    const next = guideSteps.value.findIndex((step, index) => index > guideStep.value && step.section !== section)
     if (next < 0) closeGuide()
     else guideStep.value = next
   }
 
   // the salon's Replay the walkthrough
   function replayGuide() {
+    guideSteps.value = walkthroughFor(isPhone())
     guideStep.value = 0
   }
 

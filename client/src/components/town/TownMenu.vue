@@ -3,7 +3,8 @@
 // On a phone, the town's second row of buttons (Daily, the bell, music, public or private) folds
 // into one ☰ menu under the weather chip, so the map isn't crowded. Each row does exactly what its
 // button does; TownView does the work. A red dot on ☰ says something is waiting: an unread
-// notification or a Daily reward to claim. Wider screens and the walkthrough keep the buttons.
+// notification or a Daily reward to claim. Wider screens keep the buttons. The walkthrough has the
+// reader open it and lights each row (lib/walkthrough.js, data-tour="town-menu…").
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -16,6 +17,8 @@ const props = defineProps({
   publicBusy: { type: Boolean, default: false },
   // under-18s are always private
   publicLocked: { type: Boolean, default: false },
+  // the walkthrough is showing the rows: a tap elsewhere (its Next button) doesn't shut it
+  keepOpen: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['toggle', 'close', 'daily', 'notifications', 'music', 'public'])
@@ -26,6 +29,7 @@ const label = computed(() => (waiting.value ? 'Menu, something new' : 'Menu'))
 
 // a tap anywhere else shuts it
 function outside(event) {
+  if (props.keepOpen) return
   if (!root.value?.contains(event.target)) emit('close')
 }
 
@@ -45,6 +49,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside, true)
     <button
       type="button"
       class="btn btn-secondary btn-icon px-sign town-menu__toggle"
+      data-tour="town-menu"
       :aria-label="label"
       :aria-expanded="open"
       aria-controls="town-menu"
@@ -56,7 +61,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside, true)
 
     <Transition name="town-menu">
       <div v-if="open" id="town-menu" class="px-sign-box town-menu__list" role="group" aria-label="Town menu">
-        <button v-if="daily" type="button" class="town-menu__row" @click="emit('daily')">
+        <button v-if="daily" type="button" class="town-menu__row" data-tour="town-menu-daily" @click="emit('daily')">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 2.5c.6 3.2-1.4 4.7-2.9 6.6-1.3 1.6-2.4 3.2-2.4 5.6a5.3 5.3 0 0 0 10.6 0c0-2.1-.9-3.7-1.9-5-.3 1.4-1 2.4-2 2.8.5-3.6-.3-7.4-1.4-10z" />
           </svg>
@@ -67,7 +72,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside, true)
           </span>
         </button>
 
-        <button type="button" class="town-menu__row" @click="emit('notifications')">
+        <button type="button" class="town-menu__row" data-tour="town-menu-bell" @click="emit('notifications')">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.8 2H4.2z" />
             <path d="M10 21.2a2.2 2.2 0 0 0 4 0" />
@@ -76,7 +81,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside, true)
           <span v-if="unread" class="town-menu__more"><span class="town-menu__badge">{{ unread > 9 ? '9+' : unread }}</span></span>
         </button>
 
-        <button type="button" role="switch" class="town-menu__row" :aria-checked="musicOn" @click="emit('music')">
+        <button type="button" role="switch" class="town-menu__row" data-tour="town-menu-music" :aria-checked="musicOn" @click="emit('music')">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <ellipse class="town-menu__fill" cx="9" cy="17.5" rx="3.6" ry="2.8" transform="rotate(-20 9 17.5)" />
             <path d="M12.3 16.6V4.2" />
@@ -91,6 +96,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside, true)
           type="button"
           role="switch"
           class="town-menu__row"
+          data-tour="town-menu-privacy"
           aria-label="Public profile and location"
           :aria-checked="public"
           :disabled="publicBusy || publicLocked"

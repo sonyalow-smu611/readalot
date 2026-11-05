@@ -16,6 +16,9 @@
 //   to            the page it's on: the walkthrough goes there first (null: wherever the reader is)
 //   focus         a place id in town/places.js: the town's camera glides to it (TownView)
 //   kind          'explain' (the default) or 'try'
+//   screen        'phone' or 'wide': only on that size of screen (PHONE_QUERY). A stop can have one
+//                 too. A phone keeps Daily, the bell, music and public or private in the town's ☰
+//                 menu (components/town/TownMenu.vue), so it has its own steps for them
 //   say           what the character says
 //   stops         explain: [{ target, say }]: what to light, one after the other. A step with
 //                 just `target` and `say` is one stop; no target is a greyed screen with no outline
@@ -40,6 +43,14 @@
 const t = (name) => `[data-tour="${name}"]`
 const PIP = '[aria-label^="Walk to Pip"]'
 
+// The town's buttons that a phone keeps in the ☰ menu: the same line for the button and its row.
+const SAY = {
+  daily: 'Daily tasks: finish three a day to claim coins and XP, and keep your streak going.',
+  music: 'The music button: tap it to play or mute the background music, whenever you like.',
+  bell: 'The bell: friend requests, friends coming online and readers visiting your room.',
+  privacy: 'Private or Public. Public lists you in the cafe and shows your rough area, never your exact spot.',
+}
+
 const RAW = [
   // --- The town ------------------------------------------------------------------------------------
   {
@@ -55,12 +66,37 @@ const RAW = [
     stops: [
       { target: t('town-weather'), say: "The weather: the town's sky follows the real weather where you are." },
       { target: t('town-badge'), say: 'You! The number is your level, the ring fills with XP, and the coin is your coins.' },
-      { target: t('town-daily'), say: 'Daily tasks: finish three a day to claim coins and XP, and keep your streak going.' },
-      { target: t('town-music'), say: 'The music button: tap it to play or mute the background music, whenever you like.' },
+      { target: t('town-daily'), say: SAY.daily, screen: 'wide' },
+      { target: t('town-music'), say: SAY.music, screen: 'wide' },
       { target: t('town-places'), say: 'Places lists every building, so you can go straight to one.' },
       { target: t('town-friends'), say: "Friends: see who's online, answer requests, and add someone by username." },
-      { target: t('town-bell'), say: 'The bell: friend requests, friends coming online and readers visiting your room.' },
-      { target: t('town-privacy'), say: 'Private or Public. Public lists you in the cafe and shows your rough area, never your exact spot.' },
+      { target: t('town-bell'), say: SAY.bell, screen: 'wide' },
+      { target: t('town-privacy'), say: SAY.privacy, screen: 'wide' },
+    ],
+  },
+  // a phone: the reader opens the ☰ menu, and each of its rows is lit in turn (TownView keeps the
+  // menu open for that step and shuts it after)
+  {
+    id: 'town-menu',
+    section: 'Town',
+    to: '/',
+    screen: 'phone',
+    kind: 'try',
+    target: t('town-menu'),
+    say: 'Daily tasks, your notifications, the music and Public or Private are tucked in this menu.',
+    ask: 'Tap ☰.',
+    until: 'tap',
+  },
+  {
+    id: 'town-menu-items',
+    section: 'Town',
+    to: '/',
+    screen: 'phone',
+    stops: [
+      { target: t('town-menu-daily'), say: SAY.daily },
+      { target: t('town-menu-bell'), say: SAY.bell },
+      { target: t('town-menu-music'), say: SAY.music },
+      { target: t('town-menu-privacy'), say: SAY.privacy },
     ],
   },
   {
@@ -346,15 +382,17 @@ const RAW = [
     target: t('salon-studio'),
     say: "Restyle me here: hair, outfit, colours and extras. Pieces with a lock cost coins. Save look when you're happy.",
   },
+  // the badge in the town's corner is the way to your profile: it opens the salon on the Profile tab
   {
-    id: 'profile-tab',
+    id: 'profile-badge',
     section: 'Salon',
-    to: '/salon',
+    to: '/',
     kind: 'try',
-    target: t('salon-profile-tab'),
-    say: 'Your profile lives on the other tab.',
-    ask: 'Tap Profile.',
-    until: 'tap',
+    target: t('town-badge'),
+    say: 'Your profile has a shortcut: your badge in the corner of the town opens it, wherever you are in town.',
+    ask: 'Tap your badge.',
+    hint: 'tap',
+    until: /^\/salon/,
   },
   {
     id: 'profile-cards',
@@ -402,12 +440,24 @@ const RAW = [
   },
 ]
 
-// Every step the same shape: a kind, and (explain) the stops to light, each with its own line.
-export const WALKTHROUGH = RAW.map((step) => {
-  const kind = step.kind ?? 'explain'
-  const stops = kind === 'explain' ? (step.stops ?? [{ target: step.target ?? null, say: step.say }]) : []
-  return { ...step, kind, stops, say: step.say ?? stops[0]?.say ?? '' }
-})
+// A phone, as the town's ☰ menu counts one (TownView): its own steps for what the menu holds.
+export const PHONE_QUERY = '(max-width: 600px)'
+export const isPhone = () => typeof window !== 'undefined' && window.matchMedia(PHONE_QUERY).matches
+
+const forScreen = (phone) => (item) => !item.screen || item.screen === (phone ? 'phone' : 'wide')
+
+// Every step the same shape: a kind, and (explain) the stops to light, each with its own line. Only
+// the steps and stops for this size of screen.
+export function walkthroughFor(phone) {
+  return RAW.filter(forScreen(phone)).map((step) => {
+    const kind = step.kind ?? 'explain'
+    const stops = kind === 'explain' ? (step.stops ?? [{ target: step.target ?? null, say: step.say }]).filter(forScreen(phone)) : []
+    return { ...step, kind, stops, say: step.say ?? stops[0]?.say ?? '' }
+  })
+}
+
+// the laptop's, for anything that wants the whole list without a screen to ask
+export const WALKTHROUGH = walkthroughFor(false)
 
 // The text bar's height. The app shrinks by this while the walkthrough plays, so the bar never
 // covers anything and stays in the same place on every step. Taller on a phone (up to PHONE_MAX
