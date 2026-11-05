@@ -24,7 +24,7 @@
             v-for="option in MOODS"
             :key="option.value"
             class="btn btn-chip mood__option"
-            :class="{ 'is-on': mood === option.value }"
+            :class="[`mood__option--${option.value}`, { 'is-on': mood === option.value }]"
             type="button"
             :aria-pressed="mood === option.value"
             @click="mood = option.value"
@@ -34,8 +34,8 @@
           </button>
         </div>
 
-        <button class="btn btn-primary mood__continue" type="submit" :disabled="!mood">Continue</button>
-        <button class="btn btn-link mood__skip" type="button" @click="$emit('skip')">Skip for today</button>
+        <button class="btn btn-success mood__continue" type="submit" :disabled="!mood">Continue</button>
+        <button class="btn btn-secondary mood__skip" type="button" @click="$emit('skip')">Skip for today</button>
       </form>
     </div>
   </div>
@@ -99,6 +99,48 @@ onMounted(() => dialog.value.focus());
   gap: 2px;
   min-height: 62px;
   padding: 10px 8px;
+}
+
+/* each mood has its own colour: a soft tint at rest, the full colour once picked */
+.mood__option--calm {
+  --mood-tint: #cfe8dc;
+  --mood-fill: #3f8f73;
+  --mood-light: #62b094;
+  --mood-dark: #2a6b55;
+}
+
+.mood__option--low {
+  --mood-tint: #d4dcf2;
+  --mood-fill: #5b6fb8;
+  --mood-light: #7f92d4;
+  --mood-dark: #405091;
+}
+
+.mood__option--stressed {
+  --mood-tint: #f4d2cc;
+  --mood-fill: #c0563f;
+  --mood-light: #de7a63;
+  --mood-dark: #8f3a2a;
+}
+
+.mood__option--excited {
+  --mood-tint: #fbe6a8;
+  --mood-fill: #d99a1c;
+  --mood-light: #f0bb48;
+  --mood-dark: #a8750f;
+}
+
+.mood__option:not(.is-on) {
+  --px-fill: var(--mood-tint);
+  --px-hover: var(--mood-light);
+}
+
+.mood__option.is-on {
+  --px-fill: var(--mood-fill);
+  --px-light: var(--mood-light);
+  --px-dark: var(--mood-dark);
+  --px-hover: var(--mood-dark);
+  --px-label: #fff;
 }
 
 .mood__name {

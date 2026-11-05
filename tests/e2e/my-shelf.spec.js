@@ -673,13 +673,13 @@ test.describe("a book's card on My Shelf", () => {
     await expect(hobbit(page)).toBeFocused();
   });
 
-  test("is laid out like the library's card: no shelf line, and the reviews behind Read reviews", async ({ page }) => {
+  test("is laid out like the library's card: no shelf line, and the reviews behind Leave/Read Reviews", async ({ page }) => {
     // no line above the title naming the shelf
     await expect(card(page).getByText("To be read", { exact: true })).toHaveCount(0);
 
     const reviews = card(page).getByRole("region", { name: "Reviews" });
     await expect(reviews).toBeHidden();
-    await card(page).getByRole("button", { name: /^Read reviews/ }).click();
+    await card(page).getByRole("button", { name: /^Leave\/Read Reviews/ }).click();
     await expect(reviews).toBeVisible();
     await expect(reviews.getByText("Rate this book")).toBeVisible();
 

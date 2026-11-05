@@ -29,6 +29,7 @@
               {{ data.author }}<template v-if="data.work">, <cite>{{ data.work }}</cite></template>
             </p>
             <p v-else-if="data?.topic" class="board__quote-by">On {{ data.topic }}</p>
+            <SaveQuoteButton class="board__quote-save" :quote="quoteToSave" />
           </StateView>
         </section>
 
@@ -49,7 +50,7 @@
 
         <div class="board__actions">
           <button v-if="!mine" class="btn btn-primary" type="button" @click="$emit('write')">Leave a note</button>
-          <button class="btn btn-outline-secondary" type="button" @click="$emit('close')">Close</button>
+          <button class="btn btn-secondary" type="button" @click="$emit('close')">Close</button>
         </div>
       </div>
     </div>
@@ -57,7 +58,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import SaveQuoteButton from '@/components/SaveQuoteButton.vue'
 import StateView from '@/components/StateView.vue'
 import { useAsync } from '@/composables/useAsync.js'
 import { getTodayQuote } from '@/services/api.js'
@@ -81,6 +83,13 @@ defineEmits(['close', 'remove', 'retry', 'write'])
 
 const dialog = ref(null)
 const { data, error, loading, run } = useAsync(getTodayQuote)
+
+// the quote of the day in the shape the saved quotes keep it: the reader can keep it from here
+const quoteToSave = computed(() =>
+  data.value?.quoteText
+    ? { quoteText: data.value.quoteText, author: data.value.author || '', work: data.value.work || '', sourceUrl: data.value.sourceUrl || null }
+    : null,
+)
 
 function load() {
   return run().catch(() => {})
@@ -121,6 +130,10 @@ onMounted(() => {
   font-family: var(--rl-font-title);
   font-size: 1.05rem;
   color: var(--rl-text);
+}
+
+.board__quote-save {
+  margin-top: 10px;
 }
 
 .board__quote-by {

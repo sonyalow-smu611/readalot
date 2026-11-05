@@ -3,7 +3,7 @@
 // date (services/notifications.js). Friend requests and who is online come from /api/friends.
 import { Router } from "express";
 import { requireSignedIn } from "../middleware/auth.js";
-import { roomVisits } from "../services/notifications.js";
+import { activityOf, roomVisits } from "../services/notifications.js";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -14,6 +14,16 @@ router.get("/visits", requireSignedIn, async (req, res, next) => {
     const asked = new Date(String(req.query.since ?? ""));
     const since = Number.isNaN(asked.getTime()) ? new Date(Date.now() - WEEK_MS) : asked;
     res.json({ visits: await roomVisits(req.user.id, since) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/activity", requireSignedIn, async (req, res, next) => {
+  try {
+    const asked = new Date(String(req.query.since ?? ""));
+    const since = Number.isNaN(asked.getTime()) ? new Date(Date.now() - WEEK_MS) : asked;
+    res.json(await activityOf(req.user.id, since));
   } catch (err) {
     next(err);
   }

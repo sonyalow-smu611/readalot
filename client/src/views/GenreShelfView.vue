@@ -30,7 +30,7 @@ const SORTS = [
 ]
 
 const route = useRoute()
-const { previewBook, saving, openPreview, closePreview, saveStatus } = useBookPreview()
+const { previewBook, saving, addedId, openPreview, closePreview, saveStatus, undoAdd } = useBookPreview()
 
 const genre = computed(() => genreInfo(route.params.genre))
 const books = ref([])
@@ -144,7 +144,14 @@ const tiers = computed(() => {
       />
     </template>
 
-    <FoundBookPreview :book="previewBook" :adding="saving" @add="saveStatus('want_to_read')" @close="closePreview" />
+    <FoundBookPreview
+      :book="previewBook"
+      :adding="saving"
+      :undoable="addedId === previewBook?.id"
+      @add="saveStatus('want_to_read')"
+      @undo="undoAdd"
+      @close="closePreview"
+    />
   </section>
 </template>
 

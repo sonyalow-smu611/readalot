@@ -100,8 +100,8 @@
               <strong v-else-if="!editable">No books on these shelves yet</strong>
               <template v-else>
                 <strong>Add your first book</strong>
-                <RouterLink to="/discover">Discover books</RouterLink>
-                <RouterLink to="/scan">Scan a cover</RouterLink>
+                <RouterLink class="btn btn-secondary btn-sm" to="/discover">Discover books</RouterLink>
+                <RouterLink class="btn btn-secondary btn-sm" to="/scan">Scan a cover</RouterLink>
               </template>
             </div>
 

@@ -885,6 +885,21 @@ Written by Claude at Dylan's request, from the team's testing notes. The team ag
 | Adding private readers (backend, agreed by the team) | `server/src/services/readers.js`, `server/src/services/friends.js` | `findReader` takes an `anyone` option, used only by `requestFriend`, so a reader who isn't discoverable can be sent a request by username. Their profile, room and location stay hidden until they accept; nearby still lists only discoverable readers |
 | Tests | `tests/e2e/friends-list.spec.js`, `tests/e2e/friends.spec.js`, `tests/e2e/supabaseUser.js` | "Sending…" while a request is held, and adding a private reader by username (`createPrivateReader` makes one without signing in) |
 
+### Notifications, navigation and button fixes (AI-generated)
+
+Written by Claude at Aalric's request, from the team's testing notes. The shared files (`App`-level styles, stores, services, `server/`) were changed because the request asked for it; a teammate reviews them in the pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Notifications | `server/src/services/notifications.js` (`activityOf`), `server/src/routes/notifications.js`, `client/src/services/api.js`, `client/src/town/notificationsStore.js`, `client/src/components/town/NotificationsPanel.vue`, `client/src/views/TownView.vue` | New `GET /api/notifications/activity`: requests you sent, ones accepted later and your conversations. The bell lists them with the existing ones, turns red while any are unread, and nothing pops up by itself any more. Each notification goes to its screen: friends list, chat, the friend on the map or the visitor's profile |
+| Friends | `server/src/services/friends.js` (`sent`), `client/src/town/nearbyStore.js`, `client/src/components/town/FriendsList.vue`, `FriendCard.vue` | Requests you sent show under "Waiting for an answer" and the town refreshes every 10 seconds (and when the list opens). A removed friend leaves the map and every list at once, and comes back if the removal fails |
+| Reviews and reading | `components/BookPreviewModal.vue`, `components/book/ReviewForm.vue`, `components/book/FoundBookPreview.vue`, `composables/useBookPreview.js`, `lib/searchHistory.js`, `buildings/library/SearchView.vue` | "Leave/Read Reviews", "Post Review", a "See it in my room" button, Undo after Add to To be read, and a device-only list of recent searches with Clear history |
+| Quotes and mood | `components/SaveQuoteButton.vue`, `components/modals/MoodResultModal.vue`, `MoodCheckInModal.vue`, `QuoteOfDayModal.vue`, `buildings/house/components/NoticeBoard.vue`, `RoomDock.vue` | Save quote / Unsave (also on the Quote of the Day), Undo after Add to To Be Read, a colour for each mood, green confirm buttons, wider shop cards so names and prices show, and Close as a button |
+| Profile | `buildings/salon/components/FavouriteGenres.vue`, `SavedQuoteItem.vue`, `SavedQuotes.vue`, `AboutYou.vue`, `buildings/salon/SalonView.vue` | Genre names only, red Remove Quote and Log out, a roomier About you dropdown, and the Profile tab kept in the address so Back lands on it |
+| Back behaviour | `components/shared/BuildingShell.vue`, `composables/useGoBack.js`, `lib/returnState.js`, `views/ReaderRoomView.vue`, `buildings/house/RoomView.vue` | Back goes to the page the reader came from (not a fixed page), says where, and a mood recommendation reopens after Back from its book page |
+| Links | `styles/pixel-buttons.css` and the pages that had plain links | No underlines: text links became buttons, `.btn-link` is a paper button (the password eye stays quiet) |
+| Tests | `tests/e2e/notifications.spec.js`, `navigation.spec.js`, `mood-result.spec.js`, `visit-room.spec.js`, `townFriends.js` and the label changes in `reviews`, `bookshelf`, `my-shelf`, `find-book` | New and updated for all of the above |
+
 ### Testing fixes, round 2 (AI-generated)
 
 Written by Claude at Dylan's request, from the team's testing notes (agreed by the team).

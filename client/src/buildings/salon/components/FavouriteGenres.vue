@@ -14,7 +14,6 @@ defineProps({
       <li v-for="genre in genres" :key="genre">
         <RouterLink class="tag" :to="{ name: 'genre-shelf', params: { genre } }">
           {{ genre }}
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
         </RouterLink>
       </li>
     </ul>
@@ -37,7 +36,7 @@ defineProps({
   align-items: center;
   gap: 2px;
   min-height: 44px;
-  padding: 6px 10px 6px 14px;
+  padding: 6px 14px;
   border: 2px solid #1e1a24;
   border-radius: 999px;
   background: #fbe7f0;
@@ -74,15 +73,5 @@ li:nth-child(odd) .tag {
   .tag:hover {
     animation: none;
   }
-}
-
-.tag svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 </style>

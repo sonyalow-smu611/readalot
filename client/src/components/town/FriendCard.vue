@@ -66,7 +66,8 @@ onMounted(() => card.value?.focus())
       </div>
       <button
         type="button"
-        class="btn btn-link btn-sm friend-card__remove"
+        class="btn btn-sm friend-card__remove"
+        :class="confirmingRemove ? 'btn-danger' : 'btn-secondary'"
         @click="confirmingRemove ? emit('remove', friend) : (confirmingRemove = true)"
       >
         {{ confirmingRemove ? `Yes, remove ${first}` : 'Remove friend' }}

@@ -67,7 +67,7 @@ test("Where to get lists shops and the library, each opening that shop's search 
 });
 
 test("the reviews wait behind their own button", async ({ page }) => {
-  const toggle = preview(page).getByRole("button", { name: /^Read reviews/ });
+  const toggle = preview(page).getByRole("button", { name: /^Leave\/Read Reviews/ });
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await expect(preview(page).getByRole("heading", { name: "Reviews" })).toBeHidden();
   await toggle.click();

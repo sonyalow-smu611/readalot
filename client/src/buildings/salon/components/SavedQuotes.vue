@@ -52,10 +52,11 @@ onMounted(load)
           <div class="empty">
             <span class="empty__mark" aria-hidden="true">“</span>
             <p class="mb-1">No saved quotes yet</p>
-            <p class="block__empty mb-2">Tap Save quote on a line from your mood check-in in My Room to keep it here.</p>
-            <RouterLink class="empty__link" to="/house">Go to My Room</RouterLink>
-            ·
-            <RouterLink class="empty__link" to="/discover">Find a book</RouterLink>
+            <p class="block__empty mb-2">Tap Save quote on a line from your mood check-in or the Quote of the Day in My Room to keep it here.</p>
+            <div class="empty__links">
+              <RouterLink class="btn btn-secondary btn-sm" to="/house">Go to My Room</RouterLink>
+              <RouterLink class="btn btn-secondary btn-sm" to="/discover">Find a book</RouterLink>
+            </div>
           </div>
         </template>
         <p v-if="removeError" class="quotes__error" role="alert">{{ removeError }}</p>
@@ -104,9 +105,10 @@ onMounted(load)
   line-height: 1;
 }
 
-.empty__link {
-  color: #a84874;
-  font-size: 0.875rem;
-  font-weight: 700;
+.empty__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }
 </style>

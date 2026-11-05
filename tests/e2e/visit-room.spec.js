@@ -37,8 +37,9 @@ test.describe("getting there", () => {
     await expect(page.getByRole("button", { name: "Bookshelf, 3 books" })).toBeVisible();
     await expect(page.getByRole("button", { name: "The Hobbit by J. R. R. Tolkien" })).toBeAttached();
 
-    await page.getByRole("link", { name: "Back to Emma's profile" }).click();
-    await expect(page).toHaveURL(/\/people\/emma\.reads$/);
+    // Back goes to the page it came from, the Cafe
+    await page.getByRole("link", { name: "Back to the Cafe" }).click();
+    await expect(page).toHaveURL(/\/cafe$/);
   });
 
   test("someone else's room has no room menu, credits or mood check-in", async ({ page }) => {
@@ -563,7 +564,8 @@ test.describe("knocking on the door", () => {
     await holdBack(page, "**/api/rooms/*/furniture");
     await visitRoom.click();
 
-    const back = page.getByRole("link", { name: "Back to the Cafe" });
+    // from the reader's profile, so Back says so
+    const back = page.getByRole("link", { name: /^Back/ });
     const daily = page.getByRole("button", { name: /^Daily tasks/ });
     await expect(door(page, "shut")).toBeVisible();
     await expect.poll(async () => {

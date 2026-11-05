@@ -21,22 +21,33 @@
           <!-- the topic stands in when a quote has no author -->
           <p v-else-if="data?.topic" class="text-muted small mb-0">On {{ data.topic }}</p>
         </StateView>
-        <button class="btn btn-primary mt-4" type="button" @click="$emit('close')">Close</button>
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+          <SaveQuoteButton :quote="quoteToSave" />
+          <button class="btn btn-secondary btn-sm" type="button" @click="$emit('close')">Close</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useAsync } from "../../composables/useAsync.js";
 import { getTodayQuote } from "../../services/api.js";
+import SaveQuoteButton from "../SaveQuoteButton.vue";
 import StateView from "../StateView.vue";
 
 defineEmits(["close"]);
 
 const dialog = ref(null);
 const { data, error, loading, run } = useAsync(getTodayQuote);
+
+// the quote of the day in the shape the saved quotes keep it
+const quoteToSave = computed(() =>
+  data.value?.quoteText
+    ? { quoteText: data.value.quoteText, author: data.value.author || "", work: data.value.work || "", sourceUrl: data.value.sourceUrl || null }
+    : null
+);
 
 function load() {
   return run().catch(() => {});

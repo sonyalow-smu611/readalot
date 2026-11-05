@@ -1,19 +1,22 @@
 <script setup>
 // The page for a reader, at /people/:id: their profile on the Library's wall, with the way back.
 import { useRoute } from 'vue-router';
+import { useGoBack } from '../composables/useGoBack.js';
 import ReaderProfile from '../components/people/ReaderProfile.vue';
 import { PROFILE_COLOURS } from '../components/people/profileColours.js';
 
 const route = useRoute();
+// back to wherever the reader came from: the town's notification, the Cafe, a friend's list
+const { goBack, label, href } = useGoBack({ name: 'cafe' }, 'Back to Discover');
 </script>
 
 <template>
   <main class="reader-room" :style="PROFILE_COLOURS">
     <div class="back-row">
-      <RouterLink class="btn btn-secondary px-sign back-link" to="/people">
+      <a :href="href" class="btn btn-secondary px-sign back-link" @click.prevent="goBack">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-        Back to Discover
-      </RouterLink>
+        {{ label }}
+      </a>
     </div>
 
     <ReaderProfile :reader-id="route.params.id" />

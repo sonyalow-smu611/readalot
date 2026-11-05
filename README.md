@@ -540,8 +540,8 @@ in from Scenario 2, or log in again: `demo@demo.ikda.app` / `Ikda-Demo-2026` / `
    mind), **Excited** (Full of energy). **Continue** stays greyed out until you pick one.
 9. **Press a mood → Continue.**
     → **A book for your mood** with a quote from it. (The quote links back to its source.)
-10. **Press "Save quote".** → It changes to **Saved**.
-11. **Press "Add to To Be Read".** → **Added to To Be Read.**
+10. **Press "Save quote".** → It changes to **Unsave** (press it to take the quote out again).
+11. **Press "Add to To Be Read".** → **Added to To Be Read** with an **Undo** button beside it (press it and the book comes off the shelf).
 12. **Press "Show another recommendation".** → A different book.
 13. **Close it.** (Another day, **Skip for today** keeps it away until tomorrow.)
 14. **Check Saved quotes** in the Salon's Profile tab → your three quotes, plus the new one.
@@ -577,18 +577,18 @@ in from Scenario 2, or log in again: `demo@demo.ikda.app` / `Ikda-Demo-2026` / `
     pages.** (Reduced-motion settings skip this.)
     - **Press anywhere while it flies** → it skips straight to open.
 17. **On the card:** cover, title, author, stars (when readers have rated it), synopsis, **Remove from
-    shelf**, and **Read reviews**. What else shows depends on the shelf:
+    shelf**, and **Leave/Read Reviews**. What else shows depends on the shelf:
     - A **Currently reading** book (Dune) has a **progress slider**, and **Mark as finished**. 👀 **Drag the
       slider** (Dune starts at 45%) → the percent saves.
     - **Press "Mark as finished"** → the book moves to **Finished reading**. 👀 Finishing a book is worth
       **+100 XP**: Jordan has 620 (visiting a room, leaving a note and sending a message in Scenario 2 add
       only a few more), so this crosses **700 XP and levels up to level 5**, and you get **125 coins** (600
       becomes 725). Check the badge in the town, or the Salon's **Reader level** card, afterwards.
-    - **Press "Read reviews"** → **Rate this book** with five stars (**★ 1 star** … **★ 5 stars**), a **Your
-      review (optional)** box and **Save review**. **Choose 5 stars, type a sentence and press Save
+    - **Press "Leave/Read Reviews"** → **Rate this book** with five stars (**★ 1 star** … **★ 5 stars**), a **Your
+      review (optional)** box and **Post Review**. **Choose 5 stars, type a sentence and press Save
       review** → your review appears with **Edit your review** and **Delete your review**, and you earn
       **+40 XP**.
-    - Open **The Hobbit** (Finished) and press **Read reviews** → **Jordan's 5-star review** and the
+    - Open **The Hobbit** (Finished) and press **Leave/Read Reviews** → **Jordan's 5-star review** and the
       reviews of **Emma** and **Ayaan**, and the rating **4.7 from 3 readers**.
     - Open **Fourth Wing** (To be read) → **Start reading** and **Where to get**.
 18. **Press "Remove from shelf".**

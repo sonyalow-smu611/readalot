@@ -23,7 +23,7 @@ const place = PLACES.find((p) => p.id === 'library')
 const route = useRoute()
 const router = useRouter()
 const bookshelf = useBookshelfStore()
-const { previewBook, saving, openPreview, closePreview, saveStatus } = useBookPreview()
+const { previewBook, saving, addedId, openPreview, closePreview, saveStatus, undoAdd } = useBookPreview()
 
 // --- Weather -----------------------------------------------------------------------------------
 // The live weather, as My Room has it: it shows through the hall's windows and lights the hall.
@@ -259,7 +259,14 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 
       <ScanMachine v-if="scannerOpen" @close="closeScanner" @found="openPreview" @search="searchInstead" />
 
-      <FoundBookPreview :book="previewBook" :adding="saving" @add="saveStatus('want_to_read')" @close="closePreview" />
+      <FoundBookPreview
+      :book="previewBook"
+      :adding="saving"
+      :undoable="addedId === previewBook?.id"
+      @add="saveStatus('want_to_read')"
+      @undo="undoAdd"
+      @close="closePreview"
+    />
     </section>
   </BuildingShell>
 </template>

@@ -15,13 +15,13 @@
         <h2 id="remove-book-title" class="remove__title">Remove “{{ book.title }}” from your shelf?</h2>
         <p class="remove__note">You can add it again any time.</p>
         <div class="d-grid gap-2">
-          <button class="btn btn-primary" type="button" @click="$emit('remove', { remember: false })">
+          <button class="btn btn-danger" type="button" @click="$emit('remove', { remember: false })">
             Yes, remove
           </button>
-          <button class="btn btn-outline-primary" type="button" @click="$emit('remove', { remember: true })">
+          <button class="btn btn-outline-danger" type="button" @click="$emit('remove', { remember: true })">
             Yes, and don't ask again
           </button>
-          <button class="btn btn-link remove__keep" type="button" @click="$emit('close')">No, keep it</button>
+          <button class="btn btn-secondary remove__keep" type="button" @click="$emit('close')">No, keep it</button>
         </div>
       </div>
     </div>
@@ -61,7 +61,5 @@ onMounted(() => dialog.value.focus());
 
 .remove__keep {
   font-weight: 700;
-  color: var(--rl-muted);
-  text-decoration: none;
 }
 </style>

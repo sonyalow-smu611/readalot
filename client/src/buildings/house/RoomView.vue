@@ -18,6 +18,7 @@ import { lampsFor, toggleLamp } from '@/buildings/house/lamps.js'
 import CurrentlyReadingCard from '@/buildings/house/components/CurrentlyReadingCard.vue'
 import MoodCheckInModal from '@/components/modals/MoodCheckInModal.vue'
 import MoodResultModal from '@/components/modals/MoodResultModal.vue'
+import { stashView, takeView } from '@/lib/returnState.js'
 import StateView from '@/components/StateView.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
 import VisitorBookDialog from '@/buildings/house/components/VisitorBookDialog.vue'
@@ -282,8 +283,11 @@ async function openBoardFromBell() {
 // --- Mood check-in -----------------------------------------------------------------------
 // Opens by itself on the first visit of the day; the room menu can bring it back any time.
 const MOOD_KEY = 'readalot.moodCheckIn'
+const MOOD_VIEW = 'mood-result'
 const moodStep = ref(null) // null | 'checkin' | 'result'
 const mood = ref('')
+// the recommendation to show again when the reader comes Back from its book page
+const restoredMood = ref(null)
 
 // today's date on this device, e.g. "2026-01-31"
 function today() {
@@ -316,8 +320,19 @@ function openMood() {
 
 function submitMood(value) {
   mood.value = value
+  restoredMood.value = null
   markMoodDone()
   moodStep.value = 'result'
+}
+
+// Off to the recommended book's page: the card is stashed so Back lands on the same card.
+function leaveMood(snapshot) {
+  stashView(MOOD_VIEW, snapshot)
+}
+
+function closeMood() {
+  restoredMood.value = null
+  moodStep.value = null
 }
 
 function skipMood() {
@@ -336,7 +351,12 @@ onMounted(() => {
   // the check-in and the reader's own shelf belong to their own room
   if (!props.visiting) {
     // not over the walkthrough, which shows the room menu's Mood check-in instead
-    if (!moodDoneToday() && !user.guide) moodStep.value = 'checkin'
+    const back = takeView(MOOD_VIEW)
+    if (back) {
+      mood.value = back.mood
+      restoredMood.value = back
+      moodStep.value = 'result'
+    } else if (!moodDoneToday() && !user.guide) moodStep.value = 'checkin'
     bookshelf.load()
     loadRoom(user.profile.id)
   }
@@ -459,7 +479,7 @@ onBeforeUnmount(() => {
     <NoteComposer v-if="writing" :owner="visiting.firstName" :error="noteError" :busy="posting" @post="postNote" @cancel="stopNote" />
 
     <MoodCheckInModal v-if="moodStep === 'checkin'" @submit="submitMood" @skip="skipMood" />
-    <MoodResultModal v-else-if="moodStep === 'result'" :mood="mood" @close="moodStep = null" />
+    <MoodResultModal v-else-if="moodStep === 'result'" :mood="mood" :restored="restoredMood" @leave="leaveMood" @close="closeMood" />
   </section>
 </template>
 

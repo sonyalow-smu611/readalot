@@ -101,6 +101,12 @@ export function getRoomVisits(since) {
   return request(`/notifications/visits?since=${encodeURIComponent(since)}`);
 }
 
+// { sent, accepted, messages } since the date: friend requests you sent, ones accepted later and
+// your conversations (see server/src/services/notifications.js)
+export function getActivity(since) {
+  return request(`/notifications/activity?since=${encodeURIComponent(since)}`);
+}
+
 // Other readers with their shelves (see stores/people.js); `id` is the reader's username.
 export function getReaders() {
   return request("/people");

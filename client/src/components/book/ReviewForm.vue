@@ -25,7 +25,7 @@
 
     <p v-if="error" class="review-form__error" role="alert">{{ error }}</p>
     <div class="review-form__actions">
-      <button class="btn btn-primary" type="submit" :disabled="saving || !rating">Save review</button>
+      <button class="btn btn-primary" type="submit" :disabled="saving || !rating">Post Review</button>
       <button v-if="review" class="btn btn-secondary" type="button" :disabled="saving" @click="$emit('cancel')">
         Cancel
       </button>

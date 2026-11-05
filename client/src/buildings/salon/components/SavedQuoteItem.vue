@@ -13,22 +13,23 @@ defineEmits(['remove'])
     <blockquote class="saved__text">“{{ quote.quoteText }}”</blockquote>
     <p class="saved__by">
       {{ quote.author || 'Unknown author' }}<template v-if="quote.work">,
-        <RouterLink v-if="quote.bookId" :to="`/books/${quote.bookId}`"><cite>{{ quote.work }}</cite></RouterLink>
-        <cite v-else>{{ quote.work }}</cite>
+        <cite>{{ quote.work }}</cite>
       </template>
-      <template v-if="quote.sourceUrl">
-        · <a :href="quote.sourceUrl" target="_blank" rel="noopener">via Wikiquote</a>
-      </template>
+      <template v-if="quote.sourceUrl"> · via Wikiquote</template>
     </p>
-    <button
-      type="button"
-      class="btn btn-secondary btn-sm"
-      :disabled="busy"
-      :aria-label="`Remove quote from ${quote.work || 'this book'}`"
-      @click="$emit('remove', quote.id)"
-    >
-      Remove
-    </button>
+    <div class="saved__actions">
+      <RouterLink v-if="quote.bookId" class="btn btn-secondary btn-sm" :to="`/books/${quote.bookId}`">Open book page</RouterLink>
+      <a v-if="quote.sourceUrl" class="btn btn-secondary btn-sm" :href="quote.sourceUrl" target="_blank" rel="noopener">Read on Wikiquote</a>
+      <button
+        type="button"
+        class="btn btn-danger btn-sm"
+        :disabled="busy"
+        :aria-label="`Remove quote from ${quote.work || 'this book'}`"
+        @click="$emit('remove', quote.id)"
+      >
+        Remove Quote
+      </button>
+    </div>
   </li>
 </template>
 
@@ -57,7 +58,9 @@ defineEmits(['remove'])
   font-size: 0.8rem;
 }
 
-.saved__by a {
-  color: #a84874;
+.saved__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 </style>
