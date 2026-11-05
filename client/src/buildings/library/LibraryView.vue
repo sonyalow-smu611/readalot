@@ -151,6 +151,8 @@ function openShelf(key) {
 // the bookcase closes and focus goes back to the bookcase in the hall that opened it
 async function closeShelf() {
   openKey.value = null
+  // opened from a link (?shelf=…, a favourite genre): drop it so going back or reloading doesn't open it again
+  if (route.query.shelf) router.replace({ name: 'library' })
   await nextTick()
   if (trigger?.isConnected) trigger.focus()
 }
@@ -178,6 +180,15 @@ function searchInstead() {
   askDesk()
 }
 
+// /library?shelf=<key> opens that bookcase: the salon's favourite genres link here. Only a bookcase
+// the hall has (and not the one already open) opens.
+function openLinkedShelf(key) {
+  if (!key || key === openKey.value || !categoryByKey(key)) return
+  openShelf(key)
+}
+
+watch(() => route.query.shelf, openLinkedShelf)
+
 // /scan while already in the library opens the scanner too
 watch(
   () => route.query.scan,
@@ -191,6 +202,7 @@ onMounted(() => {
   // the reader's shelf, so the preview knows which books are already on it
   bookshelf.load()
   if (route.query.scan) openScanner()
+  openLinkedShelf(route.query.shelf)
   loadWeather()
   weatherTimer = window.setInterval(loadWeather, WEATHER_REFRESH_MS)
 })

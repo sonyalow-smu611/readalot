@@ -1,9 +1,9 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The town's notifications: friend requests (waiting for you, sent by you, accepted), messages,
 // friends coming online, visits to your room and notes left on your notice board. They wait in the
-// bell's list, red until you've looked, and nothing pops up on its own: you open the bell, then a
-// notification, to go to it. The town calls check() after every refresh, so they arrive while
-// you're in town and catch up when you come back. The list is built from Supabase each time:
+// bell's list, red until you've looked. A new one slides in for a few seconds and fades away (the
+// town shows it, NotificationSlide); tap it, or open the bell, to go to it. The town calls check()
+// after every refresh, so they arrive while you're in town and catch up when you come back. The list is built from Supabase each time:
 // requests, messages, visits and notes in the last week, and friends who came online this visit.
 // What's read and what's cleared are two times saved on your
 // profile (database/notifications_seen.sql), so every device agrees.
@@ -35,6 +35,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
   let visits = []
   let activity = []
   let notes = []
+  // what has slid in already this visit, so each notification does so once
+  let announced = new Set()
   let online = []
   // Coming online counts once a visit: "online" is seen in town in the last 5 minutes, so someone
   // moving between buildings would otherwise come online again and again.
@@ -66,6 +68,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     visits = []
     activity = []
     notes = []
+    announced = new Set()
     online = []
     greeted = new Set()
     knownFriends = null
@@ -109,6 +112,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         text: `You sent ${reader.displayName} a friend request`,
         at,
         readerId: reader.id,
+        mine: true,
       })),
       ...(found.accepted ?? []).map(({ id, at, reader }) => ({
         id: `accepted-${id}`,
@@ -168,10 +172,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
       .map(({ seen, ...item }) => ({ ...item, read: Boolean(seen) || time(item.at) <= time(readAt.value) }))
   }
 
-  // Rebuilds the list. A failed look at the visits or the activity keeps the ones already found
-  // until the next check.
+  // Rebuilds the list and returns what is new to slide in: unread, not shown before this visit, and
+  // not something you did yourself (the request or message you just sent). A failed look at the
+  // visits or the activity keeps the ones already found until the next check.
   async function check() {
-    if (!readerId.value) return
+    if (!readerId.value) return []
     await loaded
     ;[visits, activity, notes] = await Promise.all([
       recentVisits().catch(() => visits),
@@ -180,6 +185,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
     ])
     online = [...newlyOnline(), ...online].slice(0, KEEP)
     build()
+    const fresh = items.value.filter((item) => !item.read && !item.mine && !announced.has(item.id))
+    for (const item of items.value) announced.add(item.id)
+    return fresh
   }
 
   // The list as it is now, without asking the server: after the reader answers a request, say.

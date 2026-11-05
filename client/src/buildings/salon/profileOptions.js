@@ -1,19 +1,9 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The fixed lists the salon's profile cards and edit form share.
+import { GENRE_NAMES } from '@/lib/genreShelves.js'
 
-export const GENRES = [
-  'Fantasy',
-  'Literary Fiction',
-  'Magical Realism',
-  'Science Fiction',
-  'Mystery',
-  'Thriller',
-  'Classic',
-  'Historical Fiction',
-  'Memoir',
-  'Non-fiction',
-  'Self-Help',
-]
+// the genres you can name as a favourite: the library's bookcases (lib/genreShelves.js)
+export const GENRES = GENRE_NAMES
 
 export const GENDERS = ['Woman', 'Man', 'Non-binary', 'Prefer not to say']
 export const FAITHS = ['Christianity', 'Islam', 'Buddhism', 'Hinduism', 'Sikhism', 'Judaism', 'None', 'Prefer not to say']

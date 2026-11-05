@@ -66,7 +66,7 @@ after a reset**:
 
 | Where | Already there |
 |---|---|
-| **Profile** | Level 4 with 620 XP (80 XP from level 5), 600 coins, favourite genres Fantasy / Science Fiction / Mystery / Literary Fiction, a public profile, a pink "Rosie" character |
+| **Profile** | Level 4 with 620 XP (80 XP from level 5), 600 coins, favourite genres Fantasy / Sci-Fi / Mystery & Thriller / Memoir, a public profile, a pink "Rosie" character |
 | **Bookshelf** | 10 books. **Finished and reviewed:** The Hobbit (5 stars), Pride and Prejudice (4), Project Hail Mary (5). **Reading:** Dune (45%), The Secret History (20%). **To be read:** Fourth Wing, Piranesi, The Night Circus, Circe, Gone Girl |
 | **Friends** | **Emma Tan** and **Ayaan Rahman** (online now), **Sofia Lim** (last seen 12 days ago), **Mei Chen** (last seen 5 weeks ago, so her house looks dusty) |
 | **Friend request** | **Noah Koh** is waiting to be accepted |

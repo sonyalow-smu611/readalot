@@ -154,7 +154,7 @@ test.describe("reading prefs", () => {
     await page.goto("/people/emma.reads");
     const prefs = card(page, "Reading Prefs");
     const genres = prefs.getByRole("list", { name: "Favourite genres" }).getByRole("listitem");
-    await expect(genres).toHaveText(["★ Fantasy, you both like it", "Mystery", "Romance"]);
+    await expect(genres).toHaveText(["★ Fantasy, you both like it", "Mystery & Thriller", "Romance"]);
     await expect(prefs.getByText("★ 1 in common: Fantasy", { exact: true })).toBeVisible();
   });
 

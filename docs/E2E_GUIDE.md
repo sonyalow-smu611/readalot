@@ -233,7 +233,7 @@ The reader's character has a glow and a green diamond.
 - **Weather chip** (top left): `Weather: <sky> · <temp>°, live. Change the sky`. Each tap steps through
   previews (day, night, rain, rainy night, then live again).
 - **Daily** (flame, left): opens the Daily panel (A8a). The panel opens by itself the first time each day.
-- **Bell** (`Notifications, N new`, with a red badge while something is unread): friend requests (waiting, sent by you, accepted), messages you sent or received, friends coming online, visits to your room; **Clear all**. Nothing pops up by itself: open the bell and press a notification to go to it (friends list, chat, the friend on the map, or the visitor's profile).
+- **Bell** (`Notifications, N new`, with a red badge while something is unread): friend requests (waiting, sent by you, accepted), messages you sent or received, friends coming online, visits to your room; **Clear all**. A new one (not something you did yourself) slides in from the right for about 5 seconds and fades away; press it, or open the bell and press a notification, to go to it (friends list, chat, the friend on the map, or the visitor's profile).
 - **Places** (`Places in town`): jumps to a building.
 - **Friends** (`Friends, N online, M friend requests`): the friends panel (A14).
 - **Public / private chip** (under Daily): the same setting as the Salon's switch (A17).
@@ -366,7 +366,9 @@ sent** / **Added as friend**), **Message**, **Currently Reading**, **Reading Pre
 **Books You Both Have**, and **Close reader profile (×)**.
 **Visiting a room** (`/people/:id/room`): **Knocking on the door…**, then the reader's room, read-only, in their
 colours, with **Back to <name>'s profile**. The bookshelf opens their shelf (no search, no status
-buttons); a book opens a card with nothing to edit; the corkboard shows their notes; **Leave a note**
+buttons) and every book on it, with its cover and synopsis, as the reader sees their own shelf; a book opens the
+same card as in the library (**Add to To be read** / **Undo**, **Where to get**, **Leave/Read Reviews**, **Open full
+book page**), where the shelf it shows is yours; the corkboard shows their notes; **Leave a note**
 opens "Say hello, recommend a book…" with **Post note** / **Cancel** (up to 140 characters; you can take down
 your own notes); lamps toggle for your visit only. Visiting earns 15 XP once a day per room; a note 10 XP.
 An unknown reader shows **We couldn't find that reader.** with **Find readers in the Cafe**.
@@ -469,7 +471,7 @@ API with that reader's access token: `Authorization: Bearer <token>` (get one wi
 
 | ID | Account | How to get it | State |
 |---|---|---|---|
-| **ACCT-NEW** | A fresh reader | Register `qa.<n>@demo.ikda.app`, username `qa.<n>` (digits and letters), password `Maya1234`, code `111111`; finish Welcome with name `Qa Tester`, Woman, age 21, Prefer not to say, genres Fantasy and Mystery, any character | Profile complete, walkthrough pending, 480 coins, 0 XP, empty shelf, no friends |
+| **ACCT-NEW** | A fresh reader | Register `qa.<n>@demo.ikda.app`, username `qa.<n>` (digits and letters), password `Maya1234`, code `111111`; finish Welcome with name `Qa Tester`, Woman, age 21, Prefer not to say, genres Fantasy and Mystery & Thriller, any character | Profile complete, walkthrough pending, 480 coins, 0 XP, empty shelf, no friends |
 | **ACCT-NEW-TOURSEEN** | A fresh reader with the walkthrough already done | ACCT-NEW, then **Skip tour** (or `createReader({ profile, tourSeen: true })` in code) | As above, no walkthrough |
 | **ACCT-DEMO** | Jordan Lee | `demo@demo.ikda.app` / `Ikda-Demo-2026` / `111111`, after `npm run seed:demo -w server` | Level 4, 620 XP, 600 coins, 10 books (3 finished and reviewed: The Hobbit 5★, Pride and Prejudice 4★, Project Hail Mary 5★; 2 reading: Dune 45%, The Secret History 20%; 5 to be read: Fourth Wing, Piranesi, The Night Circus, Circe, Gone Girl), friends Emma Tan and Ayaan Rahman (online for 5 minutes after the seed), Sofia Lim (12 days away), Mei Chen (5 weeks away), a pending request from Noah Koh, chats with Emma and Ayaan, notes from Emma and Ayaan on the corkboard, two visits and a request in the bell, three saved quotes, a decorated room (13 placed pieces) and 5 pieces in the Inventory (Moon poster, Rocking chair, Calico cat, Navy curtains, Tartan bedding), tour seen |
 | **ACCT-PROG** | A programmatic reader | `createReader({ profile: {...}, tourSeen })` in `tests/e2e/supabaseUser.js` (needs the service-role key) | Isolated, deleted after the test |

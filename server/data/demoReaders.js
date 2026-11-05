@@ -23,6 +23,12 @@ export const DEMO_BOOKS = [
 export const NEIGHBOUR_ID = "00000000-0000-4000-8000-000000000208";
 export const NEIGHBOUR_USERNAME = "pip.ikda";
 
+// The made-up readers that were seeded into the shared Supabase project: Emma, Ayaan and the rest,
+// and the demo account's own reader. With Supabase on they are kept out of the town, the Cafe,
+// friend lists and search (services/readers.js), so only real readers and Pip show; the rows stay
+// in the database. Without Supabase (the e2e tests) the data below still serves the app.
+export const DEMO_ACCOUNT_ID = "00000000-0000-4000-8000-000000000301";
+
 // shelf statuses as user_books stores them
 const READ = "read";
 const READING = "reading";
@@ -41,7 +47,7 @@ export const DEMO_READERS = [
     neighborhood: "Bishan (demo)",
     lat: 1.351,
     lng: 103.849,
-    favoriteGenres: ["Fantasy", "Mystery", "Romance"],
+    favoriteGenres: ["Fantasy", "Mystery & Thriller", "Romance"],
     awayMinutes: MINUTE,
     character: { base: "maya", hair: "bun", hairColour: "chestnut", skin: "tone-4", top: "puffer", topColour: "red", bottom: "baggy", bottomColour: "slate", shoes: "trainers", shoeColour: "ink" },
     shelf: [["book-hobbit", READ], ["book-secret-history", READING], ["book-fourth-wing", WANT]],
@@ -61,7 +67,7 @@ export const DEMO_READERS = [
     neighborhood: "Jurong East (demo)",
     lat: 1.333,
     lng: 103.742,
-    favoriteGenres: ["Science Fiction", "Fantasy", "History"],
+    favoriteGenres: ["Sci-Fi", "Fantasy", "Historical Fiction"],
     awayMinutes: MINUTE,
     character: { base: "jay", hair: "twists", hairColour: "blonde", skin: "tone-9", top: "fuzzy", topColour: "mustard", bottom: "ripped", bottomColour: "denim", shoes: "skaters", shoeColour: "ink", eyes: "goggles" },
     shelf: [["book-dune", READING], ["book-hobbit", READ], ["book-project-hail", WANT]],
@@ -81,7 +87,7 @@ export const DEMO_READERS = [
     neighborhood: "Tampines (demo)",
     lat: 1.354,
     lng: 103.945,
-    favoriteGenres: ["Literary Fiction", "Poetry", "Mystery"],
+    favoriteGenres: ["Memoir", "Historical Fiction", "Mystery & Thriller"],
     awayMinutes: 12 * DAY,
     character: { base: "rosie", hair: "long", hairColour: "pink", skin: "tone-2", top: "pinafore", topColour: "pink", bottom: "skirt", bottomColour: "cream", shoes: "trainers", shoeColour: "pink" },
     shelf: [["book-pride", READING], ["book-secret-history", READ], ["book-little-women", WANT]],
@@ -101,7 +107,7 @@ export const DEMO_READERS = [
     neighborhood: "Woodlands (demo)",
     lat: 1.438,
     lng: 103.786,
-    favoriteGenres: ["Thriller", "History", "Science Fiction"],
+    favoriteGenres: ["Mystery & Thriller", "Historical Fiction", "Sci-Fi"],
     awayMinutes: 70 * DAY,
     character: { base: "nova", hair: "puff", hairColour: "ginger", skin: "tone-8", top: "puffer", topColour: "charcoal", bottom: "baggy", bottomColour: "charcoal", shoes: "trainers", shoeColour: "ink", neck: "scarf-grey" },
     shelf: [["book-dune", READ], ["book-sapiens", READING], ["book-gone-girl", WANT]],
@@ -121,7 +127,7 @@ export const DEMO_READERS = [
     neighborhood: "Clementi (demo)",
     lat: 1.315,
     lng: 103.765,
-    favoriteGenres: ["Mystery", "Romance", "Literary Fiction"],
+    favoriteGenres: ["Mystery & Thriller", "Romance", "Memoir"],
     awayMinutes: 35 * DAY,
     character: { base: "nova", hair: "twists", hairColour: "ash", skin: "tone-4", top: "puffer", topColour: "sky", bottom: "skirt", bottomColour: "olive", shoes: "trainers", shoeColour: "ink" },
     shelf: [["book-secret-history", READING], ["book-pride", READ], ["book-little-women", WANT]]
@@ -134,7 +140,7 @@ export const DEMO_READERS = [
     neighborhood: "Serangoon (demo)",
     lat: 1.35,
     lng: 103.873,
-    favoriteGenres: ["Fantasy", "Science Fiction", "Romance"],
+    favoriteGenres: ["Fantasy", "Sci-Fi", "Romance"],
     awayMinutes: 2 * DAY,
     character: { base: "rex", hair: "curly", hairColour: "sandy", skin: "tone-8", top: "fuzzy", topColour: "lilac", bottom: "baggy", bottomColour: "olive", shoes: "trainers", shoeColour: "grey", hairAccessory: "flower-pink", neck: "scarf-grey" },
     shelf: [["book-fourth-wing", READING], ["book-hobbit", READ], ["book-project-hail", WANT]]
@@ -147,7 +153,7 @@ export const DEMO_READERS = [
     neighborhood: "Pasir Ris (demo)",
     lat: 1.373,
     lng: 103.949,
-    favoriteGenres: ["History", "Thriller", "Literary Fiction"],
+    favoriteGenres: ["Historical Fiction", "Mystery & Thriller", "Memoir"],
     awayMinutes: 100 * DAY,
     character: { base: "jay", hair: "curly", hairColour: "auburn", skin: "tone-9", top: "pinafore", topColour: "mustard", bottom: "skirt", bottomColour: "grey", shoes: "skaters", shoeColour: "grey", neck: "scarf-grey" },
     shelf: [["book-sapiens", READING], ["book-gone-girl", READ], ["book-pride", WANT]]
@@ -163,7 +169,7 @@ export const DEMO_READERS = [
     neighborhood: "IKDA Town",
     lat: 1.3,
     lng: 103.85,
-    favoriteGenres: ["Fantasy", "Mystery", "Science Fiction", "Romance"],
+    favoriteGenres: ["Fantasy", "Mystery & Thriller", "Sci-Fi", "Romance"],
     awayMinutes: 0,
     character: { base: "rex", hair: "bun", hairColour: "auburn", skin: "tone-3", top: "fuzzy", topColour: "sage", bottom: "baggy", bottomColour: "slate", shoes: "trainers", shoeColour: "ink", neck: "scarf-grey" },
     shelf: [["book-hobbit", READ], ["book-project-hail", READING], ["book-pride", READ], ["book-secret-history", WANT]],
@@ -175,3 +181,9 @@ export const DEMO_READERS = [
     ])
   }
 ];
+
+// account ids of the made-up readers to hide (everyone above except Pip, and the demo account)
+export const SAMPLE_READER_IDS = new Set([
+  ...DEMO_READERS.filter((reader) => reader.id !== NEIGHBOUR_ID).map((reader) => reader.id),
+  DEMO_ACCOUNT_ID
+]);

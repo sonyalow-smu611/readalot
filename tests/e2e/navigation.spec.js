@@ -1,5 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 import { expect, mockQuote, mockWeather, roomReady, skipMoodCheckIn, test } from "./fixtures.js";
+import { resetProfile } from "./supabaseUser.js";
 
 // Going from page A to page B and pressing Back lands on page A again: the same tab, the same
 // pop-up, never a default page.
@@ -156,4 +157,44 @@ test("a page file that has gone missing (a tab left open across a redeploy) load
   await expect(page).toHaveURL(/\/salon/);
   await expect(page.getByRole("tab", { name: "Profile" })).toBeVisible();
   expect(failed).toBeGreaterThan(1);
+});
+
+test.describe("favourite genres", () => {
+  // a profile saved with an old name that has no bookcase (Classic) and one that does (Science Fiction)
+  test.beforeEach(async ({ reader }) => {
+    await resetProfile(reader.id, { name: "Gen", favouriteGenres: ["Fantasy", "Science Fiction", "Classic"] });
+  });
+
+  test("each saved genre is a button to its bookcase in the library, and Back returns to the profile", async ({ page }) => {
+    await page.route("**/api/books/search**", (route) => route.fulfill({ json: { books: [{ id: "g1", title: "Dune", authors: ["F"], coverUrl: "" }] } }));
+    await page.goto("/salon");
+    await page.getByRole("tab", { name: "Profile" }).click();
+    // the old name with no bookcase (Classic) isn't offered
+    await expect(page.getByRole("link", { name: "Fantasy bookcase in the library" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Sci-Fi bookcase in the library" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Classic/ })).toHaveCount(0);
+
+    await page.getByRole("link", { name: "Sci-Fi bookcase in the library" }).click();
+    await expect(page).toHaveURL(/\/library\?shelf=scifi/);
+    await expect(page.getByRole("dialog", { name: "Science Fiction" })).toBeVisible();
+
+    // closing the bookcase drops the link, so a reload doesn't open it again
+    await page.getByRole("button", { name: "Back to the hall" }).click();
+    await expect(page).toHaveURL(/\/library$/);
+
+    await page.getByRole("link", { name: /^Back/ }).click();
+    await expect(page).toHaveURL(/\/salon\?tab=profile/);
+  });
+
+  test("Edit profile offers only the library's genre bookcases", async ({ page }) => {
+    await page.goto("/salon");
+    await page.getByRole("tab", { name: "Profile" }).click();
+    await page.getByRole("button", { name: "Edit profile" }).click();
+    const group = page.getByRole("group", { name: "Favourite genres" });
+    await expect(group.getByRole("button")).toHaveText([
+      "Romance", "Romantasy", "Fantasy", "Mystery & Thriller", "Horror", "Sci-Fi", "Historical Fiction", "Young Adult", "Memoir", "Graphic Novels",
+    ]);
+    await expect(group.getByRole("button", { name: "Fantasy" })).toHaveAttribute("aria-pressed", "true");
+    await expect(group.getByRole("button", { name: "Sci-Fi" })).toHaveAttribute("aria-pressed", "true");
+  });
 });

@@ -162,7 +162,7 @@ await ok(
     display_name: DEMO.name,
     bio: "Fantasy, sci-fi and a good cup of tea. Demo account.",
     avatar: "🦊",
-    favorite_genres: ["Fantasy", "Science Fiction", "Mystery", "Literary Fiction"],
+    favorite_genres: ["Fantasy", "Sci-Fi", "Mystery & Thriller", "Memoir"],
     location_name: "Tampines, Singapore",
     location_lat: 1.354,
     location_lng: 103.945,

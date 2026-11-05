@@ -14,7 +14,8 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import StateView from '@/components/StateView.vue'
-import BookPreviewModal from '@/components/BookPreviewModal.vue'
+import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
+import { useBookPreview } from '@/composables/useBookPreview'
 import ShelfBookcase from '@/buildings/house/components/ShelfBookcase.vue'
 import ShelfSign from '@/buildings/house/components/ShelfSign.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
@@ -128,9 +129,14 @@ async function dropBook({ book, status }) {
   else dropNews.value = `${book.title} moved to ${shelfName(status)}`
 }
 
+// A visited reader's book opens as the library opens a book: Add to To be read, Where to get,
+// Leave/Read Reviews (the card's shelf is yours, not theirs).
+const { previewBook, saving, addedId, openPreview, closePreview, saveStatus, undoAdd } = useBookPreview()
+
 function openBook(book) {
   trigger = document.activeElement
   openedBook.value = book
+  if (visitingId) openPreview(book)
 }
 
 // Back to the book on the shelf it's on now (it may have moved shelf meanwhile), or to whatever
@@ -138,6 +144,7 @@ function openBook(book) {
 async function closeBook() {
   const { id } = openedBook.value ?? {}
   openedBook.value = null
+  closePreview()
   await nextTick()
   const spine = id && page.value?.querySelector(`[data-book-id="${CSS.escape(id)}"]`)
   ;(spine ?? (trigger?.isConnected ? trigger : null))?.focus()
@@ -149,8 +156,11 @@ function retry() {
 }
 
 onMounted(() => {
-  if (visitingId) loadVisiting()
-  else bookshelf.load()
+  if (visitingId) {
+    loadVisiting()
+    // your own shelf, so a visited reader's book says whether you have it
+    if (!bookshelf.books.length && !bookshelf.loading) bookshelf.load()
+  } else bookshelf.load()
 })
 </script>
 
@@ -263,14 +273,13 @@ onMounted(() => {
     </BuildingShell>
 
     <template v-if="openedBook">
-      <BookPreviewModal
+      <FoundBookPreview
         v-if="visiting"
-        :book="openedBook"
-        label="Book details"
-        close-label="Close book"
-        :tab="`On ${visiting.firstName}'s ${shelfName(openedBook.status)} shelf`"
-        :statuses="false"
-        :links-to-page="false"
+        :book="previewBook"
+        :adding="saving"
+        :undoable="addedId === previewBook?.id"
+        @add="saveStatus('want_to_read')"
+        @undo="undoAdd"
         @close="closeBook"
       />
       <BookDialog v-else :book="openedBook" @close="closeBook" />

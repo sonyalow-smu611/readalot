@@ -16,7 +16,6 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `components/PlacesMenu.vue` | The Places button in the room's top left corner and its list of places |
 | `notes.js` | Notes left on readers' notice boards, through the API (`/api/rooms/:id/notes`) |
 | `components/RoomStrip.vue` | The room itself: scrolling, the tappable spots, the shelf's name plates, books, furniture, cats. Takes the furniture and whether it can be edited from the page |
-| `components/VisitorBookDialog.vue` | A book off someone else's shelf in their room: what it is and which shelf, with nothing to change |
 | `components/NoteComposer.vue` | The Leave a note card |
 | `components/NoticeBoard.vue` | A notice board, a visited reader's or your own: the Quote of the Day, then the notes left there |
 | `components/ShelfBookcase.vue` | My Shelf's bookcase: the Library's bookcase look (frame, dark back) with exactly three shelves, one per reading status. Carries a book picked up off a shelf, lights the shelf under it, scrolls the page at its edges, and emits `move` when it's let go over another shelf |
