@@ -68,6 +68,7 @@ reviewed by a teammate in the pull request.
 | Furniture library and free placement | Wall art, plants, chairs, cats, curtains, bedding, room themes, lamp switches, placement rules, press-and-hold moving |
 | Visiting rooms and notes | Visit routes, read-only rooms, knocking door, notice board notes kept on the server |
 | Shelf sign and Spines/Covers switch | Gold pixel shelf sign, `SlideToggle` opening on Covers |
+| Picking a placed piece (Dylan) | Highlight with × and ✥ badges instead of Move/Remove buttons, `RemovePieceModal` confirm, tap elsewhere or Escape to let go; a picked piece drags at once, with a "Drag to move" line at the top |
 
 ## Library (Aasim)
 
