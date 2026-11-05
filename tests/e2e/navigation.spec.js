@@ -131,3 +131,14 @@ test("the Quote of the Day can be saved from the notice board, outside the mood 
   await expect(board.getByRole("button", { name: "Save quote" })).toBeVisible();
   expect(saved).toEqual([]);
 });
+
+test("Back from My Room goes to the town even after visiting its shelf", async ({ page }) => {
+  await page.goto("/");
+  await page.goto("/house");
+  await page.getByRole("link", { name: "Back to town" }).waitFor();
+  await page.goto("/house/shelf");
+  await page.getByRole("link", { name: "Back to room" }).click();
+  await expect(page).toHaveURL(/\/house$/);
+  await page.getByRole("link", { name: "Back to town" }).click();
+  await expect(page).toHaveURL(/\/$/);
+});

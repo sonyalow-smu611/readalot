@@ -35,9 +35,13 @@ const previous = computed(() => {
   void route.fullPath
   return typeof window.history.state?.back === 'string' ? window.history.state.back : null
 })
-// true when that page isn't the one this button would go to anyway
+// true when that page is somewhere else in the app: not the page this button would go to anyway, and
+// not another page of this same building (My Room and its shelf, for one, link to each other, so
+// Back from the room would go round in circles between them)
+const areaOf = (path) => pathOf(path).split('/')[1] ?? ''
 const returns = computed(() => {
   if (!previous.value || pathOf(previous.value) === pathOf(route.path)) return false
+  if (areaOf(previous.value) === areaOf(route.path)) return false
   return pathOf(previous.value) !== pathOf(router.resolve(props.back).fullPath)
 })
 
