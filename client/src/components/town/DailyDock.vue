@@ -24,6 +24,10 @@ const TITLE_BAR_BUTTON = '.app-header__card a.app-header__icon'
 const UNDER_BACK = '.strip__menu, .cafe__count'
 // pages whose content starts right under the back button
 const BESIDE_BACK = ['search', 'reader-room']
+// ...and on a phone, the library: its buttons share one line there (its search bar opens below)
+const BESIDE_BACK_ON_PHONE = ['library']
+const PHONE = '(max-width: 719.98px)'
+const besideBackOnPhone = () => BESIDE_BACK_ON_PHONE.includes(route.name) && window.matchMedia(PHONE).matches
 // the town's Daily button sits this far in, for a page with nothing in its corner
 const EDGE = { top: 14, left: 17 }
 const GAP = 8
@@ -96,7 +100,7 @@ function findSpot(frame) {
   if (titleBarButton) return { top: titleBarButton.top, right: frame.offsetWidth - titleBarButton.left + GAP }
   const back = find(BACK)
   if (!back) return EDGE
-  if (BESIDE_BACK.includes(route.name)) return { top: back.top, left: back.right + GAP }
+  if (BESIDE_BACK.includes(route.name) || besideBackOnPhone()) return { top: back.top, left: back.right + GAP }
   const below = [...document.querySelectorAll(UNDER_BACK)].map((el) => layoutBox(el, frame).bottom)
   return { top: Math.max(EDGE.top, Math.max(back.bottom, ...below) + GAP), left: back.left }
 }
