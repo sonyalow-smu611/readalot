@@ -49,29 +49,20 @@
             </figure>
 
             <div class="result__keep">
-              <button
-                class="btn btn-secondary btn-sm"
-                type="button"
-                :aria-pressed="Boolean(savedId)"
-                :disabled="saving"
-                @click="toggleSave"
-              >
-                {{ saving ? "Saving…" : savedId ? "Saved" : "Save quote" }}
-              </button>
-              <RouterLink v-if="savedId" class="result__keep-link" to="/salon#saved-quotes">See saved quotes</RouterLink>
+              <SaveQuoteButton :quote="quoteToSave" />
             </div>
-            <p v-if="saveError" class="result__error" role="alert">{{ saveError }}</p>
 
             <p v-if="addError" class="result__error" role="alert">{{ addError }}</p>
-            <button
-              class="btn btn-primary result__action"
-              type="button"
-              :disabled="adding || added"
-              @click="add"
-            >
-              {{ added ? "Added to To Be Read" : adding ? "Adding…" : "Add to To Be Read" }}
+            <div v-if="added" class="result__added">
+              <span class="result__added-text" role="status"><span aria-hidden="true">✓</span> Added to To Be Read</span>
+              <button class="btn btn-secondary btn-sm" type="button" :disabled="adding" @click="undo">
+                {{ adding ? "Undoing…" : "Undo" }}
+              </button>
+            </div>
+            <button v-else class="btn btn-success result__action" type="button" :disabled="adding" @click="add">
+              {{ adding ? "Adding…" : "Add to To Be Read" }}
             </button>
-            <RouterLink class="btn btn-outline-primary result__action" :to="`/books/${data.book.id}`">
+            <RouterLink class="btn btn-outline-primary result__action" :to="`/books/${data.book.id}`" @click="$emit('leave', { mood, data })">
               Open book page
             </RouterLink>
             <button class="btn btn-outline-primary result__action" type="button" @click="load">
@@ -80,86 +71,70 @@
           </template>
         </StateView>
 
-        <button class="btn btn-link result__close" type="button" @click="$emit('close')">
-          Close <span aria-hidden="true">×</span>
-        </button>
+        <button class="btn btn-secondary result__close" type="button" @click="$emit('close')">Close</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useAsync } from "../../composables/useAsync.js";
-import { getRecommendations, getSavedQuotes, saveQuote, unsaveQuote } from "../../services/api.js";
+import { getRecommendations } from "../../services/api.js";
 import { useBookshelfStore } from "../../stores/bookshelf.js";
 import BookCover from "../BookCover.vue";
+import SaveQuoteButton from "../SaveQuoteButton.vue";
 import StateView from "../StateView.vue";
 import MoodSteps from "./MoodSteps.vue";
 
 const props = defineProps({
   // calm | low | stressed | excited
-  mood: { type: String, required: true }
+  mood: { type: String, required: true },
+  // the recommendation this card showed when the reader left for its book page: coming back shows
+  // the same one rather than asking again
+  restored: { type: Object, default: null }
 });
-defineEmits(["close"]);
+defineEmits(["close", "leave"]);
 
 const bookshelf = useBookshelfStore();
 const dialog = ref(null);
 const adding = ref(false);
 const added = ref(false);
 const addError = ref("");
-// the saved quote's id while the quote on screen is saved
-const savedId = ref(null);
-const saving = ref(false);
-const saveError = ref("");
-
 // asking again leaves out the work on screen, so "another" is always a different book
 const { data, error, loading, run } = useAsync(() => getRecommendations(props.mood, data.value?.workId));
+
+// The quote on screen, in the shape the saved quotes keep it.
+const quoteToSave = computed(() => {
+  if (!data.value) return null;
+  const { quote, book, mood } = data.value;
+  return {
+    quoteText: quote.quoteText,
+    author: quote.author,
+    work: quote.work || book.title,
+    bookId: book.id,
+    sourceUrl: quote.sourceUrl || null,
+    mood
+  };
+});
 
 async function load() {
   added.value = false;
   addError.value = "";
-  savedId.value = null;
-  saveError.value = "";
   await run().catch(() => {});
-  if (data.value) findSaved(data.value);
 }
 
-// a quote saved before shows as Saved; if the list can't load, the button just offers to save
-async function findSaved(shown) {
+// Takes the book off To Be Read again.
+async function undo() {
+  adding.value = true;
+  addError.value = "";
   try {
-    const { quotes } = await getSavedQuotes();
-    if (data.value !== shown) return;
-    const match = quotes.find((q) => q.quoteText === shown.quote.quoteText && (q.bookId || "") === shown.book.id);
-    savedId.value = match?.id ?? null;
+    await bookshelf.removeBook(data.value.book.id);
+    added.value = false;
   } catch {
-    // leave the button as Save quote
-  }
-}
-
-async function toggleSave() {
-  saving.value = true;
-  saveError.value = "";
-  try {
-    if (savedId.value) {
-      await unsaveQuote(savedId.value);
-      savedId.value = null;
-    } else {
-      const { quote, book, mood } = data.value;
-      const saved = await saveQuote({
-        quoteText: quote.quoteText,
-        author: quote.author,
-        work: quote.work || book.title,
-        bookId: book.id,
-        sourceUrl: quote.sourceUrl || null,
-        mood
-      });
-      savedId.value = saved.id;
-    }
-  } catch {
-    saveError.value = savedId.value ? "Couldn't remove this quote. Try again." : "Couldn't save this quote. Try again.";
+    addError.value = "Couldn't undo this. Try again.";
   } finally {
-    saving.value = false;
+    adding.value = false;
   }
 }
 
@@ -178,7 +153,10 @@ async function add() {
 
 onMounted(() => {
   dialog.value.focus();
-  load();
+  if (props.restored) {
+    data.value = props.restored.data;
+    // the book may be on To Be Read already: Undo is only for one added from this card
+  } else load();
 });
 </script>
 
@@ -263,9 +241,17 @@ onMounted(() => {
   margin: -6px 0 16px;
 }
 
-.result__keep-link {
-  font-size: 13px;
-  font-weight: 700;
+.result__added {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  border: var(--px-border);
+  background: var(--px-paper-shade);
+  font-weight: 800;
 }
 
 .result__action {

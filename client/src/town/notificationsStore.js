@@ -1,14 +1,15 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The town's notifications: friend requests, friends coming online and visits to your room, each
-// of which shows once as a pop-up (TownView) and stays in the bell's list. The town calls check()
-// after every refresh, so they arrive while you're in town and catch up when you come back.
-// The list is built from Supabase each time: requests waiting for you, visits in the last week, and
-// friends who came online this visit. What's read and what's cleared are two times saved on your
+// The town's notifications: friend requests (waiting for you, sent by you, accepted), messages,
+// friends coming online and visits to your room. They wait in the bell's list, red until you've
+// looked, and nothing pops up on its own: you open the bell, then a notification, to go to it. The
+// town calls check() after every refresh, so they arrive while you're in town and catch up when you
+// come back. The list is built from Supabase each time: requests, messages and visits in the last
+// week, and friends who came online this visit. What's read and what's cleared are two times saved on your
 // profile (database/notifications_seen.sql), so every device agrees.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { loadNotificationTimes, saveNotificationTimes } from '@/services/auth.js'
-import { getRoomVisits } from '@/services/api.js'
+import { getActivity, getRoomVisits } from '@/services/api.js'
 import { presence } from '@/town/friends.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
 
@@ -20,16 +21,16 @@ const time = (at) => Date.parse(at) || 0
 export const useNotificationsStore = defineStore('notifications', () => {
   const nearby = useNearbyStore()
   const readerId = ref('')
-  // [{ id, kind: 'request' | 'online' | 'visit', text, at, read, requestId?, friendId?, visitorId? }]
+  // [{ id, kind: 'request' | 'sent' | 'accepted' | 'message' | 'online' | 'visit', text, at, read,
+  // requestId?, friendId?, readerId?, visitorId? }]
   const items = ref([])
   // anything at or before readAt is read; anything at or before clearedAt is gone from the list
   const readAt = ref('')
   const clearedAt = ref('')
   let loaded = Promise.resolve()
   let visits = []
+  let activity = []
   let online = []
-  // what has popped up this visit, so nothing pops up twice
-  let popped = new Set()
   // Coming online counts once a visit: "online" is seen in town in the last 5 minutes, so someone
   // moving between buildings would otherwise come online again and again.
   let greeted = new Set()
@@ -58,8 +59,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
     readAt.value = ''
     clearedAt.value = ''
     visits = []
+    activity = []
     online = []
-    popped = new Set()
     greeted = new Set()
     knownFriends = null
     loaded = loadTimes(id)
@@ -91,6 +92,35 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }))
   }
 
+  // Requests you sent, ones that were accepted, and your conversations.
+  async function recentActivity() {
+    const since = new Date(Math.max(Date.now() - WEEK, time(clearedAt.value))).toISOString()
+    const found = await getActivity(since)
+    return [
+      ...(found.sent ?? []).map(({ id, at, reader }) => ({
+        id: `sent-${id}`,
+        kind: 'sent',
+        text: `You sent ${reader.displayName} a friend request`,
+        at,
+        readerId: reader.id,
+      })),
+      ...(found.accepted ?? []).map(({ id, at, reader }) => ({
+        id: `accepted-${id}`,
+        kind: 'accepted',
+        text: `${reader.displayName} accepted your friend request`,
+        at,
+        readerId: reader.id,
+      })),
+      ...(found.messages ?? []).map(({ id, at, direction, reader }) => ({
+        id: `message-${id}`,
+        kind: 'message',
+        text: direction === 'sent' ? `You sent ${reader.displayName} a message` : `${reader.displayName} sent you a message`,
+        at,
+        readerId: reader.id,
+      })),
+    ]
+  }
+
   async function recentVisits() {
     const since = new Date(Math.max(Date.now() - WEEK, time(clearedAt.value))).toISOString()
     const { visits: found } = await getRoomVisits(since)
@@ -104,24 +134,29 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function build() {
-    items.value = [...requests(), ...online, ...visits]
+    const friendIds = new Set(nearby.friends.map((friend) => friend.id))
+    items.value = [...requests(), ...activity, ...online, ...visits]
       .filter((item) => time(item.at) > time(clearedAt.value))
+      // someone you've since removed isn't news
+      .filter((item) => item.kind !== 'online' || friendIds.has(item.friendId))
       .sort((a, b) => time(b.at) - time(a.at))
       .slice(0, KEEP)
       .map((item) => ({ ...item, read: time(item.at) <= time(readAt.value) }))
   }
 
-  // Rebuilds the list and returns what's new since the last look. A failed look at the visits
-  // keeps the ones already found until the next check.
+  // Rebuilds the list. A failed look at the visits or the activity keeps the ones already found
+  // until the next check.
   async function check() {
-    if (!readerId.value) return []
+    if (!readerId.value) return
     await loaded
-    visits = await recentVisits().catch(() => visits)
+    ;[visits, activity] = await Promise.all([recentVisits().catch(() => visits), recentActivity().catch(() => activity)])
     online = [...newlyOnline(), ...online].slice(0, KEEP)
     build()
-    const fresh = items.value.filter((item) => !item.read && !popped.has(item.id))
-    for (const item of fresh) popped.add(item.id)
-    return fresh
+  }
+
+  // The list as it is now, without asking the server: after the reader answers a request, say.
+  function rebuild() {
+    build()
   }
 
   function markRead() {
@@ -134,9 +169,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
   function clear() {
     clearedAt.value = new Date().toISOString()
     online = []
+    activity = []
     build()
     saveTimes({ clearedAt: clearedAt.value })
   }
 
-  return { items, unread, start, check, markRead, clear }
+  return { items, unread, start, check, rebuild, markRead, clear }
 })

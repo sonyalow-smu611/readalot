@@ -10,7 +10,7 @@
      .btn-secondary, .btn-outline-*     Secondary: Cancel, Close, Back and the other choices
      .btn-accent                        Accent: the one fun action (Shop, Buy)
      .btn-danger                        Danger: taking something away
-     .btn-link                          Quiet: a small text action inside a card
+     .btn-link                          Quiet: a small paper button inside a card, never underlined
      .btn-icon                          Icon: a square button that is only an icon
      .btn-chip                          Chip: a toggle or filter; pressed or selected fills in
    .btn-sm is a little tighter, still 44 px tall.
@@ -147,6 +147,7 @@
 .btn-outline-dark,
 .btn-outline-success,
 .btn-outline-danger,
+.btn-link,
 .btn-light {
   --px-fill: var(--px-paper);
 }
@@ -168,8 +169,31 @@
   --px-hover: #8a3a2f;
 }
 
-/* Quiet: no fill or outline, an underlined dark label */
-.btn-link {
+/* Quiet: a small text action inside a card. Never an underlined link: it is a paper button like
+   Secondary, so every way to move on looks like something you can press. */
+.btn.btn-link:not(.btn-icon) {
+  --bs-btn-bg: var(--px-fill);
+  --bs-btn-color: var(--px-label);
+  --bs-btn-border-color: var(--px-outline);
+  --bs-btn-hover-bg: var(--px-hover);
+  --bs-btn-hover-color: var(--px-label);
+  --bs-btn-hover-border-color: var(--px-outline);
+  --bs-btn-active-bg: var(--px-fill);
+  --bs-btn-active-color: var(--px-label);
+  --bs-btn-active-border-color: var(--px-outline);
+  --bs-btn-disabled-bg: var(--px-paper-shade);
+  --bs-btn-disabled-color: var(--room-slate, #6e6a62);
+  --bs-btn-disabled-border-color: var(--px-outline);
+
+  text-decoration: none;
+  box-shadow:
+    inset 0 2px 0 var(--px-light),
+    inset 0 -2px 0 var(--px-dark),
+    var(--px-shadow);
+}
+
+/* an icon on its own (the password's eye) stays quiet: no fill, no outline */
+.btn.btn-link.btn-icon {
   --bs-btn-bg: transparent;
   --bs-btn-border-color: transparent;
   --bs-btn-hover-bg: transparent;
@@ -184,14 +208,19 @@
 
   border: 0;
   box-shadow: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
-.btn-link:active:not(:disabled),
-.btn-link:focus-visible {
+.btn.btn-link.btn-icon:active:not(:disabled),
+.btn.btn-link.btn-icon:focus-visible {
   transform: none;
   box-shadow: none;
+}
+
+/* No underlines anywhere: a link that goes somewhere is dressed as a button instead */
+a,
+a:hover {
+  text-decoration: none;
 }
 
 /* Icon: square, the icon in the middle */

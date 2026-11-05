@@ -60,7 +60,7 @@
             :aria-controls="reviewsId"
             @click="reviewsShown = !reviewsShown"
           >
-            {{ reviewsShown ? "Hide reviews" : reviewsLoading ? "Read reviews" : `Read reviews (${reviews.length})` }}
+            {{ reviewsShown ? "Hide reviews" : reviewsLoading ? "Leave/Read Reviews" : `Leave/Read Reviews (${reviews.length})` }}
           </button>
           <BookReviews
             v-show="!collapseReviews || reviewsShown"
@@ -110,7 +110,7 @@ const props = defineProps({
   statuses: { type: Boolean, default: true },
   // Open full book page; off for books that have no page (the demo readers')
   linksToPage: { type: Boolean, default: true },
-  // the reviews wait behind a "Read reviews" button, so what the page put in the slot comes first
+  // the reviews wait behind a "Leave/Read Reviews" button, so what the page put in the slot comes first
   collapseReviews: { type: Boolean, default: false }
 });
 defineEmits(["close", "status"]);

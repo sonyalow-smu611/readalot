@@ -10,7 +10,9 @@ import { useRoute, useRouter } from 'vue-router'
 import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
 import { useBookPreview } from '@/composables/useBookPreview'
 import { searchBooks } from '@/services/api.js'
+import { clearSearches, loadSearches, rememberSearch } from '@/lib/searchHistory.js'
 import { useBookshelfStore } from '@/stores/bookshelf'
+import { useUserStore } from '@/stores/user'
 import { HALL_CASE } from './categories.js'
 import BookShelves from './components/BookShelves.vue'
 import { iconUrl } from './hall/icons.js'
@@ -25,7 +27,8 @@ const MODES = [
 const route = useRoute()
 const router = useRouter()
 const bookshelf = useBookshelfStore()
-const { previewBook, saving, openPreview, closePreview, saveStatus } = useBookPreview()
+const user = useUserStore()
+const { previewBook, saving, addedId, openPreview, closePreview, saveStatus, undoAdd } = useBookPreview()
 
 const query = ref('')
 const books = ref([])
@@ -34,6 +37,8 @@ const error = ref('')
 const searched = ref('')
 const mode = ref('covers')
 const input = ref(null)
+// the searches made before, newest first
+const history = ref(loadSearches(user.profile.id))
 
 const icons = { magnifier: iconUrl('magnifier'), bell: iconUrl('bell') }
 
@@ -49,6 +54,7 @@ async function runSearch(text) {
     return
   }
 
+  history.value = rememberSearch(user.profile.id, text)
   loading.value = true
   try {
     const result = await searchBooks(text, RESULTS)
@@ -78,6 +84,11 @@ function onSubmit() {
   // the same words again: search again in place (e.g. after an error) instead of adding history
   if (text === searched.value) return runSearch(text)
   router.push({ name: 'search', query: { q: text } })
+}
+
+function searchAgain(text) {
+  query.value = text
+  onSubmit()
 }
 
 // back where the reader came from; opened straight from a link, back to the library
@@ -144,6 +155,15 @@ onMounted(() => {
         <template v-else-if="!searched">
           <h2 class="search__card-title">Ask the librarian</h2>
           <p>Search by title or author, like “Pachinko” or “Sally Rooney”.</p>
+          <section v-if="history.length" class="search__history" aria-label="Recent searches">
+            <h3 class="search__history-title">Recent searches</h3>
+            <div class="search__history-list">
+              <button v-for="text in history" :key="text" type="button" class="btn btn-chip btn-sm" @click="searchAgain(text)">
+                {{ text }}
+              </button>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" @click="history = clearSearches(user.profile.id)">Clear history</button>
+          </section>
         </template>
         <template v-else>
           <h2 class="search__card-title">No books found</h2>
@@ -165,7 +185,14 @@ onMounted(() => {
       </template>
     </div>
 
-    <FoundBookPreview :book="previewBook" :adding="saving" @add="saveStatus('want_to_read')" @close="closePreview" />
+    <FoundBookPreview
+      :book="previewBook"
+      :adding="saving"
+      :undoable="addedId === previewBook?.id"
+      @add="saveStatus('want_to_read')"
+      @undo="undoAdd"
+      @close="closePreview"
+    />
   </section>
 </template>
 
@@ -319,5 +346,26 @@ onMounted(() => {
 
 .search__card p:last-child {
   margin-bottom: 0;
+}
+
+.search__history {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.search__history-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.search__history-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
 }
 </style>

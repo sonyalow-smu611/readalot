@@ -22,6 +22,8 @@ export const useNearbyStore = defineStore('nearby', () => {
   const incoming = ref([])
   // reader ids you've asked
   const outgoing = ref([])
+  // [{ requestId, reader, at }]: the requests you've sent that are still waiting
+  const sent = ref([])
   const nearby = ref([])
 
   const user = useUserStore()
@@ -34,6 +36,7 @@ export const useNearbyStore = defineStore('nearby', () => {
     friends.value = data.friends
     incoming.value = data.incoming
     outgoing.value = data.outgoing
+    sent.value = data.sent ?? []
   }
 
   // The town's refresh. Throws when it can't reach the server; what's on screen stays.
@@ -88,13 +91,32 @@ export const useNearbyStore = defineStore('nearby', () => {
     await loadFriends()
   }
 
+  // Goes from the map and the lists straight away, and comes back if it didn't save.
+  function forget(readerIds) {
+    const gone = new Set(readerIds)
+    const before = { friends: friends.value, nearby: nearby.value }
+    friends.value = friends.value.filter((reader) => !gone.has(reader.id))
+    nearby.value = nearby.value.filter((reader) => !gone.has(reader.id))
+    return () => {
+      friends.value = before.friends
+      nearby.value = before.nearby
+    }
+  }
+
   async function removeFriend(readerId) {
-    await removeFriendship(readerId)
+    const undo = forget([readerId])
+    try {
+      await removeFriendship(readerId)
+    } catch (err) {
+      undo()
+      throw err
+    }
     await loadFriends()
   }
 
   // Removes several at once. Throws saying how many didn't go; the rest are still removed.
   async function removeFriends(readerIds) {
+    forget(readerIds)
     const results = await Promise.allSettled(readerIds.map((id) => removeFriendship(id)))
     await loadFriends()
     const failed = results.filter((result) => result.status === 'rejected').length
@@ -106,8 +128,9 @@ export const useNearbyStore = defineStore('nearby', () => {
     friends.value = []
     incoming.value = []
     outgoing.value = []
+    sent.value = []
     nearby.value = []
   }
 
-  return { friends, incoming, outgoing, nearby, houses, minor, loadFriends, refresh, setPublic, addFriend, addByUsername, answer, removeFriend, removeFriends, reset }
+  return { friends, incoming, outgoing, sent, nearby, houses, minor, loadFriends, refresh, setPublic, addFriend, addByUsername, answer, removeFriend, removeFriends, reset }
 })

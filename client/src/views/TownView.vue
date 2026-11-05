@@ -21,7 +21,6 @@ import { useNotificationsStore } from '@/town/notificationsStore.js'
 import { lastPlace, rememberPlace } from '@/town/lastPlace.js'
 import { yourUsername } from '@/town/username.js'
 import { MAX_FREEZES } from '@/town/daily.js'
-import { useToast } from '@/composables/useToast'
 import { fetchWeather } from '@/services/weather.js'
 import TownMap from '@/components/town/TownMap.vue'
 import TownHud from '@/components/town/TownHud.vue'
@@ -40,9 +39,8 @@ import LocationPrompt from '@/components/town/LocationPrompt.vue'
 import NotificationsPanel from '@/components/town/NotificationsPanel.vue'
 
 const WEATHER_EVERY = 10 * 60 * 1000
-const NEARBY_EVERY = 30 * 1000
+const NEARBY_EVERY = 10 * 1000
 const NOTICE_FOR = 5000
-const POP_UP_FOR = 5000
 const PREVIEW_DAYS = import.meta.env.DEV
 
 const router = useRouter()
@@ -51,7 +49,6 @@ const progress = useProgressStore()
 const daily = useDailyStore()
 const nearby = useNearbyStore()
 const notifications = useNotificationsStore()
-const toast = useToast()
 const { profile, guide } = storeToRefs(user)
 
 const ready = ref(false)
@@ -154,17 +151,10 @@ async function refreshNearby() {
   if (document.hidden) return
   try {
     await nearby.refresh()
-    popUp(await notifications.check())
+    await notifications.check()
   } catch {
     // the town still works without it: everyone stays as they were until the next refresh
   }
-}
-
-// New notifications show for a moment; they wait in the bell during the tour or on the way in.
-function popUp(fresh) {
-  if (!fresh.length || guide.value || entering.value) return
-  const message = fresh.length === 1 ? fresh[0].text : `${fresh.length} new notifications`
-  toast.show(message, POP_UP_FOR, { label: 'View', run: openNotifications })
 }
 
 async function choosePublic(on) {
@@ -206,6 +196,7 @@ async function addByUsername(username) {
       friends: [`You and ${username} are now friends.`, true],
       asked: [`Friend request sent to ${username}.`, true],
     }[outcome]
+    notifications.check().catch(() => {})
     addStatus.value = { busy: false, ok: said[1], message: said[0] }
   } catch (err) {
     const message = err.message === 'Reader not found' ? `Couldn't find ${username}. Check the spelling.` : err.message
@@ -216,6 +207,7 @@ async function addByUsername(username) {
 async function answerRequest(requestId, accept) {
   try {
     await nearby.answer(requestId, accept)
+    notifications.rebuild()
   } catch (err) {
     showNotice(err.message)
   }
@@ -312,6 +304,8 @@ watch(notificationsOpen, (open) => {
 })
 watch(friendsOpen, (open) => {
   if (!open) addStatus.value = null
+  // opening the list looks for new requests straight away rather than at the next refresh
+  else nearby.loadFriends().catch(() => {})
 })
 
 function select(place) {
@@ -358,12 +352,18 @@ function openNotifications() {
 // Goes to what the notification is about.
 function openNotification(item) {
   notificationsOpen.value = false
-  if (item.kind === 'request') toggleFriends()
-  else if (item.kind === 'visit') router.push({ name: 'reader-room', params: { id: item.visitorId } })
-  else {
-    const friend = friendsInTown.value.find(({ id }) => id === item.friendId)
+  const friend = friendsInTown.value.find(({ id }) => id === (item.friendId ?? item.readerId))
+  if (item.kind === 'request' || item.kind === 'sent') {
+    closePanels()
+    friendsOpen.value = true
+  } else if (item.kind === 'message') {
+    if (friend) sayHi(friend)
+    else router.push({ name: 'reader-room', params: { id: item.readerId } })
+  } else if (item.kind === 'accepted') {
     if (friend) findFriend(friend)
-  }
+    else router.push({ name: 'reader-room', params: { id: item.readerId } })
+  } else if (item.kind === 'visit') router.push({ name: 'reader-room', params: { id: item.visitorId } })
+  else if (friend) findFriend(friend)
 }
 
 function toggleDaily() {
@@ -523,6 +523,7 @@ function goInside(place) {
     <FriendsList
       :friends="friendsInTown"
       :requests="nearby.incoming"
+      :sent="nearby.sent"
       :nearby="nearbyInTown"
       :open="friendsOpen"
       :add-status="addStatus"

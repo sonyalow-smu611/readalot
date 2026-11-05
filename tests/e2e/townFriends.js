@@ -19,16 +19,19 @@ export const friend = (id, displayName, spot, { away = 0, reading = null } = {})
 export const EMMA = friend("emma.reads", "Emma Tan", 0, { reading: "The Hobbit" });
 export const NOAH = friend("noah.bookmarks", "Noah Lim", 1, { away: 600 });
 
-// Answers the town's calls from `town`: { friends, incoming, outgoing, visits }, which a test can
-// change as it goes. `town.asked` collects every username a friend request was sent to, and
+// Answers the town's calls from `town`: { friends, incoming, outgoing, sent, visits, activity }, which
+// a test can change as it goes (`activity` is { sent, accepted, messages } for the bell). `town.asked` collects every username a friend request was sent to, and
 // `town.removed` every friend removed.
 export async function mockFriends(page, start = {}) {
-  const town = { friends: [], incoming: [], outgoing: [], visits: [], asked: [], removed: [], ...start };
+  const town = { friends: [], incoming: [], outgoing: [], sent: [], visits: [], activity: {}, asked: [], removed: [], ...start };
   await page.route("**/api/nearby", (route) => route.fulfill({ json: { readers: [] } }));
   await page.route("**/api/friends", (route) =>
-    route.fulfill({ json: { friends: town.friends, incoming: town.incoming, outgoing: town.outgoing } })
+    route.fulfill({ json: { friends: town.friends, incoming: town.incoming, outgoing: town.outgoing, sent: town.sent } })
   );
   await page.route("**/api/notifications/visits*", (route) => route.fulfill({ json: { visits: town.visits } }));
+  await page.route("**/api/notifications/activity*", (route) =>
+    route.fulfill({ json: { sent: [], accepted: [], messages: [], ...town.activity } })
+  );
   await page.route("**/api/friends/requests", (route) => {
     const { readerId } = route.request().postDataJSON();
     town.asked.push(readerId);

@@ -233,7 +233,7 @@ The reader's character has a glow and a green diamond.
 - **Weather chip** (top left): `Weather: <sky> · <temp>°, live. Change the sky`. Each tap steps through
   previews (day, night, rain, rainy night, then live again).
 - **Daily** (flame, left): opens the Daily panel (A8a). The panel opens by itself the first time each day.
-- **Bell** (`Notifications, N new`): friend requests, friends coming online, visits to your room; **Clear all**.
+- **Bell** (`Notifications, N new`, with a red badge while something is unread): friend requests (waiting, sent by you, accepted), messages you sent or received, friends coming online, visits to your room; **Clear all**. Nothing pops up by itself: open the bell and press a notification to go to it (friends list, chat, the friend on the map, or the visitor's profile).
 - **Places** (`Places in town`): jumps to a building.
 - **Friends** (`Friends, N online, M friend requests`): the friends panel (A14).
 - **Public / private chip** (under Daily): the same setting as the Salon's switch (A17).
@@ -277,7 +277,7 @@ arrow keys) or jumps along with **Places** (Window, Chair, Bookshelf, Clock, Cor
 - **Book card** (a book of your own): cover, title, author, rating, synopsis, the next-step button
   (**Start reading** on a To-be-read book, **Mark as finished** on a Reading book, nothing on a Finished
   one), a **progress slider** while reading, **Where to get** while still to be read, **Remove from shelf**
-  (asks first, then an **Undo** toast), **Read reviews** (with the rating and review form, A13),
+  (asks first, then an **Undo** toast), **Leave/Read Reviews** (with the rating and review form, A13),
   **Open full book page**, and **Close book** (the book flies back).
 - **Room menu** (the button at the bottom right): **Mood check-in**, **Shop**, **Inventory** (A10, A11).
 - **Coins** show at the top right.
@@ -295,8 +295,8 @@ shift-wheel and arrow keys. Empty shelf: **No books yet** with **Discover books*
 (Settled, unhurried), **Low** (Could use a lift), **Stressed** (A lot on my mind) or **Excited** (Full of
 energy), press **Continue** (disabled until one is chosen), or **Skip for today**. The result card
 **A book for your mood** shows a book with a quote from it (Wikiquote, then api-ninjas, then a stored line)
-and the buttons **Save quote** (becomes **Saved**; stored in `saved_mood_quotes`, shown in the Salon),
-**Add to To Be Read** (becomes **Added to To Be Read**), **Show another recommendation** (a different book),
+and the buttons **Save quote** (becomes **Unsave**; stored in `saved_mood_quotes`, shown in the Salon),
+**Add to To Be Read** (becomes **Added to To Be Read** with **Undo**), **Show another recommendation** (a different book),
 open the book's page, and close.
 **Quote of the Day** (the corkboard) shows one quote, the same for everyone all day, changing at midnight Singapore time.
 
@@ -323,7 +323,7 @@ Romantasy, Fantasy, Mystery & Thriller, Horror, Sci-Fi, Historical Fiction, Youn
 Novels. The **Places** menu (bottom right, "Places in the library") has two groups: *Around the library* and *Shelves*.
 - **Opening a bookcase** shows its books; **Spines / Covers** switches the look; a book slides out on hover.
 - **Book card** (a found book): cover, title, author, rating, synopsis, **Add to To be read** (becomes a shelf
-  label; after adding, **See it in My Room**), **Where to get** (shops, downloads, borrowing), **Read reviews**,
+  label; after adding, **See it in my room** (a button, with **Undo** beside it for a book just added)), **Where to get** (shops, downloads, borrowing), **Leave/Read Reviews**,
   **Open full book page**.
 - **Help desk / search** (`/search?q=`): a search bar (**Search books or authors**); results stand in a bookcase;
   Back steps through earlier searches; the query survives a reload; no results shows a clean empty
@@ -333,9 +333,9 @@ Novels. The **Places** menu (bottom right, "Places in the library") has two grou
 
 ## A13. Books, reviews and ratings
 
-A book's card or full page (`/books/:id`) shows details and reviews. **Read reviews (N)** expands the
+A book's card or full page (`/books/:id`) shows details and reviews. **Leave/Read Reviews (N)** expands the
 list and, for the signed-in reader, **Rate this book** (five stars: ★ 1 star … ★ 5 stars), **Your review
-(optional)** (up to 500 characters, with a counter) and **Save review**. After saving: the reader's review
+(optional)** (up to 500 characters, with a counter) and **Post Review**. After saving: the reader's review
 with **Edit your review** and **Delete your review**, and the average ("4.7 ★ from 3 readers"). A review is
 one per reader per book (`reviews`). Writing one earns 40 XP (once per book).
 
@@ -352,7 +352,9 @@ accepted straight away. Errors: `Couldn't find <name>. Check the spelling.`, alr
 **Chat** (a **Reader messages** box): the conversation, a **Your message** box, **SEND →**, **Minimise chat**,
 **Close chat with <name>**; 1 to 1000 characters; one message per 1.5 seconds per reader; private to the two readers. Sending can earn 5 XP.
 **Bell:** entries such as "Emma Tan visited your room 46 minutes ago", "Noah Koh sent you a friend request",
-"<friend> is online"; the count is stored (`notifications_read_at`, `notifications_cleared_at`) so devices agree.
+"<friend> is online", "You sent <name> a friend request", "<name> accepted your friend request", "You sent <name> a message"
+(or "<name> sent you a message"). The Friends panel also lists **Waiting for an answer** for requests you sent.
+Removing a friend takes them off the map and out of the list straight away. The count is stored (`notifications_read_at`, `notifications_cleared_at`) so devices agree.
 
 ## A15. Cafe, profiles and visiting rooms
 
@@ -530,9 +532,9 @@ Use these exact names. (Labels are from the code; a handful were also seen in a 
 - **Friends:** Add friend, Remove friends, Friend requests, Accept, Decline, Your friends, Chat with <name>, Readers nearby, Friend's username, Send request, Remove friend, Yes, remove <name>, View profile, Visit <name>'s house.
 - **Chat:** Reader messages, Your message, SEND →, Minimise chat, Close chat with <name>.
 - **Room:** Places, Window, Chair, Bookshelf, Clock, Corkboard, Bed, Room menu, Mood check-in, Shop, Inventory, Decoration shop, Buy <name>?, Confirm, Cancel, Not enough credits., Close, Move left/up/down/right, Done.
-- **Book card (own):** Start reading, Mark as finished, Remove from shelf, Read reviews, Hide reviews, Rate this book, ★ N star(s), Your review (optional), Save review, Edit your review, Delete your review, Open full book page, Close book, Undo.
-- **Found book card:** Add to To be read, See it in My Room, Where to get.
-- **Mood:** How are you feeling today?, Calm, Low, Stressed, Excited, Continue, Skip for today, A book for your mood, Save quote, Saved, Add to To Be Read, Added to To Be Read, Show another recommendation, Quote of the Day.
+- **Book card (own):** Start reading, Mark as finished, Remove from shelf, Leave/Read Reviews, Hide reviews, Rate this book, ★ N star(s), Your review (optional), Post Review, Edit your review, Delete your review, Open full book page, Close book, Undo.
+- **Found book card:** Add to To be read, See it in my room, Undo, Where to get.
+- **Mood:** How are you feeling today?, Calm, Low, Stressed, Excited, Continue, Skip for today, A book for your mood, Save quote, Unsave, Add to To Be Read, Added to To Be Read, Undo, Show another recommendation, Quote of the Day.
 - **My Shelf:** Back to room, Search your books, Spines, Covers, No books yet, Discover books, Scan a cover, Previous, Next.
 - **Library:** Back to town, Places in the library, Around the library, Shelves, Search books or authors, Search, Search is offline, Try again, Snap cover, Or upload a photo of the cover, Search by title, Close scanner.
 - **Cafe:** Loading readers…, No other readers available yet., Readers unavailable, Retry, N% match, Meet <name>, Visit <name>'s room, Added as friend, Request sent, Message, Close reader profile.
@@ -559,7 +561,7 @@ is reachable only through the API (service role).
 `GET /recommendations?mood=`; `GET /quote/today`; `GET /weather`; `GET /time`; `GET /creatures`; `GET /people`,
 `/people/:id`, `/people/:id/compatibility`; `POST /nearby`; `GET|POST /friends`, `/friends/requests`,
 `/friends/requests/:id/accept|decline`, `DELETE /friends/:id`; `GET|POST /messages/:readerId` (the id is the other reader's **account UUID**, not a username);
-`GET /notifications/visits`; `GET|POST|DELETE /rooms/:id/notes`; `GET|PUT /rooms/:id/furniture`;
+`GET /notifications/visits`; `GET /notifications/activity` (requests sent and accepted, messages); `GET|POST|DELETE /rooms/:id/notes`; `GET|PUT /rooms/:id/furniture`;
 `GET|POST|DELETE /saved-quotes`; `POST /scan-book`; `GET /stores/nearby` (placeholder); `POST /demo-auth/register` (no token; demo domain only).
 
 ## C6. Existing automated tests

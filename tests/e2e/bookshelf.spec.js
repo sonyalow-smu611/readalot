@@ -242,7 +242,7 @@ test.describe("from the room", () => {
 
     const details = page.getByRole("dialog", { name: "Book details" });
     await expect(details.getByRole("heading", { name: "The Hobbit" })).toBeVisible();
-    for (const name of ["Start reading", "Where to get", /^Read reviews/, "Remove from shelf", "Close book"]) {
+    for (const name of ["Start reading", "Where to get", /^Leave\/Read Reviews/, "Remove from shelf", "Close book"]) {
       await expect(details.getByRole("button", { name })).toBeVisible();
     }
     await expect(details.getByRole("link", { name: "Open full book page" })).toHaveAttribute("href", "/books/demo-shelf-2");
@@ -346,11 +346,11 @@ test.describe("from the room", () => {
     await expect(page.getByRole("button", { name: "Mark as finished" })).toHaveCount(0);
   });
 
-  test("a Finished book is rated and reviewed behind Read reviews, as in the library", async ({ page }) => {
+  test("a Finished book is rated and reviewed behind Leave/Read Reviews, as in the library", async ({ page }) => {
     await page.getByRole("button", { name: "Pride and Prejudice by Jane Austen" }).click();
 
     const details = page.getByRole("dialog", { name: "Book details" });
-    await details.getByRole("button", { name: /^Read reviews/ }).click();
+    await details.getByRole("button", { name: /^Leave\/Read Reviews/ }).click();
     await expect(details.getByRole("region", { name: "Reviews" }).getByText("Rate this book")).toBeVisible();
   });
 });

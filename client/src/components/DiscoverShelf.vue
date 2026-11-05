@@ -31,7 +31,7 @@ const SKELETON_CARDS = 4
       <h2 class="discover-shelf__title">
         <span aria-hidden="true">{{ emoji }}</span> {{ title }}
       </h2>
-      <RouterLink v-if="seeAll" class="discover-shelf__all" :to="seeAll">See all</RouterLink>
+      <RouterLink v-if="seeAll" class="btn btn-secondary btn-sm discover-shelf__all" :to="seeAll">See all</RouterLink>
     </header>
 
     <div v-if="loading" class="discover-shelf__row">
@@ -80,10 +80,7 @@ const SKELETON_CARDS = 4
 }
 
 .discover-shelf__all {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ink-muted);
-  text-decoration: none;
+  flex: none;
 }
 
 .discover-shelf__row {

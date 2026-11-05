@@ -33,8 +33,8 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 **DB:** none. **Pass:** books load (about a dozen); both looks render. **Existing coverage:** `library.spec.js`.
 
 ### LIB-05 · A found book: card and Add to To be read · Critical
-1. In the Fantasy bookcase press a book → a card: cover, title, author, rating (if any), synopsis, **Add to To be read**, **Where to get**, **Read reviews**, **Open full book page**.
-2. Press **Add to To be read** → "Adding…", then the button/label shows the book is on the shelf (To be read); **See it in My Room** appears; a toast may show.
+1. In the Fantasy bookcase press a book → a card: cover, title, author, rating (if any), synopsis, **Add to To be read**, **Where to get**, **Leave/Read Reviews**, **Open full book page**.
+2. Press **Add to To be read** → "Adding…", then the button/label shows the book is on the shelf (To be read); **See it in my room** (a button, with **Undo** beside it for a book just added) appears; a toast may show.
 3. In My Room the book is on **To be read**.
 **DB:** `user_books` row `want_to_read` (book id from Google Books); `books` row cached; `xp_events` `add_book` +10; Daily "add a book" ticks if today's task. **Pass:** XP 0 → 10; the book on the shelf after reload. **Existing coverage:** `find-book.spec.js`, `library.spec.js`.
 
@@ -80,7 +80,7 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 **DB:** none. **Pass:** never a blank screen. **Existing coverage:** `scan-book.spec.js` (placeholder, skipped).
 
 ### LIB-13 · A book already on the shelf · Medium
-**Pre:** ACCT-DEMO. 1. Search `The Hobbit` and open its card → it shows the shelf it is on (Finished) instead of **Add to To be read**, and **See it in My Room**.
+**Pre:** ACCT-DEMO. 1. Search `The Hobbit` and open its card → it shows the shelf it is on (Finished) instead of **Add to To be read**, and **See it in my room** (a button, with **Undo** beside it for a book just added).
 2. Add a book twice (double-click **Add to To be read**) → only one `user_books` row and one XP award.
 **DB:** unique `(user_id, book_id)`; `xp_events` once per book. **Pass:** no duplicates.
 
@@ -105,8 +105,8 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 
 ### BOOK-03 · Write a review · Critical
 **Pre:** a reader with a Finished or shelved book (ACCT-DEMO: Dune shelf; or add one).
-1. Open the book's card → **Read reviews** → **Rate this book** with five stars (★ 1 star … ★ 5 stars), **Your review (optional)** with a `0 / 500` counter, **Save review**; **Save review** is disabled until a star is chosen.
-2. Choose **★ 5 stars**, type `Epic and unforgettable.`, press **Save review** → your review appears (stars, text, "just now") with **Edit your review** and **Delete your review**; the header shows the new average and "from 1 reader".
+1. Open the book's card → **Leave/Read Reviews** → **Rate this book** with five stars (★ 1 star … ★ 5 stars), **Your review (optional)** with a `0 / 500` counter, **Post Review**; **Post Review** is disabled until a star is chosen.
+2. Choose **★ 5 stars**, type `Epic and unforgettable.`, press **Post Review** → your review appears (stars, text, "just now") with **Edit your review** and **Delete your review**; the header shows the new average and "from 1 reader".
 **DB:** `reviews` row (rating 5, review_text, unique per reader and book); `xp_events` `write_review` +40 (once per book). **Pass:** XP +40; the review persists after reload. **Existing coverage:** `reviews.spec.js`. **Reset the demo account.**
 
 ### BOOK-04 · Review text limit and a stars-only review · Medium
@@ -115,7 +115,7 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 **DB:** `reviews.review_text` null or ≤ 500; constraint `reviews_text_length`. **Pass:** both saved.
 
 ### BOOK-05 · Edit your review · Medium
-1. **Edit your review** → the form returns with your stars and text; change to ★ 3 and new text → **Save review**.
+1. **Edit your review** → the form returns with your stars and text; change to ★ 3 and new text → **Post Review**.
 2. The review and average update; `updated_at` changes; XP is **not** awarded again.
 **DB:** the same `reviews` row updated. **Pass:** still one review per book.
 
@@ -124,7 +124,7 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 **DB:** `reviews` row deleted; XP already earned stays. **Pass:** re-reviewing later works and gives no second XP.
 
 ### BOOK-07 · Average rating and count · Medium
-**Pre:** ACCT-DEMO. 1. Open The Hobbit → **Read reviews (3)**: Jordan 5, Emma 5, Ayaan 4 → the header reads about "4.7 ★ from 3 readers".
+**Pre:** ACCT-DEMO. 1. Open The Hobbit → **Leave/Read Reviews (3)**: Jordan 5, Emma 5, Ayaan 4 → the header reads about "4.7 ★ from 3 readers".
 2. Add a 3-star review from a second account → "4.3 ★ from 4 readers".
 **DB:** `reviews`. **Pass:** the average is the mean to one decimal.
 
@@ -139,12 +139,12 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 **DB:** `xp_events` unique `(reader, action, target)` for `write_review`. **Pass:** XP increases by 40 per distinct book only.
 
 ### BOOK-10 · Reviewing a book that is not on your shelf · Medium
-1. From a found book you have **not** added, open **Read reviews** → the form may be shown.
+1. From a found book you have **not** added, open **Leave/Read Reviews** → the form may be shown.
 2. Save a review → it saves; check whether XP is awarded: after `lock_down.sql` a review counts only if the book is on the shelf **or reviewed by you** → expect +40 once the review exists.
 **DB:** `reviews` row; `xp_events` `write_review` (confirm). **Pass:** record the actual behaviour (reviews allowed without a shelf entry). **(unverified)**
 
 ### BOOK-11 · Reviews load and error states · High
-1. Slow the network → **Read reviews** shows a loading state ("Read reviews" label) then the count.
+1. Slow the network → **Leave/Read Reviews** shows a loading state ("Leave/Read Reviews" label) then the count.
 2. Block `GET /api/books/<id>/reviews` → an error with **Retry** (or "couldn't load"), the rest of the card intact.
 3. A book with no reviews → "No one has reviewed it yet."
 **DB:** none. **Pass:** each state shown; no crash.

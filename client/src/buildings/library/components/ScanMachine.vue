@@ -178,7 +178,7 @@ async function scan(imageBase64) {
       <p v-if="scanning && cameraError" class="scanner__note" role="status">Scanning…</p>
       <p v-if="error" class="scanner__error" role="alert">
         {{ error }}
-        <button v-if="notFound" type="button" class="scanner__link" @click="$emit('search')">Search by title</button>
+        <button v-if="notFound" type="button" class="btn btn-secondary btn-sm" @click="$emit('search')">Search by title</button>
       </p>
       <p v-if="sample" class="scanner__note">
         Sample result: covers can't be read until GOOGLE_CLOUD_VISION_KEY is set.
@@ -331,15 +331,6 @@ async function scan(imageBase64) {
   margin: 0 0 8px;
   font-size: 13px;
   color: #8d2218;
-}
-
-.scanner__link {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-weight: 700;
-  color: var(--library-accent, var(--rl-primary));
-  text-decoration: underline;
 }
 
 .scanner__result {

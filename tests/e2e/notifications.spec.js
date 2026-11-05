@@ -3,8 +3,8 @@ import { expect, nextPaint, test, townReady } from "./fixtures.js";
 import { signInPage } from "./supabaseUser.js";
 import { EMMA, NOAH, friend, mockFriends, skipDailyPanel } from "./townFriends.js";
 
-// The town's bell: friend requests, visits to your room and friends coming online pop up once and
-// stay in the list.
+// The town's bell: friend requests (waiting, sent, accepted), messages, visits to your room and
+// friends coming online. Nothing pops up by itself: the bell turns red, and the list opens from it.
 const REQUEST = { requestId: "request-1", reader: friend("sofia.stories", "Sofia Rossi", null), at: new Date().toISOString() };
 const VISIT = { id: "1", at: new Date().toISOString(), visitor: { id: "emma.reads", displayName: "Emma Tan" } };
 const SECRET_VISIT = { id: "2", at: new Date().toISOString(), visitor: null };
@@ -12,6 +12,7 @@ const SECRET_VISIT = { id: "2", at: new Date().toISOString(), visitor: null };
 const bell = (page) => page.getByRole("button", { name: /^Notifications,/ });
 const panel = (page) => page.getByRole("region", { name: "Notifications" });
 const popUp = (page) => page.locator(".app-toast");
+const friendsList = (page) => page.getByRole("navigation", { name: "Friends in town" });
 
 // Opens the town and waits for its first look at the notifications: until then the bell says 0 new
 // whatever is waiting.
@@ -27,20 +28,21 @@ test.beforeEach(async ({ page, reader }) => {
   await skipDailyPanel(reader.id);
 });
 
-test("a friend request and a room visit pop up and stay in the bell", async ({ page }) => {
+test("a friend request and a room visit turn the bell red, with no pop-up", async ({ page }) => {
   await mockFriends(page, { friends: [EMMA], incoming: [REQUEST], visits: [VISIT, SECRET_VISIT] });
   await page.goto("/");
-  await expect(popUp(page)).toContainText("3 new notifications");
   await expect(bell(page)).toHaveAccessibleName("Notifications, 3 new");
+  await expect(bell(page).locator(".notifications-button__badge")).toBeVisible();
+  await expect(popUp(page)).toHaveCount(0);
 
-  await popUp(page).getByRole("button", { name: "View" }).click();
+  await bell(page).click();
   await expect(panel(page)).toContainText("Sofia Rossi sent you a friend request");
   await expect(panel(page)).toContainText("Emma Tan visited your room");
   // someone private isn't named, and has no page to go to
   await expect(panel(page).getByRole("button", { name: /Someone visited your room/ })).toBeDisabled();
 
   await panel(page).getByRole("button", { name: /Sofia Rossi/ }).click();
-  await expect(page.getByRole("navigation", { name: "Friends in town" }).getByRole("button", { name: "Accept Sofia Rossi" })).toBeVisible();
+  await expect(friendsList(page).getByRole("button", { name: "Accept Sofia Rossi" })).toBeVisible();
   await expect(bell(page)).toHaveAccessibleName("Notifications, 0 new");
 
   // a reload doesn't show them again
@@ -105,7 +107,7 @@ test("a visitor's notification opens their profile", async ({ page }) => {
   await expect(page).toHaveURL(/\/people\/emma\.reads$/);
 });
 
-test("a friend coming online pops up, once", async ({ page }) => {
+test("a friend coming online turns the bell red, once", async ({ page }) => {
   test.setTimeout(100_000);
   const town = await mockFriends(page, { friends: [EMMA, NOAH] });
   // the town's first look: whoever is online before it was already here
@@ -117,12 +119,75 @@ test("a friend coming online pops up, once", async ({ page }) => {
   await expect(bell(page)).toHaveAccessibleName("Notifications, 0 new");
 
   town.friends = [EMMA, { ...NOAH, lastSeenAt: new Date().toISOString() }];
-  await expect(popUp(page)).toContainText("Noah Lim is online", { timeout: 35_000 });
-  await expect(bell(page)).toHaveAccessibleName("Notifications, 1 new");
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 1 new", { timeout: 35_000 });
+  await expect(popUp(page)).toHaveCount(0);
+  await bell(page).click();
+  await expect(panel(page)).toContainText("Noah Lim is online");
+  await bell(page).click();
 
-  // the town's next refresh brings nothing new
-  await page.waitForTimeout(31_000);
-  await expect(bell(page)).toHaveAccessibleName("Notifications, 1 new");
+  // looking at it made it read, and the town's next refresh brings nothing new
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 0 new");
+  await page.waitForTimeout(21_000);
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 0 new");
+});
+
+const ACCEPTED = { id: "a1", at: new Date().toISOString(), reader: { id: "emma.reads", displayName: "Emma Tan" } };
+const SENT = { id: "s1", at: new Date().toISOString(), reader: { id: "sofia.stories", displayName: "Sofia Rossi" } };
+const MESSAGE = { id: "m1", at: new Date().toISOString(), direction: "sent", reader: { id: "emma.reads", displayName: "Emma Tan" } };
+
+test("requests sent, requests accepted and messages are in the bell, and each goes to its screen", async ({ page }) => {
+  await mockFriends(page, {
+    friends: [EMMA],
+    sent: [{ requestId: "request-9", reader: friend("sofia.stories", "Sofia Rossi", null), at: SENT.at }],
+    activity: { sent: [SENT], accepted: [ACCEPTED], messages: [MESSAGE] },
+  });
+  await page.goto("/");
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 3 new");
+  await bell(page).click();
+  await expect(panel(page)).toContainText("You sent Sofia Rossi a friend request");
+  await expect(panel(page)).toContainText("Emma Tan accepted your friend request");
+  await expect(panel(page)).toContainText("You sent Emma Tan a message");
+
+  // a message opens the chat with them
+  await panel(page).getByRole("button", { name: /You sent Emma Tan a message/ }).click();
+  await expect(page.getByRole("button", { name: "Close chat with Emma Tan" })).toBeVisible();
+
+  // a sent request opens the friends list, which says who is still to answer
+  await bell(page).click();
+  await panel(page).getByRole("button", { name: /You sent Sofia Rossi a friend request/ }).click();
+  await expect(friendsList(page)).toContainText("You asked Sofia Rossi to be friends");
+});
+
+test("an accepted request opens the friend on the map", async ({ page }) => {
+  await mockFriends(page, { friends: [EMMA], activity: { accepted: [ACCEPTED] } });
+  await page.goto("/");
+  await bell(page).click();
+  await panel(page).getByRole("button", { name: /Emma Tan accepted your friend request/ }).click();
+  await expect(panel(page)).toBeHidden();
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 0 new");
+});
+
+test("a friend removed is gone from the friends list at once", async ({ page }) => {
+  await mockFriends(page, { friends: [EMMA, NOAH] });
+  await page.goto("/");
+  await townReady(page);
+  await page.getByRole("button", { name: /^Friends/ }).click();
+  await expect(friendsList(page)).toContainText("Emma Tan");
+  await friendsList(page).getByRole("button", { name: "Remove friends" }).click();
+  await friendsList(page).getByRole("checkbox", { name: "Select Emma Tan" }).check();
+  await friendsList(page).getByRole("button", { name: "Remove", exact: true }).click();
+  await friendsList(page).getByRole("button", { name: /^Yes, remove/ }).click();
+  await expect(friendsList(page)).not.toContainText("Emma Tan");
+});
+
+test("a visitor's profile goes back to the town it was opened from, not the Cafe", async ({ page }) => {
+  await mockFriends(page, { friends: [EMMA], visits: [VISIT] });
+  await page.goto("/");
+  await bell(page).click();
+  await panel(page).getByRole("button", { name: /Emma Tan visited/ }).click();
+  await expect(page).toHaveURL(/\/people\/emma\.reads$/);
+  await page.getByRole("link", { name: "Back to town" }).click();
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test.describe("on a phone", () => {

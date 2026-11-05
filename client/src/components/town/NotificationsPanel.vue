@@ -44,7 +44,8 @@ const leadsNowhere = (item) => item.kind === 'visit' && !item.visitorId
   position: absolute;
   top: 68px;
   right: 14px;
-  z-index: 10;
+  /* over the chat boxes along the bottom */
+  z-index: 20;
   display: flex;
   flex-direction: column;
   gap: 4px;

@@ -14,6 +14,8 @@ const props = defineProps({
   friends: { type: Array, required: true },
   // [{ requestId, reader }]
   requests: { type: Array, default: () => [] },
+  // [{ requestId, reader }]: requests you sent that nobody has answered yet
+  sent: { type: Array, default: () => [] },
   // readers near you, [{ id, displayName, online }]: the labelled way to the people on the canvas
   nearby: { type: Array, default: () => [] },
   open: { type: Boolean, default: false },
@@ -89,6 +91,12 @@ watch(
         @answer="(id, accept) => emit('answer', id, accept)"
       />
       <p v-if="!requests.length" class="friends-list__empty">No requests right now.</p>
+      <template v-if="sent.length">
+        <h2 class="friends-list__heading">Waiting for an answer</h2>
+        <p v-for="request in sent" :key="request.requestId" class="friends-list__sent">
+          You asked {{ request.reader.displayName }} to be friends
+        </p>
+      </template>
     </template>
     <h2 class="friends-list__heading">Your friends</h2>
     <p v-if="!friends.length" class="friends-list__empty">No friends yet. Go public to find readers nearby: friends you add get a house in town.</p>
@@ -110,7 +118,7 @@ watch(
         <button type="button" class="btn btn-secondary btn-sm" @click="stopSelecting">Cancel</button>
         <button
           type="button"
-          class="btn btn-primary btn-sm"
+          class="btn btn-danger btn-sm"
           :disabled="!toRemove.length"
           @click="confirming ? remove() : (confirming = true)"
         >
@@ -140,7 +148,8 @@ watch(
   position: absolute;
   top: 68px;
   right: 14px;
-  z-index: 10;
+  /* over the chat boxes along the bottom */
+  z-index: 20;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -185,6 +194,14 @@ watch(
   padding: 10px 12px;
   font-size: 14px;
   color: var(--rl-muted);
+}
+
+.friends-list__sent {
+  margin: 0;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rl-text);
 }
 
 .friends-list__heading {

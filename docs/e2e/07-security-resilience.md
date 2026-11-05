@@ -109,7 +109,7 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 
 ### ERR-08 · Double clicks and rapid repeats make no duplicates · High
 1. Double-click **Confirm** on a purchase → one charge, one piece.
-2. Double-click **Accept** on a request, **SEND →** twice quickly, **Save review** twice, **Add to To be read** twice, **Post note** twice, **Claim** twice → exactly one row/effect each.
+2. Double-click **Accept** on a request, **SEND →** twice quickly, **Post Review** twice, **Add to To be read** twice, **Post note** twice, **Claim** twice → exactly one row/effect each.
 3. Press **Register** twice quickly → one account (or the second is refused).
 **DB:** one row each; `xp_events` once. **Pass:** idempotent at every step. **Existing coverage:** partly in `friends.spec.js`, `furniture.spec.js`.
 

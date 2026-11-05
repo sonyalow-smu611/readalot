@@ -71,7 +71,7 @@ changes it:** `npm run seed:demo -w server`. Existing room helpers: `roomReady`,
 
 ### SHF-03 · Start reading a To-be-read book · Critical
 **Pre:** ACCT-DEMO (Fourth Wing on To be read).
-1. Open `Fourth Wing` → buttons **Start reading**, **Where to get**, **Remove from shelf**, **Read reviews**.
+1. Open `Fourth Wing` → buttons **Start reading**, **Where to get**, **Remove from shelf**, **Leave/Read Reviews**.
 2. Press **Start reading** → the book moves to **Currently reading**; a **progress slider** appears; the button becomes **Mark as finished**.
 3. Close the card → the book is now on the middle row.
 **DB:** `user_books.status = reading`, `progress = 0`; `xp_events` `start_book` +20 (target = book id); reading task ticks in Daily. **Pass:** XP 620 → 640; persists on reload. **Reset the demo account.**
@@ -84,7 +84,7 @@ changes it:** `npm run seed:demo -w server`. Existing room helpers: `roomReady`,
 ### SHF-05 · Finish a book: XP, coins and level-up · Critical
 **Pre:** ACCT-DEMO at 620 XP (level 4).
 1. Open `Dune` → **Mark as finished**.
-2. The book moves to **Finished reading** (4 books); the slider disappears; the card now offers **Read reviews**.
+2. The book moves to **Finished reading** (4 books); the slider disappears; the card now offers **Leave/Read Reviews**.
 3. Check XP/coins: **+100 XP** → 720 XP = **level 5**, +125 coins (600 → 725) 📸; the badge in the town shows 5 and `725`.
 **DB:** `user_books.status = read`, `progress = 100`; `xp_events` `finish_book` +100; `profiles.coins = 725`. **Pass:** level 4 → 5 exactly here (no earlier crossing). **Reset the demo account.**
 

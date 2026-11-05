@@ -78,14 +78,14 @@ watch(() => route.params.id, load, { immediate: true })
   <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :back="outsideBack.to" :back-label="outsideBack.label">
     <div class="visit-missing" role="alert">
       <p>{{ error }}</p>
-      <button type="button" class="btn btn-link" @click="load(route.params.id)">Try again</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="load(route.params.id)">Try again</button>
     </div>
   </BuildingShell>
 
   <BuildingShell v-else title="Room not found" :owner="place.owner" :back="outsideBack.to" :back-label="outsideBack.label">
     <div class="visit-missing">
       <p>We couldn't find that reader.</p>
-      <RouterLink :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink>
+      <RouterLink class="btn btn-secondary btn-sm" :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink>
     </div>
   </BuildingShell>
 </template>

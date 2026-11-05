@@ -54,7 +54,9 @@ const bookshelf = useBookshelfStore()
 const { inventory, placed, shopOpen } = useDecor()
 
 const clouds = ref(true)
-const panel = ref('studio')
+// the tab and, on a phone, the pulled-up sheet live in the address (?tab=profile&sheet=1), so going
+// to a book or the shop from the profile and pressing Back lands on the profile again
+const panel = ref(PANELS.some((p) => p.id === route.query.tab) ? route.query.tab : 'studio')
 
 // saving one change to the account; returns the error message, or '' when it worked
 async function save(details) {
@@ -75,7 +77,7 @@ const discarding = ref(false)
 // bumped by every save, to throw confetti
 const confetti = ref(0)
 // phones: whether the dock's sheet is pulled up over the reader
-const sheetOpen = ref(false)
+const sheetOpen = ref(route.query.sheet === '1')
 const progress = useProgressStore()
 const nearby = useNearbyStore()
 // a level-up while in the salon is worth confetti too
@@ -84,6 +86,12 @@ let leaveAnswer = null
 let savedTimer = null
 
 const changed = computed(() => JSON.stringify(draft.value) !== JSON.stringify(user.profile.character))
+
+// keeps the address in step with the tab, replacing the entry so the tab isn't a step of its own
+watch([panel, sheetOpen], ([tab, sheet]) => {
+  const query = { ...route.query, tab, sheet: sheet ? '1' : undefined }
+  router.replace({ query, hash: route.hash }).catch(() => {})
+})
 
 // every change makes the reader bounce
 watch(draft, () => (hop.value += 1))
@@ -365,7 +373,7 @@ async function logout() {
                 <button type="button" class="btn btn-secondary replay" data-tour="profile-replay" @click="user.replayGuide()">
                   Replay the walkthrough
                 </button>
-                <button type="button" class="btn btn-secondary logout" data-tour="profile-logout" @click="confirmingLogout = true">
+                <button type="button" class="btn btn-danger logout" data-tour="profile-logout" @click="confirmingLogout = true">
                   Log out
                 </button>
               </template>

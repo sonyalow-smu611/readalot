@@ -7,14 +7,17 @@
   behind their own button, so the choices come first.
 
   The page owns the book and saving it: this emits `add` when Add to To be read is tapped and
-  `close` to put the preview away. My Shelf keeps the full preview with the statuses.
+  `undo` when Undo is tapped (only for a book added from here), and `close` to put the preview away. My Shelf keeps the full preview with the statuses.
 -->
 <template>
   <BookPreviewModal :book="book" :statuses="false" collapse-reviews @close="$emit('close')">
     <div v-if="book" class="found">
       <p v-if="shelf" class="found__on" role="status">
         <span aria-hidden="true">✓</span> On your {{ shelf }} shelf
-        <RouterLink class="found__see" :to="{ name: 'my-shelf' }">See it in My Room</RouterLink>
+        <RouterLink class="btn btn-secondary btn-sm found__see" :to="{ name: 'my-shelf' }">See it in my room</RouterLink>
+        <button v-if="undoable" type="button" class="btn btn-secondary btn-sm" :disabled="adding" @click="$emit('undo')">
+          {{ adding ? 'Undoing…' : 'Undo' }}
+        </button>
       </p>
       <button v-else type="button" class="btn btn-success found__add" data-tour="book-add" :disabled="adding" @click="$emit('add')">
         {{ adding ? 'Adding…' : 'Add to To be read' }}
@@ -35,9 +38,11 @@ const props = defineProps({
   book: { type: Object, default: null },
   // Add to To be read is being saved
   adding: { type: Boolean, default: false },
+  // the preview just added this book, so Undo can take it off again
+  undoable: { type: Boolean, default: false },
 })
 
-defineEmits(['add', 'close'])
+defineEmits(['add', 'undo', 'close'])
 
 const shelf = computed(() => (props.book?.status ? shelfName(props.book.status) : ''))
 </script>
@@ -65,7 +70,5 @@ const shelf = computed(() => (props.book?.status ? shelfName(props.book.status) 
 
 .found__see {
   margin-left: auto;
-  font-weight: 700;
-  color: var(--rl-text);
 }
 </style>

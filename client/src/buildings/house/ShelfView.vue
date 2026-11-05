@@ -227,8 +227,8 @@ onMounted(() => {
             <strong>Add your first book</strong>
             <p>Books you save show up here, on To be read, Currently reading or Finished reading.</p>
             <div class="my-shelf__empty-links">
-              <RouterLink to="/discover">Discover books</RouterLink>
-              <RouterLink to="/scan">Scan a cover</RouterLink>
+              <RouterLink class="btn btn-secondary btn-sm" to="/discover">Discover books</RouterLink>
+              <RouterLink class="btn btn-secondary btn-sm" to="/scan">Scan a cover</RouterLink>
             </div>
           </div>
 
@@ -254,7 +254,7 @@ onMounted(() => {
     <BuildingShell v-else title="Shelf not found" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
       <div class="my-shelf__empty">
         <p>We couldn't find that reader.</p>
-        <div class="my-shelf__empty-links"><RouterLink :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink></div>
+        <div class="my-shelf__empty-links"><RouterLink class="btn btn-secondary btn-sm" :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink></div>
       </div>
     </BuildingShell>
 
@@ -414,11 +414,8 @@ onMounted(() => {
 .my-shelf__empty-links {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 10px;
   font-weight: 700;
 }
 
-.my-shelf__empty-links a {
-  color: var(--house-accent);
-}
 </style>

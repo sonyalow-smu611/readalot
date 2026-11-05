@@ -163,7 +163,7 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
       </p>
       <p v-if="!canAfford" class="confirm__warn">Not enough credits.</p>
       <div class="confirm__actions">
-        <button type="button" class="btn btn-primary confirm__btn" :disabled="!canAfford" @click="confirmBuy">
+        <button type="button" class="btn btn-success confirm__btn" :disabled="!canAfford" @click="confirmBuy">
           Confirm
         </button>
         <button type="button" class="btn btn-secondary confirm__btn" @click="cancelBuy">
@@ -377,7 +377,10 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 }
 
 .dock-card {
-  flex: 0 0 112px;
+  flex: 0 0 132px;
+  min-width: 0;
+  height: auto;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -404,11 +407,22 @@ watch([shopOpen, inventoryOpen], async ([shop, bag]) => {
 .dock-card__name,
 .dock-card__price,
 .dock-card__where {
-  font-size: 0.68rem;
-  line-height: 1.25;
+  max-width: 100%;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
-.dock-card__price,
+.dock-card__name {
+  font-weight: 800;
+}
+
+.dock-card__price {
+  font-weight: 800;
+  color: var(--rl-text);
+}
+
 .dock-card__where {
   color: var(--rl-muted);
 }
