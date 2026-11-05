@@ -6,12 +6,15 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getReader, getReaders } from '@/services/api.js'
+import { isPip, pipInTown } from '@/services/walkthroughPip.js'
 import { getCompatibility, getSharedBooks, getSharedGenres } from '@/lib/readerMatch.js'
 import { useBookshelfStore } from '@/stores/bookshelf.js'
 import { useUserStore } from '@/stores/user'
 
 export const usePeopleStore = defineStore('people', () => {
-  const readers = ref([])
+  const fetched = ref([])
+  // Pip, the walkthrough's neighbour, leaves with the walkthrough, even from a list fetched while it played
+  const readers = computed(() => (pipInTown.value ? fetched.value : fetched.value.filter((reader) => !isPip(reader.id))))
   const loaded = ref(false)
   const loading = ref(false)
   const error = ref('')
@@ -30,7 +33,7 @@ export const usePeopleStore = defineStore('people', () => {
       error.value = ''
       try {
         const list = await getReaders()
-        readers.value = list.readers
+        fetched.value = list.readers
         loaded.value = true
       } catch (err) {
         error.value = err.message || "Couldn't load the readers."
@@ -66,7 +69,7 @@ export const usePeopleStore = defineStore('people', () => {
 
   // signed out: the next reader fetches their own
   function reset() {
-    readers.value = []
+    fetched.value = []
     loaded.value = false
     error.value = ''
   }

@@ -60,7 +60,19 @@ yourself, see [docs/DEVELOPER.md](docs/DEVELOPER.md).
 | Cafe | Emiley |
 | Hair Salon, sign-in | Aalric |
 
+### AI usage
+
+We used AI coding assistants (mainly Claude Code, plus Cursor and Codex) for boilerplate, pixel art,
+layouts, mock data and test upkeep. With the team's agreement, AI also wrote these parts: the room's
+decoration placing, Supabase sign-in and profiles, nearby readers and friends, the reviews and room
+notes endpoints, town notifications and tap to walk, the library's Bestsellers bookcase, and daily
+tasks in Supabase. Every AI-written file starts with a comment pointing to
+[AI_USAGE.md](AI_USAGE.md), which lists what AI produced in each part.
+
+
 ## Credits
+
+### Music credits
 
 Background music from https://www.FesliyanStudios.com (free for non-commercial use, with credit):
 

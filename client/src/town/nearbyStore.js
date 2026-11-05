@@ -11,13 +11,16 @@ import {
   sendFriendRequest,
 } from '@/services/api.js'
 import { saveProfile } from '@/services/auth.js'
+import { isPip, pipInTown } from '@/services/walkthroughPip.js'
 import { currentPosition } from '@/services/location.js'
 import { useUserStore } from '@/stores/user'
 import { nameFriendHouses } from '@/town/places.js'
 import { yourUsername } from '@/town/username.js'
 
 export const useNearbyStore = defineStore('nearby', () => {
-  const friends = ref([])
+  const allFriends = ref([])
+  // Pip, the walkthrough's neighbour, is a friend only while the walkthrough plays: gone once it ends
+  const friends = computed(() => (pipInTown.value ? allFriends.value : allFriends.value.filter((reader) => !isPip(reader.id))))
   // [{ requestId, reader }]
   const incoming = ref([])
   // reader ids you've asked
@@ -41,7 +44,7 @@ export const useNearbyStore = defineStore('nearby', () => {
 
   async function loadFriends() {
     const data = await getFriendships()
-    friends.value = data.friends
+    allFriends.value = data.friends
     incoming.value = data.incoming
     outgoing.value = data.outgoing
     sent.value = data.sent ?? []
@@ -114,7 +117,7 @@ export const useNearbyStore = defineStore('nearby', () => {
   // still there, as a reader nearby, once the server has said so.
   function forget(readerIds) {
     const gone = new Set(readerIds)
-    friends.value = friends.value.filter((reader) => !gone.has(reader.id))
+    allFriends.value = allFriends.value.filter((reader) => !gone.has(reader.id))
   }
 
   async function removeFriend(readerId, saved = async () => {}) {
@@ -137,7 +140,7 @@ export const useNearbyStore = defineStore('nearby', () => {
 
   // signed out: the next reader fetches their own
   function reset() {
-    friends.value = []
+    allFriends.value = []
     incoming.value = []
     outgoing.value = []
     sent.value = []
