@@ -3,12 +3,14 @@
 // Café-only changes: use the shared People store and its existing readers.
 // No database accounts, tables or records are created.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
 import CafeViewport from './components/CafeViewport.vue'
 import CafeReaderCard from './components/CafeReaderCard.vue'
 import { drawCafeWeatherArt } from './cafeWeatherArt.js'
 import { rotateCafeReaders } from './cafeReaders.js'
 import { NEIGHBOUR } from '@/lib/neighbour.js'
+import { stashView, takeView } from '@/lib/returnState.js'
 import { usePeopleStore } from '@/stores/people.js'
 import { drawAvatar, makeRnd } from '@/lib/avatar/draw.js'
 import { characterSeed, normaliseCharacter, presetCharacter, toDrawParams } from '@/lib/avatar/catalogue.js'
@@ -39,6 +41,22 @@ const guests = computed(() => seatedIds.value.flatMap((id, index) => {
   }]
 }))
 const activeId = ref('')
+// the reader whose card was open when you left for their room: you come back to the same seats, to
+// them and to their card, so you don't lose track of who you were meeting
+const resumeId = ref('')
+const CARD_VIEW = 'cafe-card'
+const CARD_FOR = 30 * 60 * 1000
+const READER_PAGES = ['reader-house', 'reader-house-shelf', 'reader-room', 'reader-shelf']
+let resume = (() => {
+  const back = takeView(CARD_VIEW)
+  return back && Date.now() - back.at < CARD_FOR ? back : null
+})()
+
+onBeforeRouteLeave((to) => {
+  if (activeId.value && READER_PAGES.includes(to.name)) {
+    stashView(CARD_VIEW, { id: activeId.value, seated: seatedIds.value, at: Date.now() })
+  }
+})
 const movementError = ref('')
 const selectedReader = computed(() => guests.value.find((r) => r.id === activeId.value) ?? null)
 const scene = computed(() => ['sunny', 'cloudy', 'rain'].includes(weather.value?.scene) ? weather.value.scene : 'cloudy')
@@ -94,6 +112,15 @@ async function updateReaders() {
     const others = rotateCafeReaders(available.filter((reader) => reader !== pip), pip ? 7 : 8)
     const seated = pip ? [...others.slice(0, 2), pip, ...others.slice(2)] : others
     seatedIds.value = seated.map((reader) => reader.id)
+    // back from their room: the same seats, you beside them, and their card open
+    const back = resume
+    resume = null
+    if (back && available.some((reader) => reader.id === back.id)) {
+      const there = back.seated.filter((id) => available.some((reader) => reader.id === id))
+      seatedIds.value = there
+      resumeId.value = back.id
+      activeId.value = back.id
+    }
   } catch (err) {
     if (disposed) return
     seatedIds.value = []
@@ -126,7 +153,7 @@ onBeforeUnmount(() => {
 <template>
   <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" flush>
     <main class="cafe" aria-label="IKDA cafe" data-tour="people-map">
-      <CafeViewport :image="image" :foreground="foreground" :readers="guests" :player-image="selfImage" :selected-id="activeId"
+      <CafeViewport :image="image" :foreground="foreground" :readers="guests" :player-image="selfImage" :selected-id="activeId" :resume-id="resumeId"
         @walking="startWalking" @arrive="arrived" @route-error="movementError = $event" />
 
       <p class="cafe__weather" role="status" aria-live="polite">

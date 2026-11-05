@@ -19,6 +19,7 @@ import { useProgressStore } from '@/stores/progress.js'
 import { useDailyStore } from '@/town/dailyStore.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
 import { useNotificationsStore } from '@/town/notificationsStore.js'
+import { stashView, takeView } from '@/lib/returnState.js'
 import { lastPlace, rememberPlace } from '@/town/lastPlace.js'
 import { yourUsername } from '@/town/username.js'
 import { MAX_FREEZES } from '@/town/daily.js'
@@ -149,6 +150,8 @@ async function refreshNearby() {
   if (document.hidden) return
   try {
     await nearby.refresh()
+    looked = true
+    reopenCard()
     slideIn(await notifications.check())
   } catch {
     // the town still works without it: everyone stays as they were until the next refresh
@@ -526,9 +529,46 @@ function closeChat(id) {
   if (openChat.value === id) openChat.value = null
 }
 
+// The card of the reader you went to visit opens again when you come back (see reopenCard), so you
+// don't lose track of them on the map.
+const CARD_VIEW = 'town-card'
+const CARD_FOR = 30 * 60 * 1000
+let pendingCard = (() => {
+  const back = takeView(CARD_VIEW)
+  return back && Date.now() - back.at < CARD_FOR ? back.id : null
+})()
+let looked = false
+
+function rememberCard(id) {
+  stashView(CARD_VIEW, { id, at: Date.now() })
+}
+
+// Back from a visit: once the map is up and the readers are known, glide to the reader and open
+// their card again. If they have moved on (gone offline or out of reach) it just stays shut.
+function reopenCard() {
+  if (!pendingCard || !ready.value || guide.value || entering.value) return
+  const there =
+    friendsInTown.value.some((friend) => friend.id === pendingCard && friend.online && friend.character) ||
+    nearbyInTown.value.some((reader) => reader.id === pendingCard)
+  if (there) {
+    friendFocus.value = { id: pendingCard, key: Date.now() }
+    pendingCard = null
+  } else if (looked) pendingCard = null
+}
+
+watch(ready, reopenCard)
+
 function visitFriend(house) {
+  if (selectedFriend.value) rememberCard(selectedFriend.value.id)
   friendId.value = null
   enter(house)
+}
+
+// A reader on the street, straight to their room: no page in between.
+function visitRoom(reader) {
+  if (entering.value || guide.value) return
+  rememberCard(reader.id)
+  router.push({ name: 'reader-house', params: { id: reader.id }, query: { from: 'town' } })
 }
 
 // Your character walks over first; the map says when they are through the door (goInside).
@@ -707,7 +747,7 @@ function goInside(place) {
         :sending="actionOf(`add-${selectedNearby.id}`)"
         nearby
         @add="addFriend"
-        @profile="router.push({ name: 'reader-room', params: { id: $event.id } })"
+        @visit-room="visitRoom"
         @close="friendId = null"
       />
     </Transition>

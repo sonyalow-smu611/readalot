@@ -976,3 +976,13 @@ Written by Claude at Aalric's request. The server change is to a shared service 
 | Every book, in full (backend) | `server/src/services/readers.js` (`withBooks`, `findReader`), `server/src/routes/people.js` | A single reader (`GET /api/people/:id`) now comes with every book on their shelf, in full (cover, synopsis and the rest), as the reader sees it themselves, with Google Books filling in a book the books table doesn't hold. The list of readers (the Cafe) stays light. Before, a visit showed only the books the books table held, so most shelves looked empty |
 | Visit | `client/src/stores/people.js` (`fetchReader` with `full`), `client/src/buildings/house/visitors.js` | A visit asks for that one reader in full and keeps every book field |
 | Book card | `client/src/buildings/house/RoomView.vue`, `ShelfView.vue` | A book on a visited reader's bookshelf, in their room or on their shelf page, opens the library's card (`FoundBookPreview`): Add to To be read and Undo, Where to get, Leave/Read Reviews and Open full book page. `VisitorBookDialog.vue` is removed |
+
+### Fewer townsfolk, straight to the room, and the card comes back (AI-generated)
+
+Written by Claude at Aalric's request. Layout and navigation only.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Fewer walkers | `client/src/town/places.js` | At most five made-up townsfolk walk the pavements (`MAX_NPCS`), so the readers really out walking (friends online, readers nearby) are easy to see |
+| Street card | `client/src/components/town/FriendCard.vue`, `client/src/views/TownView.vue` | A reader nearby has Add friend and Visit <name>'s room, straight to their room like the Cafe: there is no profile page in between |
+| Coming back | `client/src/lib/returnState.js`, `TownView.vue`, `client/src/buildings/cafe/CafeView.vue`, `components/CafeViewport.vue` | Back from a visit lands on the same card: the town glides to that reader and opens their card, and the Cafe brings back the same seats, stands you beside them and opens their card |

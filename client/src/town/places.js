@@ -119,5 +119,11 @@ export const AVATARS = ['rosie', 'maya', 'rex', 'jay', 'nova']
 // More people who live in town; they only walk around.
 export const TOWNSFOLK = ['theo', 'pip', 'ivy', 'stella', 'leo', 'finn', 'luna', 'fern', 'hazel']
 
-// Everyone wanders the pavements once, each at their own pace (map pixels a second); see roads.js.
-export const WALKERS = [...AVATARS, ...TOWNSFOLK].map((avatar, i) => ({ avatar, speed: 48 + ((i * 7) % 18) }))
+// They wander the pavements, each at their own pace (map pixels a second); see roads.js.
+// At most five of them, so the streets stay clear for the real readers out walking (friends online
+// and readers near you, see TownScene.js): the townsfolk who only walk, none of them wearing a
+// character a reader can pick, and not the one called Pip (Pip the Librarian is a reader).
+export const MAX_NPCS = 5
+export const WALKERS = TOWNSFOLK.filter((avatar) => avatar !== 'pip')
+  .slice(0, MAX_NPCS)
+  .map((avatar, i) => ({ avatar, speed: 48 + ((i * 7) % 18) }))

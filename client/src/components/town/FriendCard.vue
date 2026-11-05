@@ -2,7 +2,7 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The card that slides up when you stop a reader out walking. A friend: what they're up to, and
 // the ways on (talk to them, visit their house, remove them). A reader nearby: add them as a
-// friend, or see their profile.
+// friend, or visit their room (straight there, with no page in between).
 import { onMounted, ref } from 'vue'
 import LoadButton from '@/components/shared/LoadButton.vue'
 
@@ -20,7 +20,7 @@ const props = defineProps({
   sending: { type: Object, default: () => ({ busy: false, failed: false }) },
   removing: { type: Object, default: () => ({ busy: false, failed: false }) },
 })
-const emit = defineEmits(['talk', 'visit', 'add', 'profile', 'remove', 'close'])
+const emit = defineEmits(['talk', 'visit', 'add', 'visit-room', 'remove', 'close'])
 
 const card = ref(null)
 const first = props.friend.displayName.split(' ')[0]
@@ -65,7 +65,7 @@ onMounted(() => card.value?.focus())
       >
         {{ requested ? 'Requested' : 'Add friend' }}
       </LoadButton>
-      <button type="button" class="btn btn-secondary friend-card__visit" @click="emit('profile', friend)">View profile</button>
+      <button type="button" class="btn btn-secondary friend-card__visit" @click="emit('visit-room', friend)">Visit {{ first }}'s room</button>
     </div>
     <template v-else>
       <div class="friend-card__actions">

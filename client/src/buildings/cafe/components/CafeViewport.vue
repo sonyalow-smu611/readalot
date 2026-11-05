@@ -11,6 +11,8 @@ const props = defineProps({
   readers: { type: Array, default: () => [] },
   playerImage: { type: String, required: true },
   selectedId: { type: String, default: '' },
+  // a reader to stand beside from the start (coming back from visiting their room)
+  resumeId: { type: String, default: '' },
 })
 const emit = defineEmits(['arrive', 'walking', 'route-error'])
 
@@ -161,7 +163,21 @@ function animationFrame(now) {
   }
   frameId = requestAnimationFrame(animationFrame)
 }
+// Stands beside the reader you were meeting, once they are in their seat.
+let resumed = false
+async function standBeside() {
+  if (resumed || !props.resumeId) return
+  const index = props.readers.findIndex((reader) => reader.id === props.resumeId)
+  if (index < 0) return
+  resumed = true
+  player.value = { ...seatOf(props.readers[index], index).approach }
+  await nextTick()
+  measure()
+  followPlayer(1)
+}
+
 watch(() => props.readers.map((r) => r.id).join('|'), () => {
+  standBeside()
   if (destinationId && !props.readers.some((reader) => reader.id === destinationId)) clearWalk()
 })
 onMounted(async () => {

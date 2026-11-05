@@ -347,7 +347,7 @@ requests right now."), **Your friends** (each shows the book being read, **Onlin
 and a **Chat with …** button; pressing the row finds them on the map), **Readers nearby** (public readers
 close to your last rough area; pressing opens a card). Adding a sample reader (Pip, the demo readers) is
 accepted straight away. Errors: `Couldn't find <name>. Check the spelling.`, already friends, etc.
-**Friend card** (tap a walking friend): Add friend / Requested, **View profile**, **Visit <name>'s house**,
+**Friend card** (tap a walking friend): Add friend / Requested, **Visit <name>'s room** (straight to their room; **Back to town** returns to the same card), **Visit <name>'s house**,
 **Remove friend** (asks again: **Yes, remove <name>**).
 **Chat** (a **Reader messages** box): the conversation, a **Your message** box, **SEND →**, **Minimise chat**,
 **Close chat with <name>**; 1 to 1000 characters; one message per 1.5 seconds per reader; private to the two readers. Sending can earn 5 XP.
@@ -531,7 +531,7 @@ Use these exact names. (Labels are from the code; a handful were also seen in a 
 - **Welcome:** Name, Gender, Age, Religion, Genres, Characters, Back, Next, Finish, Try again.
 - **Walkthrough:** Walkthrough (region), Back, Next, Done, Skip this part, Skip tour, Replay the walkthrough.
 - **Town:** Follow my character, Zoom in, Zoom out, Notifications, Clear all, Places, Friends, Daily tasks, Dismiss, Claim N coins, Go, Nice!, Weather: …, Go inside, Enter the library, Enter the cafe, Enter the salon, Close.
-- **Friends:** Add friend, Remove friends, Friend requests, Accept, Decline, Your friends, Chat with <name>, Readers nearby, Friend's username, Send request, Remove friend, Yes, remove <name>, View profile, Visit <name>'s house.
+- **Friends:** Add friend, Remove friends, Friend requests, Accept, Decline, Your friends, Chat with <name>, Readers nearby, Friend's username, Send request, Remove friend, Yes, remove <name>, Visit <name>'s room, Visit <name>'s house.
 - **Chat:** Reader messages, Your message, SEND →, Minimise chat, Close chat with <name>.
 - **Room:** Places, Window, Chair, Bookshelf, Clock, Corkboard, Bed, Room menu, Mood check-in, Shop, Inventory, Decoration shop, Buy <name>?, Confirm, Cancel, Not enough credits., Close, Move left/up/down/right, Done.
 - **Book card (own):** Start reading, Mark as finished, Remove from shelf, Leave/Read Reviews, Hide reviews, Rate this book, ★ N star(s), Your review (optional), Post Review, Edit your review, Delete your review, Open full book page, Close book, Undo.
