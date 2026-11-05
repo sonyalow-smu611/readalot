@@ -99,7 +99,7 @@ export async function townReady(page) {
 }
 
 // The API with Supabase on, for the tests that need real friendships and locations (playwright.config.js).
-export const REAL_API = "http://127.0.0.1:3101";
+export const REAL_API = process.env.PLAYWRIGHT_REAL_API_URL || `http://127.0.0.1:${process.env.PLAYWRIGHT_REAL_API_PORT || "3111"}`;
 
 // Sends this page's API calls to it; every other test uses the API with the demo shelf.
 export async function useRealApi(page) {

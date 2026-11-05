@@ -853,6 +853,13 @@ Written by Codex at Aalric's request after a live README-only walkthrough simula
 | Master E2E guide | `docs/E2E_GUIDE.md` | Updated walkthrough documentation to the observed 34-stop structure, refreshed status notes to reflect the professor-pass verification, and aligned the walkthrough index description |
 | Walkthrough scenarios | `docs/e2e/02-walkthrough.md` | Rewrote TOUR scenarios to match the current walkthrough UX (`1 of 34`, `Skip this step`, section boundaries, and completion behaviour) with updated pass criteria |
 
+### Cross-device E2E foundation (AI-assisted)
+
+Added desktop Chromium and iPhone Playwright projects, isolated default E2E ports, retained failed-test
+artifacts, and a behavior-focused landing-to-sign-in smoke journey. The work preserves existing test
+fixtures and their real-Supabase API target override. Team to review: `playwright.config.js`,
+`tests/e2e/fixtures.js`, `tests/e2e/cross-device.spec.js`, and root test scripts.
+
 ### My Shelf header on phones (AI-generated)
 
 Written by Claude at Sonya's request. Layout and styling only; no business logic.
