@@ -152,14 +152,18 @@ when a code is accepted; floating books are pushed by the cursor.
   `POST /api/demo-auth/register`, which creates a confirmed account. An address already registered shows
   `That email is already registered. Log in instead.`
 
-**Log in (`/login`).** Heading **Welcome back**. **Email**, **Password** (+ eye), **Log in**, link
+**Log in (`/login`).** Heading **Welcome back**. **Email**, **Password** (+ eye), a **Remember me for 30 days**
+checkbox (ticked at the start; its tick draws itself), **Log in**, link
 **Need a card? Register**. The password is checked first (a wrong one shows Supabase's error and stays on
 the page); then a code is emailed (or, for demo addresses, none is sent).
 
 **Check your email (`/verify`).** Six digit boxes (typing moves on, Backspace goes back, a pasted code
-fills all six), **Confirm code**, and a **Resend** link that starts as `Resend in 30s`, counts down, then
-becomes **Resend code**. A demo address shows **"Demo account: no email is sent. Enter the code 111111."**
+fills all six), **Confirm code**, and a **Resend** button (the same width and padding as Confirm code, a gap
+below it) that starts as `Resend in 30s`, counts down, then becomes **Resend code**. A demo address shows **"Demo account: no email is sent. Enter the code 111111."**
 A wrong code shows an error and the cats duck (demo: `That code is not right. The demo code is 111111.`).
+With **Remember me for 30 days** ticked the reader stays signed in for 30 days on that browser (the session is kept
+in `localStorage` with its end date, `readalot-remember`); unticked, the session lasts until the browser is closed
+(`sessionStorage`). Readers who signed in before this existed stay signed in as before.
 A correct code shows **Code accepted**, the cats hop, then a returning reader zooms into the town and a
 new reader goes to Welcome. A reload on the code screen of a demo address asks to log in again
 (`Go back and log in again, then enter the code.`).
@@ -244,7 +248,7 @@ The reader's character has a glow and a green diamond.
 
 **Friends in town.** Friends' houses stand on plots (seven at most), with a name tag and a green dot when
 online; a friend away a long time has a dusty house. Online friends walk the streets with an orange
-glow, readers nearby (if you are public) with a blue glow; tapping one opens a **friend card**.
+glow, readers nearby (if you are public) with a blue glow; tapping one opens the Cafe's reader card (**Meet <name>**).
 
 ### A8a. Daily tasks
 
@@ -283,7 +287,7 @@ arrow keys) or jumps along with **Places** (Window, Chair, Bookshelf, Clock, Cor
 - **Coins** show at the top right.
 
 **My Shelf:** a bookcase with exactly three shelves (the statuses), a search box (**Search your books**),
-genre chips, **Spines / Covers**, **Back to room**. A book can be dragged (mouse: pull it up or down;
+genre chips, the **Spines / Covers** sliding switch (opens on Covers; press **Spines** to show spines, then a press anywhere on the switch goes back to Covers), **Back to room**. A book can be dragged (mouse: pull it up or down;
 touch: press and hold) to another shelf, which changes its status; **Esc** or letting go elsewhere puts it
 back; holding near the top or bottom edge scrolls the page. Long rows have **Previous / Next**, swipe,
 shift-wheel and arrow keys. Empty shelf: **No books yet** with **Discover books** and **Scan a cover**.
@@ -321,7 +325,7 @@ keys). Lit by the live weather (rain on the windows), lamps that toggle on tap. 
 with its own sign, colours and wall: **Bestsellers** (this week's list, credited under the sign), Romance,
 Romantasy, Fantasy, Mystery & Thriller, Horror, Sci-Fi, Historical Fiction, Young Adult, Memoir, Graphic
 Novels. The **Places** menu (bottom right, "Places in the library") has two groups: *Around the library* and *Shelves*.
-- **Opening a bookcase** shows its books; **Spines / Covers** switches the look; a book slides out on hover.
+- **Opening a bookcase** shows its books; the **Spines / Covers** sliding switch (opens on Covers) changes the look; a book slides out on hover.
 - **Book card** (a found book): cover, title, author, rating, synopsis, **Add to To be read** (becomes a shelf
   label; after adding, **See it in my room** (a button, with **Undo** beside it for a book just added)), **Where to get** (shops, downloads, borrowing), **Leave/Read Reviews**,
   **Open full book page**.
@@ -347,8 +351,7 @@ requests right now."), **Your friends** (each shows the book being read, **Onlin
 and a **Chat with …** button; pressing the row finds them on the map), **Readers nearby** (public readers
 close to your last rough area; pressing opens a card). Adding a sample reader (Pip, the demo readers) is
 accepted straight away. Errors: `Couldn't find <name>. Check the spelling.`, already friends, etc.
-**Friend card** (tap a walking friend): Add friend / Requested, **View profile**, **Visit <name>'s house**,
-**Remove friend** (asks again: **Yes, remove <name>**).
+**Reader card** (tap anyone walking on the map, a friend or a reader nearby): the same card as tapping a reader in the Cafe (**Meet <name>**): who they are, **Visit <name>'s room** (**Back to town** returns to the same card), **Add friend** / **Added as friend**, **Message**, what they are reading and your shared books and genres. Friends are removed from the Friends list (**Remove friends**).
 **Chat** (a **Reader messages** box): the conversation, a **Your message** box, **SEND →**, **Minimise chat**,
 **Close chat with <name>**; 1 to 1000 characters; one message per 1.5 seconds per reader; private to the two readers. Sending can earn 5 XP.
 **Bell:** entries such as "Emma Tan visited your room 46 minutes ago", "Noah Koh sent you a friend request",
@@ -527,11 +530,11 @@ Striped 55, Floral 65, Starry 70, Tartan 65.
 Use these exact names. (Labels are from the code; a handful were also seen in a running app.)
 
 - **Landing:** IKDA, Meet Maya, The town, Your character, Levels, How it works, FAQ, Sign up, See how it works, Log in, Surprise me, Start over.
-- **Auth:** Create your card, Welcome back, Email, Username, Password, Confirm password, Show password, Hide password, Register, Log in, Already have a card? Log in, Need a card? Register, Check your email, Verification code, Digit 1…6, Confirm code, Resend code, Resend in Ns, Code accepted.
+- **Auth:** Create your card, Welcome back, Email, Username, Password, Confirm password, Show password, Hide password, Register, Log in, Already have a card? Log in, Need a card? Register, Check your email, Verification code, Digit 1…6, Confirm code, Resend code, Resend in Ns, Code accepted, Remember me for 30 days.
 - **Welcome:** Name, Gender, Age, Religion, Genres, Characters, Back, Next, Finish, Try again.
 - **Walkthrough:** Walkthrough (region), Back, Next, Done, Skip this part, Skip tour, Replay the walkthrough.
 - **Town:** Follow my character, Zoom in, Zoom out, Notifications, Clear all, Places, Friends, Daily tasks, Dismiss, Claim N coins, Go, Nice!, Weather: …, Go inside, Enter the library, Enter the cafe, Enter the salon, Close.
-- **Friends:** Add friend, Remove friends, Friend requests, Accept, Decline, Your friends, Chat with <name>, Readers nearby, Friend's username, Send request, Remove friend, Yes, remove <name>, View profile, Visit <name>'s house.
+- **Friends:** Add friend, Remove friends, Friend requests, Accept, Decline, Your friends, Chat with <name>, Readers nearby, Friend's username, Send request, Remove friend, Yes, remove <name>, Visit <name>'s room, Visit <name>'s house.
 - **Chat:** Reader messages, Your message, SEND →, Minimise chat, Close chat with <name>.
 - **Room:** Places, Window, Chair, Bookshelf, Clock, Corkboard, Bed, Room menu, Mood check-in, Shop, Inventory, Decoration shop, Buy <name>?, Confirm, Cancel, Not enough credits., Close, Move left/up/down/right, Done.
 - **Book card (own):** Start reading, Mark as finished, Remove from shelf, Leave/Read Reviews, Hide reviews, Rate this book, ★ N star(s), Your review (optional), Post Review, Edit your review, Delete your review, Open full book page, Close book, Undo.

@@ -20,10 +20,11 @@ const shelves = computed(() =>
 
 <template>
   <ProfileBlock title="Favourite genres">
-    <ul v-if="shelves.length" class="tags">
-      <li v-for="{ genre, shelf } in shelves" :key="shelf.key">
+    <ul v-if="shelves.length" class="tags" data-tour="profile-genres">
+      <li v-for="({ shelf }, index) in shelves" :key="shelf.key">
         <RouterLink
           class="btn btn-secondary tag"
+          :data-tour="index === 0 ? 'profile-genre' : null"
           :to="{ name: 'library', query: { shelf: shelf.key } }"
           :aria-label="`${shelf.label} bookcase in the library`"
         >

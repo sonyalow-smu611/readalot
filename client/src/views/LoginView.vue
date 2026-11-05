@@ -3,6 +3,7 @@ import LoadButton from '@/components/shared/LoadButton.vue'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthStage from '@/components/auth/AuthStage.vue'
+import TickCheckbox from '@/components/shared/TickCheckbox.vue'
 import { USERNAME_PATTERN, beginLogin, beginRegister, usernameFree } from '@/services/auth.js'
 import { prefersReducedMotion } from '@/lib/motion'
 import { useUserStore } from '@/stores/user'
@@ -17,6 +18,8 @@ const username = ref('')
 const password = ref('')
 const confirm = ref('')
 const showPassword = ref(false)
+// Remember me: stay signed in for 30 days (ticked unless the reader unticks it)
+const rememberMe = ref(true)
 const blinking = ref(false)
 let blinkTimer = 0
 
@@ -106,7 +109,7 @@ async function submit() {
   }
   const result = registerMode.value
     ? await beginRegister(email.value.trim(), password.value, username.value)
-    : await beginLogin(email.value.trim(), password.value)
+    : await beginLogin(email.value.trim(), password.value, rememberMe.value)
   busy.value = false
   if (result.error) {
     fail(result.error.message)
@@ -201,6 +204,7 @@ async function submit() {
           @blur="blur('confirm')"
         />
       </div>
+      <TickCheckbox v-if="!registerMode" v-model="rememberMe" class="remember">Remember me for 30 days</TickCheckbox>
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
       <LoadButton class="btn btn-primary w-100" type="submit" :busy="busy" :failed="Boolean(error)" busy-text="Sending…">
         {{ registerMode ? 'Register' : 'Log in' }}
@@ -218,6 +222,10 @@ async function submit() {
   margin: 4px 0 0;
   color: var(--rl-muted);
   font-size: 0.8rem;
+}
+
+.remember {
+  margin: -4px 0 8px;
 }
 
 .stage-error {

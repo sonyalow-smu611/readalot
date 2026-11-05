@@ -2,7 +2,7 @@
 // Email sign-in and the reader's saved profile, through the Supabase client.
 // The profile lives in two tables: `profiles` (what other readers may see) and `profile_private`
 // (gender, age, religion: only the reader). See database/profiles_and_tour.sql.
-import { MISSING_KEYS, supabase } from '@/services/supabase.js'
+import { MISSING_KEYS, setRemember, supabase } from '@/services/supabase.js'
 import { cleanGenres } from '@/lib/genreShelves.js'
 
 const PENDING_KEY = 'readalot-pending-auth'
@@ -49,8 +49,9 @@ function missing() {
   return { data: null, error: { message: MISSING_KEYS } }
 }
 
-export function rememberPending(email, purpose) {
-  sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email, purpose }))
+// `remember` is the Remember me choice, kept with the code step so it is used when the code is accepted
+export function rememberPending(email, purpose, remember = true) {
+  sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email, purpose, remember }))
 }
 
 export function readPending() {
@@ -124,7 +125,7 @@ async function beginDemoRegister(email, password, username) {
   return { data: { email }, error: null }
 }
 
-export async function beginLogin(email, password) {
+export async function beginLogin(email, password, remember = true) {
   if (!supabase) return missing()
   const signed = await supabase.auth.signInWithPassword({ email, password })
   if (signed.error) return signed
@@ -132,7 +133,7 @@ export async function beginLogin(email, password) {
   if (isDemoEmail(email)) {
     // the password was right: no email is sent, the code is DEMO_CODE
     demoPassword = password
-    rememberPending(email, 'login')
+    rememberPending(email, 'login', remember)
     return { data: { email }, error: null }
   }
   const sent = await supabase.auth.signInWithOtp({
@@ -140,12 +141,14 @@ export async function beginLogin(email, password) {
     options: { shouldCreateUser: false },
   })
   if (sent.error) return sent
-  rememberPending(email, 'login')
+  rememberPending(email, 'login', remember)
   return { data: { email }, error: null }
 }
 
 export async function verifyEmailCode(email, token, purpose) {
   if (!supabase) return missing()
+  // where the session is kept (30 days, or until the browser closes) is decided before it is made
+  setRemember(readPending()?.remember !== false)
   if (isDemoEmail(email)) {
     if (token !== DEMO_CODE) return { data: null, error: { message: `That code is not right. The demo code is ${DEMO_CODE}.` } }
     if (!demoPassword) return { data: null, error: { message: 'Go back and log in again, then enter the code.' } }

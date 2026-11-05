@@ -13,6 +13,7 @@
     class="case"
     role="dialog"
     aria-modal="true"
+    data-tour="genre-case"
     :aria-labelledby="headingId"
     tabindex="-1"
     :style="theme"
@@ -32,18 +33,8 @@
           {{ credit.text }}<span class="visually-hidden"> (opens in a new tab)</span>
         </a>
       </div>
-      <div class="case__modes" role="group" aria-label="Show the books by">
-        <button
-          v-for="option in MODES"
-          :key="option.value"
-          type="button"
-          class="btn btn-chip btn-sm"
-          :class="{ active: mode === option.value }"
-          :aria-pressed="mode === option.value"
-          @click="mode = option.value"
-        >
-          {{ option.label }}
-        </button>
+      <div class="case__modes" data-tour="genre-modes">
+        <SlideToggle v-model="mode" :options="MODES" label="Show the books by" home="covers" />
       </div>
     </header>
 
@@ -65,6 +56,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { iconUrl } from '../hall/icons.js'
+import SlideToggle from '@/components/shared/SlideToggle.vue'
 import BookShelves from './BookShelves.vue'
 
 const props = defineProps({
@@ -87,7 +79,8 @@ const MODES = [
 ]
 
 const panel = ref(null)
-const mode = ref('spines')
+// the books face out by default; the switch turns them to their spines
+const mode = ref('covers')
 const headingId = `case-${props.category.key}`
 
 const icon = iconUrl(props.category.icon)

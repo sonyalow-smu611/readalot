@@ -10,10 +10,13 @@ import AppHeader from '@/components/AppHeader.vue'
 import DailyDock from '@/components/town/DailyDock.vue'
 import BookOpenOverlay from '@/components/BookOpenOverlay.vue'
 import GuideTour from '@/components/GuideTour.vue'
-import { BAR_HEIGHT } from '@/lib/walkthrough.js'
+import { useBarHeight } from '@/composables/useBarHeight.js'
 import LoadingScreen from '@/components/LoadingScreen.vue'
 import Toast from '@/components/Toast.vue'
 import { useMusicStore } from '@/stores/music.js'
+
+// the walkthrough bar's height now (taller on a phone)
+const barHeight = useBarHeight()
 
 const route = useRoute()
 const router = useRouter()
@@ -60,7 +63,7 @@ function resetScroll() {
       ref="main"
       class="app-main"
       :class="route.meta.bare || route.meta.fullBleed ? 'app-main--bleed' : 'container py-4'"
-      :style="guide ? { marginBottom: `${BAR_HEIGHT}px` } : null"
+      :style="guide ? { marginBottom: `${barHeight}px` } : null"
     >
       <RouterView v-slot="{ Component, route: current }">
         <Transition :name="current.meta.transition ?? 'fade'" mode="out-in" @before-enter="resetScroll">

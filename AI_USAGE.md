@@ -963,6 +963,51 @@ Written by Claude at Khaleil's request (changes to Aalric's salon and Dylan's to
 
 | Area | Files | What AI produced |
 |------|-------|------------------|
+<<<<<<< HEAD
+| Made-up readers hidden (backend, requested by Aalric) | `server/data/demoReaders.js` (`SAMPLE_READER_IDS`), `server/src/services/readers.js`, `friends.js`, `nearby.js` | With Supabase on, Emma, Ayaan, Sofia, Noah, Mei, Priya, Daniel and the demo account's reader no longer show in the Cafe, nearby, friend lists, profiles or add-by-username. Pip stays, and is the only reader who accepts a request at once. Real readers work as before. Their rows stay in the database; without Supabase (the e2e tests) the sample data still serves the app |
+| Sliding notification | `client/src/components/town/NotificationSlide.vue`, `client/src/views/TownView.vue`, `client/src/town/notificationsStore.js` | A new notification slides in from the right for about 5 seconds, then fades away; tapping it goes to it. Things you did yourself (a request you sent) don't slide in. The bell stays red until the list is opened |
+| Tests | `tests/e2e/notifications.spec.js` | Slide in, fade away, tap to open, and nothing for your own actions |
+
+### A visited reader's shelf shows every book, and opens like the library (AI-generated)
+
+Written by Claude at Aalric's request. The server change is to a shared service and was asked for by Aalric.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Every book, in full (backend) | `server/src/services/readers.js` (`withBooks`, `findReader`), `server/src/routes/people.js` | A single reader (`GET /api/people/:id`) now comes with every book on their shelf, in full (cover, synopsis and the rest), as the reader sees it themselves, with Google Books filling in a book the books table doesn't hold. The list of readers (the Cafe) stays light. Before, a visit showed only the books the books table held, so most shelves looked empty |
+| Visit | `client/src/stores/people.js` (`fetchReader` with `full`), `client/src/buildings/house/visitors.js` | A visit asks for that one reader in full and keeps every book field |
+| Book card | `client/src/buildings/house/RoomView.vue`, `ShelfView.vue` | A book on a visited reader's bookshelf, in their room or on their shelf page, opens the library's card (`FoundBookPreview`): Add to To be read and Undo, Where to get, Leave/Read Reviews and Open full book page. `VisitorBookDialog.vue` is removed |
+
+### Fewer townsfolk, straight to the room, and the card comes back (AI-generated)
+
+Written by Claude at Aalric's request. Layout and navigation only.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Fewer walkers | `client/src/town/places.js` | At most five made-up townsfolk walk the pavements (`MAX_NPCS`), so the readers really out walking (friends online, readers nearby) are easy to see |
+| Street card | `client/src/views/TownView.vue` (`FriendCard.vue` removed) | Tapping anyone walking on the map, a friend or a reader nearby, opens the Cafe's own reader card (`CafeReaderCard`): Visit <name>'s room, Add friend, Message and the shared cards. There is no profile page in between, and Back to town reopens the same card |
+| Coming back | `client/src/lib/returnState.js`, `TownView.vue`, `client/src/buildings/cafe/CafeView.vue`, `components/CafeViewport.vue` | Back from a visit lands on the same card: the town glides to that reader and opens their card, and the Cafe brings back the same seats, stands you beside them and opens their card |
+
+### A sliding Spines / Covers switch, opening on Covers (AI-generated)
+
+Written by Claude at Aalric's request. Layout and styling only.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Switch | `client/src/components/shared/SlideToggle.vue` | A switch with a thumb that glides between the choices (a 0.34 second ease; none with reduced motion), still two buttons for the keyboard and screen readers, with Left and Right moving between them. While it is on Spines, a press anywhere on it (on either side, or its edge) slides it back to Covers (`home`) |
+| Where | `client/src/buildings/house/ShelfView.vue`, `client/src/buildings/library/SearchView.vue`, `client/src/buildings/library/components/GenreBookcase.vue` | The two chips became this switch, and My Shelf and the library's opened bookcases now open on Covers (search already did) |
+
+### Verification screen, remember me, and the walkthrough (AI-generated)
+
+Written by Claude at Aalric's request. Remember me changes how the sign-in session is kept (shared `services/`), asked for by Aalric.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Code screen | `client/src/views/VerifyView.vue` | Resend code is a button the same width and padding as Confirm code, with a gap below it (it had no padding, so its words touched the box) |
+| Remember me | `client/src/services/supabase.js`, `services/auth.js`, `client/src/views/LoginView.vue`, `client/src/components/shared/TickCheckbox.vue` | A "Remember me for 30 days" checkbox on Log in (ticked to start) whose tick draws itself. Ticked: the session is kept in `localStorage` with an end date 30 days away and the reader is signed out after it. Unticked: it is kept in `sessionStorage`, so closing the browser signs out. Readers already signed in are not signed out |
+| Walkthrough steps | `client/src/lib/walkthrough.js`, `GenreBookcase.vue`, `FavouriteGenres.vue`, `TownView.vue`, `SalonView.vue` | A stop for the music button in the town; in the salon's Profile, a stop for the favourite genres, a step that asks the reader to tap one, and two stops in the library bookcase it opens (35 steps in all). A step marked `optional` is skipped if its target never shows |
+| Walkthrough text | `client/src/components/GuideTour.vue`, `client/src/composables/useBarHeight.js`, `App.vue` | The words are centred and bigger; on a phone the bar is 232 px tall (200 px on a laptop) so the longest lines fit. Checked all 35 steps at 360, 390 and 1280 px wide |
+=======
 | Badge to Profile | `client/src/components/town/PlayerBadge.vue`, `client/src/views/TownView.vue` | The badge in the town's corner opens the salon on the Profile tab with the sheet pulled up (`?tab=profile&sheet=1`), and shows your @username under your name |
 | Username in the profile | `client/src/services/auth.js`, `client/src/stores/user.js` | The profile loads `profiles.username` into `profile.username` (as `town/username.js` asked for), and `saveProfile` can save it; a name taken in the meantime says so |
 | Editing the username | `client/src/buildings/salon/components/ProfileEditForm.vue`, `client/src/buildings/salon/components/ReaderCard.vue` | A Username field in Edit profile, checked as it's typed (format, then free or taken, with `readalot_username_free`), lowercase and without the @ as typed; only a new, free name is saved. The Profile card shows @username under the name |
@@ -978,3 +1023,4 @@ Written by Claude at Khaleil's request (changes to Dylan's town and Aasim's libr
 | ☰ menu | `client/src/components/town/TownMenu.vue` (new), `client/src/views/TownView.vue` | On a phone (600 px and narrower), Daily, the music button, the bell and Public/Private fold into one ☰ under the weather chip; weather, Places and Friends stay. Each row does what its button did (Daily and Notifications open their panels and close the menu; Music and Public switch in place). A red dot on ☰ for unread notifications or a Daily reward. The walkthrough and wider screens keep the buttons |
 | Badge | `client/src/views/TownView.vue`, `client/src/components/town/PlayerBadge.vue` | A quarter smaller on a phone (`scale`, so the badge's own pop still works), kept in its corner; the @username sits midway between the name and the coins |
 | Library's top line | `client/src/buildings/library/LibraryView.vue`, `client/src/components/town/DailyDock.vue` | On a phone: "‹ Town", Daily and music, the magnifier and the weather share one line, and the search bar opens below it with a gap instead of over Daily and music |
+>>>>>>> origin/main

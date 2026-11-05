@@ -13,6 +13,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BuildingShell from '@/components/shared/BuildingShell.vue'
+import SlideToggle from '@/components/shared/SlideToggle.vue'
 import StateView from '@/components/StateView.vue'
 import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
 import { useBookPreview } from '@/composables/useBookPreview'
@@ -83,7 +84,8 @@ async function loadVisiting() {
 const query = ref('')
 const genre = ref(ALL)
 // the books standing as spines or face out
-const mode = ref('spines')
+// the books face out by default; the switch turns them to their spines
+const mode = ref('covers')
 
 // the genres of the shelf's books, the most common first (ties alphabetical)
 const genres = computed(() => {
@@ -185,18 +187,8 @@ onMounted(() => {
           <!-- the shell's Back to room button floats over this cell -->
           <span class="my-shelf__back-space" aria-hidden="true" />
           <ShelfSign class="my-shelf__sign" :text="shell.sign" :compact="Boolean(visitingId)" />
-          <div class="my-shelf__modes" role="group" aria-label="Show the books by">
-            <button
-              v-for="option in MODES"
-              :key="option.value"
-              type="button"
-              class="btn btn-chip btn-sm"
-              :class="{ active: mode === option.value }"
-              :aria-pressed="mode === option.value"
-              @click="mode = option.value"
-            >
-              {{ option.label }}
-            </button>
+          <div class="my-shelf__modes">
+            <SlideToggle v-model="mode" :options="MODES" label="Show the books by" home="covers" />
           </div>
         </header>
 

@@ -28,8 +28,11 @@ import {
   ringOf,
   roundedPath,
 } from '@/lib/tourShapes.js'
-import { BAR_HEIGHT } from '@/lib/walkthrough.js'
+import { useBarHeight } from '@/composables/useBarHeight.js'
 import { useUserStore } from '@/stores/user'
+
+// the walkthrough bar's height now (taller on a phone)
+const barHeight = useBarHeight()
 
 const route = useRoute()
 const router = useRouter()
@@ -183,7 +186,7 @@ function draw(time) {
 // Beside the thing and never over it: below it when it is in the top half, above it when it is in
 // the bottom half, else to a side, and always clear of the text bar.
 function placeAvatar(active) {
-  const areaH = host.height - BAR_HEIGHT
+  const areaH = host.height - barHeight.value
   const clampX = (x) => Math.min(Math.max(x, EDGE), host.width - ME_W - EDGE)
   let spot = { x: clampX((host.width - ME_W) / 2), y: Math.max(EDGE, areaH / 2 - ME_H / 2) }
   if (active) {
@@ -321,6 +324,12 @@ function loop(time) {
   // already done (a friend request to someone who is already a friend): nothing to do here
   if (isTry.value && active && (active.element.disabled || active.element.getAttribute('aria-disabled') === 'true')) advance(900)
 
+  // an optional step whose target never shows (nothing to tap) moves on by itself
+  if (isTry.value && step.optional && !active && onPage(step.to)) {
+    missing += 1
+    if (missing > MISSING_FRAMES) advance(0)
+  } else missing = 0
+
   trackSlide(active)
   if (isTry.value && step.until === 'book-moved') watchShelf()
 
@@ -341,9 +350,16 @@ function advance(delay = 400) {
   }, delay)
 }
 
-// whether the reader is already on the step's page
+// how long an optional step waits for its target before it is skipped (frames, about 4 seconds)
+const MISSING_FRAMES = 240
+let missing = 0
+
+// whether the reader is already on the step's page (and on the tab it names, when it names one)
 function onPage(to) {
-  return !to || route.path === to.split('?')[0]
+  if (!to) return true
+  const [path, query = ''] = to.split('?')
+  const tab = new URLSearchParams(query).get('tab')
+  return route.path === path && (!tab || route.query.tab === tab)
 }
 
 // Next lights the next thing in a group before it goes on; Back goes the other way
@@ -369,6 +385,7 @@ watch(guideStep, async (step) => {
   hop.value += 1
   sawDialog = false
   advancing = -1
+  missing = 0
   leaving.value = false
   slide = null
   shelfBefore = null
@@ -500,7 +517,7 @@ const handCells = HAND.flatMap((row, y) =>
     </span>
 
     <!-- the words, always in the same place -->
-    <footer class="guide__bubble" :style="{ height: `${BAR_HEIGHT}px` }" aria-live="polite">
+    <footer class="guide__bubble" :style="{ height: `${barHeight}px` }" aria-live="polite">
       <div class="guide__top">
         <p class="guide__count">{{ guideStep + 1 }} of {{ guideCount }} · {{ guide.section }}</p>
         <div v-if="!isLast" class="guide__skips">
@@ -613,26 +630,45 @@ const handCells = HAND.flatMap((row, y) =>
   font-size: 0.78rem;
 }
 
+/* the words fill the bar: centred across it and down it, in a bigger size */
 .guide__say {
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
   overflow: hidden;
-  font-size: 0.92rem;
-  line-height: 1.35;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
   color: var(--rl-text);
 }
 
 .guide__ask {
   margin: 0;
-  font-size: 0.92rem;
-  font-weight: 700;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 800;
   color: var(--rl-primary, #6b4a34);
 }
 
 .guide__dots {
   display: flex;
+  justify-content: center;
   gap: 6px;
+}
+
+/* a phone: a little smaller, in a taller bar (useBarHeight), so the longest lines still fit */
+@media (max-width: 575.98px) {
+  .guide__say {
+    font-size: 1.02rem;
+  }
+
+  .guide__ask {
+    font-size: 1rem;
+  }
 }
 
 .guide__dots i {

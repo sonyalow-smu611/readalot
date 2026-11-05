@@ -96,7 +96,7 @@ turns it off and on, remembered on that device. The weather comes from `services
 | `fonts.js` | Loads the genre signs' pixel fonts |
 | `components/LibraryHall.vue` | The hall itself: sizing, scrolling, the bookcase and desk buttons, the signs, the weather |
 | `components/PlacesMenu.vue` | The Places menu in the bottom right (a copy of My Room's, in groups) |
-| `components/GenreBookcase.vue` | One genre's bookcase opened: its wall, sign, Spines/Covers and its books |
+| `components/GenreBookcase.vue` | One genre's bookcase opened: its wall, sign, the sliding Spines/Covers switch (opening on Covers) and its books |
 | `components/BookShelves.vue` | A bookcase full of books, as spines or covers; the genre bookcase and search both use it |
 | `components/ScanMachine.vue` | The book scanner: camera with "Snap cover", photo upload, the scan and its result |
 | `hall/layout.js` | **What stands where.** Every piece, the wall art, the lamps' light and the places in the menu |

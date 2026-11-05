@@ -19,6 +19,7 @@ import { useProgressStore } from '@/stores/progress.js'
 import { useDailyStore } from '@/town/dailyStore.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
 import { useNotificationsStore } from '@/town/notificationsStore.js'
+import { stashView, takeView } from '@/lib/returnState.js'
 import { lastPlace, rememberPlace } from '@/town/lastPlace.js'
 import { yourUsername } from '@/town/username.js'
 import { MAX_FREEZES } from '@/town/daily.js'
@@ -30,7 +31,7 @@ import PlaceCard from '@/components/town/PlaceCard.vue'
 import WeatherChip from '@/components/town/WeatherChip.vue'
 import PlayerBadge from '@/components/town/PlayerBadge.vue'
 import FriendsList from '@/components/town/FriendsList.vue'
-import FriendCard from '@/components/town/FriendCard.vue'
+import CafeReaderCard from '@/buildings/cafe/components/CafeReaderCard.vue'
 import ChatDock from '@/components/town/ChatDock.vue'
 import DailyButton from '@/components/town/DailyButton.vue'
 import MusicToggle from '@/components/MusicToggle.vue'
@@ -134,7 +135,8 @@ const onlineCount = computed(() => friendsInTown.value.filter((friend) => friend
 const chats = computed(() => chatIds.value.map((id) => friendsInTown.value.find((friend) => friend.id === id)).filter(Boolean))
 const selectedFriend = computed(() => friendsInTown.value.find((friend) => friend.id === friendId.value) ?? null)
 const selectedNearby = computed(() => nearbyInTown.value.find((reader) => reader.id === friendId.value) ?? null)
-const selectedFriendHouse = computed(() => nearby.houses.find((place) => place.id === selectedFriend.value?.house) ?? null)
+// the reader on the map whose card is open (a friend out walking, or a reader near you)
+const cardReader = computed(() => selectedFriend.value ?? selectedNearby.value)
 const selectedPresence = computed(() => {
   const reader = selected.value?.reader
   return reader ? (friendsInTown.value.find((friend) => friend.id === reader) ?? null) : null
@@ -155,6 +157,8 @@ async function refreshNearby() {
   if (document.hidden) return
   try {
     await nearby.refresh()
+    looked = true
+    reopenCard()
     slideIn(await notifications.check())
   } catch {
     // the town still works without it: everyone stays as they were until the next refresh
@@ -193,14 +197,8 @@ async function choosePublic(on) {
   }
 }
 
-// the nearby reader whose Add friend is on its way, for the card's Sending… button
-// The friend action on its way, for its button's spinner and then tick (LoadButton):
-// { key, busy, failed }, keyed like `add-<reader id>`, `accept-<request id>`, `remove-<reader id>`.
+// The friend action on its way: { key, busy, failed }, keyed like `accept-<request id>`.
 const action = ref(null)
-const actionOf = (key) => ({
-  busy: action.value?.key === key && action.value.busy,
-  failed: action.value?.key === key && action.value.failed,
-})
 
 // Runs a friend action: busy until it's saved, then its tick for a moment before the lists
 // change (a request that's answered leaves the list, so the tick is seen first). A failure says
@@ -218,10 +216,6 @@ async function runAction(key, task) {
     showNotice(err.message)
     return false
   }
-}
-
-async function addFriend(reader) {
-  await runAction(`add-${reader.id}`, (saved) => nearby.addFriend(reader.id, saved))
 }
 
 // Add friend, by username: says how it went in the form.
@@ -250,18 +244,6 @@ async function answerRequest(requestId, accept) {
   }
 }
 
-// The card shows its spinner, then its tick, then closes.
-async function removeFriend(friend) {
-  closeChat(friend.id)
-  const removed = await runAction(`remove-${friend.id}`, (saved) =>
-    nearby.removeFriend(friend.id, async () => {
-      await saved()
-      if (friendId.value === friend.id) friendId.value = null
-    }),
-  )
-  if (!removed && friendId.value === friend.id) friendId.value = null
-}
-
 async function removeFriends(friends) {
   for (const { id } of friends) closeChat(id)
   await runAction('remove-several', (saved) => nearby.removeFriends(friends.map(({ id }) => id), saved))
@@ -288,6 +270,8 @@ onMounted(() => {
 onBeforeRouteLeave((to) => {
   const place = allPlaces.value.find(({ route }) => route.name === to.name && (!route.params || route.params.id === to.params.id))
   rememberPlace(place?.id ?? '')
+  // off to a reader's room (or profile) from their card: the card opens again on the way back
+  if (friendId.value && READER_PAGES.includes(to.name)) rememberCard(friendId.value)
 })
 
 onBeforeUnmount(() => {
@@ -550,10 +534,35 @@ function closeChat(id) {
   if (openChat.value === id) openChat.value = null
 }
 
-function visitFriend(house) {
-  friendId.value = null
-  enter(house)
+// The card of the reader you went to visit opens again when you come back (see reopenCard), so you
+// don't lose track of them on the map.
+const CARD_VIEW = 'town-card'
+const CARD_FOR = 30 * 60 * 1000
+const READER_PAGES = ['reader-house', 'reader-house-shelf', 'reader-room', 'reader-shelf']
+let pendingCard = (() => {
+  const back = takeView(CARD_VIEW)
+  return back && Date.now() - back.at < CARD_FOR ? back.id : null
+})()
+let looked = false
+
+function rememberCard(id) {
+  stashView(CARD_VIEW, { id, at: Date.now() })
 }
+
+// Back from a visit: once the map is up and the readers are known, glide to the reader and open
+// their card again. If they have moved on (gone offline or out of reach) it just stays shut.
+function reopenCard() {
+  if (!pendingCard || !ready.value || guide.value || entering.value) return
+  const there =
+    friendsInTown.value.some((friend) => friend.id === pendingCard && friend.online && friend.character) ||
+    nearbyInTown.value.some((reader) => reader.id === pendingCard)
+  if (there) {
+    friendFocus.value = { id: pendingCard, key: Date.now() }
+    pendingCard = null
+  } else if (looked) pendingCard = null
+}
+
+watch(ready, reopenCard)
 
 // Your character walks over first; the map says when they are through the door (goInside).
 function enter(place) {
@@ -625,7 +634,7 @@ function goInside(place) {
          beside it: in one row, so the music button slides along as Daily widens to show its words -->
     <div class="town__daily">
       <DailyButton v-if="daily.ready" data-tour="town-daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
-      <MusicToggle />
+      <MusicToggle data-tour="town-music" />
     </div>
     <!-- on a phone, Daily, music, the bell and public or private fold into this ☰ menu instead -->
     <TownMenu
@@ -731,29 +740,14 @@ function goInside(place) {
       />
     </Transition>
 
-    <!-- one reader's card at a time: a reader nearby you've just added (a demo reader says yes at
-         once) swaps to their friend card, the old one gone before the new one comes in -->
+    <!-- one reader's card at a time -->
     <Transition name="town-card" mode="out-in">
-      <FriendCard
-        v-if="selectedFriend"
-        :key="`friend-${selectedFriend.id}`"
-        :friend="selectedFriend"
-        :house="selectedFriendHouse"
-        :removing="actionOf(`remove-${selectedFriend.id}`)"
-        @talk="sayHi"
-        @visit="visitFriend"
-        @remove="removeFriend"
-        @close="friendId = null"
-      />
-      <FriendCard
-        v-else-if="selectedNearby"
-        :key="`nearby-${selectedNearby.id}`"
-        :friend="selectedNearby"
-        :requested="selectedNearby.requested || nearby.outgoing.includes(selectedNearby.id)"
-        :sending="actionOf(`add-${selectedNearby.id}`)"
-        nearby
-        @add="addFriend"
-        @profile="router.push({ name: 'reader-room', params: { id: $event.id } })"
+      <!-- the same card as tapping a reader in the Cafe: who they are, Visit room, Add friend, Message -->
+      <CafeReaderCard
+        v-if="cardReader"
+        :key="`reader-${cardReader.id}`"
+        class="town__reader-card"
+        :reader="cardReader"
         @close="friendId = null"
       />
     </Transition>
@@ -893,6 +887,27 @@ function goInside(place) {
     transition: none;
   }
 }
+
+/* a reader's card on the map: the Cafe's card (CafeReaderCard), over the town, in the middle of a
+   laptop's screen and as a sheet from the bottom on a phone */
+.town__reader-card {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  margin: auto;
+  width: min(660px, calc(100% - 28px));
+  height: fit-content;
+  max-height: calc(100% - 28px);
+}
+
+@media (max-width: 640px) {
+  .town__reader-card {
+    top: auto;
+    margin: 0;
+    width: 100%;
+    max-height: calc(100% - 156px);
+  }
+}
 </style>
 
 <style>
@@ -919,4 +934,5 @@ html.town-entering::view-transition-old(root) {
 html.town-entering::view-transition-new(root) {
   animation: town-zoom-out 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s both;
 }
+
 </style>

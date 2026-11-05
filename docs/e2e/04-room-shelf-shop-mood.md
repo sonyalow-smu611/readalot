@@ -99,7 +99,7 @@ changes it:** `npm run seed:demo -w server`. Existing room helpers: `roomReady`,
 
 ### SHF-08 · My Shelf layout and view modes · Medium
 1. Tap the bookshelf → `/house/shelf`: the three-shelf bookcase in My Room's colours, **Back to room**, **Spines / Covers**, **Search your books**, genre chips.
-2. Press **Covers** → books show cover-out; **Spines** → titles on spines.
+2. The switch opens on **Covers** (books cover-out); slide it to **Spines** → titles on spines, and back.
 3. **Back to room** → `/house`.
 **DB:** none. **Pass:** both modes render all books. **Existing coverage:** `my-shelf.spec.js`.
 
