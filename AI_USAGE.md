@@ -933,6 +933,17 @@ Written by Claude at Dylan's request, from the team's testing notes (agreed by t
 | IKDA | `client/index.html`, `client/src/router/index.js`, `AppHeader.vue`, `IntroAnimation.vue`, `TownView.vue`, `CafeView.vue`, `DiscoverView.vue`, `useBookReviews.js`, `server/src/services/books.js`, `server/src/index.js`, `server/src/routes/creatures.js` | Every name the reader sees says IKDA, as the landing page and the town already did; storage keys and package names stay as they were |
 | Tests | `tests/e2e/friends-list.spec.js`, `friends.spec.js`, `notifications.spec.js`, `townFriends.js`, `supabaseUser.js`, `reviews.spec.js`, `onboarding.spec.js` | Spinner and tick on Accept, Remove friends and the Cafe's Add friend; a removed friend nearby staying in town; a closed chat on another button; asking a removed friend again; only received messages in the bell; IKDA |
 
+### Leaving a visited room, and knocking only on the way in (AI-generated)
+
+Written by Claude Code at Aasim's request, with Sonya's OK for her visit page. Team to review:
+`BuildingShell.vue` is shared, so every building's back button is affected.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Back button | `client/src/components/shared/BuildingShell.vue` | When the page before is the very page the button goes to, Back goes back to it instead of opening it again, so the history doesn't go round in circles (a visited room → its shelf → back to the room no longer forgets the Cafe) |
+| Visiting a room | `client/src/buildings/house/VisitView.vue` | The room's back button goes to where the visit started: the town, the reader's profile page, or the Cafe. "Knocking on the door" plays only on the way in: back from their shelf or profile, the room shows as soon as it has loaded |
+| Tests | `tests/e2e/visit-room.spec.js` | "coming back and leaving": the Cafe → room → shelf → room → Cafe, and a visit from the profile page |
+
 ### Music, sound effects and weather sounds (AI-generated)
 
 Written by Claude at Khaleil's request. Khaleil chose every track and sound by ear, from shortlists of free tracks: CC0, plus Fesliyan Studios music, which is free for non-commercial use with a credit. Credits are in README.

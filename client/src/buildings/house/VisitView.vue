@@ -21,14 +21,27 @@ const progress = useProgressStore()
 // true once the door has opened and the room can show
 const entered = ref(false)
 const knockingOn = computed(() => reader.value?.firstName ?? knownFirstName(route.params.id))
-// came in through their front door on the map (?from=town): back goes to the town; otherwise
-// they came from the reader's profile, so back goes there (or the Cafe, before the room loads)
+// the page before this one and the page after it in the history (the router keeps both)
+const historyPath = (key) => {
+  const path = window.history.state?.[key]
+  return typeof path === 'string' ? path.split(/[?#]/)[0] : ''
+}
+// back in the room from their own shelf or profile: the door is already open, so no knock
+const returning = (id) => historyPath('forward').startsWith(`/people/${id}`)
+// came in through their front door on the map (?from=town): back goes to the town; from their
+// profile page, back goes there; otherwise the visit started in the Cafe, so back goes there
 const fromTown = computed(() => route.query.from === 'town')
-const roomBack = computed(() =>
-  fromTown.value
-    ? { to: { name: 'town' }, label: 'Back to town' }
-    : { to: { name: 'reader-room', params: { id: reader.value?.id } }, label: `Back to ${reader.value?.firstName}'s profile` },
-)
+const fromProfile = computed(() => {
+  void route.fullPath
+  return historyPath('back') === `/people/${route.params.id}`
+})
+const roomBack = computed(() => {
+  if (fromTown.value) return { to: { name: 'town' }, label: 'Back to town' }
+  if (fromProfile.value) {
+    return { to: { name: 'reader-room', params: { id: route.params.id } }, label: `Back to ${reader.value?.firstName}'s profile` }
+  }
+  return { to: { name: 'cafe' }, label: 'Back to the Cafe' }
+})
 const outsideBack = computed(() =>
   fromTown.value ? { to: { name: 'town' }, label: 'Back to town' } : { to: { name: 'cafe' }, label: 'Back to the Cafe' },
 )
@@ -37,7 +50,7 @@ async function load(id) {
   loading.value = true
   error.value = ''
   reader.value = null
-  entered.value = false
+  entered.value = returning(id)
   let room = null
   let failure = ''
   try {
@@ -71,9 +84,13 @@ watch(() => route.params.id, load, { immediate: true })
     <RoomView :key="reader.id" :visiting="reader" :style="{ '--house-accent': place.accent }" />
   </BuildingShell>
 
-  <BuildingShell v-else-if="loading || reader" title="Visiting" :owner="place.owner" flush :back="outsideBack.to" :back-label="outsideBack.label">
+  <BuildingShell v-else-if="(loading || reader) && !entered" title="Visiting" :owner="place.owner" flush :back="outsideBack.to" :back-label="outsideBack.label">
     <KnockingDoor :name="knockingOn" :ready="Boolean(reader)" @opened="entered = true" />
   </BuildingShell>
+
+  <!-- back from their shelf or profile: the room shows as soon as it has loaded, without the door -->
+  <BuildingShell v-else-if="loading" title="Visiting" :owner="place.owner" flush :back="roomBack.to" :back-label="roomBack.label" />
+
 
   <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :back="outsideBack.to" :back-label="outsideBack.label">
     <div class="visit-missing" role="alert">
