@@ -17,12 +17,15 @@ import './styles/pixel-buttons.css'
 import './styles/pixel-surfaces.css'
 import './styles/pixel-sign.css'
 import { applyRoomPalette } from './lib/roomPalette'
+import { startButtonClicks } from './lib/sfx.js'
 
 import App from './App.vue'
 import router from './router'
 import { registerMotionDirectives } from './directives'
 
 applyRoomPalette()
+// every button clicks (lib/sfx.js)
+startButtonClicks()
 
 const app = createApp(App)
 
