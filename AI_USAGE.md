@@ -956,3 +956,13 @@ Written by Claude at Khaleil's request. Khaleil chose every track and sound by e
 | Sounds in town | `client/src/town/TownScene.js`, `client/src/town/you.js` | A pop when you tap the ground or set off for a building (it replaces the Enter button's click), a click when you tap a building, footsteps in time with the walk's bounce (pavement along the roads, grass across open ground; only on trips you start), and the door with a shop bell as it opens |
 | Weather sounds | `client/src/lib/ambience.js` (new), `client/src/stores/music.js`, `client/public/ambience/` (new) | Loops cut to repeat without a seam, following the live weather: rain or a thunderstorm, birds when sunny, a breeze when cloudy, crickets at night in town; rain on the window inside the room, library and cafe; cups clinking now and then in the cafe. About 12 dB under the music, and the music button turns them off too |
 | Docs | `README.md` | Music and sound credits |
+
+### Real readers only, and a sliding notification (AI-generated)
+
+Written by Claude at Aalric's request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Made-up readers hidden (backend, requested by Aalric) | `server/data/demoReaders.js` (`SAMPLE_READER_IDS`), `server/src/services/readers.js`, `friends.js`, `nearby.js` | With Supabase on, Emma, Ayaan, Sofia, Noah, Mei, Priya, Daniel and the demo account's reader no longer show in the Cafe, nearby, friend lists, profiles or add-by-username. Pip stays, and is the only reader who accepts a request at once. Real readers work as before. Their rows stay in the database; without Supabase (the e2e tests) the sample data still serves the app |
+| Sliding notification | `client/src/components/town/NotificationSlide.vue`, `client/src/views/TownView.vue`, `client/src/town/notificationsStore.js` | A new notification slides in from the right for about 5 seconds, then fades away; tapping it goes to it. Things you did yourself (a request you sent) don't slide in. The bell stays red until the list is opened |
+| Tests | `tests/e2e/notifications.spec.js` | Slide in, fade away, tap to open, and nothing for your own actions |

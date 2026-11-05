@@ -233,7 +233,7 @@ The reader's character has a glow and a green diamond.
 - **Weather chip** (top left): `Weather: <sky> · <temp>°, live. Change the sky`. Each tap steps through
   previews (day, night, rain, rainy night, then live again).
 - **Daily** (flame, left): opens the Daily panel (A8a). The panel opens by itself the first time each day.
-- **Bell** (`Notifications, N new`, with a red badge while something is unread): friend requests (waiting, sent by you, accepted), messages you sent or received, friends coming online, visits to your room; **Clear all**. Nothing pops up by itself: open the bell and press a notification to go to it (friends list, chat, the friend on the map, or the visitor's profile).
+- **Bell** (`Notifications, N new`, with a red badge while something is unread): friend requests (waiting, sent by you, accepted), messages you sent or received, friends coming online, visits to your room; **Clear all**. A new one (not something you did yourself) slides in from the right for about 5 seconds and fades away; press it, or open the bell and press a notification, to go to it (friends list, chat, the friend on the map, or the visitor's profile).
 - **Places** (`Places in town`): jumps to a building.
 - **Friends** (`Friends, N online, M friend requests`): the friends panel (A14).
 - **Public / private chip** (under Daily): the same setting as the Salon's switch (A17).

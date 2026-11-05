@@ -4,7 +4,7 @@
 // coordinates, area or distance go to another reader.
 import { env } from "./env.js";
 import { friendshipsOf, isDemoReader } from "./friends.js";
-import { lastSeen } from "./readers.js";
+import { isSampleReader, lastSeen } from "./readers.js";
 import { supabase } from "./supabase.js";
 
 const CELLS_PER_DEGREE = 100;
@@ -78,8 +78,8 @@ async function readersNear(me) {
 
   const cutoff = Date.now() - STALE_MS;
   const ids = areas
-    .filter((area) => near(mine, area) && !hidden.has(area.reader))
-    // demo readers never open the app, so their set areas don't go stale
+    .filter((area) => near(mine, area) && !hidden.has(area.reader) && !isSampleReader(area.reader))
+    // Pip never opens the app, so Pip's set area doesn't go stale
     .filter((area) => new Date(area.updated_at).getTime() >= cutoff || isDemoReader(area.reader))
     .map((area) => area.reader);
   if (!ids.length) return [];

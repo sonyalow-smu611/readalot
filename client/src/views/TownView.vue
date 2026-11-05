@@ -38,6 +38,7 @@ import DailyReward from '@/components/town/DailyReward.vue'
 import LocationChip from '@/components/town/LocationChip.vue'
 import LocationPrompt from '@/components/town/LocationPrompt.vue'
 import NotificationsPanel from '@/components/town/NotificationsPanel.vue'
+import NotificationSlide from '@/components/town/NotificationSlide.vue'
 
 const WEATHER_EVERY = 10 * 60 * 1000
 const NEARBY_EVERY = 10 * 1000
@@ -148,10 +149,29 @@ async function refreshNearby() {
   if (document.hidden) return
   try {
     await nearby.refresh()
-    await notifications.check()
+    slideIn(await notifications.check())
   } catch {
     // the town still works without it: everyone stays as they were until the next refresh
   }
+}
+
+// A new notification slides in for a few seconds and fades away; it waits in the bell during the
+// tour or on the way into a building. Several at once show the newest, with how many more.
+const SLIDE_FOR = 5000
+const slide = ref(null)
+let slideTimer = null
+
+function slideIn(fresh) {
+  if (!fresh?.length || guide.value || entering.value || notificationsOpen.value) return
+  const [newest] = [...fresh].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+  slide.value = { ...newest, more: fresh.length - 1 }
+  clearTimeout(slideTimer)
+  slideTimer = setTimeout(() => (slide.value = null), SLIDE_FOR)
+}
+
+function hideSlide() {
+  clearTimeout(slideTimer)
+  slide.value = null
 }
 
 async function choosePublic(on) {
@@ -267,6 +287,7 @@ onBeforeRouteLeave((to) => {
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', shutChatOnOtherButtons, true)
   topWatcher?.disconnect()
+  clearTimeout(slideTimer)
   clearInterval(weatherTimer)
   clearInterval(nearbyTimer)
   clearTimeout(noticeTimer)
@@ -355,6 +376,7 @@ function toggleNotifications() {
 }
 
 function openNotifications() {
+  hideSlide()
   closePanels()
   selected.value = null
   friendId.value = null
@@ -363,6 +385,7 @@ function openNotifications() {
 
 // Goes to what the notification is about.
 function openNotification(item) {
+  hideSlide()
   notificationsOpen.value = false
   const friend = friendsInTown.value.find(({ id }) => id === (item.friendId ?? item.readerId))
   if (item.kind === 'request' || item.kind === 'sent') {
@@ -601,6 +624,7 @@ function goInside(place) {
       @add="addByUsername"
       @remove="removeFriends"
     />
+    <NotificationSlide :item="slide" :more="slide?.more ?? 0" @open="openNotification" />
     <NotificationsPanel
       :items="notifications.items"
       :open="notificationsOpen"

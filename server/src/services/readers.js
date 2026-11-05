@@ -1,11 +1,15 @@
 // Other readers, as the Cafe, the town and reader profiles show them: discoverable profiles with
 // the books on their shelves. Without Supabase the demo readers in data/demoReaders.js stand in.
 // Friends are in friends.js (the friendships table).
-import { DEMO_BOOKS, DEMO_READERS, NEIGHBOUR_ID } from "../../data/demoReaders.js";
+import { DEMO_BOOKS, DEMO_READERS, NEIGHBOUR_ID, SAMPLE_READER_IDS } from "../../data/demoReaders.js";
 import { env } from "./env.js";
 import { supabase } from "./supabase.js";
 
 const MINUTE_MS = 60 * 1000;
+
+// A made-up reader from the seed (not Pip): with Supabase on they are left out everywhere readers
+// are listed or looked up.
+export const isSampleReader = (userId) => SAMPLE_READER_IDS.has(userId);
 // pins show a general area, not a home
 const approximate = (value) => (value == null ? null : Number(Number(value).toFixed(2)));
 
@@ -115,7 +119,7 @@ export async function listReaders(viewerId) {
     .neq("id", viewerId)
     .order("display_name");
   if (error) throw error;
-  return withBooks(data);
+  return withBooks(data.filter((profile) => !isSampleReader(profile.id)));
 }
 
 // Readers by account id, public or private: your friends, who stay in your town when they go
@@ -123,7 +127,9 @@ export async function listReaders(viewerId) {
 export async function readersByIds(ids) {
   if (!ids.length) return [];
   if (!env.HAS_SUPABASE) return demoReaders().filter((reader) => ids.includes(reader.userId));
-  const { data, error } = await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", ids);
+  const real = ids.filter((id) => !isSampleReader(id));
+  if (!real.length) return [];
+  const { data, error } = await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", real);
   if (error) throw error;
   return withBooks(data);
 }
@@ -149,7 +155,7 @@ export async function findReader(handle, viewerId, { anyone = false } = {}) {
     .eq(isUuid(handle) ? "id" : "username", handle)
     .maybeSingle();
   if (error) throw error;
-  if (!data) return null;
+  if (!data || isSampleReader(data.id)) return null;
   if (!anyone && !data.discoverable && !(viewerId && (await areFriends(viewerId, data.id)))) return null;
   return (await withBooks([data]))[0];
 }

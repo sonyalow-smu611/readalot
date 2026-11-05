@@ -23,6 +23,12 @@ export const DEMO_BOOKS = [
 export const NEIGHBOUR_ID = "00000000-0000-4000-8000-000000000208";
 export const NEIGHBOUR_USERNAME = "pip.ikda";
 
+// The made-up readers that were seeded into the shared Supabase project: Emma, Ayaan and the rest,
+// and the demo account's own reader. With Supabase on they are kept out of the town, the Cafe,
+// friend lists and search (services/readers.js), so only real readers and Pip show; the rows stay
+// in the database. Without Supabase (the e2e tests) the data below still serves the app.
+export const DEMO_ACCOUNT_ID = "00000000-0000-4000-8000-000000000301";
+
 // shelf statuses as user_books stores them
 const READ = "read";
 const READING = "reading";
@@ -175,3 +181,9 @@ export const DEMO_READERS = [
     ])
   }
 ];
+
+// account ids of the made-up readers to hide (everyone above except Pip, and the demo account)
+export const SAMPLE_READER_IDS = new Set([
+  ...DEMO_READERS.filter((reader) => reader.id !== NEIGHBOUR_ID).map((reader) => reader.id),
+  DEMO_ACCOUNT_ID
+]);
