@@ -37,7 +37,7 @@ function resetScroll() {
 </script>
 
 <template>
-  <PhoneFrame :full="booting || !ready">
+  <PhoneFrame :full="booting || !ready" :class="{ 'app-wall': route.meta.wall }">
     <LoadingScreen v-if="booting" @done="booting = false" />
     <!-- only shows if the first page is slow to arrive, so a quick load doesn't flash it -->
     <p v-if="!ready" class="app-waiting" role="status">Opening the town…</p>
@@ -63,6 +63,15 @@ function resetScroll() {
 </template>
 
 <style scoped>
+/* pages that stand books on bookcases (a genre) sit on the library's wall: parchment with its faint
+   wallpaper stripes and a wooden crown along the top, like the search page and the hall */
+.app-wall :deep(.phone-frame) {
+  border-top: 10px solid #6b4329;
+  background:
+    repeating-linear-gradient(to right, transparent 0 18px, #e3cba1 18px 24px, transparent 24px 36px),
+    #efdcb8;
+}
+
 .app-main {
   flex: 1 1 auto;
   min-height: 0;

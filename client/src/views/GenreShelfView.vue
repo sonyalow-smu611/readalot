@@ -3,7 +3,7 @@
 // Full genre shelf (/discover/:genre): about 24 books from one Google Books search, standing in
 // bookcases (the library's wooden bookcase in that genre's wood). Each bookcase holds a dozen
 // books, and the bookcases sit side by side in a carousel: swipe or drag left and right, or use
-// the arrows and dots. The sort chips re-order the books in the browser; nothing is fetched again.
+// the arrows and dots. The sort chips (Popular Now, Highest Rated) re-order the books in the browser; nothing is fetched again.
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BookShelves from '@/buildings/library/components/BookShelves.vue'
@@ -20,11 +20,10 @@ const BOOK_COUNT = 24
 // books on each bookcase of the carousel
 const PER_CASE = 12
 
-// Highest first for each. Popular = how many people rated it, Length = page count.
+// Highest first for each. Popular Now = how many people rated it, Highest Rated = its rating.
 const SORTS = [
-  { key: 'popular', label: 'Popular first', field: 'ratingsCount' },
-  { key: 'length', label: 'Length', field: 'pageCount' },
-  { key: 'rating', label: 'Rating', field: 'averageRating' },
+  { key: 'popular', label: 'Popular Now', field: 'ratingsCount' },
+  { key: 'rating', label: 'Highest Rated', field: 'averageRating' },
 ]
 
 const route = useRoute()

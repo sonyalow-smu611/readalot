@@ -31,7 +31,7 @@ const routes = [
   { path: '/people', name: 'discover-people', redirect: { name: 'cafe' } },
   { path: '/profile', name: 'profile', redirect: { name: 'salon' } },
   // Pages opened from inside a building
-  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, wide: true, order: 2 } },
+  { path: '/discover/:genre', name: 'genre-shelf', component: GenreShelfView, meta: { title: 'Discover', back: true, wide: true, wall: true, order: 2 } },
   // the library's catalogue: full screen, in the library's look
   { path: '/search', name: 'search', component: () => import('@/buildings/library/SearchView.vue'), meta: { title: 'Search', fullBleed: true, wide: true, order: 2 } },
   { path: '/people/:id', name: 'reader-room', component: ReaderRoomView, meta: { fullBleed: true, wide: true, order: 2 } },
