@@ -1,6 +1,6 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
@@ -13,6 +13,8 @@ import GuideTour from '@/components/GuideTour.vue'
 import { BAR_HEIGHT } from '@/lib/walkthrough.js'
 import LoadingScreen from '@/components/LoadingScreen.vue'
 import Toast from '@/components/Toast.vue'
+import MusicToggle from '@/components/MusicToggle.vue'
+import { useMusicStore } from '@/stores/music.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,8 +28,21 @@ const stopWatching = router.afterEach((to, from, failure) => {
   if (!failure && from.name === 'start' && justChoseOnLanding()) booting.value = true
 })
 onBeforeUnmount(stopWatching)
-const { guide } = storeToRefs(useUserStore())
+const { guide, signedIn } = storeToRefs(useUserStore())
 const showChrome = computed(() => ready.value && !route.meta.bare)
+
+// Background music plays only for a signed-in reader, never on the landing or sign-in pages, and
+// each building has its own track (stores/music.js).
+const music = useMusicStore()
+watch(
+  () => [ready.value, signedIn.value, route.name, Boolean(route.meta.bare)],
+  ([isReady, isSignedIn, routeName, bare]) => {
+    if (isReady) music.follow({ signedIn: isSignedIn, routeName, bare })
+  },
+  { immediate: true },
+)
+// the toggle stays out of the way of the loading screen and the tour's bar
+const showMusicToggle = computed(() => showChrome.value && signedIn.value && !booting.value && !guide.value)
 // the town has its own Daily button, and the tour shouldn't have anything over it
 const showDaily = computed(() => showChrome.value && route.name !== 'town' && !guide.value)
 
@@ -56,6 +71,7 @@ function resetScroll() {
       </RouterView>
     </main>
     <DailyDock v-if="showDaily" />
+    <MusicToggle v-if="showMusicToggle" />
     <GuideTour />
     <BookOpenOverlay />
     <Toast />

@@ -22,6 +22,7 @@ import { routeTo } from './ground.js'
 import { doorstep } from './door.js'
 import { Friend } from './friend.js'
 import { Sign, hasSign, loadSigns } from './signs.js'
+import { playSfx } from '@/lib/sfx.js'
 
 const MAX_ZOOM = 1.5
 const START_ZOOM = 0.6
@@ -332,7 +333,10 @@ export default class TownScene extends Phaser.Scene {
   // Taps on a building, or on its sign, choose it; pointing at either pops it.
   listen(target, place) {
     target.on('pointerup', (pointer) => {
-      if (this.isTap(pointer)) this.select(place)
+      if (!this.isTap(pointer)) return
+      // tapping a building on the map is like pressing a button: it opens the building's card
+      if (!this.busy) playSfx('click')
+      this.select(place)
     })
     target.on('pointerover', () => {
       this.hovered = place.id
@@ -574,6 +578,7 @@ export default class TownScene extends Phaser.Scene {
     const { x, y } = this.cameras.main.getWorldPoint(pointer.x, pointer.y)
     const emptyPlots = FRIEND_HOUSES.filter((place) => !this.friends.some((f) => f.house === place.id)).map((place) => place.art)
     const route = routeTo([this.you.body.x, this.you.body.y], [x, y], emptyPlots)
+    playSfx('go')
     this.you.goTo(route)
     this.markSpot(route[route.length - 1])
     this.onWalk?.()
@@ -600,6 +605,7 @@ export default class TownScene extends Phaser.Scene {
     const place = ALL_PLACES.find((p) => p.id === id)
     if (!place || this.busy) return
     this.busy = true
+    playSfx('go')
     this.releaseFriend()
     this.outline(null)
     // a building still grown from being pointed at would cover its door
