@@ -933,14 +933,26 @@ Written by Claude at Dylan's request, from the team's testing notes (agreed by t
 | IKDA | `client/index.html`, `client/src/router/index.js`, `AppHeader.vue`, `IntroAnimation.vue`, `TownView.vue`, `CafeView.vue`, `DiscoverView.vue`, `useBookReviews.js`, `server/src/services/books.js`, `server/src/index.js`, `server/src/routes/creatures.js` | Every name the reader sees says IKDA, as the landing page and the town already did; storage keys and package names stay as they were |
 | Tests | `tests/e2e/friends-list.spec.js`, `friends.spec.js`, `notifications.spec.js`, `townFriends.js`, `supabaseUser.js`, `reviews.spec.js`, `onboarding.spec.js` | Spinner and tick on Accept, Remove friends and the Cafe's Add friend; a removed friend nearby staying in town; a closed chat on another button; asking a removed friend again; only received messages in the bell; IKDA |
 
-### Favourite genres are the library's bookcases (AI-generated)
+### Leaving a visited room, and knocking only on the way in (AI-generated)
 
-Written by Claude at Aalric's request. The SQL is for a person to run in Supabase; the app is written so it reads right before and after it.
+Written by Claude Code at Aasim's request, with Sonya's OK for her visit page. Team to review:
+`BuildingShell.vue` is shared, so every building's back button is affected.
 
 | Area | Files | What AI produced |
 |------|-------|------------------|
-| Genre list | `client/src/lib/genreShelves.js`, `client/src/buildings/salon/profileOptions.js`, `client/src/views/WelcomeView.vue`, `client/src/services/auth.js` | The genres you can pick (at Welcome and in Edit profile) are the library's ten genre bookcases, without Bestsellers. Saved genres are read through `cleanGenres`, so older names become their bookcase and ones with no bookcase are left out |
-| Profile | `client/src/buildings/salon/components/FavouriteGenres.vue` | Each favourite genre is a button that opens its bookcase in the library |
-| Library | `client/src/buildings/library/LibraryView.vue` | `/library?shelf=<key>` opens that bookcase, and closing it drops the link so Back and reload don't reopen it |
-| Schema | `database/favourite_genres_shelves.sql` | Turns every profile's saved genres into bookcase names (dropping ones with no bookcase) and limits `profiles.favorite_genres` to them |
-| Seeds and tests | `server/data/demoReaders.js`, `server/scripts/seed*.js`, `tests/e2e/*` | Sample readers use the bookcase names |
+| Back button | `client/src/components/shared/BuildingShell.vue` | When the page before is the very page the button goes to, Back goes back to it instead of opening it again, so the history doesn't go round in circles (a visited room → its shelf → back to the room no longer forgets the Cafe) |
+| Visiting a room | `client/src/buildings/house/VisitView.vue` | The room's back button goes to where the visit started: the town, the reader's profile page, or the Cafe. "Knocking on the door" plays only on the way in: back from their shelf or profile, the room shows as soon as it has loaded |
+| Tests | `tests/e2e/visit-room.spec.js` | "coming back and leaving": the Cafe → room → shelf → room → Cafe, and a visit from the profile page |
+
+### Music, sound effects and weather sounds (AI-generated)
+
+Written by Claude at Khaleil's request. Khaleil chose every track and sound by ear, from shortlists of free tracks: CC0, plus Fesliyan Studios music, which is free for non-commercial use with a credit. Credits are in README.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Background music | `client/src/stores/music.js` (new), `client/src/App.vue`, `client/public/music/` (new) | One looping track per building (town, My Room, library, cafe, salon), only once signed in and never on the landing or sign-in pages. Changing building fades to the new track, and a building's track carries on where it left off. Browsers block sound until the first tap, so a blocked start waits for it. The tracks are re-encoded to the same loudness, and the town's starts 7.5 s in |
+| Music button | `client/src/components/MusicToggle.vue` (new), `client/src/App.vue`, `client/src/buildings/house/RoomView.vue` | A pixel-sign button in the top-right corner of every signed-in page: a note when on, the note struck through when off, remembered on the device. It sits in line with each page's own corner controls, and the room's "Couldn't load your furniture" bar stops short of it |
+| Sound effects | `client/src/lib/sfx.js` (new), `client/src/main.js`, `client/public/sfx/` (new) | Web Audio, so sounds play at once and can overlap. Every button clicks; the first tap unlocks audio |
+| Sounds in town | `client/src/town/TownScene.js`, `client/src/town/you.js` | A pop when you tap the ground or set off for a building (it replaces the Enter button's click), a click when you tap a building, footsteps in time with the walk's bounce (pavement along the roads, grass across open ground; only on trips you start), and the door with a shop bell as it opens |
+| Weather sounds | `client/src/lib/ambience.js` (new), `client/src/stores/music.js`, `client/public/ambience/` (new) | Loops cut to repeat without a seam, following the live weather: rain or a thunderstorm, birds when sunny, a breeze when cloudy, crickets at night in town; rain on the window inside the room, library and cafe; cups clinking now and then in the cafe. About 12 dB under the music, and the music button turns them off too |
+| Docs | `README.md` | Music and sound credits |

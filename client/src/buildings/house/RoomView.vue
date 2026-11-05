@@ -509,7 +509,8 @@ onBeforeUnmount(() => {
 .home__furniture-error {
   position: absolute;
   top: 56px;
-  right: 12px;
+  /* stops short of the music note (components/MusicToggle.vue) in the corner */
+  right: 70px;
   left: 12px;
   z-index: 4;
   display: flex;

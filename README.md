@@ -744,6 +744,24 @@ Severity (blocker / major / minor / polish):
 | Cafe | Emiley |
 | Hair Salon, sign-in | Aalric |
 
+### Music credits
+
+Background music from https://www.FesliyanStudios.com (free for non-commercial use, with credit):
+
+| Place | Track |
+|---|---|
+| Town (home page) | News Chill, by Steve Oxen |
+| My Room | Talk To Me, by David Renda |
+| Library | Morning Refresher, by Steve Oxen |
+| Cafe | The Lounge, by David Renda |
+| Hair Salon | Swinging Sixties, by Steve Oxen |
+
+Sound effects are CC0 (public domain): button clicks and the "off you go" pop from Kenney's Interface Sounds, footsteps on grass and pavement from Kenney's Impact Sounds, and the door from Kenney's RPG Audio with a bell from "100 CC0 SFX" (OpenGameArt).
+
+Background sounds follow the live weather, also CC0 from OpenGameArt: rain ("Rain (loopable)" by Ylmir), a thunderstorm ("Rain, long thunder"), rain on the window indoors ("Rain on Window Loop"), birdsong on sunny days ("Ambient Bird Sounds" by isaiah658), a breeze when cloudy ("Park ambiences"), crickets at night ("Crickets ambient noise, loopable"), and cups clinking in the cafe ("100 CC0 SFX").
+
+Music and background sounds play only once you are signed in. The note button in the top-right corner turns them on or off, and the choice is remembered on that device.
+
 ## 9. E2E testing guide (for the verification phase)
 
 A complete user guide and 215 numbered end-to-end scenarios (with steps, expected results, database checks and

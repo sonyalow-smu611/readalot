@@ -61,6 +61,41 @@ test.describe("getting there", () => {
   });
 });
 
+test.describe("coming back and leaving", () => {
+  // the door knocks only on the way in: back from their shelf or profile, the room just shows
+  test("from the Cafe, their shelf and back keeps the way back to the Cafe, with no second knock", async ({ page }) => {
+    await page.goto("/cafe");
+    await page.getByRole("button", { name: /^Walk to Emma Tan/ }).press("Enter");
+    const card = page.getByRole("dialog", { name: "Meet Emma Tan" });
+    await expect(card).toBeVisible({ timeout: 15000 });
+    await card.getByRole("link", { name: "Visit Emma's room" }).click();
+    await expect(page.getByText("Knocking on Emma's door")).toBeVisible();
+    await page.getByRole("button", { name: "Bookshelf, 3 books" }).click();
+
+    await page.getByRole("link", { name: "Back to Emma's room" }).click();
+    await expect(roomOf(page, "Emma")).toBeVisible();
+    await expect(page.getByText("Knocking on Emma's door")).toHaveCount(0);
+    await page.getByRole("link", { name: "Back to the Cafe" }).click();
+    await expect(page).toHaveURL(/\/cafe$/);
+  });
+
+  test("from their profile page, the room goes back to the profile, which doesn't lead back into the room", async ({ page }) => {
+    await page.goto("/people/emma.reads");
+    await page.getByRole("link", { name: "Visit Emma's room" }).click();
+    await expect(roomOf(page, "Emma")).toBeVisible();
+    await page.getByRole("button", { name: "Bookshelf, 3 books" }).click();
+    await page.getByRole("link", { name: "Back to Emma's room" }).click();
+    await expect(roomOf(page, "Emma")).toBeVisible();
+
+    await page.getByRole("link", { name: "Back to Emma's profile" }).click();
+    await expect(page).toHaveURL(/\/people\/emma\.reads$/);
+    await expect(page.getByText("Knocking on Emma's door")).toHaveCount(0);
+    // the profile was opened straight from its address, so its Back goes to the Cafe
+    await page.getByRole("link", { name: "Back to Discover" }).click();
+    await expect(page).toHaveURL(/\/cafe$/);
+  });
+});
+
 test.describe("their furniture", () => {
   test("a sample reader's furniture comes from the server, like anyone's", async ({ page, reader }) => {
     const answer = await page.request.get("/api/rooms/emma.reads/furniture", {

@@ -9,6 +9,7 @@ import { walkingRoute } from './roads.js'
 import { DOOR_OPENS, doorstep, openDoor } from './door.js'
 import { TownReader } from './reader.js'
 import { SKY_DEPTH } from './sky.js'
+import { playSfx } from '@/lib/sfx.js'
 
 // On the way to a building: at least this fast, and never longer than MAX_TRIP seconds.
 const TRIP_SPEED = 380
@@ -46,7 +47,30 @@ export class You extends TownReader {
       scene.tweens.add({ targets: this.float, y: -8, duration: 900, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
       scene.tweens.add({ targets: this.diamond, scaleX: 0.55, duration: 1300, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 })
     }
+    // Footsteps, only on the trips you send it on (not while it wanders): one each time the
+    // step's bounce lands, so they keep pace with the walk. `surface` is 'pavement' or 'grass'.
+    this.surface = null
+    this.step?.on('yoyo', () => {
+      if (this.surface) playSfx(this.surface)
+    })
     this.rest()
+  }
+
+  // an interrupted trip is over too, so wandering afterwards stays quiet
+  stop() {
+    this.surface = null
+    this.tripLegs = null
+    super.stop()
+  }
+
+  // Each leg of a trip says what's underfoot. A trip's legs follow the pavements, except a
+  // tap's last stretch (or a short walk straight to it), which crosses the grass.
+  walk(points, speed, done) {
+    if (this.tripLegs != null) {
+      const fromEnd = points.length
+      this.surface = fromEnd === 0 ? null : this.grassLegs >= fromEnd ? 'grass' : 'pavement'
+    }
+    super.walk(points, speed, done)
   }
 
   sync() {
@@ -61,14 +85,21 @@ export class You extends TownReader {
   }
 
   // Hurries along the route, so anywhere in town is only a few seconds away, then calls done().
-  trip(route, done) {
+  // grassLegs: how many of the route's last legs cross grass rather than pavement.
+  trip(route, done, grassLegs = 0) {
     let length = 0
     route.reduce((from, to) => {
       length += Math.hypot(to[0] - from[0], to[1] - from[1])
       return to
     }, [this.body.x, this.body.y])
     this.step.timeScale = 1.8
-    this.walk(route, Math.max(TRIP_SPEED, length / MAX_TRIP), done)
+    this.tripLegs = route.length
+    this.grassLegs = grassLegs
+    this.walk(route, Math.max(TRIP_SPEED, length / MAX_TRIP), () => {
+      this.tripLegs = null
+      this.surface = null
+      done()
+    })
   }
 
   // Walks the route (from the map's tap, see ground.js) and stays where it ends.
@@ -79,11 +110,17 @@ export class You extends TownReader {
       this.body.setPosition(...route[route.length - 1])
       return
     }
-    this.trip(route, () => {
-      this.step.pause()
-      this.step.timeScale = 1
-      this.body.setScale(1)
-    })
+    // see ground.js routeTo: a single leg is a short walk straight across; otherwise only the
+    // last stretch, from the pavement to the spot, is off the pavement
+    this.trip(
+      route,
+      () => {
+        this.step.pause()
+        this.step.timeScale = 1
+        this.body.setScale(1)
+      },
+      1,
+    )
   }
 
   // From here on you show only inside the doorway (and on the step below it), so you vanish
@@ -104,15 +141,18 @@ export class You extends TownReader {
   // Walks to the building's door; atDoor() runs as it swings open, inside() once you are through.
   goIn(place, { atDoor, inside }) {
     if (this.reducedMotion) {
+      playSfx('door')
       inside()
       return
     }
     this.stop()
     const { front, beside } = doorstep(place)
+    // to a door it's pavement all the way
     this.trip(walkingRoute([this.body.x, this.body.y], beside), () => {
       this.step.pause()
       this.body.setScale(1)
       const doorway = openDoor(this.scene, place)
+      playSfx('door')
       atDoor()
       // wait beside the door, facing it, while it swings open; then step in front of it and go
       // through the doorway, a little smaller the further in you go
