@@ -50,7 +50,7 @@ verify the database at the checkpoints marked **✔ DB**. Reset the demo account
 
 ### SAL-08 · Profile tab content · High
 1. **Profile** → the reader card (name, email, counts **Reading / To read / Finished**, **Edit**), **Reader level** (+ **How to earn XP**), **Favourite genres**, **Coins** (+ **Visit the shop**), **About you**, **Privacy**, **Saved quotes**, **Replay the walkthrough**, **Log out** 📸.
-2. For Jordan: `Jordan Lee`, `demo@demo.ikda.app`, 2 / 5 / 3, level 4, 620 XP with "80 XP to level 5, which gives 125 coins", genres Fantasy / Science Fiction / Mystery / Literary Fiction, 600 coins.
+2. For Jordan: `Jordan Lee`, `demo@demo.ikda.app`, 2 / 5 / 3, level 4, 620 XP with "80 XP to level 5, which gives 125 coins", genres Fantasy / Sci-Fi / Mystery & Thriller / Memoir, 600 coins.
 3. On a phone-size window the panel is a sheet with a handle: **Show more / Show less**.
 **DB:** none. **Pass:** numbers match `my_progress` and `user_books`. **Existing coverage:** `salon.spec.js`, `progress.spec.js`.
 

@@ -2,17 +2,18 @@
 // Friends: a request one reader sends and the other accepts (the friendships table). Follows are
 // separate and stay one-way. Without Supabase there are no friends. Demo readers can't answer, so
 // they accept straight away.
-import { DEMO_READERS, NEIGHBOUR_ID } from "../../data/demoReaders.js";
+import { NEIGHBOUR_ID } from "../../data/demoReaders.js";
 import { env } from "./env.js";
-import { findReader, readersByIds } from "./readers.js";
+import { findReader, isSampleReader, readersByIds } from "./readers.js";
 import { addNote } from "./roomNotes.js";
 import { supabase } from "./supabase.js";
 
 // how many friends' houses the town has room for (FRIEND_HOUSES in client/src/town/places.js)
 export const HOUSE_SPOTS = 7;
 
-const demoIds = new Set(DEMO_READERS.map((reader) => reader.id));
-export const isDemoReader = (userId) => demoIds.has(userId);
+// Pip is the one sample reader left in town, and the only one who accepts a request at once. The
+// others (Emma and the rest) are hidden when Supabase is on: see SAMPLE_READER_IDS.
+export const isDemoReader = (userId) => userId === NEIGHBOUR_ID;
 
 const otherOf = (row, me) => (row.requester === me ? row.addressee : row.requester);
 const spotColumn = (row, me) => (row.requester === me ? "requester_spot" : "addressee_spot");
@@ -48,7 +49,8 @@ async function giveOutSpots(accepted, me) {
 // you as { requestId, reader, at } (when it was sent), outgoing: the reader ids you've asked, sent: the
 // same requests as { requestId, reader, at } for the list of who you're waiting on }
 export async function friendsOf(me) {
-  const rows = await friendshipsOf(me);
+  // a friendship with a made-up reader doesn't count: it takes no house, no row and no request
+  const rows = (await friendshipsOf(me)).filter((row) => !isSampleReader(otherOf(row, me)));
   const accepted = rows.filter((row) => row.status === "accepted");
   const incoming = rows.filter((row) => row.status === "pending" && row.addressee === me);
   const outgoing = rows.filter((row) => row.status === "pending" && row.requester === me);

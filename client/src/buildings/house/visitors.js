@@ -3,6 +3,7 @@
 // furniture in the room (from the server, like everyone's). The readers come from the people store
 // (stores/people.js); the house only reads them, and turns their books into the shape the room's
 // bookshelf uses.
+import { normalizeBook } from '@/lib/book.js'
 import { getRoomFurniture } from '@/services/api.js'
 import { usePeopleStore } from '@/stores/people.js'
 
@@ -15,15 +16,10 @@ const THEME_OF = {
   'pip.ikda': 'tea-room',
 }
 
+// A book off their shelf, as the reader's own shelf has it: the server sends the full book (cover,
+// synopsis and the rest), and a list's lighter book (title, author, genre) still reads right.
 function shelfBook(book) {
-  return {
-    id: book.id,
-    title: book.title,
-    authors: [book.author],
-    genres: book.genre ? [book.genre] : [],
-    status: book.status,
-    coverUrl: '',
-  }
+  return normalizeBook({ ...book, authors: book.authors ?? [book.author] })
 }
 
 // The furniture standing in a reader's room: what they've placed, the sample readers included
@@ -47,7 +43,7 @@ export function knownFirstName(id) {
 // A reader's room: { id, name, firstName, books, currentBook, furniture, theme }, or null when there's
 // no such reader. Throws when the reader can't be fetched.
 export async function readerRoom(id) {
-  const reader = await usePeopleStore().fetchReader(id)
+  const reader = await usePeopleStore().fetchReader(id, { full: true })
   if (!reader) return null
   const books = reader.books.map(shelfBook)
   return {

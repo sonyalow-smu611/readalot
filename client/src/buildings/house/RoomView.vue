@@ -21,8 +21,8 @@ import MoodResultModal from '@/components/modals/MoodResultModal.vue'
 import { stashView, takeView } from '@/lib/returnState.js'
 import StateView from '@/components/StateView.vue'
 import BookDialog from '@/buildings/house/components/BookDialog.vue'
-import VisitorBookDialog from '@/buildings/house/components/VisitorBookDialog.vue'
-import { PLACES } from '@/town/places.js'
+import FoundBookPreview from '@/components/book/FoundBookPreview.vue'
+import { useBookPreview } from '@/composables/useBookPreview'
 import DecorArt from '@/buildings/house/components/DecorArt.vue'
 import CreditChip from '@/components/CreditChip.vue'
 import RoomDock from '@/buildings/house/components/RoomDock.vue'
@@ -53,8 +53,6 @@ const theme = computed(() => themeOf(props.visiting?.theme ?? MY_THEME))
 // the lamps, on or off, for this room (kept for the visit)
 const lampRoom = props.visiting?.id ?? 'mine'
 const lamps = lampsFor(lampRoom)
-// the house's colour from the town, for the book card
-const accent = PLACES.find((place) => place.id === 'house').accent
 
 // --- Window ------------------------------------------------------------------------------
 const weather = ref({ scene: 'cloudy', temperature: null, isDay: true })
@@ -126,9 +124,14 @@ watch(drag, (value) => {
 const openedBook = ref(null)
 let bookTrigger = null
 
+// A visited reader's book opens as the library opens a book: Add to To be read, Where to get,
+// Leave/Read Reviews (the card's shelf is yours, not theirs).
+const { previewBook, saving, addedId, openPreview, closePreview, saveStatus, undoAdd } = useBookPreview()
+
 function openBook(book) {
   bookTrigger = document.activeElement
   openedBook.value = book
+  if (props.visiting) openPreview(book)
 }
 
 // the bookshelf itself: every book, on My Shelf (or the visited reader's shelf)
@@ -143,6 +146,7 @@ async function closeBook({ removed = false } = {}) {
   if (!openedBook.value) return
   const { id } = openedBook.value
   openedBook.value = null
+  closePreview()
   await strip.value?.putBack({ removed })
   await nextTick()
   // the button that opened it may have gone (the book changed shelf in the list, or a tap that
@@ -359,6 +363,9 @@ onMounted(() => {
     } else if (!moodDoneToday() && !user.guide) moodStep.value = 'checkin'
     bookshelf.load()
     loadRoom(user.profile.id)
+  } else if (!bookshelf.books.length && !bookshelf.loading) {
+    // your own shelf, so a visited reader's book says whether you have it
+    bookshelf.load()
   }
   if (props.visiting) loadNotes()
   else openBoardFromBell()
@@ -438,7 +445,15 @@ onBeforeUnmount(() => {
     <!-- covers the room while a book is out: nothing in the room under it (another book, the
          chair, a drag to look around) can be reached -->
     <template v-if="openedBook">
-      <VisitorBookDialog v-if="visiting" :book="openedBook" :owner="visiting.firstName" :accent="accent" @close="closeBook" />
+      <FoundBookPreview
+        v-if="visiting"
+        :book="previewBook"
+        :adding="saving"
+        :undoable="addedId === previewBook?.id"
+        @add="saveStatus('want_to_read')"
+        @undo="undoAdd"
+        @close="closeBook"
+      />
       <BookDialog v-else :book="openedBook" @close="closeBook" />
     </template>
 

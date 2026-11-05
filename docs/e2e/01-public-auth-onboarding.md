@@ -255,7 +255,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 4. **Religion**: choose Prefer not to say, **Next** → step 5.
 5. **Genres**: pick Fantasy and Mystery, **Next** → step 6.
 6. **Pick your character**: press each of the five presets (the big character hops in and is alive), choose one, **Finish** → the button says **Saving…**, then the camera zooms into the town 📸.
-**DB:** `profiles` row for the user: `display_name = "Qa Tester"`, `favorite_genres = {Fantasy,Mystery}`, `character` = the chosen preset's JSON (`v:1`, `base`, `hair`, …), `avatar` set; `profile_private`: `gender = "Woman"`, `age = 21`, `religion = "Prefer not to say"`; `profiles.coins = 480`; `tour_seen_at` is null; the `username` equals the one picked at Register (or a made-up one if taken meanwhile).
+**DB:** `profiles` row for the user: `display_name = "Qa Tester"`, `favorite_genres = {Fantasy,"Mystery & Thriller"}`, `character` = the chosen preset's JSON (`v:1`, `base`, `hair`, …), `avatar` set; `profile_private`: `gender = "Woman"`, `age = 21`, `religion = "Prefer not to say"`; `profiles.coins = 480`; `tour_seen_at` is null; the `username` equals the one picked at Register (or a made-up one if taken meanwhile).
 **Pass:** town opens, badge shows `Qa Tester` and level 1; the walkthrough starts (TOUR-01).
 
 ### WEL-02 · Validation on every step · High

@@ -3,6 +3,7 @@
 // The profile lives in two tables: `profiles` (what other readers may see) and `profile_private`
 // (gender, age, religion: only the reader). See database/profiles_and_tour.sql.
 import { MISSING_KEYS, supabase } from '@/services/supabase.js'
+import { cleanGenres } from '@/lib/genreShelves.js'
 
 const PENDING_KEY = 'readalot-pending-auth'
 
@@ -189,7 +190,7 @@ export async function loadProfile(userId) {
       username: row.username || '',
       avatar: row.avatar || '🐨',
       character: row.character,
-      favouriteGenres: Array.isArray(row.favorite_genres) ? row.favorite_genres : [],
+      favouriteGenres: cleanGenres(row.favorite_genres),
       location: row.location_name || '',
       discoverable: row.discoverable === true,
       locationAsked: row.location_asked_at || '',

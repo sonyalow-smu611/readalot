@@ -9,9 +9,16 @@ const REQUEST = { requestId: "request-1", reader: friend("sofia.stories", "Sofia
 const VISIT = { id: "1", at: new Date().toISOString(), visitor: { id: "emma.reads", displayName: "Emma Tan" } };
 const SECRET_VISIT = { id: "2", at: new Date().toISOString(), visitor: null };
 
+const ACCEPTED = { id: "a1", at: new Date().toISOString(), reader: { id: "emma.reads", displayName: "Emma Tan" } };
+const SENT = { id: "s1", at: new Date().toISOString(), reader: { id: "sofia.stories", displayName: "Sofia Rossi" } };
+const MESSAGE = { id: "m1", at: new Date().toISOString(), direction: "received", reader: { id: "emma.reads", displayName: "Emma Tan" } };
+// a message you sent yourself: never a notification
+const MESSAGE_SENT = { id: "m2", at: new Date().toISOString(), direction: "sent", reader: { id: "emma.reads", displayName: "Emma Tan" } };
+
 const bell = (page) => page.getByRole("button", { name: /^Notifications,/ });
 const panel = (page) => page.getByRole("region", { name: "Notifications" });
 const popUp = (page) => page.locator(".app-toast");
+const slide = (page) => page.locator(".notification-slide");
 const friendsList = (page) => page.getByRole("navigation", { name: "Friends in town" });
 
 // Opens the town and waits for its first look at the notifications: until then the bell says 0 new
@@ -28,12 +35,18 @@ test.beforeEach(async ({ page, reader }) => {
   await skipDailyPanel(reader.id);
 });
 
-test("a friend request and a room visit turn the bell red, with no pop-up", async ({ page }) => {
+test("a friend request and a room visit turn the bell red and slide in, then fade away", async ({ page }) => {
   await mockFriends(page, { friends: [EMMA], incoming: [REQUEST], visits: [VISIT, SECRET_VISIT] });
   await page.goto("/");
   await expect(bell(page)).toHaveAccessibleName("Notifications, 3 new");
   await expect(bell(page).locator(".notifications-button__badge")).toBeVisible();
+  // the newest slides in, says how many came with it, and fades away by itself
+  await expect(slide(page)).toBeVisible();
+  await expect(slide(page)).toContainText("+2 more");
+  await expect(slide(page)).toBeHidden({ timeout: 10_000 });
   await expect(popUp(page)).toHaveCount(0);
+  // fading doesn't read it: the bell is still red
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 3 new");
 
   await bell(page).click();
   await expect(panel(page)).toContainText("Sofia Rossi sent you a friend request");
@@ -55,6 +68,21 @@ test("a friend request and a room visit turn the bell red, with no pop-up", asyn
 });
 
 // What's read and what's cleared is saved with your profile, so another device agrees.
+test("tapping the sliding notification goes to it", async ({ page }) => {
+  await mockFriends(page, { friends: [EMMA], visits: [VISIT] });
+  await page.goto("/");
+  await slide(page).click();
+  await expect(page).toHaveURL(/\/people\/emma\.reads$/);
+});
+
+test("something you did yourself (a request you sent) doesn't slide in", async ({ page }) => {
+  await mockFriends(page, { friends: [EMMA], activity: { sent: [SENT] } });
+  await page.goto("/");
+  await townReady(page);
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 1 new");
+  await expect(slide(page)).toHaveCount(0);
+});
+
 test("read and cleared stay that way on another device", async ({ page, browser, reader }, testInfo) => {
   await mockFriends(page, { friends: [EMMA], visits: [VISIT] });
   await page.goto("/");
@@ -130,12 +158,6 @@ test("a friend coming online turns the bell red, once", async ({ page }) => {
   await page.waitForTimeout(21_000);
   await expect(bell(page)).toHaveAccessibleName("Notifications, 0 new");
 });
-
-const ACCEPTED = { id: "a1", at: new Date().toISOString(), reader: { id: "emma.reads", displayName: "Emma Tan" } };
-const SENT = { id: "s1", at: new Date().toISOString(), reader: { id: "sofia.stories", displayName: "Sofia Rossi" } };
-const MESSAGE = { id: "m1", at: new Date().toISOString(), direction: "received", reader: { id: "emma.reads", displayName: "Emma Tan" } };
-// a message you sent yourself: never a notification
-const MESSAGE_SENT = { id: "m2", at: new Date().toISOString(), direction: "sent", reader: { id: "emma.reads", displayName: "Emma Tan" } };
 
 test("requests sent, requests accepted and messages are in the bell, and each goes to its screen", async ({ page }) => {
   await mockFriends(page, {
