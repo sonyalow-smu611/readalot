@@ -66,11 +66,12 @@ export async function friendsOf(me) {
   };
 }
 
-// Sends a request to a public reader (by reader.id). If they already asked you, you're friends. A
+// Sends a request to a reader (by reader.id), public or private: a private reader can be asked by
+// their username, though nobody finds them nearby. If they already asked you, you're friends. A
 // decline stays silent: asking again looks the same as asking the first time. False when there's
 // no such reader.
 export async function requestFriend(me, handle) {
-  const reader = await findReader(handle, me);
+  const reader = await findReader(handle, me, { anyone: true });
   if (!reader || reader.userId === me || !env.HAS_SUPABASE) return false;
 
   const accepted = isDemoReader(reader.userId);

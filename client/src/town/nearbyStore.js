@@ -56,10 +56,19 @@ export const useNearbyStore = defineStore('nearby', () => {
     nearby.value = on ? (await checkInNearby(position)).readers : []
   }
 
-  // Each of these throws when it isn't saved.
+  // Each of these throws when it isn't saved. They reload only the friend list, not the whole
+  // refresh: that asks the browser for your location first, which can take seconds.
+  // A request shows as sent straight away, and comes back off if it didn't send.
   async function addFriend(readerId) {
-    await sendFriendRequest(readerId)
-    await refresh()
+    const already = outgoing.value.includes(readerId)
+    if (!already) outgoing.value = [...outgoing.value, readerId]
+    try {
+      await sendFriendRequest(readerId)
+    } catch (err) {
+      if (!already) outgoing.value = outgoing.value.filter((id) => id !== readerId)
+      throw err
+    }
+    await loadFriends()
   }
 
   // Asks a reader by username (town/username.js says what's left to wire up). Returns how it went:
@@ -76,18 +85,18 @@ export const useNearbyStore = defineStore('nearby', () => {
 
   async function answer(requestId, accept) {
     await answerFriendRequest(requestId, accept)
-    await refresh()
+    await loadFriends()
   }
 
   async function removeFriend(readerId) {
     await removeFriendship(readerId)
-    await refresh()
+    await loadFriends()
   }
 
   // Removes several at once. Throws saying how many didn't go; the rest are still removed.
   async function removeFriends(readerIds) {
     const results = await Promise.allSettled(readerIds.map((id) => removeFriendship(id)))
-    await refresh()
+    await loadFriends()
     const failed = results.filter((result) => result.status === 'rejected').length
     if (failed) throw new Error(`${failed} of ${readerIds.length} couldn't be removed. Try again.`)
   }

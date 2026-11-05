@@ -21,6 +21,17 @@ const progress = useProgressStore()
 // true once the door has opened and the room can show
 const entered = ref(false)
 const knockingOn = computed(() => reader.value?.firstName ?? knownFirstName(route.params.id))
+// came in through their front door on the map (?from=town): back goes to the town; otherwise
+// they came from the reader's profile, so back goes there (or the Cafe, before the room loads)
+const fromTown = computed(() => route.query.from === 'town')
+const roomBack = computed(() =>
+  fromTown.value
+    ? { to: { name: 'town' }, label: 'Back to town' }
+    : { to: { name: 'reader-room', params: { id: reader.value?.id } }, label: `Back to ${reader.value?.firstName}'s profile` },
+)
+const outsideBack = computed(() =>
+  fromTown.value ? { to: { name: 'town' }, label: 'Back to town' } : { to: { name: 'cafe' }, label: 'Back to the Cafe' },
+)
 
 async function load(id) {
   loading.value = true
@@ -54,24 +65,24 @@ watch(() => route.params.id, load, { immediate: true })
     subtitle="Visiting"
     :owner="reader.name"
     flush
-    :back="{ name: 'reader-room', params: { id: reader.id } }"
-    :back-label="`Back to ${reader.firstName}'s profile`"
+    :back="roomBack.to"
+    :back-label="roomBack.label"
   >
     <RoomView :key="reader.id" :visiting="reader" :style="{ '--house-accent': place.accent }" />
   </BuildingShell>
 
-  <BuildingShell v-else-if="loading || reader" title="Visiting" :owner="place.owner" flush :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+  <BuildingShell v-else-if="loading || reader" title="Visiting" :owner="place.owner" flush :back="outsideBack.to" :back-label="outsideBack.label">
     <KnockingDoor :name="knockingOn" :ready="Boolean(reader)" @opened="entered = true" />
   </BuildingShell>
 
-  <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+  <BuildingShell v-else-if="error" title="Visiting" :owner="place.owner" :back="outsideBack.to" :back-label="outsideBack.label">
     <div class="visit-missing" role="alert">
       <p>{{ error }}</p>
       <button type="button" class="btn btn-link" @click="load(route.params.id)">Try again</button>
     </div>
   </BuildingShell>
 
-  <BuildingShell v-else title="Room not found" :owner="place.owner" :back="{ name: 'cafe' }" back-label="Back to the Cafe">
+  <BuildingShell v-else title="Room not found" :owner="place.owner" :back="outsideBack.to" :back-label="outsideBack.label">
     <div class="visit-missing">
       <p>We couldn't find that reader.</p>
       <RouterLink :to="{ name: 'cafe' }">Find readers in the Cafe</RouterLink>

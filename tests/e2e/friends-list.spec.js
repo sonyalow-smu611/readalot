@@ -95,6 +95,30 @@ test("adding a friend by username says how it went", async ({ page }) => {
   expect(town.asked).toEqual(["nobody.here", "ravi.reads"]);
 });
 
+// A request can take a moment: the button says it's sending and can't be pressed twice.
+test("Send request shows Sending… while the request is on its way", async ({ page }) => {
+  const town = await mockFriends(page);
+  let letGo;
+  const held = new Promise((resolve) => (letGo = resolve));
+  await page.route("**/api/friends/requests", async (route) => {
+    await held;
+    return route.fallback();
+  });
+  await page.goto("/");
+  await openList(page);
+  await list(page).getByRole("button", { name: "Add friend" }).click();
+  await list(page).getByRole("textbox", { name: "Friend's username" }).fill("ravi.reads");
+  await list(page).getByRole("button", { name: "Send request" }).click();
+
+  const sending = list(page).getByRole("button", { name: "Sending…" });
+  await expect(sending).toBeVisible();
+  await expect(sending).toBeDisabled();
+  letGo();
+  await expect(list(page).getByRole("status")).toHaveText("Friend request sent to ravi.reads.");
+  await expect(list(page).getByRole("button", { name: "Send request" })).toBeVisible();
+  expect(town.asked).toEqual(["ravi.reads"]);
+});
+
 test("removing friends asks first, then removes the ones ticked", async ({ page }) => {
   const town = await mockFriends(page, { friends: [EMMA, NOAH] });
   await page.goto("/");

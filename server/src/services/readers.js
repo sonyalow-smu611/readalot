@@ -139,8 +139,9 @@ async function areFriends(viewerId, otherId) {
 }
 
 // One reader by username (or account id), or null: a discoverable reader, or one of viewerId's
-// friends.
-export async function findReader(handle, viewerId) {
+// friends. `anyone` finds private readers too: only for sending a friend request by username,
+// which a private reader can still turn down; their profile stays hidden until they accept.
+export async function findReader(handle, viewerId, { anyone = false } = {}) {
   if (!env.HAS_SUPABASE) return demoReaders().find((reader) => reader.id === handle || reader.userId === handle) ?? null;
   const { data, error } = await supabase
     .from("profiles")
@@ -149,7 +150,7 @@ export async function findReader(handle, viewerId) {
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  if (!data.discoverable && !(viewerId && (await areFriends(viewerId, data.id)))) return null;
+  if (!anyone && !data.discoverable && !(viewerId && (await areFriends(viewerId, data.id)))) return null;
   return (await withBooks([data]))[0];
 }
 

@@ -872,3 +872,15 @@ Written by Claude at Sonya's request. A loading animation; the only logic is whe
 | Door | `client/src/buildings/house/components/KnockingDoor.vue` | A pixel door on its own that knocks while the room loads, swings open onto a lamplit room, and lasts at least 1.5 seconds. Stays still with reduced motion |
 | Visit page | `client/src/buildings/house/VisitView.vue`, `client/src/buildings/house/visitors.js` | Shows the door until it has opened, then fades in the room. Uses the reader's first name when the people store has it. A load that finishes after the reader has left or moved on is ignored |
 | Tests | `tests/e2e/visit-room.spec.js` | The words, the door opening only when the room is ready, phone fit, the Daily button, going back, failed loads, unknown readers and reduced motion |
+
+### Testing fixes, round 1 (AI-generated)
+
+Written by Claude at Dylan's request, from the team's testing notes. The team agreed Dylan could make these changes across the town and the house.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Visiting a friend's house | `client/src/town/places.js`, `client/src/buildings/house/VisitView.vue`, `client/src/buildings/house/RoomView.vue`, `client/src/buildings/house/ShelfView.vue` | A friend's house on the map now opens their room instead of their profile. Coming in from the town (`?from=town`), the room's back button goes to the town; from a profile, it still goes back to the profile. Their shelf keeps that setting |
+| Tests | `tests/e2e/friends.spec.js`, `tests/e2e/town-map.spec.js`, `tests/e2e/visit-room.spec.js` | Updated for the house opening the room, and Back going to the town |
+| Faster friend requests | `client/src/town/nearbyStore.js`, `client/src/views/TownView.vue`, `client/src/components/town/FriendCard.vue`, `client/src/components/town/AddFriendForm.vue` | Sending, answering or removing a friend now reloads only the friend list, not the full town refresh that asked for your location first. A nearby reader shows as Requested straight away (and goes back if it fails). Both Add friend buttons show a spinner and "Sending…" while the request is on its way |
+| Adding private readers (backend, agreed by the team) | `server/src/services/readers.js`, `server/src/services/friends.js` | `findReader` takes an `anyone` option, used only by `requestFriend`, so a reader who isn't discoverable can be sent a request by username. Their profile, room and location stay hidden until they accept; nearby still lists only discoverable readers |
+| Tests | `tests/e2e/friends-list.spec.js`, `tests/e2e/friends.spec.js`, `tests/e2e/supabaseUser.js` | "Sending…" while a request is held, and adding a private reader by username (`createPrivateReader` makes one without signing in) |

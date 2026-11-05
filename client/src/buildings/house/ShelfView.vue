@@ -56,13 +56,13 @@ const shell = computed(() => {
       sign: `${reader.firstName}'s Shelf`,
       subtitle: 'Visiting',
       owner: reader.name,
-      back: { name: 'reader-house', params: { id: reader.id } },
+      back: { name: 'reader-house', params: { id: reader.id }, query: route.query },
       backLabel: `Back to ${reader.firstName}'s room`,
       backShort: 'Back',
     }
   }
   if (visitingId) {
-    return { title: 'Shelf', sign: 'Shelf', subtitle: 'Visiting', owner: place.owner, back: { name: 'reader-house', params: { id: visitingId } }, backLabel: 'Back to their room', backShort: 'Back' }
+    return { title: 'Shelf', sign: 'Shelf', subtitle: 'Visiting', owner: place.owner, back: { name: 'reader-house', params: { id: visitingId }, query: route.query }, backLabel: 'Back to their room', backShort: 'Back' }
   }
   return { title: place.name, sign: 'My Shelf', subtitle: 'My Shelf', owner: place.owner, back: { name: 'house' }, backLabel: 'Back to room' }
 })

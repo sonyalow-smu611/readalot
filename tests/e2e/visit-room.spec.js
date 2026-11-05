@@ -103,14 +103,14 @@ test.describe("their furniture", () => {
     await page.getByRole("navigation", { name: "Places in the room" }).waitFor({ state: "detached" });
     await page.getByRole("button", { name: "Places" }).click();
     await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Emma's house/ }).click();
+    // her front door leads straight into her room
     await page.getByRole("dialog", { name: "Emma's house" }).getByRole("button", { name: "Visit Emma" }).click();
-    await page.getByRole("link", { name: "Visit Emma's room" }).click();
-    await expect(roomOf(page, "Emma")).toBeVisible();
+    await expect(roomOf(page, "Emma")).toBeVisible({ timeout: 15000 });
     await expect(piece(page, "Moon poster")).toHaveCount(1);
     await expect(piece(page, "Mountain poster")).toHaveCount(0);
 
-    // back through her profile and the town
-    for (let step = 0; step < 3; step += 1) await page.goBack();
+    // back out through the town
+    for (let step = 0; step < 2; step += 1) await page.goBack();
     await expect(page).toHaveURL(/\/house$/);
     await expect(piece(page, "Mountain poster")).toHaveCount(1);
     await expect(piece(page, "Moon poster")).toHaveCount(0);

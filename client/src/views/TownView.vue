@@ -180,11 +180,17 @@ async function choosePublic(on) {
   }
 }
 
+// the nearby reader whose Add friend is on its way, for the card's Sending… button
+const sendingTo = ref(null)
+
 async function addFriend(reader) {
+  sendingTo.value = reader.id
   try {
     await nearby.addFriend(reader.id)
   } catch (err) {
     showNotice(err.message)
+  } finally {
+    sendingTo.value = null
   }
 }
 
@@ -606,7 +612,8 @@ function goInside(place) {
         v-if="selectedNearby"
         :key="selectedNearby.id"
         :friend="selectedNearby"
-        :requested="selectedNearby.requested"
+        :requested="selectedNearby.requested || nearby.outgoing.includes(selectedNearby.id)"
+        :sending="sendingTo === selectedNearby.id"
         nearby
         @add="addFriend"
         @profile="router.push({ name: 'reader-room', params: { id: $event.id } })"

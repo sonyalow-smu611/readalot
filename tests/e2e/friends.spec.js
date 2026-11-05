@@ -1,6 +1,6 @@
 import { expect, test, townReady, useRealApi } from "./fixtures.js";
 import { skipDailyPanel } from "./townFriends.js";
-import { befriend } from "./supabaseUser.js";
+import { befriend, createPrivateReader } from "./supabaseUser.js";
 
 // Friends in town: a friend has a house and, when online, walks the streets. The map is a canvas,
 // so these go through the Friends and Places lists.
@@ -29,14 +29,16 @@ test("only your friends have houses in town", async ({ page }) => {
   await expect(places.getByRole("button", { name: /^Sofia's house/ })).toHaveCount(0);
 });
 
-test("a friend's house opens their profile", async ({ page }) => {
+// Through their front door into their room, and the back button goes straight out to the town
+test("a friend's house opens their room, and back goes to the town", async ({ page }) => {
   const card = await openPlace(page, "Emma's house");
   await expect(card.getByText("Emma Tan", { exact: false })).toBeVisible();
   await expect(card).toContainText("Online now");
   await card.getByRole("button", { name: "Visit Emma" }).click();
-  await expect(page).toHaveURL(/\/people\/emma\.reads$/, WALK_IN);
-  await expect(page.getByRole("heading", { level: 1, name: "Emma Tan" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Visit Emma's room" })).toBeVisible();
+  await expect(page).toHaveURL(/\/people\/emma\.reads\/room\?from=town$/, WALK_IN);
+  await expect(page.getByRole("heading", { level: 1, name: "Emma's Room" })).toBeVisible(WALK_IN);
+  await page.getByRole("link", { name: "Back to town" }).click();
+  await expect(page).toHaveURL(/\/$/);
 });
 
 // The Friends button counts who is online; its list shows everyone, and leads to their house.
@@ -89,7 +91,7 @@ test("a friend's card leads to their house", async ({ page }) => {
   await page.getByRole("button", { name: "Friends, 2 online" }).click();
   await page.getByRole("navigation", { name: "Friends in town" }).getByRole("button", { name: /Ayaan Rahman/ }).click();
   await page.getByRole("dialog", { name: "Ayaan Rahman" }).getByRole("button", { name: "Visit Ayaan's house" }).click();
-  await expect(page).toHaveURL(/\/people\/ayaan\.pages$/, WALK_IN);
+  await expect(page).toHaveURL(/\/people\/ayaan\.pages\/room\?from=town$/, WALK_IN);
 });
 
 test("removing a friend takes their house away", async ({ page }) => {
@@ -103,4 +105,19 @@ test("removing a friend takes their house away", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Friends, 1 online" })).toBeVisible();
   await page.getByRole("button", { name: "Places" }).click();
   await expect(page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Ayaan's house/ })).toHaveCount(0);
+});
+
+// A reader who isn't public never shows up nearby, but you can still ask them by their username.
+test("a private reader can be added by their username", async ({ page }) => {
+  const priya = await createPrivateReader();
+  try {
+    await page.getByRole("button", { name: /^Friends,/ }).click();
+    const list = page.getByRole("navigation", { name: "Friends in town" });
+    await list.getByRole("button", { name: "Add friend" }).click();
+    await list.getByRole("textbox", { name: "Friend's username" }).fill(priya.username);
+    await list.getByRole("button", { name: "Send request" }).click();
+    await expect(list.getByRole("status")).toHaveText(`Friend request sent to ${priya.username}.`);
+  } finally {
+    await priya.remove();
+  }
 });

@@ -110,7 +110,7 @@ test("coming back from a friend's house leaves you outside it", async ({ page })
   await page.getByRole("button", { name: "Places" }).click();
   await page.getByRole("navigation", { name: "Places in town" }).getByRole("button", { name: /^Emma's house/ }).click();
   await page.getByRole("dialog", { name: "Emma's house" }).getByRole("button", { name: "Visit Emma" }).click();
-  await expect(page).toHaveURL(/\/people\/emma\.reads$/, WALK_IN);
+  await expect(page).toHaveURL(/\/people\/emma\.reads\/room\?from=town$/, WALK_IN);
   await page.goBack();
   await expect.poll(() => you(page), BOOT).toEqual(front("cottage-white"));
 });

@@ -42,7 +42,10 @@ watch(
         autocapitalize="none"
         spellcheck="false"
       />
-      <button type="submit" class="btn btn-primary btn-sm" :disabled="status?.busy || !text.trim()">Send request</button>
+      <button type="submit" class="btn btn-primary btn-sm" :disabled="status?.busy || !text.trim()" :aria-busy="Boolean(status?.busy)">
+        <span v-if="status?.busy" class="spinner-border spinner-border-sm me-1" aria-hidden="true" />
+        {{ status?.busy ? 'Sending…' : 'Send request' }}
+      </button>
     </div>
     <p v-if="status?.message" class="add-friend__message" :class="{ 'is-wrong': !status.ok }" role="status">{{ status.message }}</p>
     <p v-if="username" class="add-friend__yours">Your username: {{ username }}</p>

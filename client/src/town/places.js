@@ -95,7 +95,8 @@ export function nameFriendHouses(friends) {
     return [
       {
         ...house,
-        route: { name: 'reader-room', params: { id: reader.id } },
+        // straight into their room; `from` sends its back button to the town, not their profile
+        route: { name: 'reader-house', params: { id: reader.id }, query: { from: 'town' } },
         // whose house it is, to match their online status to it (see friends.js)
         reader: reader.id,
         name: `${first}'s house`,

@@ -36,6 +36,26 @@ export async function createReader({ profile = null, tourSeen = true } = {}) {
   }
 }
 
+// A private reader (not discoverable) with a username, never signed in, so it doesn't count
+// towards Supabase's sign-in limit. Returns { id, username, remove }.
+export async function createPrivateReader(name = "Priya Private") {
+  const created = await admin.auth.admin.createUser({ email: `e2e-${randomUUID()}@readalot.test`, password: randomUUID(), email_confirm: true });
+  if (created.error) throw created.error;
+  const id = created.data.user.id;
+  const username = `e2e.${id.slice(0, 8)}`;
+  const remove = async () => {
+    await admin.from("friendships").delete().or(`requester.eq.${id},addressee.eq.${id}`);
+    await admin.from("profiles").delete().eq("id", id);
+    await admin.auth.admin.deleteUser(id);
+  };
+  const saved = await admin.from("profiles").upsert({ id, username, display_name: name, discoverable: false });
+  if (saved.error) {
+    await remove();
+    throw saved.error;
+  }
+  return { id, username, remove };
+}
+
 async function signInReader({ id, email, password, profile, tourSeen }) {
   if (profile) {
     const saved = await admin.from("profiles").upsert({

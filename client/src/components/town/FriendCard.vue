@@ -14,6 +14,8 @@ const props = defineProps({
   nearby: { type: Boolean, default: false },
   // you've already asked this reader
   requested: { type: Boolean, default: false },
+  // your request to this reader is on its way
+  sending: { type: Boolean, default: false },
 })
 const emit = defineEmits(['talk', 'visit', 'add', 'profile', 'remove', 'close'])
 
@@ -49,8 +51,9 @@ onMounted(() => card.value?.focus())
     </p>
     <p v-if="house" class="friend-card__blurb">{{ house.blurb }}</p>
     <div v-if="nearby" class="friend-card__actions">
-      <button type="button" class="btn btn-primary friend-card__talk" :disabled="requested" @click="emit('add', friend)">
-        {{ requested ? 'Requested' : 'Add friend' }}
+      <button type="button" class="btn btn-primary friend-card__talk" :disabled="requested || sending" :aria-busy="sending" @click="emit('add', friend)">
+        <span v-if="sending" class="spinner-border spinner-border-sm me-1" aria-hidden="true" />
+        {{ sending ? 'Sending…' : requested ? 'Requested' : 'Add friend' }}
       </button>
       <button type="button" class="btn btn-secondary friend-card__visit" @click="emit('profile', friend)">View profile</button>
     </div>

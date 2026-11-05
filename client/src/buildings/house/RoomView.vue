@@ -131,7 +131,8 @@ function openBook(book) {
 
 // the bookshelf itself: every book, on My Shelf (or the visited reader's shelf)
 function openShelf() {
-  if (props.visiting) router.push({ name: 'reader-house-shelf', params: { id: props.visiting.id } })
+  // keeps ?from=town, so the room's back button still goes to the town afterwards
+  if (props.visiting) router.push({ name: 'reader-house-shelf', params: { id: props.visiting.id }, query: route.query })
   else router.push({ name: 'my-shelf' })
 }
 
