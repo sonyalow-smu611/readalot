@@ -1,5 +1,20 @@
 import { supabase } from "./supabase.js";
 import { earnXp } from "./progress.js";
+// Pip the Librarian is only in the walkthrough and has no account: these answer for Pip (see walkthroughPip.js)
+import {
+  befriendPip,
+  isPip,
+  pinOnPip,
+  pipBoard,
+  pipFurniture,
+  pipProfile,
+  takeDownPipNote,
+  takeDownWelcome,
+  unfriendPip,
+  withPip,
+  withPipFriend,
+  withWelcome
+} from "./walkthroughPip.js";
 
 async function request(path, options = {}) {
   const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
@@ -80,11 +95,12 @@ export function checkInNearby(position = {}) {
 }
 
 // { friends, incoming, outgoing }: see server/src/services/friends.js
-export function getFriendships() {
-  return request("/friends");
+export async function getFriendships() {
+  return withPipFriend(await request("/friends"));
 }
 
-export function sendFriendRequest(readerId) {
+export async function sendFriendRequest(readerId) {
+  if (isPip(readerId)) return befriendPip();
   return request("/friends/requests", { method: "POST", body: JSON.stringify({ readerId }) });
 }
 
@@ -92,7 +108,8 @@ export function answerFriendRequest(requestId, accept) {
   return request(`/friends/requests/${requestId}/${accept ? "accept" : "decline"}`, { method: "POST" });
 }
 
-export function removeFriendship(readerId) {
+export async function removeFriendship(readerId) {
+  if (isPip(readerId)) return unfriendPip();
   return request(`/friends/${encodeURIComponent(readerId)}`, { method: "DELETE" });
 }
 
@@ -108,11 +125,12 @@ export function getActivity(since) {
 }
 
 // Other readers with their shelves (see stores/people.js); `id` is the reader's username.
-export function getReaders() {
-  return request("/people");
+export async function getReaders() {
+  return withPip(await request("/people"));
 }
 
-export function getReader(id) {
+export async function getReader(id) {
+  if (isPip(id)) return pipProfile();
   return request(`/people/${encodeURIComponent(id)}`);
 }
 
@@ -175,24 +193,29 @@ export function getTodayQuote() {
 }
 
 // The notes on a reader's notice board (readerId: their username, or account id), newest first
-export function getRoomNotes(readerId) {
-  return request(`/rooms/${encodeURIComponent(readerId)}/notes`);
+export async function getRoomNotes(readerId) {
+  if (isPip(readerId)) return pipBoard();
+  return withWelcome(readerId, await request(`/rooms/${encodeURIComponent(readerId)}/notes`));
 }
 
 // { text, author }: author is the writer's name, which the server only reads without Supabase
-export function postRoomNote(readerId, data) {
+export async function postRoomNote(readerId, data) {
+  if (isPip(readerId)) return pinOnPip(data);
   return request(`/rooms/${encodeURIComponent(readerId)}/notes`, {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
-export function deleteRoomNote(readerId, noteId) {
+export async function deleteRoomNote(readerId, noteId) {
+  if (isPip(readerId)) return takeDownPipNote(noteId);
+  if (takeDownWelcome(readerId, noteId)) return null;
   return request(`/rooms/${encodeURIComponent(readerId)}/notes/${encodeURIComponent(noteId)}`, { method: "DELETE" });
 }
 
 // A reader's room furniture: { pieces: [{ uid, id, zone?, x?, at? }] } (no zone: in the inventory)
-export function getRoomFurniture(readerId) {
+export async function getRoomFurniture(readerId) {
+  if (isPip(readerId)) return pipFurniture();
   return request(`/rooms/${encodeURIComponent(readerId)}/furniture`);
 }
 

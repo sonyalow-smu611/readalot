@@ -293,6 +293,15 @@ watch(
   { immediate: true },
 )
 
+// The walkthrough has ended here: Pip, its neighbour, has left town (services/walkthroughPip.js),
+// so the bell looks again and drops Pip's welcome note
+watch(
+  () => Boolean(guide.value),
+  (playing, was) => {
+    if (was && !playing) notifications.check().catch(() => {})
+  },
+)
+
 // The first visit each day opens the tasks, once the map is up and any tour and the public or
 // private question are over.
 watch(

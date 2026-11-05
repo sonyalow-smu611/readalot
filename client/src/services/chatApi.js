@@ -2,6 +2,8 @@
 // messaged, the sample readers included; one without an account can't.
 import { supabase } from './supabase.js'
 import { getReader } from './api.js'
+// Pip the Librarian is only in the walkthrough and has no account: Pip's chat is kept here (see walkthroughPip.js)
+import { PIP_ACCOUNT, messagePip, pipChat } from './walkthroughPip.js'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const NO_ACCOUNT = "This reader can't receive messages yet."
@@ -28,6 +30,7 @@ export async function resolveChatRecipient(readerId) {
 }
 
 export async function getMessages(recipientId, senderId) {
+  if (recipientId === PIP_ACCOUNT) return pipChat()
   if (!supabase) throw new Error('Supabase is not configured.')
   if (!UUID.test(String(recipientId)) || !UUID.test(String(senderId))) throw new Error('Invalid conversation.')
   const { data, error } = await supabase
@@ -43,6 +46,7 @@ export async function getMessages(recipientId, senderId) {
 export async function sendReaderMessage(recipientId, content, senderId) {
   const value = String(content ?? '').trim()
   if (!value || value.length > 1000) throw new Error('Write a message between 1 and 1000 characters.')
+  if (recipientId === PIP_ACCOUNT) return messagePip(senderId, value)
   if (!supabase) throw new Error('Supabase is not configured.')
   if (!UUID.test(String(recipientId)) || !UUID.test(String(senderId)) || senderId === recipientId) {
     throw new Error('Invalid recipient.')

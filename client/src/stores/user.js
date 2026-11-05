@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance (Phase 1) — see AI_USAGE.md
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import usersData from '@/data/users.json'
 import { currentSession, loadProfile, markTourSeen, watchAuth } from '@/services/auth.js'
 import { normaliseCharacter } from '@/lib/avatar/catalogue.js'
@@ -8,6 +8,7 @@ import { useProgressStore } from '@/stores/progress.js'
 import { usePeopleStore } from '@/stores/people.js'
 import { useNearbyStore } from '@/town/nearbyStore.js'
 import { WALKTHROUGH, isPhone, walkthroughFor } from '@/lib/walkthrough.js'
+import { pipArrives, pipLeaves } from '@/services/walkthroughPip.js'
 
 // The walkthrough (lib/walkthrough.js) plays once after Welcome; finishing or skipping saves
 // profiles.tour_seen_at, so it doesn't play again by itself on any device. The salon replays it.
@@ -58,6 +59,12 @@ export const useUserStore = defineStore('user', () => {
   const profileComplete = computed(() => hasProfile.value)
   const guideSteps = ref(WALKTHROUGH)
   const guide = computed(() => (guideStep.value >= 0 ? guideSteps.value[guideStep.value] : null))
+  // Pip the Librarian, whom the walkthrough's Cafe part introduces, is in town only while it plays
+  // (services/walkthroughPip.js): a stranger again each time it starts, gone once it ends
+  watch(
+    () => guideStep.value >= 0,
+    (playing) => (playing ? pipArrives(profile.value.id) : pipLeaves()),
+  )
   const guideCount = computed(() => guideSteps.value.length)
   // a new reader on their way to the town for the first time: the tour is about to start
   const tourPending = computed(() => hasProfile.value && !tourSeen.value)
