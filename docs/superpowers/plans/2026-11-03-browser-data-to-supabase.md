@@ -52,8 +52,8 @@
 - [ ] **Step 2:** In `seedReaders.js`, after `user_books`: `ok("room_furniture", supabase.from("room_furniture").upsert(readers with furniture → { owner_id: reader.id, pieces: reader.furniture, updated_at }))`.
 - [ ] **Step 3:** In `roomFurniture.js`, `getPieces(ownerId)` without Supabase returns `demoRooms.get(ownerId) ?? DEMO_READERS.find((r) => r.id === ownerId)?.furniture ?? []`.
 - [ ] **Step 4:** In `visitors.js`, `furnitureOf(readerId)` returns only the saved placed pieces; delete `FURNISHINGS`. Update the comment.
-- [ ] **Step 5:** Run `npx playwright test tests/e2e/visit-room.spec.js tests/e2e/room-furniture.spec.js`. Expected: the tests that look for Emma's Moon poster and Wingback chair pass (demo API now serves them).
-- [ ] **Step 6:** Build: `npm --workspace client run build`. Dylan reviews and commits.
+- [ ] **Step 5:** Run `pnpm exec playwright test tests/e2e/visit-room.spec.js tests/e2e/room-furniture.spec.js`. Expected: the tests that look for Emma's Moon poster and Wingback chair pass (demo API now serves them).
+- [ ] **Step 6:** Build: `pnpm --filter readalot-client build`. Dylan reviews and commits.
 
 ### Task 2: Remove the browser-only chat
 
@@ -68,7 +68,7 @@
 - [ ] **Step 1: Write the failing test** `"a reader with no account can't be messaged, and says so"`: route `**/api/people/nobody.local` to `{ reader: { id: "nobody.local", userId: "not-a-uuid", displayName: "No Body", books: [], favoriteGenres: [] } }`, open their profile, press Message, expect the alert `"This reader can't receive messages yet."` and no textbox `"Message"`.
 - [ ] **Step 2:** Run it. Expected: FAIL (today it opens a device-only chat).
 - [ ] **Step 3:** Delete `DEMO_PREFIX`, `demoKey`, `readDemo` and both `demo` branches in `chatApi.js`; `resolveChatRecipient` throws the message above for a missing or non-UUID `userId` or "Reader not found". In `ReaderChat.vue` delete `demoMode`, its label text, its note and `.demo-note`; the existing error state shows the message.
-- [ ] **Step 4:** Run `npx playwright test tests/e2e/reader-profile.spec.js tests/e2e/cafe-profile.spec.js tests/e2e/buttons.spec.js`. Expected: PASS.
+- [ ] **Step 4:** Run `pnpm exec playwright test tests/e2e/reader-profile.spec.js tests/e2e/cafe-profile.spec.js tests/e2e/buttons.spec.js`. Expected: PASS.
 - [ ] **Step 5:** Dylan reviews and commits.
 
 ### Task 3: Notifications' read and cleared state in Supabase
@@ -92,7 +92,7 @@
 - [ ] **Step 4:** Add `at: row.created_at` to `incoming` in `friendsOf`.
 - [ ] **Step 5:** Rewrite the store's state without localStorage. Items are built on each `check()` from `nearby.incoming` (kind `request`, `at`), visits since the later of `clearedAt` and a week ago (kind `visit`), and friends coming online this visit (kind `online`, `at` now, kept for the session only). An item is `read` when `at <= readAt`, hidden when `at <= clearedAt`. It pops up once per session when `at > readAt`. `markRead()` sets `readAt` to now, `clear()` sets `clearedAt` to now; both save through `saveNotificationTimes` and keep working for the session if the save fails.
 - [ ] **Step 6:** In `TownView.vue`, call `notifications.start(id, { readAt: profile.notifications_read_at, clearedAt: profile.notifications_cleared_at })`.
-- [ ] **Step 7:** Run `npx playwright test tests/e2e/notifications.spec.js tests/e2e/friends-list.spec.js`. Expected: PASS, including the existing "pops up, once" test.
+- [ ] **Step 7:** Run `pnpm exec playwright test tests/e2e/notifications.spec.js tests/e2e/friends-list.spec.js`. Expected: PASS, including the existing "pops up, once" test.
 - [ ] **Step 8:** Dylan reviews and commits.
 
 ### Task 4: Daily tasks in the database
@@ -138,13 +138,13 @@
 - [ ] **Step 4:** In `TownView.vue` and `DailyDock.vue`, `const claimed = await daily.claim()`; on `null`, show `daily.error` with the existing `showNotice` (town) or the panel's notice line (dock).
 - [ ] **Step 5:** Replace every localStorage `readalot-daily` write in the listed specs with `await skipDailyPanel(reader.id)` or `setDaily`.
 - [ ] **Step 6:** Add `"with Supabase down the town still opens, without the Daily button"`: route `**/rest/v1/rpc/daily_today` to status 500, open the town, expect `townReady` and no `Daily tasks` button.
-- [ ] **Step 7:** Run `npx playwright test tests/e2e/daily.spec.js` then the full suite `npx playwright test`. Expected: all pass except tests already listed as failing on `main`.
+- [ ] **Step 7:** Run `pnpm exec playwright test tests/e2e/daily.spec.js` then the full suite `pnpm exec playwright test`. Expected: all pass except tests already listed as failing on `main`.
 - [ ] **Step 8:** Build, add the `AI_USAGE.md` section (with Task 0's agreement), Dylan reviews and commits.
 
 ### Task 6: Seed the demo readers (Dylan runs it)
 
-- [ ] **Step 1:** Dylan runs `npm run seed:readers -w server`. It writes to the shared Supabase project: the demo readers' profiles, areas near SMU, books, shelves and (after Task 1) furniture, and resets when each was last online.
-- [ ] **Step 2:** Run `npx playwright test tests/e2e/nearby.spec.js tests/e2e/visit-room.spec.js`. Expected: "adding a demo reader gives them a house straight away" passes, and Emma's room shows her furniture from Supabase.
+- [ ] **Step 1:** Dylan runs `pnpm --filter readalot-server seed:readers`. It writes to the shared Supabase project: the demo readers' profiles, areas near SMU, books, shelves and (after Task 1) furniture, and resets when each was last online.
+- [ ] **Step 2:** Run `pnpm exec playwright test tests/e2e/nearby.spec.js tests/e2e/visit-room.spec.js`. Expected: "adding a demo reader gives them a house straight away" passes, and Emma's room shows her furniture from Supabase.
 
 ## Not in this plan
 

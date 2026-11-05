@@ -3,7 +3,7 @@ import { skipDailyPanel } from "./townFriends.js";
 import { createReader, markActive, notAskedYet, setAge, setDiscoverable, signInPage, storedArea } from "./supabaseUser.js";
 
 // Going public, finding readers near you and adding them. The location is faked, and the demo
-// readers' areas near SMU come from `npm run seed:readers -w server`.
+// readers' areas near SMU come from `pnpm --filter readalot-server seed:readers`.
 const SMU = { latitude: 1.2966, longitude: 103.8502 };
 const FAR_AWAY = { latitude: 51.5, longitude: -0.12 };
 const PROFILE = { name: "Reader", favouriteGenres: ["Fantasy"] };

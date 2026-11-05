@@ -3,7 +3,7 @@
 // single `quotes` column, most-liked quotes first).
 //
 // Usage: download the dataset, then
-//   npm run import-quotes -w server -- <folder with the CSV files>
+//   pnpm --filter readalot-server import-quotes <folder with the CSV files>
 //
 // Only part of the dataset is kept: the topics that suit a reading room, quotes short enough
 // to read on the note's popup, and nothing with coarse language. Change the constants below
@@ -89,7 +89,7 @@ function keep(text) {
 
 const folder = process.argv[2];
 if (!folder) {
-  console.error("Usage: npm run import-quotes -w server -- <folder with the CSV files>");
+  console.error("Usage: pnpm --filter readalot-server import-quotes <folder with the CSV files>");
   process.exit(1);
 }
 

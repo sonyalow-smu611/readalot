@@ -9,8 +9,8 @@
 // on the team's shared project. Re-run it before each demo: it puts the demo reader and two friends
 // back "online", resets the shelf and XP, and puts the room back.
 //
-// Needs the demo readers first: npm run seed:readers -w server
-// Usage: npm run seed:demo -w server
+// Needs the demo readers first: pnpm --filter readalot-server seed:readers
+// Usage: pnpm --filter readalot-server seed:demo
 import { DEMO_READERS } from "../data/demoReaders.js";
 import { findGoogleBook, searchGoogleBooks } from "../src/services/books.js";
 import { env } from "../src/services/env.js";
@@ -39,7 +39,7 @@ const sgDay = (ms) => new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia
 
 const reader = (username) => {
   const found = DEMO_READERS.find((one) => one.username === username);
-  if (!found) throw new Error(`Run npm run seed:readers -w server first: ${username} is missing.`);
+  if (!found) throw new Error(`Run pnpm --filter readalot-server seed:readers first: ${username} is missing.`);
   return found.id;
 };
 const EMMA = reader("emma.reads");

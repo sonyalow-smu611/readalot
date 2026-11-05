@@ -160,7 +160,7 @@ Everything you can do in the room today still works: books on the shelf, the Cur
 **Art pipeline**
 - All room art is drawn by a script that works like the town's draw script. It's plain browser canvas code run in Playwright's Chromium, so every run gives the same pixels.
 - It uses the town's own helpers (whole-pixel rectangles and ellipses, filled shapes, shading and the 1 px `#1e1a24` outline), so outlines and shading match the town exactly.
-- It writes a small set of PNG sprites, at 1 pixel per art pixel, into the house's public art folder, and is run with its own npm script.
+- It writes a small set of PNG sprites, at 1 pixel per art pixel, into the house's public art folder, and is run with its own package script.
 - All furniture and props are original drawings. They follow the mood and style of the two references but copy none of their pieces or layout.
 
 **Style, measured from the references**

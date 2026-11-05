@@ -141,7 +141,7 @@ rules so the two land consistent.
   same fields it has today.
 - `drawAvatar(p, rnd)` takes the random generator as an argument instead of reading the script's
   global one. The map script passes its own seeded `rnd`, in the same order as today, so
-  **`npm --workspace client run draw-map` must produce byte-identical `map.png`, avatars,
+  **`pnpm --filter readalot-client draw-map` must produce byte-identical `map.png`, avatars,
   buildings, cars and `map-data.json`**. The app passes a fresh generator with a fixed seed for
   each drawing, so the same settings always give the same pixels.
 - The script currently glues the art files together as plain text and runs them in Chromium.
@@ -323,7 +323,7 @@ rules so the two land consistent.
     privacy switch, a shelf's book list, and the log-out dialog.
 - The pixel look is checked by eye: screenshots of Log in, Welcome and the salon (with the
   customiser open) at phone width (390 px) and laptop width (1280 px), side by side with the town.
-- `npm --workspace client run build` passes.
+- `pnpm --filter readalot-client build` passes.
 
 ## Out of Scope
 

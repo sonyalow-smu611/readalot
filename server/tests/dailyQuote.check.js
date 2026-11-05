@@ -1,4 +1,4 @@
-// Assert-style check for the Quote of the Day picker. Run: npm run check -w server
+// Assert-style check for the Quote of the Day picker. Run: pnpm --filter readalot-server check
 import assert from "node:assert/strict";
 import { pickDailyQuote } from "../src/services/dailyQuote.js";
 

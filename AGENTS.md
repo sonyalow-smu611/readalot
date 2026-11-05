@@ -79,7 +79,7 @@ Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /l
 ```
 client/
   public/town/            map.png (3584 x 2560) and avatars/ — generated, don't edit by hand
-  scripts/draw-town-map.mjs + scripts/town-art/   draws them: npm --workspace client run draw-map
+  scripts/draw-town-map.mjs + scripts/town-art/   draws them: pnpm --filter readalot-client draw-map
   src/
     town/                 places.js (layout), TownScene.js (Phaser), ground.js (where a tap can walk to)
     components/town/      TownMap, TownHud, PlacesMenu, PlaceCard
@@ -96,11 +96,11 @@ tests/e2e/                Playwright tests, one file per journey (town.spec.js c
 ## Run and check
 
 ```bash
-npm install
-npm run dev:server        # API on :3000
-npm run dev:client        # app on http://localhost:5173
-npm run test:e2e          # Playwright; starts its own servers
-npm --workspace client run build
+pnpm install           # pnpm 12; the repo is a pnpm workspace (client, server)
+pnpm dev:server        # API on :3000
+pnpm dev:client        # app on http://localhost:5173
+pnpm test:e2e          # Playwright; starts its own servers
+pnpm build             # builds the client
 ```
 
 Before you finish: build passes, the e2e tests for what you touched pass, and a new journey gets

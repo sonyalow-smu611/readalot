@@ -21,13 +21,14 @@ discover books, meet nearby readers and scan books in.
 
 ## Getting Started
 
-Requires Node.js 20 or newer (built with Node 24).
+Requires Node.js 20 or newer (built with Node 24) and [pnpm](https://pnpm.io) 12
+(`npm install -g pnpm`, or `corepack enable` to use the version in `package.json`).
 
 ```bash
-npm install               # once, at the repo root: installs client and server (npm workspaces)
+pnpm install              # once, at the repo root: installs client and server (pnpm workspaces)
 cp .env.example .env      # optional keys; the app runs with all of them empty
-npm run dev:server
-npm run dev:client
+pnpm dev:server
+pnpm dev:client
 ```
 
 Run the server and client commands in separate terminals.
@@ -47,7 +48,7 @@ the Day" below). Until then, `API_NINJAS_KEY` supplies the day's quote, and with
 popup shows one built-in quote.
 
 **With Supabase** (shared keys from the team): follow "Database" below, then run
-`npm run seed -w server` once for the demo user, fake readers and sample books.
+`pnpm --filter readalot-server seed` once for the demo user, fake readers and sample books.
 
 On phones the app fills the screen; on wider screens it sits in a centred phone-size frame. In
 Chrome DevTools, device mode at 390 × 844 (or 375 px wide) shows the primary layout.
@@ -58,7 +59,7 @@ One shared Supabase project is used by all developers.
 
 - Fresh project: run `database/schema.sql` in the Supabase SQL editor (skip the "Migration" block at the bottom).
 - Existing project from the older schema: run only the "Migration" block (idempotent).
-- Then run `npm run seed -w server` and copy the printed demo user id into `DEMO_USER_ID`.
+- Then run `pnpm --filter readalot-server seed` and copy the printed demo user id into `DEMO_USER_ID`.
 
 ### Environment variables
 
@@ -84,13 +85,13 @@ time.now (room clock), Wikipedia and Dog CEO (pet photos).
 
 | Command | Purpose |
 |---------|---------|
-| `npm run dev:server` / `npm run dev:client` | Run API / web app |
-| `npm run build` | Build the client |
-| `npm run seed -w server` | Seed demo user, readers, saved books |
-| `npm run import-quotes -w server -- <folder>` | Rebuild `server/data/quotes.json` from the downloaded Kaggle quotes dataset (see Quote of the Day) |
-| `npm run verify-works -w server` | Verify the mood book list against the quotes API (not written yet, T12) |
-| `npm run check -w server` | Assert checks: compatibility score, Quote of the Day picker |
-| `npm run test:e2e` | Playwright tests (see Testing). First time: `npx playwright install chromium` |
+| `pnpm dev:server` / `pnpm dev:client` | Run API / web app |
+| `pnpm build` | Build the client |
+| `pnpm --filter readalot-server seed` | Seed demo user, readers, saved books |
+| `pnpm --filter readalot-server import-quotes <folder>` | Rebuild `server/data/quotes.json` from the downloaded Kaggle quotes dataset (see Quote of the Day) |
+| `pnpm --filter readalot-server verify-works` | Verify the mood book list against the quotes API (not written yet, T12) |
+| `pnpm --filter readalot-server check` | Assert checks: compatibility score, Quote of the Day picker |
+| `pnpm test:e2e` | Playwright tests (see Testing). First time: `pnpm exec playwright install chromium` |
 
 ## Testing
 
@@ -101,22 +102,22 @@ the app's code or its stores.
 ### Running the tests
 
 ```bash
-npm install                                   # first time
-npx playwright install chromium               # first time: the browser the tests use
-npm run test:e2e                              # every test, headless (about 4–5 minutes)
-npx playwright test tests/e2e/room.spec.js    # one file
-npx playwright test -g "Places menu"          # tests whose name matches
-npx playwright test --headed                  # watch the browser while they run
-npx playwright test --ui                      # step through tests, with a timeline and DOM snapshots
-npx playwright test --debug -g "lamp"         # pause on each step in the inspector
-npx playwright show-report                    # open the last run's HTML report
+pnpm install                                        # first time
+pnpm exec playwright install chromium               # first time: the browser the tests use
+pnpm test:e2e                                       # every test, headless (about 4–5 minutes)
+pnpm exec playwright test tests/e2e/room.spec.js    # one file
+pnpm exec playwright test -g "Places menu"          # tests whose name matches
+pnpm exec playwright test --headed                  # watch the browser while they run
+pnpm exec playwright test --ui                      # step through tests, with a timeline and DOM snapshots
+pnpm exec playwright test --debug -g "lamp"         # pause on each step in the inspector
+pnpm exec playwright show-report                    # open the last run's HTML report
 ```
 
 - **You don't need to start the app yourself.** The run starts its own API on port 3100 (with no
   Google Books key, so the built-in 16-book demo shelf) and its own client on port 5174. If a run
   fails at once with "address already in use", an old test server is still on one of those ports:
   `lsof -nP -iTCP:3100 -sTCP:LISTEN` shows it, and `kill <PID>` stops it.
-- **On a busy laptop,** run fewer tests at once: `npx playwright test --workers=2`.
+- **On a busy laptop,** run fewer tests at once: `pnpm exec playwright test --workers=2`.
 - A failed test keeps its screenshot and an "error context" page snapshot in `test-results/`.
 
 ### How the tests are written
@@ -174,7 +175,7 @@ readalot/
 ├── design-system/              Design tokens and component notes
 ├── client/
 │   ├── blender/                The old 3D room (no longer used by the app): .blend files and their scripts
-│   ├── public/room/strip/      The room's sprites, drawn by scripts/draw-room.mjs (npm run draw-room)
+│   ├── public/room/strip/      The room's sprites, drawn by scripts/draw-room.mjs (pnpm --filter readalot-client draw-room)
 │   └── src/
 │       ├── views/              One file per route
 │       ├── buildings/house/    My Room (its own README): RoomView, components/ (RoomStrip, WindowView, Currently Reading card),
@@ -289,7 +290,7 @@ User shape:
 - Google Books returns a limited slice per query, so genre shelves can be thin.
 - Compatibility is computed per request (O(users)); fine at MVP scale.
 - Desktop shows a centred phone-width column only.
-- The room's art is drawn by `client/scripts/draw-room.mjs` (`npm --workspace client run draw-room`), with Playwright's Chromium; the sprites are committed, so running the app does not need it.
+- The room's art is drawn by `client/scripts/draw-room.mjs` (`pnpm --filter readalot-client draw-room`), with Playwright's Chromium; the sprites are committed, so running the app does not need it.
 - A book's real cover only shows on the 3D book when its image host allows it (CORS); otherwise the book gets a cloth cover with its title. Google Books thumbnails may not allow it.
 - Decorations, pets and credits are kept in memory only and reset when the page reloads.
 - Discover People, Reader Room, follow and chat use four fictional sample readers kept in the browser (see Discover People), not real accounts.
@@ -337,7 +338,7 @@ To build the list (other topics or limits are set at the top of the script):
 ```bash
 pip install kagglehub
 python -c "import kagglehub; print(kagglehub.dataset_download('abdokamr/good-reads-quotes'))"
-npm run import-quotes -w server -- <the folder printed above>
+pnpm --filter readalot-server import-quotes <the folder printed above>
 ```
 
 ### Mood Check-in

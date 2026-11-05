@@ -37,7 +37,7 @@ along sideways. It's drawn in the town's style, using the town's own drawing hel
 | `assets/room-still.png` | The picture shown until the room has loaded, or when it can't load |
 
 The art itself is drawn by `client/scripts/room-art/room.js` into `client/public/room/strip/`.
-Redraw it with `npm --workspace client run draw-room`.
+Redraw it with `pnpm --filter readalot-client draw-room`.
 
 ## Coordinates
 
@@ -63,7 +63,7 @@ furniture as its `y`.
    using the town's helpers: `R` (rectangle), `P` (pixel), `E` (ellipse), `fillPoly` and `shade`,
    plus the room's `panel`, `RR` (round rectangle), `L` (line) and `leaf`. Take colours from `C`
    (the palette). `add` gives the sprite the town's 1 px outline.
-2. **Redraw:** `npm --workspace client run draw-room`. Check the new PNG in
+2. **Redraw:** `pnpm --filter readalot-client draw-room`. Check the new PNG in
    `client/public/room/strip/`.
 3. **Place it:** add a line to `PIECES` in `strip/layout.js`:
 
@@ -121,7 +121,7 @@ To add a piece:
 
 1. **Draw it** in `client/scripts/room-art/room.js`, in the "furniture library" section at the
    end, with `add(id, width, height, draw)` as for any piece.
-2. **Redraw:** `npm --workspace client run draw-room`.
+2. **Redraw:** `pnpm --filter readalot-client draw-room`.
 3. **List it** in `FURNITURE` in `furniture.js`:
 
    ```js
@@ -233,7 +233,7 @@ because it can't.
 
 A visited room shows the furniture that reader saved, or the plain room if they have saved none.
 The Cafe's sample readers have theirs saved too: their pieces are in `server/data/demoReaders.js`,
-and `npm run seed:readers -w server` puts them in `room_furniture` (without Supabase the server
+and `pnpm --filter readalot-server seed:readers` puts them in `room_furniture` (without Supabase the server
 serves them from that file). A visit never saves anything.
 
 ## On a laptop

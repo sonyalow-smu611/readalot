@@ -1,6 +1,6 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // The town's layout in map pixels (public/town/map.png is MAP_W x MAP_H). The boxes come from
-// `npm --workspace client run draw-map`: when a building moves in the art, paste its new box here.
+// `pnpm --filter readalot-client draw-map`: when a building moves in the art, paste its new box here.
 // The same command writes map-data.json (lamps, windows, water) for the animations; don't edit that.
 import { getCurrentlyReading } from '@/lib/readerMatch.js'
 
