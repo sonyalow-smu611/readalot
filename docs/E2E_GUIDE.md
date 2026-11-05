@@ -366,7 +366,9 @@ sent** / **Added as friend**), **Message**, **Currently Reading**, **Reading Pre
 **Books You Both Have**, and **Close reader profile (×)**.
 **Visiting a room** (`/people/:id/room`): **Knocking on the door…**, then the reader's room, read-only, in their
 colours, with **Back to <name>'s profile**. The bookshelf opens their shelf (no search, no status
-buttons); a book opens a card with nothing to edit; the corkboard shows their notes; **Leave a note**
+buttons) and every book on it, with its cover and synopsis, as the reader sees their own shelf; a book opens the
+same card as in the library (**Add to To be read** / **Undo**, **Where to get**, **Leave/Read Reviews**, **Open full
+book page**), where the shelf it shows is yours; the corkboard shows their notes; **Leave a note**
 opens "Say hello, recommend a book…" with **Post note** / **Cancel** (up to 140 characters; you can take down
 your own notes); lamps toggle for your visit only. Visiting earns 15 XP once a day per room; a note 10 XP.
 An unknown reader shows **We couldn't find that reader.** with **Find readers in the Cafe**.

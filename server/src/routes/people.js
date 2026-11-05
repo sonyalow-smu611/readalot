@@ -15,7 +15,7 @@ router.get("/", requireUser, async (req, res, next) => {
 
 router.get("/:id", requireUser, async (req, res, next) => {
   try {
-    const reader = await findReader(req.params.id, req.user.id);
+    const reader = await findReader(req.params.id, req.user.id, { full: true });
     if (!reader) return res.status(404).json({ error: "Reader not found" });
     res.json({ reader });
   } catch (err) {

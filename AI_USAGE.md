@@ -966,3 +966,13 @@ Written by Claude at Aalric's request.
 | Made-up readers hidden (backend, requested by Aalric) | `server/data/demoReaders.js` (`SAMPLE_READER_IDS`), `server/src/services/readers.js`, `friends.js`, `nearby.js` | With Supabase on, Emma, Ayaan, Sofia, Noah, Mei, Priya, Daniel and the demo account's reader no longer show in the Cafe, nearby, friend lists, profiles or add-by-username. Pip stays, and is the only reader who accepts a request at once. Real readers work as before. Their rows stay in the database; without Supabase (the e2e tests) the sample data still serves the app |
 | Sliding notification | `client/src/components/town/NotificationSlide.vue`, `client/src/views/TownView.vue`, `client/src/town/notificationsStore.js` | A new notification slides in from the right for about 5 seconds, then fades away; tapping it goes to it. Things you did yourself (a request you sent) don't slide in. The bell stays red until the list is opened |
 | Tests | `tests/e2e/notifications.spec.js` | Slide in, fade away, tap to open, and nothing for your own actions |
+
+### A visited reader's shelf shows every book, and opens like the library (AI-generated)
+
+Written by Claude at Aalric's request. The server change is to a shared service and was asked for by Aalric.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Every book, in full (backend) | `server/src/services/readers.js` (`withBooks`, `findReader`), `server/src/routes/people.js` | A single reader (`GET /api/people/:id`) now comes with every book on their shelf, in full (cover, synopsis and the rest), as the reader sees it themselves, with Google Books filling in a book the books table doesn't hold. The list of readers (the Cafe) stays light. Before, a visit showed only the books the books table held, so most shelves looked empty |
+| Visit | `client/src/stores/people.js` (`fetchReader` with `full`), `client/src/buildings/house/visitors.js` | A visit asks for that one reader in full and keeps every book field |
+| Book card | `client/src/buildings/house/RoomView.vue`, `ShelfView.vue` | A book on a visited reader's bookshelf, in their room or on their shelf page, opens the library's card (`FoundBookPreview`): Add to To be read and Undo, Where to get, Leave/Read Reviews and Open full book page. `VisitorBookDialog.vue` is removed |

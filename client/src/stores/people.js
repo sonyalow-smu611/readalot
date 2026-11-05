@@ -49,11 +49,13 @@ export const usePeopleStore = defineStore('people', () => {
   }
 
   // One reader, from the list when it has them, else fetched on its own; null when there's no
-  // such reader. Throws when the request fails for another reason.
-  async function fetchReader(id) {
+  // such reader. `full` always fetches them on their own: the list only has each book's title,
+  // author and shelf, and a visit to their room shows the books in full (cover, synopsis). Throws
+  // when the request fails for another reason.
+  async function fetchReader(id, { full = false } = {}) {
     await load()
     const known = find(id)
-    if (known) return known
+    if (known && !full) return known
     try {
       return (await getReader(id)).reader
     } catch (err) {
