@@ -47,7 +47,6 @@ import NotificationSlide from '@/components/town/NotificationSlide.vue'
 const WEATHER_EVERY = 10 * 60 * 1000
 const NEARBY_EVERY = 10 * 1000
 const NOTICE_FOR = 5000
-const PREVIEW_DAYS = import.meta.env.DEV
 
 const router = useRouter()
 const user = useUserStore()
@@ -708,12 +707,9 @@ function goInside(place) {
         :can-claim="daily.canClaim"
         :claimed="daily.claimed"
         :notice="daily.notice"
-        :preview="PREVIEW_DAYS"
         @go="goDo"
         @claim="claimDaily"
         @dismiss-notice="daily.dismissNotice"
-        @preview-days="daily.previewDays"
-        @preview-reset="daily.previewReset"
       />
     </Transition>
     <WeatherChip v-if="ready" data-tour="town-weather" :weather="weather" />
