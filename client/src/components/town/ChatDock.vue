@@ -134,7 +134,8 @@ const current = computed(() => props.chats.find((chat) => chat.id === props.open
   display: flex;
   flex-direction: column;
   width: min(380px, calc(100% - 28px));
-  max-height: calc(100% - 170px);
+  /* clear of the controls along the top, however many rows they wrap onto (TownView measures) */
+  max-height: calc(100% - 80px - var(--town-top-clear, 90px));
   border: 1px solid var(--rl-line);
   border-radius: var(--rl-radius-card, 16px);
   background: var(--rl-surface);

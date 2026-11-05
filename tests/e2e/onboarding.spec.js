@@ -265,7 +265,7 @@ test.describe("a returning reader", () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("button", { name: "Places" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Your name" })).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Welcome to Readalot Town" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Welcome to IKDA Town" })).toHaveCount(0);
     // and Welcome itself sends them back to town
     await page.goto("/welcome");
     await expect(page).toHaveURL(/\/$/);

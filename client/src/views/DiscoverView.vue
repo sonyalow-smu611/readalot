@@ -30,7 +30,7 @@ useReveal(page)
     </StickerCard>
 
     <div class="d-flex justify-content-between align-items-center mb-3" data-reveal>
-      <h2 class="h5 mb-0">Trending on Readalot</h2>
+      <h2 class="h5 mb-0">Trending on IKDA</h2>
       <span class="sticker-tag">Coming soon</span>
     </div>
 

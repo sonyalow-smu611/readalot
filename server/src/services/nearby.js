@@ -69,10 +69,11 @@ async function readersNear(me) {
     .lte("lat_cell", mine.lat_cell + REACH);
   if (areasError) throw areasError;
 
-  // friends are already in town; a declined or removed reader is gone for good
+  // friends are already in town; a reader you removed (or who declined) is still near you, and
+  // can be asked again
   const rows = await friendshipsOf(me);
   const otherOf = (row) => (row.requester === me ? row.addressee : row.requester);
-  const hidden = new Set(rows.filter((row) => row.status !== "pending").map(otherOf));
+  const hidden = new Set(rows.filter((row) => row.status === "accepted").map(otherOf));
   const asked = new Set(rows.filter((row) => row.status === "pending" && row.requester === me).map(otherOf));
 
   const cutoff = Date.now() - STALE_MS;

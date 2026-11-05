@@ -53,15 +53,16 @@
 
     <!-- shelf status: on the shelf, which one (and move it); not yet, one way on. Nothing while
          the shelf loads, so a book already on it never flashes "Add" first -->
-    <button
+    <LoadButton
       v-if="!shelved && !bookshelf.loading"
-      type="button"
       class="btn btn-success w-100 details__add"
-      :disabled="saving"
+      :busy="saving"
+      :failed="Boolean(statusError)"
+      busy-text="Adding…"
       @click="choose('want_to_read')"
     >
-      {{ saving ? "Adding…" : "Add to To be read" }}
-    </button>
+      Add to To be read
+    </LoadButton>
     <div v-else-if="shelved" class="d-flex w-100 details__status" role="group" aria-label="Reading status">
       <button
         v-for="option in STATUS_OPTIONS"
@@ -145,6 +146,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { primaryAuthor } from '@/lib/book'
+import LoadButton from '@/components/shared/LoadButton.vue'
 import BookSynopsis from '@/components/book/BookSynopsis.vue'
 import ReadingProgress from '@/components/book/ReadingProgress.vue'
 import BookReviews from '@/components/book/BookReviews.vue'
@@ -460,7 +462,7 @@ const user = useUserStore()
 
 .details__finished {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
 }
 
 .details__finished .details__link-btn {

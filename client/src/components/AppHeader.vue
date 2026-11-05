@@ -14,7 +14,7 @@
       <div class="app-header__text">
         <!-- pages that set a title get it as their h1; older views still bring their own -->
         <component :is="route.meta.title ? 'h1' : 'p'" class="app-header__title">
-          {{ route.meta.title || "Readalot" }}
+          {{ route.meta.title || "IKDA" }}
         </component>
         <p v-if="route.meta.subtitle" class="app-header__subtitle">{{ route.meta.subtitle }}</p>
       </div>

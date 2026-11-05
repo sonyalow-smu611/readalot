@@ -2,6 +2,7 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Edit everything about the reader at once. Checks the answers, then hands them to the page
 // to save.
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { nextTick, ref } from 'vue'
 import RadioChips from '@/buildings/salon/components/RadioChips.vue'
 import CharacterSprite from '@/components/shared/CharacterSprite.vue'
@@ -186,9 +187,9 @@ async function submit() {
       <p v-if="error" class="field-error mb-2" role="alert">{{ error }}</p>
       <div class="d-flex gap-2">
         <button type="button" class="btn btn-outline-primary" @click="emit('cancel')">Cancel</button>
-        <button class="btn btn-success flex-grow-1" type="submit" :disabled="busy">
-          {{ busy ? 'Saving…' : 'Save' }}
-        </button>
+        <LoadButton class="btn btn-success flex-grow-1" type="submit" :busy="busy" :failed="Boolean(error)" busy-text="Saving…" done-text="Saved">
+          Save
+        </LoadButton>
       </div>
     </div>
   </form>

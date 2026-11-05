@@ -205,7 +205,7 @@ onMounted(() => {
 
 .board__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
   margin-top: 16px;
 }
 </style>

@@ -2,7 +2,9 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
 // Gender, age, religion and location as small cards, each edited in place on its own.
 // The page saves; this card keeps the draft and moves focus in and out of the field.
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { nextTick, ref, watch } from 'vue'
+import PixelSelect from '@/buildings/salon/components/PixelSelect.vue'
 import ProfileBlock from '@/buildings/salon/components/ProfileBlock.vue'
 import { ABOUT_FIELDS, validAge } from '@/buildings/salon/profileOptions.js'
 
@@ -72,18 +74,15 @@ function typed() {
           @keydown.esc="emit('cancel')"
         >
           <label class="fact__label" :for="`about-${field.key}`">{{ field.label }}</label>
-          <select
+          <PixelSelect
             v-if="field.kind === 'choice'"
             :id="`about-${field.key}`"
             v-model="draft"
-            class="form-select form-select-sm"
-            :aria-invalid="Boolean(invalid || error)"
-            :aria-describedby="invalid || error ? 'about-error' : undefined"
+            :options="field.options"
+            :invalid="Boolean(invalid || error)"
+            :describedby="invalid || error ? 'about-error' : undefined"
             @change="typed"
-          >
-            <option value="" disabled>Choose one</option>
-            <option v-for="option in field.options" :key="option" :value="option">{{ option }}</option>
-          </select>
+          />
           <input
             v-else
             :id="`about-${field.key}`"
@@ -102,9 +101,9 @@ function typed() {
           <p v-if="invalid || error" id="about-error" class="field-error" role="alert">{{ invalid || error }}</p>
           <div class="fact__actions">
             <button type="button" class="btn btn-sm btn-secondary" @click="emit('cancel')">Cancel</button>
-            <button type="submit" class="btn btn-sm btn-success" :disabled="busy">
-              {{ busy ? 'Saving…' : 'Save' }}
-            </button>
+            <LoadButton type="submit" class="btn btn-sm btn-success" :busy="busy" :failed="Boolean(error)" busy-text="Saving…" done-text="Saved">
+              Save
+            </LoadButton>
           </div>
         </form>
         <template v-else>
@@ -193,7 +192,7 @@ function typed() {
 .fact__actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--rl-btn-gap);
   margin-top: 10px;
 }
 
@@ -201,8 +200,7 @@ function typed() {
   padding-inline: 14px;
 }
 
-/* the dropdown and text box open in the profile's pink: a roomy box with its own arrow */
-.fact.is-editing .form-select,
+/* the text box opens in the profile's pink: a roomy box */
 .fact.is-editing .form-control {
   min-height: 44px;
   padding: 8px 12px;
@@ -211,25 +209,6 @@ function typed() {
   color: #1e1a24;
   font-size: 1rem;
   font-weight: 700;
-}
-
-.fact.is-editing .form-select {
-  padding-right: 40px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231e1a24' stroke-width='3' stroke-linecap='square'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-position: right 12px center;
-  background-size: 18px;
-  cursor: pointer;
-}
-
-.fact.is-editing .form-select:focus,
-.fact.is-editing .form-control:focus {
-  border-color: #a84874;
-  box-shadow: 3px 3px 0 #a84874;
-  outline: none;
-}
-
-.fact.is-editing .form-select option {
-  font-weight: 600;
 }
 
 .field-error {

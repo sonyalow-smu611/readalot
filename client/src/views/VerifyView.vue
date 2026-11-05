@@ -1,4 +1,5 @@
 <script setup>
+import LoadButton from '@/components/shared/LoadButton.vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { gsap, prefersReducedMotion } from '@/lib/motion'
@@ -166,9 +167,9 @@ async function resend() {
         </div>
       </div>
       <p v-if="error" class="stage-error" role="alert">{{ error }}</p>
-      <button class="btn btn-success w-100" type="submit" :disabled="busy || sealed || code.length < 6">
-        {{ busy ? 'Checking…' : 'Confirm code' }}
-      </button>
+      <LoadButton class="btn btn-success w-100" type="submit" :busy="busy" :failed="Boolean(error)" :disabled="sealed || code.length < 6" busy-text="Checking…">
+        Confirm code
+      </LoadButton>
     </form>
     <p class="resend">
       <button type="button" class="btn btn-link p-0" :disabled="wait > 0" @click="resend">

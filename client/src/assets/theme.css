@@ -1,4 +1,6 @@
 :root {
+  /* the space between buttons side by side (or one under another): every button row uses it */
+  --rl-btn-gap: 8px;
   --rl-canvas: #f8f2e9;
   --rl-surface: #fffdf9;
   --rl-primary: #3f2e24;
