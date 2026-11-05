@@ -367,6 +367,16 @@ function toggleMenu() {
   menuOpen.value = open
 }
 
+// The walkthrough's step on the menu's rows (lib/walkthrough.js) needs it open, however the reader
+// got there (Next after opening it, or Back from the step after); any other step shuts it.
+watch(
+  () => guide.value?.id,
+  (id) => {
+    if (id === 'town-menu-items') menuOpen.value = true
+    else if (guide.value) menuOpen.value = false
+  },
+)
+
 function menuDaily() {
   menuOpen.value = false
   toggleDaily()
@@ -599,7 +609,7 @@ function goInside(place) {
 </script>
 
 <template>
-  <section ref="townRoot" class="town" :class="{ 'is-touring': Boolean(guide) }" aria-label="IKDA Town" :style="{ '--town-top-clear': `${topClear}px` }">
+  <section ref="townRoot" class="town" aria-label="IKDA Town" :style="{ '--town-top-clear': `${topClear}px` }">
     <TownMap
       :focus="focus"
       :start="arrivingForTour ? 'house' : ''"
@@ -646,6 +656,7 @@ function goInside(place) {
       :public="profile.discoverable"
       :public-busy="privacyBusy"
       :public-locked="nearby.minor"
+      :keep-open="guide?.id === 'town-menu-items'"
       @toggle="toggleMenu"
       @close="menuOpen = false"
       @daily="menuDaily"
@@ -770,7 +781,8 @@ function goInside(place) {
 }
 
 /* Daily, under the weather chip */
-/* the ☰ menu shows only on a phone, outside the walkthrough (which points at the buttons it holds) */
+/* the ☰ menu shows only on a phone, in place of the buttons it holds (the walkthrough has its own
+   steps for it there) */
 .town .town__menu {
   display: none;
   position: absolute;
@@ -780,13 +792,13 @@ function goInside(place) {
 }
 
 @media (max-width: 600px) {
-  .town:not(.is-touring) .town__menu {
+  .town .town__menu {
     display: block;
   }
 
-  .town:not(.is-touring) .town__daily,
-  .town:not(.is-touring) .town__location,
-  .town:not(.is-touring) :deep(.notifications-button) {
+  .town .town__daily,
+  .town .town__location,
+  .town :deep(.notifications-button) {
     display: none;
   }
 }

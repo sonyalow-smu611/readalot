@@ -1034,3 +1034,13 @@ Written by Claude at Aalric's request. The server change is to a shared service 
 | Books fallback (backend) | `server/src/services/books.js` | When Google Books cannot be had (a refusal from this server, a used-up quota, an outage), a search falls back to Open Library and a book page for an `ol-` book is read from it, so the library's shelves, search and genre pages still show real books with covers. Google is left alone for a minute after it fails, so searches are not slowed down. An Open Library stand-in is never saved as the match for a title |
 | Health check (backend) | `server/src/app.js`, `server/src/services/books.js` (`checkGoogleBooks`) | `/api/health?deep=1` tests Google Books and says what it answered (status and reason, never the key), since the search route hides a bad key, a quota and an outage behind the same placeholder book |
 | Log in again | `client/src/services/auth.js`, `client/src/views/LoginView.vue` | A browser that accepted a code with Remember me ticked is trusted for 30 days: logging out and back in there needs the password only. Unticking the box asks for the code again and forgets the browser |
+
+### The walkthrough on a phone, and the badge to your profile (AI-generated)
+
+Written by Claude at Khaleil's request. End-to-end tests were not updated in this change, at Khaleil's request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Steps per screen | `client/src/lib/walkthrough.js`, `client/src/stores/user.js` | A step or stop can say `screen: 'phone'` or `'wide'`; `walkthroughFor(phone)` builds the list, and the store picks it as the walkthrough starts (37 steps on a phone, 35 wider) |
+| The ☰ menu on a phone | `client/src/lib/walkthrough.js`, `client/src/components/town/TownMenu.vue`, `client/src/views/TownView.vue` | The town's step lights the weather, the badge, Places and Friends; then the reader taps ☰ and each row is lit in turn (Daily, the bell, music, public or private), with the same lines the buttons have wider. The menu stays open for that step and shuts after; the walkthrough no longer brings the separate buttons back on a phone |
+| Your profile from the badge | `client/src/lib/walkthrough.js` | On every screen, after the Style studio the walkthrough goes back to town and the reader taps their badge, which opens the Profile tab, instead of tapping the salon's Profile tab |
