@@ -98,33 +98,3 @@ The team writes these themselves (AI may only explain errors or suggest boilerpl
 Books search and weather proxies, bookshelf CRUD, people matching, mood-to-book matching,
 barcode scanning, authentication and persistence (outside the agreed exceptions above), and the
 design of e2e tests for core journeys.
-
-### Team feature acceptance suite (2026-11-05, AI-assisted)
-
-Requested by Emiley for the whole team's desktop and iPhone Playwright coverage. Test code and test scaffolding only; no application business logic or endpoints changed.
-
-| Files | AI contribution |
-|---|---|
-| `tests/e2e/features/*.spec.js`, `tests/e2e/features/fixtures.js` | Detailed feature scenarios, desktop/phone control handling, deterministic catalogue/weather/scan inputs, disposable social recipients, real reading/XP/coins checks, room permission checks and shelf rendering captures. |
-| `tests/e2e/supabaseUser.js` | Added `seedReaderBook` with unique catalogue/shelf records and cleanup for real reading/XP journeys. |
-| `playwright.features.config.js`, `tests/run-features.mjs`, `package.json` | Desktop then iPhone Chromium emulation, one worker, both viewports attempted even when desktop fails, per-viewport reports and failure artifacts, missing-key preflight and feature command. |
-| `playwright.config.js` | Excluded the separate feature suite from the original regression run; used the existing server `start` script to avoid unnecessary watch processes/file-watcher exhaustion. |
-| `tests/e2e/features/README.md`, `README.md` | Scenario inventory, commands, prerequisites, report locations and explicit mock/device/visual verification limits. |
-
-### Restoring local E2E work after pull (2026-11-06)
-
-At Emiley’s request, preserved local work in a stash, pulled main, and reconciled the AI log, package scripts and Playwright configuration. Kept the incoming port overrides, browser projects, smoke command and pnpm workspace alongside the local feature runner and non-watch test server startup. No application code changed.
-
-### Post-pull feature scenario review (2026-11-06)
-
-At Emiley’s request, reviewed changes from `fd8798d` to `e6b03bb` against the feature suite. Kept the original scenarios, including the three library navigation regression checks now fixed upstream. Added `tests/e2e/features/walkthrough.spec.js` for the phone menu during replay and the tour’s new town-badge-to-Profile step. Updated MAP-09 to wait for the notification-clear timestamp to persist before reloading, after the full run exposed an optimistic-UI timing race. Updated the feature guide and README for pnpm, inherited port overrides, upstream smoke/API coverage, and verification results. No application logic changed.
-
-### Accepted-friend house journeys (2026-11-06)
-
-At Emiley’s request, added `tests/e2e/features/friend-house.spec.js`: accepted friendship and populated room/shelf fixtures in the real API/database; town Friends/Places entry; visitor book previews and full-page actions; own-shelf add/undo and own reviews; pointer/touch attempts to move the owner’s books and furniture; no mutation-request assertions, owner-data snapshots and API write rejection; saved noticeboard note confirmed from the owner’s account. Temporary accounts and catalogue data are cleaned up. Updated the feature guide with the three scenarios and commands. No application code changed.
-
-### Retire legacy E2E suite (2026-11-06)
-
-At Emiley’s explicit request, removed all 42 top-level `tests/e2e/*.spec.js` files and retained the seven feature specs and their shared helpers. Made the feature suite the default Playwright config and `pnpm test:e2e` command, kept the old feature config/command as compatibility aliases, and removed the obsolete smoke command. Updated active documentation and removed legacy automated-coverage citations from the manual plans. Aligned retained furniture tests with the latest pulled Move/Remove accessible labels and removal confirmation; visitor checks also reject the new controls. No application code changed.
-
-Cleanup validation: the complete default run passed all 100 checks (50 desktop, then 50 iPhone), with no failures, skips or retries. Both configuration entry points collect the same 100 checks, and the client production build passes.
