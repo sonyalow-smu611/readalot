@@ -100,7 +100,7 @@ export async function resetProfile(id, profile) {
   }
   const saved = await admin.from("profiles").upsert({
     id,
-    // the salon can change it (profile-username.spec.js): back to the one signInReader gave
+    // The salon can change it: restore the username that signInReader gave this account.
     username: `e2e.${id.slice(0, 8)}`,
     display_name: profile.name,
     avatar: null,
@@ -225,6 +225,29 @@ export async function giveXp(id, xp) {
     xp,
   });
   if (error) throw error;
+}
+
+// A disposable catalogue entry and shelf row, so reading/XP journeys use real API writes.
+// Call remove() in finally; IDs are unique and never overwrite the shared seeded catalogue.
+export async function seedReaderBook(readerId, book) {
+  const id = `e2e-book-${randomUUID()}`;
+  const remove = async () => {
+    const shelf = await admin.from("user_books").delete().eq("user_id", readerId).eq("book_id", id);
+    if (shelf.error) throw shelf.error;
+    const catalogue = await admin.from("books").delete().eq("id", id);
+    if (catalogue.error) throw catalogue.error;
+  };
+  const saved = await admin.from("books").insert({
+    id, title: book.title, authors: book.authors, genres: book.genres,
+    description: book.description, cover_url: "",
+  });
+  if (saved.error) throw saved.error;
+  const shelf = await admin.from("user_books").insert({ user_id: readerId, book_id: id, status: "want_to_read", progress: 0 });
+  if (shelf.error) {
+    await remove();
+    throw shelf.error;
+  }
+  return { id, remove };
 }
 
 // The reader's XP events, newest first.

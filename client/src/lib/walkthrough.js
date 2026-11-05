@@ -217,7 +217,7 @@ const RAW = [
     target: t('discover-search'),
     allow: ['.library__bar'],
     say: 'Look up a book you love, like The Hobbit.',
-    ask: 'Type it in and press Search.',
+    ask: 'Tap search, type it in and press Search.',
     hint: 'tap',
     until: /^\/search/,
   },

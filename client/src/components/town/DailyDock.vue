@@ -140,6 +140,12 @@ watch(
   () => settle(document.querySelector('.app-main')?.firstElementChild),
 )
 
+// the button only appears once the day has loaded, which can be after the page has (a page opened
+// straight from its address): it finds its place then, or it would stay in the corner, over Back
+watch(row, (el) => {
+  if (el) settle()
+})
+
 function close() {
   open.value = false
   tab.value?.$el.focus()

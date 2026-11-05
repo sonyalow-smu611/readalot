@@ -1,3 +1,4 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # IKDA
 
 **Social media, but for book lovers.** IKDA (읽다, Korean for "to read") is a mobile-first web app
@@ -239,7 +240,7 @@ Each step has a title and a short note. **Next** moves on, **Back** goes back, a
 ### Part F: The guided tour
 
 29. The town opens and **your own character floats over the screen** in a speech bubble with a counter
-    such as **"1 of 33 · Town"**. It shows every part of the app in order
+    such as **"1 of 35 · Town"** (37 on a phone, which adds the ☰ menu). It shows every part of the app in order
     (Town, Your house, Library, Cafe, Salon). **Press Next** to move on, or **do what it asks** (it
     says, in bold, things like "Tap your house, then go in"; doing it moves on by itself).
     - 👀 It circles the thing it is talking about (the badge, the weather chip, the Daily button, the bell…).
@@ -763,6 +764,14 @@ Background sounds follow the live weather, also CC0 from OpenGameArt: rain ("Rai
 Music and background sounds play only once you are signed in. The note button beside the Daily task (🔥) button turns them on or off, and the choice is remembered on that device.
 
 ## 9. E2E testing guide (for the verification phase)
+
+The team's executable feature suite runs desktop first and then iPhone emulation:
+
+```bash
+pnpm test:e2e
+```
+
+See [feature scenarios and setup](tests/e2e/features/README.md) for individual cases, required test credentials, reports, and what is mocked. The old spec files have been removed; `pnpm test:e2e:features` is an alias for the same active suite.
 
 A complete user guide and 215 numbered end-to-end scenarios (with steps, expected results, database checks and
 priorities) are in **[docs/E2E_GUIDE.md](docs/E2E_GUIDE.md)** and the seven files in **[docs/e2e/](docs/e2e/)**:

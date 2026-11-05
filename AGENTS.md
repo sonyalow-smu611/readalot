@@ -90,7 +90,7 @@ client/
     components/           room/, book/, people/, modals/ and other existing parts
     stores/ services/ router/ lib/
 server/                   Express API (routes/), Supabase, seed data
-tests/e2e/                Playwright tests, one file per journey (town.spec.js covers the buildings)
+tests/e2e/                Shared Playwright helpers; active specs are in features/ (map.spec.js covers the buildings)
 ```
 
 ## Run and check

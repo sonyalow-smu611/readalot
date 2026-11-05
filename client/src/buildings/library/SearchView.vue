@@ -281,9 +281,11 @@ onMounted(() => {
     grid-row: 2;
   }
 
+  /* the top line holds Back and the Daily and music buttons, so the switch goes under the bar */
   .search__modes {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: center;
   }
 }
 

@@ -1,3 +1,4 @@
+// Scaffolded with AI assistance — see AI_USAGE.md
 import { test as base, expect } from "@playwright/test";
 import { createReader, hasSupabase, NEEDS_SUPABASE, resetProfile, signInPage } from "./supabaseUser.js";
 

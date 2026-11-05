@@ -1,3 +1,4 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # IKDA: complete user guide and end-to-end testing scenarios
 
 This is the master document for the end-to-end (E2E) verification phase. It has three parts:
@@ -199,7 +200,7 @@ from the Salon.
 
 **Observed in the professor pass (live app, Nov 2026).**
 
-- The counter now reads `N of 33 · <Section>`.
+- The counter now reads `N of 35 · <Section>` on a laptop and `N of 37 · <Section>` on a phone (its ☰ menu adds steps).
 - The flow includes **ask** steps with **Skip this step** (instead of forcing one action path).
 - Buttons are: **Back** (from step 2), **Next**, **Skip this step** (only on ask steps), **Skip this part**,
   **Skip tour**. The last stop has **Done**.
@@ -448,8 +449,8 @@ lost/leaked without it), High (a core feature), Medium (a supporting behaviour),
 |---|---|
 | **Live site** | https://ikda-rust.vercel.app (client and API on one Vercel project, `legally1/ikda`) |
 | **Local app** | `pnpm install`, `cp .env.example .env` (Supabase keys needed), `pnpm dev:server` (API on :3000), `pnpm dev:client` (http://localhost:5173) |
-| **Existing automated tests** | `pnpm test:e2e` (Playwright; it starts its own servers on 3100, 3101 and 5174; if a port is busy, find the process first and don't kill what you don't recognise) |
-| **One file / one test** | `pnpm exec playwright test tests/e2e/room.spec.js`, `pnpm exec playwright test -g "lamp"`, `--headed`, `--ui`, `--debug` |
+| **Existing automated tests** | `pnpm test:e2e` (Playwright; it starts its own servers on 3110, 3111 and 5175; if a port is busy, find the process first and don't kill what you don't recognise) |
+| **One file / one test** | `pnpm exec playwright test tests/e2e/features/house.spec.js`, `pnpm exec playwright test --grep HOUSE-03`, `--headed`, `--ui`, `--debug` |
 | **Server checks** | `pnpm --filter readalot-server check` (also `node server/tests/*.check.js`; some need Docker) |
 | **Seed readers (once)** | `pnpm --filter readalot-server seed:readers` (Emma, Ayaan, Sofia, Noah, Mei, Priya, Daniel, **Pip**) |
 | **Seed / reset the demo account** | `pnpm --filter readalot-server seed:demo` (rewrites only Jordan's rows; makes Emma and Ayaan "online" for 5 minutes) |
@@ -462,7 +463,7 @@ lost/leaked without it), High (a core feature), Medium (a supporting behaviour),
 (`room-canvas`, `room-cats`), the window view and a Shop card's name and price. The walkthrough marks
 targets with `data-tour="…"`. Helpers in `tests/e2e/fixtures.js`: `goToPlace`, `openPlaces`, `roomReady`,
 `openShop`, `buy`, `pickFromInventory`, `inventory`, `fromMenu`, `screenOf`, `SPOTS`, `useRealApi`
-(routes the page's `/api` calls to the API with Supabase on, port 3101), `mockWeather`, `mockTime`,
+(routes the page's `/api` calls to the API with Supabase on, port 3111), `mockWeather`, `mockTime`,
 `mockQuote`, `skipMoodCheckIn`, `townReady`, `artColour`. In `tests/e2e/supabaseUser.js`: `createReader`
 (a confirmed reader with a finished profile, signed in without the emailed code), `signInPage`, `setDaily`,
 `befriend`, `giveXp`, `readXp`, `readProfile`, `readerClient`, `visitorClient`, `markActive`.
@@ -578,24 +579,13 @@ is reachable only through the API (service role).
 
 ## C6. Existing automated tests
 
-36 Playwright spec files, about 405 tests in `tests/e2e/` (one per journey): `auth`, `onboarding`, `start`, `town`,
-`town-map`, `daily`, `friends`, `friends-list`, `nearby`, `notifications`, `cafe-profile`, `reader-profile`,
-`visit-room`, `room`, `room-furniture`, `room-themes`, `furniture`, `bookshelf`, `my-shelf`, `house-desktop`,
-`mood-result`, `library`, `library-wide`, `search`, `find-book`, `synopsis`, `book-page`, `reviews`, `progress`,
-`salon`, `buttons`, `pixel-look`, `back-button`, `database-access`, `demo-account`, `scan-book` (placeholder).
-They run the app with the built-in demo shelf and no Supabase on the main API (port 3100), a second API with
-Supabase for friends and nearby (3101), and real Supabase sign-in from the browser. Where a scenario below
-duplicates one of these, the file is named under **Existing coverage**; run it as a quick regression check.
+The active suite is seven specs under `tests/e2e/features/`, with 50 scenarios on each of desktop and iPhone emulation (100 checks). Run `pnpm test:e2e`; `pnpm test:e2e:features` is an alias. See the [current scenario inventory and results](../tests/e2e/features/README.md) for executable coverage, credentials, ports and reports.
+
+The 42 former top-level E2E specs were removed at the user's request. Legacy coverage citations in the manual scenario files were removed with them; the manual journeys remain. This automated suite does not cover every scenario in this manual guide.
 
 ## C7. Known bugs, gaps and unverified areas
 
-**Failing or flaky automated tests (from the latest runs):**
-- 8 tests always fail and fail on a clean checkout of `main` too: `daily.spec.js` lines 76 (a task's Go takes you to its building), 220 (the Daily button's
-  spot while moving from page to page), 275 (three tests: stacking under the back button on My Shelf and a friend's shelf), 293 (on search), 302 (under a title bar) and
-  `reader-profile.spec.js:276` (the Daily button beside Back to Discover). They concern **where the Daily button sits**.
-- Flaky under load, pass on re-run: `onboarding.spec.js:42`, `friends.spec.js:60`, `bookshelf.spec.js:262`,
-  `room.spec.js:213`, `town-map.spec.js:64` (a townsperson jiggles).
-- The latest working tree adds an onboarding spec rewrite and a 33-stop walkthrough; automated TOUR coverage still needs a clean full run in CI.
+Current automated results are recorded in the [feature suite guide](../tests/e2e/features/README.md). The retired suite’s failure/flakiness list no longer applies.
 
 **Known product gaps:** no password reset, no account deletion, no moderation; any signed-in reader can message
 any other reader (no friendship needed); other signed-in readers can read all `profiles` columns; the

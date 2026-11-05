@@ -9,8 +9,8 @@
     "dev:client": "npm run dev -w client",
     "dev:server": "npm run dev -w server",
     "build": "npm run build -w client",
-    "test:e2e": "npx playwright test",
-    "test:e2e:smoke": "npx playwright test tests/e2e/cross-device.spec.js"
+    "test:e2e": "node tests/run-features.mjs",
+    "test:e2e:features": "node tests/run-features.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"

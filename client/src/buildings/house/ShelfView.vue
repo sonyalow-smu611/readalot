@@ -349,12 +349,14 @@ onMounted(() => {
     padding-bottom: 14px;
   }
 
+  /* centred in the room right of the Daily and music buttons (about 134px), so a long name like
+     "Emma's Shelf" stays clear of them */
   .my-shelf__sign {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: center;
-    /* centred, and clear of the Daily button on its left */
-    max-width: calc(100% - 164px);
+    margin-left: 134px;
+    max-width: calc(100% - 134px);
   }
 }
 
