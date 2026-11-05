@@ -956,3 +956,15 @@ Written by Claude at Khaleil's request. Khaleil chose every track and sound by e
 | Sounds in town | `client/src/town/TownScene.js`, `client/src/town/you.js` | A pop when you tap the ground or set off for a building (it replaces the Enter button's click), a click when you tap a building, footsteps in time with the walk's bounce (pavement along the roads, grass across open ground; only on trips you start), and the door with a shop bell as it opens |
 | Weather sounds | `client/src/lib/ambience.js` (new), `client/src/stores/music.js`, `client/public/ambience/` (new) | Loops cut to repeat without a seam, following the live weather: rain or a thunderstorm, birds when sunny, a breeze when cloudy, crickets at night in town; rain on the window inside the room, library and cafe; cups clinking now and then in the cafe. About 12 dB under the music, and the music button turns them off too |
 | Docs | `README.md` | Music and sound credits |
+
+### Profile shortcut, usernames and the music button beside Daily (AI-generated)
+
+Written by Claude at Khaleil's request (changes to Aalric's salon and Dylan's town agreed for review in the pull request).
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Badge to Profile | `client/src/components/town/PlayerBadge.vue`, `client/src/views/TownView.vue` | The badge in the town's corner opens the salon on the Profile tab with the sheet pulled up (`?tab=profile&sheet=1`), and shows your @username under your name |
+| Username in the profile | `client/src/services/auth.js`, `client/src/stores/user.js` | The profile loads `profiles.username` into `profile.username` (as `town/username.js` asked for), and `saveProfile` can save it; a name taken in the meantime says so |
+| Editing the username | `client/src/buildings/salon/components/ProfileEditForm.vue`, `client/src/buildings/salon/components/ReaderCard.vue` | A Username field in Edit profile, checked as it's typed (format, then free or taken, with `readalot_username_free`), lowercase and without the @ as typed; only a new, free name is saved. The Profile card shows @username under the name |
+| Music button beside Daily | `client/src/components/MusicToggle.vue`, `client/src/components/town/DailyDock.vue`, `client/src/views/TownView.vue`, `client/src/components/town/NotificationsButton.vue`, `client/src/App.vue`, `client/src/buildings/house/RoomView.vue` | The note now shares a row with the Daily task button (the town's, and DailyDock's on every other page), on the side away from where Daily is pinned, so it slides along as Daily widens. The town's bell on a phone moves along one button; the room's error bar gets its full width back |
+| Tests | `tests/e2e/profile-username.spec.js` (new), `tests/e2e/supabaseUser.js`, `tests/e2e/salon.spec.js`, `tests/e2e/buttons.spec.js` | The badge's username and Profile shortcut; the username check and save; the music button beside Daily and sliding with it. `resetProfile` puts the test reader's username back; the Name field is found by its exact label, now that there's a Username field too |

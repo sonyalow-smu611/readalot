@@ -9,6 +9,8 @@ const PENDING_KEY = 'readalot-pending-auth'
 // store field → profiles column
 const PUBLIC_FIELDS = {
   name: 'display_name',
+  // set at Register; the salon's Edit profile can change it (unique, see USERNAME_PATTERN)
+  username: 'username',
   avatar: 'avatar',
   character: 'character',
   favouriteGenres: 'favorite_genres',
@@ -184,6 +186,7 @@ export async function loadProfile(userId) {
   return {
     data: {
       name: row.display_name || '',
+      username: row.username || '',
       avatar: row.avatar || '🐨',
       character: row.character,
       favouriteGenres: Array.isArray(row.favorite_genres) ? row.favorite_genres : [],
@@ -211,6 +214,11 @@ export async function saveProfile(details) {
     if (field in details) shared[column] = details[field]
   }
   const saved = await supabase.from('profiles').upsert(shared)
+  // 23505: unique_violation. Usernames are unique, and someone may take one between the check
+  // and the save.
+  if (saved.error?.code === '23505' && 'username' in details) {
+    return { data: null, error: { message: 'Someone already has that username. Try another.' } }
+  }
   if (saved.error) return saved
 
   const own = { id }

@@ -760,7 +760,7 @@ Sound effects are CC0 (public domain): button clicks and the "off you go" pop fr
 
 Background sounds follow the live weather, also CC0 from OpenGameArt: rain ("Rain (loopable)" by Ylmir), a thunderstorm ("Rain, long thunder"), rain on the window indoors ("Rain on Window Loop"), birdsong on sunny days ("Ambient Bird Sounds" by isaiah658), a breeze when cloudy ("Park ambiences"), crickets at night ("Crickets ambient noise, loopable"), and cups clinking in the cafe ("100 CC0 SFX").
 
-Music and background sounds play only once you are signed in. The note button in the top-right corner turns them on or off, and the choice is remembered on that device.
+Music and background sounds play only once you are signed in. The note button beside the Daily task (🔥) button turns them on or off, and the choice is remembered on that device.
 
 ## 9. E2E testing guide (for the verification phase)
 

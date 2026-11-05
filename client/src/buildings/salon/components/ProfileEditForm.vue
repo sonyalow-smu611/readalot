@@ -3,10 +3,12 @@
 // Edit everything about the reader at once. Checks the answers, then hands them to the page
 // to save.
 import LoadButton from '@/components/shared/LoadButton.vue'
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import RadioChips from '@/buildings/salon/components/RadioChips.vue'
 import CharacterSprite from '@/components/shared/CharacterSprite.vue'
 import { FAITHS, GENDERS, GENRES, validAge } from '@/buildings/salon/profileOptions.js'
+import { USERNAME_PATTERN, usernameFree } from '@/services/auth.js'
+import { cleanUsername } from '@/town/username.js'
 
 const props = defineProps({
   // the saved profile, to start from
@@ -26,6 +28,54 @@ const faithOptions = words(FAITHS)
 const saved = props.profile
 const form = ref(null)
 const name = ref(saved.name || '')
+
+// ---- the username: checked as it's typed (a pause first, so each key isn't a request)
+const USERNAME_WAIT = 400
+const username = ref(saved.username || '')
+// same | invalid | checking | free | taken | failed
+const usernameState = ref('same')
+const wantedUsername = computed(() => cleanUsername(username.value))
+const USERNAME_NOTES = {
+  same: 'Friends find you by this.',
+  invalid: 'Use 3–20 lowercase letters, numbers, dots or underscores.',
+  checking: 'Checking…',
+  free: 'Available',
+  taken: 'Someone already has that username.',
+  failed: "Couldn't check that username. Try again.",
+}
+const usernameNote = computed(() => USERNAME_NOTES[usernameState.value])
+let usernameTimer = 0
+let usernameAsk = 0
+
+// usernames are lowercase and the box already shows the @: what's in it is what gets saved
+watch(username, (typed) => {
+  const tidy = typed.replace(/^@+/, '').toLowerCase()
+  if (tidy !== typed) username.value = tidy
+})
+
+watch(wantedUsername, (wanted) => {
+  clearError('username')
+  window.clearTimeout(usernameTimer)
+  usernameAsk += 1
+  if (wanted === (saved.username || '')) {
+    usernameState.value = 'same'
+    return
+  }
+  if (!USERNAME_PATTERN.test(wanted)) {
+    usernameState.value = 'invalid'
+    return
+  }
+  usernameState.value = 'checking'
+  const ask = usernameAsk
+  usernameTimer = window.setTimeout(async () => {
+    const { data, error } = await usernameFree(wanted)
+    // a newer name was typed meanwhile
+    if (ask !== usernameAsk) return
+    usernameState.value = error ? 'failed' : data ? 'free' : 'taken'
+  }, USERNAME_WAIT)
+})
+
+onBeforeUnmount(() => window.clearTimeout(usernameTimer))
 const location = ref(saved.location || '')
 const gender = ref(saved.gender || '')
 const age = ref(saved.age === '' || saved.age == null ? '' : String(saved.age))
@@ -52,6 +102,13 @@ function toggleGenre(genre) {
 function validate() {
   const found = {}
   if (!name.value.trim()) found.name = 'Add your name.'
+  const usernameProblem = {
+    invalid: USERNAME_NOTES.invalid,
+    taken: USERNAME_NOTES.taken,
+    failed: USERNAME_NOTES.failed,
+    checking: 'Wait a moment while that username is checked.',
+  }[usernameState.value]
+  if (usernameProblem) found.username = usernameProblem
   if (!gender.value) found.gender = 'Choose one, including prefer not to say.'
   if (!validAge(age.value)) found.age = 'Enter an age from 13 to 120.'
   if (!religion.value) found.religion = 'Choose one, including prefer not to say.'
@@ -68,6 +125,8 @@ async function submit() {
   }
   emit('save', {
     name: name.value.trim(),
+    // only a new one is sent, so saving the rest never touches it
+    ...(usernameState.value === 'free' ? { username: wantedUsername.value } : {}),
     location: location.value.trim(),
     gender: gender.value,
     age: Number(age.value),
@@ -102,6 +161,33 @@ async function submit() {
         @input="clearError('name')"
       />
       <p v-if="errors.name" id="name-error" class="field-error">{{ errors.name }}</p>
+    </div>
+
+    <div class="field">
+      <label class="form-label" for="profile-username">Username</label>
+      <div class="input-group">
+        <span class="input-group-text" aria-hidden="true">@</span>
+        <input
+          id="profile-username"
+          v-model="username"
+          class="form-control"
+          maxlength="20"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
+          placeholder="e.g. alex.reads"
+          :aria-invalid="Boolean(errors.username) || ['invalid', 'taken'].includes(usernameState)"
+          aria-describedby="username-note"
+        />
+      </div>
+      <p
+        id="username-note"
+        class="username-note"
+        :class="errors.username ? 'field-error' : `username-note--${usernameState}`"
+        aria-live="polite"
+      >
+        {{ errors.username || usernameNote }}
+      </p>
     </div>
 
     <div class="field">
@@ -244,6 +330,24 @@ form {
   margin: 6px 0 0;
   color: #8d2218;
   font-size: 0.875rem;
+}
+
+/* under the username: a hint, then what the check found */
+.username-note {
+  margin: 6px 0 0;
+  color: var(--rl-muted);
+  font-size: 0.875rem;
+}
+
+.username-note--free {
+  color: #2f6b34;
+  font-weight: 700;
+}
+
+.username-note--invalid,
+.username-note--taken,
+.username-note--failed {
+  color: #8d2218;
 }
 
 .actions {
