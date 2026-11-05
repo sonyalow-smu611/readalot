@@ -18,6 +18,8 @@ function emptyProfile() {
     id: '',
     email: '',
     name: '',
+    // how friends find you (town/username.js); '' until the profile has loaded
+    username: '',
     avatar: '🐨',
     // the town character, always complete and valid (see lib/avatar/catalogue.js)
     character: normaliseCharacter(null),

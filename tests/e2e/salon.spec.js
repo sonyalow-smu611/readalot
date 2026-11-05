@@ -113,7 +113,7 @@ test("the profile's cards still work in the salon", async ({ page }) => {
 
   // Edit profile: the full form
   await page.getByRole("button", { name: "Edit profile" }).click();
-  await page.getByLabel("Name").fill("Robin");
+  await page.getByLabel("Name", { exact: true }).fill("Robin");
   await page.getByRole("radio", { name: "Prefer not to say" }).first().click();
   await page.getByLabel("Age").fill("22");
   await page.getByRole("radiogroup", { name: "Religion" }).getByRole("radio", { name: "None" }).click();

@@ -27,6 +27,7 @@ const emit = defineEmits(['edit', 'open-list'])
       </span>
       <div class="reader-card__name">
         <h2 class="h3 mb-0 text-truncate">{{ profile.name }}</h2>
+        <p v-if="profile.username" class="reader-card__username mb-0 text-truncate">@{{ profile.username }}</p>
         <p class="text-muted mb-0 text-truncate">{{ profile.email }}</p>
       </div>
       <button
@@ -82,6 +83,10 @@ const emit = defineEmits(['edit', 'open-list'])
 .reader-card__name {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.reader-card__username {
+  font-weight: 700;
 }
 
 .reader-card__edit {

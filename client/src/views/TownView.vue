@@ -33,6 +33,7 @@ import FriendsList from '@/components/town/FriendsList.vue'
 import FriendCard from '@/components/town/FriendCard.vue'
 import ChatDock from '@/components/town/ChatDock.vue'
 import DailyButton from '@/components/town/DailyButton.vue'
+import MusicToggle from '@/components/MusicToggle.vue'
 import DailyPanel from '@/components/town/DailyPanel.vue'
 import DailyReward from '@/components/town/DailyReward.vue'
 import LocationChip from '@/components/town/LocationChip.vue'
@@ -489,7 +490,7 @@ function toggleChat(id) {
 // chips), which on a narrow phone wrap onto more rows: the chat window stops above it.
 const townRoot = ref(null)
 const topClear = ref(90)
-const TOP_CONTROLS = '.town-hud > *, [data-tour="town-weather"], [data-tour="town-daily"], [data-tour="town-privacy"]'
+const TOP_CONTROLS = '.town-hud > *, [data-tour="town-weather"], [data-tour="town-daily"], .town__daily .music-toggle, [data-tour="town-privacy"]'
 let topWatcher = null
 
 function measureTop() {
@@ -597,8 +598,12 @@ function goInside(place) {
       @toggle-friends="toggleFriends"
       @toggle-notifications="toggleNotifications"
     />
-    <!-- today's tasks and the streak, on the left under the weather chip -->
-    <DailyButton v-if="daily.ready" class="town__daily" data-tour="town-daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
+    <!-- today's tasks and the streak, on the left under the weather chip, with the music button
+         beside it: in one row, so the music button slides along as Daily widens to show its words -->
+    <div class="town__daily">
+      <DailyButton v-if="daily.ready" data-tour="town-daily" v-bind="dailyChip" :open="dailyOpen" @toggle="toggleDaily" />
+      <MusicToggle />
+    </div>
     <LocationChip
       data-tour="town-privacy"
       class="town__location"
@@ -657,6 +662,7 @@ function goInside(place) {
       data-tour="town-badge"
       class="town__me"
       :name="profile.name || 'You'"
+      :username="profile.username"
       :character="profile.character"
       :level="progress.level"
       :coins="progress.coins"
@@ -735,6 +741,10 @@ function goInside(place) {
   left: 17px;
   top: 76px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--rl-btn-gap, 8px);
+  pointer-events: none;
 }
 
 /* public or private, under Daily */

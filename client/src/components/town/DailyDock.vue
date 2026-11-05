@@ -16,6 +16,7 @@ import { PLACES } from '@/town/places.js'
 import DailyButton from './DailyButton.vue'
 import DailyPanel from './DailyPanel.vue'
 import DailyReward from './DailyReward.vue'
+import MusicToggle from '@/components/MusicToggle.vue'
 
 const BACK = '.building-shell__back, .search__back, .reader-room .back-link'
 const TITLE_BAR_BUTTON = '.app-header__card a.app-header__icon'
@@ -40,6 +41,8 @@ const toast = useToast()
 
 const open = ref(false)
 const tab = ref(null)
+// the row the Daily button and the music button share, placed at `spot`
+const row = ref(null)
 const spot = ref(EDGE)
 const spotStyle = computed(() => Object.fromEntries(Object.entries(spot.value).map(([side, px]) => [side, `${Math.round(px)}px`])))
 const panelTop = computed(() => ({ '--daily-panel-top': `${spot.value.top + TAB_HEIGHT + GAP}px` }))
@@ -100,7 +103,7 @@ function findSpot(frame) {
 
 function measure() {
   measuring = 0
-  const frame = tab.value?.$el.offsetParent
+  const frame = row.value?.offsetParent
   if (frame) spot.value = findSpot(frame)
 }
 
@@ -182,7 +185,17 @@ onBeforeUnmount(() => {
 
 <template>
   <div v-if="daily.ready" class="daily-dock" :style="panelTop">
-    <DailyButton ref="tab" class="daily-dock__tab" :class="{ 'is-settling': settling }" :style="spotStyle" v-bind="chip" :open="open" @toggle="open = !open" />
+    <!-- the music button rides beside Daily, on the side away from where Daily is pinned, so it
+         slides along as Daily widens to show its words -->
+    <div
+      ref="row"
+      class="daily-dock__tab"
+      :class="{ 'is-settling': settling, 'is-from-right': 'right' in spot }"
+      :style="spotStyle"
+    >
+      <DailyButton ref="tab" v-bind="chip" :open="open" @toggle="open = !open" />
+      <MusicToggle />
+    </div>
     <div v-if="open" class="daily-dock__outside" aria-hidden="true" @click="close"></div>
     <Transition name="daily-dock">
       <DailyPanel
@@ -210,7 +223,16 @@ onBeforeUnmount(() => {
 .daily-dock__tab {
   position: absolute;
   z-index: 36;
+  display: flex;
+  align-items: center;
+  gap: var(--rl-btn-gap, 8px);
   transition: opacity 0.16s ease;
+}
+
+/* pinned by its right edge (beside a title bar's button): Daily stays by that button and the
+   music button sits on its left, moving left as Daily's words slide out */
+.daily-dock__tab.is-from-right {
+  flex-direction: row-reverse;
 }
 
 .daily-dock__tab.is-settling {
