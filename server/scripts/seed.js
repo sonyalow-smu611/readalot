@@ -20,20 +20,20 @@ const profiles = [
     username: "demo_reader",
     display_name: "Demo Reader",
     bio: "Seeded demo user.",
-    favorite_genres: ["Fantasy", "Fiction", "Classics"],
+    favorite_genres: ["Fantasy", "Historical Fiction"],
     location_lat: 1.3521,
     location_lng: 103.8198,
     location_name: "Singapore",
     discoverable: true
   },
   reader(1, "mei_reads", "Mei Lin", ["Fantasy", "Romance"], 1.3048, 103.8318),
-  reader(2, "arjun_pages", "Arjun Nair", ["Science Fiction", "Fiction"], 1.2966, 103.7764),
-  reader(3, "siti_books", "Siti Aminah", ["Classics", "Poetry"], 1.3644, 103.9915),
-  reader(4, "wei_shelf", "Wei Jie", ["Mystery", "Thriller"], 1.3329, 103.7436),
+  reader(2, "arjun_pages", "Arjun Nair", ["Sci-Fi", "Young Adult"], 1.2966, 103.7764),
+  reader(3, "siti_books", "Siti Aminah", ["Historical Fiction", "Memoir"], 1.3644, 103.9915),
+  reader(4, "wei_shelf", "Wei Jie", ["Mystery & Thriller", "Horror"], 1.3329, 103.7436),
   reader(5, "priya_novel", "Priya Raj", ["Fantasy", "Young Adult"], 1.3521, 103.9442),
-  reader(6, "daniel_lit", "Daniel Tan", ["Classics", "Fiction"], 1.2789, 103.8536),
-  reader(7, "hana_haiku", "Hana Sato", ["Poetry", "Romance"], 1.4382, 103.7890),
-  reader(8, "kai_comics", "Kai Ong", ["Science Fiction", "Fantasy"], 1.3151, 103.8985)
+  reader(6, "daniel_lit", "Daniel Tan", ["Historical Fiction", "Mystery & Thriller"], 1.2789, 103.8536),
+  reader(7, "hana_haiku", "Hana Sato", ["Romance", "Romantasy"], 1.4382, 103.7890),
+  reader(8, "kai_comics", "Kai Ong", ["Sci-Fi", "Fantasy"], 1.3151, 103.8985)
 ];
 
 function reader(n, username, displayName, favoriteGenres, lat, lng) {

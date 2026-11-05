@@ -932,3 +932,15 @@ Written by Claude at Dylan's request, from the team's testing notes (agreed by t
 | Button spacing | `client/src/assets/theme.css` and 26 components | `--rl-btn-gap` (8 px, the same as Bootstrap's `gap-2`) for every row of buttons |
 | IKDA | `client/index.html`, `client/src/router/index.js`, `AppHeader.vue`, `IntroAnimation.vue`, `TownView.vue`, `CafeView.vue`, `DiscoverView.vue`, `useBookReviews.js`, `server/src/services/books.js`, `server/src/index.js`, `server/src/routes/creatures.js` | Every name the reader sees says IKDA, as the landing page and the town already did; storage keys and package names stay as they were |
 | Tests | `tests/e2e/friends-list.spec.js`, `friends.spec.js`, `notifications.spec.js`, `townFriends.js`, `supabaseUser.js`, `reviews.spec.js`, `onboarding.spec.js` | Spinner and tick on Accept, Remove friends and the Cafe's Add friend; a removed friend nearby staying in town; a closed chat on another button; asking a removed friend again; only received messages in the bell; IKDA |
+
+### Favourite genres are the library's bookcases (AI-generated)
+
+Written by Claude at Aalric's request. The SQL is for a person to run in Supabase; the app is written so it reads right before and after it.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| Genre list | `client/src/lib/genreShelves.js`, `client/src/buildings/salon/profileOptions.js`, `client/src/views/WelcomeView.vue`, `client/src/services/auth.js` | The genres you can pick (at Welcome and in Edit profile) are the library's ten genre bookcases, without Bestsellers. Saved genres are read through `cleanGenres`, so older names become their bookcase and ones with no bookcase are left out |
+| Profile | `client/src/buildings/salon/components/FavouriteGenres.vue` | Each favourite genre is a button that opens its bookcase in the library |
+| Library | `client/src/buildings/library/LibraryView.vue` | `/library?shelf=<key>` opens that bookcase, and closing it drops the link so Back and reload don't reopen it |
+| Schema | `database/favourite_genres_shelves.sql` | Turns every profile's saved genres into bookcase names (dropping ones with no bookcase) and limits `profiles.favorite_genres` to them |
+| Seeds and tests | `server/data/demoReaders.js`, `server/scripts/seed*.js`, `tests/e2e/*` | Sample readers use the bookcase names |

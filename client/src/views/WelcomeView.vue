@@ -6,22 +6,12 @@ import AuthStage from '@/components/auth/AuthStage.vue'
 import CharacterPresetPicker from '@/components/shared/CharacterPresetPicker.vue'
 import PixelCharacter from '@/components/shared/PixelCharacter.vue'
 import { presetCharacter } from '@/lib/avatar/catalogue.js'
+import { GENRE_NAMES } from '@/lib/genreShelves.js'
 import { saveProfile } from '@/services/auth.js'
 import { useUserStore } from '@/stores/user'
 
-const GENRES = [
-  'Fantasy',
-  'Literary Fiction',
-  'Magical Realism',
-  'Science Fiction',
-  'Mystery',
-  'Thriller',
-  'Classic',
-  'Historical Fiction',
-  'Memoir',
-  'Non-fiction',
-  'Self-Help',
-]
+// the library's bookcases, the same genres the profile offers
+const GENRES = GENRE_NAMES
 
 const GENDERS = ['Woman', 'Man', 'Non-binary', 'Prefer not to say']
 const FAITHS = ['Christianity', 'Islam', 'Buddhism', 'Hinduism', 'Sikhism', 'Judaism', 'None', 'Prefer not to say']

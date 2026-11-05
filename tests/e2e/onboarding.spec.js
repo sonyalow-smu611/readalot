@@ -258,7 +258,7 @@ test.describe("the walkthrough, done by the reader", () => {
 });
 
 test.describe("a returning reader", () => {
-  test.use({ readerOptions: { profile: { name: "Jo", favouriteGenres: ["Mystery"] }, tourSeen: true } });
+  test.use({ readerOptions: { profile: { name: "Jo", favouriteGenres: ["Mystery & Thriller"] }, tourSeen: true } });
 
   test("goes straight to the town, with no Welcome and no tour", async ({ page }) => {
     await page.goto("/");

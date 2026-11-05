@@ -1,19 +1,33 @@
 <script setup>
 // Scaffolded with AI assistance — see AI_USAGE.md
-// The reader's favourite genres; each opens that genre's shelf.
+// The reader's favourite genres, each a button that opens that genre's bookcase in the library.
+// A genre is the name of a bookcase (lib/genreShelves.js), so every one has somewhere to go.
+import { computed } from 'vue'
 import ProfileBlock from '@/buildings/salon/components/ProfileBlock.vue'
+import { shelfOf } from '@/lib/genreShelves.js'
 
-defineProps({
+const props = defineProps({
   genres: { type: Array, required: true },
 })
+
+// each genre with the bookcase it opens; one with no bookcase (an old saved name) isn't shown
+const shelves = computed(() =>
+  props.genres
+    .map((genre) => ({ genre, shelf: shelfOf(genre) }))
+    .filter((entry) => entry.shelf),
+)
 </script>
 
 <template>
   <ProfileBlock title="Favourite genres">
-    <ul v-if="genres.length" class="tags">
-      <li v-for="genre in genres" :key="genre">
-        <RouterLink class="tag" :to="{ name: 'genre-shelf', params: { genre } }">
-          {{ genre }}
+    <ul v-if="shelves.length" class="tags">
+      <li v-for="{ genre, shelf } in shelves" :key="shelf.key">
+        <RouterLink
+          class="btn btn-secondary tag"
+          :to="{ name: 'library', query: { shelf: shelf.key } }"
+          :aria-label="`${shelf.label} bookcase in the library`"
+        >
+          {{ shelf.label }}
         </RouterLink>
       </li>
     </ul>
@@ -25,53 +39,13 @@ defineProps({
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  min-height: 44px;
-  padding: 6px 14px;
-  border: 2px solid #1e1a24;
-  border-radius: 999px;
-  background: #fbe7f0;
-  color: #1e1a24;
-  font-weight: 700;
   font-size: 0.875rem;
-  text-decoration: none;
-}
-
-.tag:hover {
-  background: #f6c9dc;
-  color: #1e1a24;
-  animation: tag-bounce 0.45s steps(5, end);
-}
-
-.tag:active {
-  transform: translateY(2px);
-}
-
-li:nth-child(odd) .tag {
-  background: #fff2c9;
-}
-
-@keyframes tag-bounce {
-  30% {
-    transform: translateY(-6px);
-  }
-  60% {
-    transform: translateY(1px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tag:hover {
-    animation: none;
-  }
 }
 </style>
