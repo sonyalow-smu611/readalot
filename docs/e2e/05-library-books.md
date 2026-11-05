@@ -1,4 +1,7 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # E2E scenarios 05: Library and books
+
+> Manual verification plan. The legacy automation citations have been removed; see the [active Playwright suite](../../tests/e2e/features/README.md) for current executable coverage.
 
 Suites: **LIB** library hall, search and scanner (14), **BOOK** book cards, full page and reviews (11) = 25. Format, accounts and rules:
 header of [01-public-auth-onboarding.md](01-public-auth-onboarding.md) and C2/C3 of [../E2E_GUIDE.md](../E2E_GUIDE.md). Unless stated:
@@ -13,7 +16,7 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 ### LIB-01 · Enter the library · Critical
 1. From the town tap **Library** → **Enter the library** → `/library`: a pixel library hall opened at the **help desk**; **Back to town** top left; a **Places** button bottom right 📸.
 2. The hall is lit by the live weather through its windows (rain on the glass when raining).
-**DB:** none. **Pass:** the hall renders with no console errors; the route is `/library`. **Existing coverage:** `library.spec.js`, `library-wide.spec.js`.
+**DB:** none. **Pass:** the hall renders with no console errors; the route is `/library`.
 
 ### LIB-02 · Look around the hall · Medium
 1. Drag, swipe, scroll the wheel, press ←/→ → the hall slides sideways: help desk, scanner, genre bookcases, reading nook.
@@ -24,19 +27,19 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 ### LIB-03 · The library's Places menu · High
 1. Press **Places** → a list "Places in the library" with two groups: **Around the library** (Help desk, Scanner, Reading nook) and **Shelves** (Bestsellers, Romance, Romantasy, Fantasy, Mystery & Thriller, Horror, Sci-Fi, Historical Fiction, Young Adult, Memoir, Graphic Novels).
 2. Press **Fantasy** → the hall slides to that bookcase; Esc closes the list.
-**DB:** none. **Pass:** 3 + 11 entries as listed; each slides to its part. **Existing coverage:** `library.spec.js`.
+**DB:** none. **Pass:** 3 + 11 entries as listed; each slides to its part.
 
 ### LIB-04 · Open a genre bookcase; Spines and Covers · High
 1. Press the **Fantasy** bookcase → it opens showing its books (loading placeholders first, then books).
 2. Slide the **Spines / Covers** switch (it opens on Covers; the thumb glides across) → the look changes; hover a book → it slides out of the shelf.
 3. Close the bookcase.
-**DB:** none. **Pass:** books load (about a dozen); both looks render. **Existing coverage:** `library.spec.js`.
+**DB:** none. **Pass:** books load (about a dozen); both looks render.
 
 ### LIB-05 · A found book: card and Add to To be read · Critical
 1. In the Fantasy bookcase press a book → a card: cover, title, author, rating (if any), synopsis, **Add to To be read**, **Where to get**, **Leave/Read Reviews**, **Open full book page**.
 2. Press **Add to To be read** → "Adding…", then the button/label shows the book is on the shelf (To be read); **See it in my room** (a button, with **Undo** beside it for a book just added) appears; a toast may show.
 3. In My Room the book is on **To be read**.
-**DB:** `user_books` row `want_to_read` (book id from Google Books); `books` row cached; `xp_events` `add_book` +10; Daily "add a book" ticks if today's task. **Pass:** XP 0 → 10; the book on the shelf after reload. **Existing coverage:** `find-book.spec.js`, `library.spec.js`.
+**DB:** `user_books` row `want_to_read` (book id from Google Books); `books` row cached; `xp_events` `add_book` +10; Daily "add a book" ticks if today's task. **Pass:** XP 0 → 10; the book on the shelf after reload.
 
 ### LIB-06 · Where to get · Medium
 1. On a found book press **Where to get** → a list of shops, downloads or ways to borrow it ("Where to get this book").
@@ -52,19 +55,19 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 1. Press the help desk or the search bar (**Search books or authors**; placeholder "What are you looking for?" when asking) → type `hobbit`, press Enter/**Search**.
 2. The page becomes `/search?q=hobbit` 📸: your query, books standing in a bookcase (covers face out), the first being The Hobbit.
 3. Press a result → its card (as LIB-05).
-**DB:** none. **Pass:** the URL carries the query; results show. **Existing coverage:** `search.spec.js`.
+**DB:** none. **Pass:** the URL carries the query; results show.
 
 ### LIB-09 · The query lives in the URL · High
 1. Search `dune`, then `circe`, then press the browser **Back** → the `dune` results return (history steps through searches).
 2. Reload `/search?q=circe` → the same results after reload.
 3. Open `/search?q=` directly → an empty search page prompting for a query.
-**DB:** none. **Pass:** history and reload behave. **Existing coverage:** `search.spec.js`.
+**DB:** none. **Pass:** history and reload behave.
 
 ### LIB-10 · No results, offline, slow · High
 1. Search `zzzqqqxyz` → a clean "nothing found" message (no crash).
 2. Block `GET /api/books/search` → **Search is offline** with **Try again**; unblock, press **Try again** → results.
 3. Throttle the network → a loading state shows; a slow reply for an older query never overwrites a newer one (type two searches quickly).
-**DB:** none. **Pass:** each state shown. **Existing coverage:** `search.spec.js`.
+**DB:** none. **Pass:** each state shown.
 
 ### LIB-11 · Scanner with a camera · Medium
 **Pre:** Chromium with a fake camera (`--use-fake-device-for-media-stream`) or a real one; Google Vision key configured **(unverified)**.
@@ -77,7 +80,7 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 1. Block the camera permission → a message and the fallbacks remain.
 2. **Or upload a photo of the cover** → choose an image of a book cover → "Scanning…" then a result or "couldn't read that cover".
 3. **Search by title** → opens the search (`/search`) for typing.
-**DB:** none. **Pass:** never a blank screen. **Existing coverage:** `scan-book.spec.js` (placeholder, skipped).
+**DB:** none. **Pass:** never a blank screen.
 
 ### LIB-13 · A book already on the shelf · Medium
 **Pre:** ACCT-DEMO. 1. Search `The Hobbit` and open its card → it shows the shelf it is on (Finished) instead of **Add to To be read**, and **See it in my room** (a button, with **Undo** beside it for a book just added).
@@ -95,19 +98,19 @@ Book search uses Google Books, which can be slow or fail: retry once before reco
 ### BOOK-01 · Book card details · High
 1. Open a found book (e.g. The Hobbit) → cover (or a cloth cover with the title when there is no image), title, author(s), synopsis (or "No synopsis for this book yet."), rating text ("4.7 ★ from 3 readers" when reviewed).
 2. Open an own book from the shelf → the same plus the next-step button and **Remove from shelf**.
-**DB:** none. **Pass:** nothing is blank or "undefined". **Existing coverage:** `synopsis.spec.js`.
+**DB:** none. **Pass:** nothing is blank or "undefined".
 
 ### BOOK-02 · The full book page · High
 1. On a card press **Open full book page** → `/books/<id>` with the full details; a close (✕) returns to where you came from.
 2. Status buttons **Want to read / Reading / Finished reading** set the status; choosing **Reading** shows a progress slider.
 3. Open `/books/<invalid>` → "Couldn't open this book." with **Retry**.
-**DB:** `user_books` status/progress as chosen; XP per C3. **Pass:** the page and its status controls work; the error state is clean. **Existing coverage:** `book-page.spec.js`.
+**DB:** `user_books` status/progress as chosen; XP per C3. **Pass:** the page and its status controls work; the error state is clean.
 
 ### BOOK-03 · Write a review · Critical
 **Pre:** a reader with a Finished or shelved book (ACCT-DEMO: Dune shelf; or add one).
 1. Open the book's card → **Leave/Read Reviews** → **Rate this book** with five stars (★ 1 star … ★ 5 stars), **Your review (optional)** with a `0 / 500` counter, **Post Review**; **Post Review** is disabled until a star is chosen.
 2. Choose **★ 5 stars**, type `Epic and unforgettable.`, press **Post Review** → your review appears (stars, text, "just now") with **Edit your review** and **Delete your review**; the header shows the new average and "from 1 reader".
-**DB:** `reviews` row (rating 5, review_text, unique per reader and book); `xp_events` `write_review` +40 (once per book). **Pass:** XP +40; the review persists after reload. **Existing coverage:** `reviews.spec.js`. **Reset the demo account.**
+**DB:** `reviews` row (rating 5, review_text, unique per reader and book); `xp_events` `write_review` +40 (once per book). **Pass:** XP +40; the review persists after reload. **Reset the demo account.**
 
 ### BOOK-04 · Review text limit and a stars-only review · Medium
 1. Type 500 characters → counter `500 / 500`; the 501st is not accepted (maxlength) or flagged.

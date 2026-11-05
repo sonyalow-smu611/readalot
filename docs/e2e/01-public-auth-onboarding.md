@@ -1,4 +1,7 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # E2E scenarios 01: landing page, authentication and Welcome
+
+> Manual verification plan. The legacy automation citations have been removed; see the [active Playwright suite](../../tests/e2e/features/README.md) for current executable coverage.
 
 Suites: **LND** (landing, 10), **AUTH** (register, login, code, logout, guard, demo account, 17), **WEL** (Welcome, 6).
 Master guide, accounts and rules: [../E2E_GUIDE.md](../E2E_GUIDE.md). Account codes (ACCT-NEW, ACCT-DEMO …) are defined in its C2.
@@ -91,7 +94,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 **Pre:** Phone viewport, `/start`.
 1. Scroll the whole page → no horizontal scrollbar at any point; nav links scroll to keep the marked one in view.
 2. Press **Sign up** → reachable and tappable (at least 44 px).
-**DB:** none. **Pass:** `document.documentElement.scrollWidth <= innerWidth` at each scroll stop. **Existing coverage:** `start.spec.js`.
+**DB:** none. **Pass:** `document.documentElement.scrollWidth <= innerWidth` at each scroll stop.
 
 ---
 
@@ -104,7 +107,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 2. Fill all four, press **Register** → the button says **Sending…**, then **Check your email** with the line "Demo account: no email is sent. Enter the code 111111." 📸.
 3. Type `111111`, press **Confirm code** → **Code accepted**, then `/welcome`.
 **DB:** `auth.users` has `qa.S@demo.ikda.app` with `email_confirmed_at` set and `raw_user_meta_data.username = "qa.S"`; no `profiles` row yet.
-**Pass:** lands on Welcome step 1 of 6. **Cleanup:** delete the account. **Existing coverage:** `demo-account.spec.js`.
+**Pass:** lands on Welcome step 1 of 6. **Cleanup:** delete the account.
 
 ### AUTH-02 · Register validation: passwords, length, username · High
 **Situation:** a reader makes typing mistakes. **Objective:** each rule shows its message and sends nothing.
@@ -115,7 +118,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 4. Username `UPPER case` is typed → the field shows `upper.case` (lowercased, space to dot).
 5. Username `a`+21 characters → the field stops at 20 (maxlength).
 6. Username `emma.reads` (taken) → `That username is taken. Try another.`
-**DB:** none (no account made). **Pass:** every message is exact; the URL stays `/register`. **Existing coverage:** `auth.spec.js`.
+**DB:** none (no account made). **Pass:** every message is exact; the URL stays `/register`.
 
 ### AUTH-03 · Register with an invalid or missing email, empty form · Medium
 **Situation:** empty or malformed input. **Objective:** the browser or app blocks submission.
@@ -137,7 +140,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 1. Register `ikda.check.S@example.com` with a valid username and password → the page calls Supabase `signUp` (a request to `.../auth/v1/signup`) and **not** `/api/demo-auth/register`.
 2. If the code screen opens → no "Demo account" line; type `111111`, **Confirm code** → an error (Supabase: token expired or invalid); the URL stays `/verify`.
 3. If Supabase refuses to send (rate limit or an unauthorised address) → an error shows on `/register`; that is also a pass.
-**DB:** an unconfirmed `auth.users` row may be created for the address; delete it. **Pass:** no demo route call and `111111` never signs in. **Existing coverage:** `demo-account.spec.js` (mocked).
+**DB:** an unconfirmed `auth.users` row may be created for the address; delete it. **Pass:** no demo route call and `111111` never signs in.
 
 ### AUTH-06 · Wrong and right code, resend countdown · High
 **Situation:** the professor mistypes the code. **Objective:** errors don't lose the account; the right code works; resend behaves.
@@ -170,7 +173,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 2. Type `111111`, **Confirm code** → **Code accepted**; the cats hop; the town opens (no Welcome, no walkthrough).
 3. Check the badge → **Jordan Lee**, gold **4**, **600** coins 📸.
 4. Check the top bar → `Friends, 2 online, 1 friend request` (within 5 minutes of the seed); the bell shows its count after a few seconds.
-**DB:** none (login only; `last_active_at` may update). **Pass:** town is shown with Jordan's data. **Existing coverage:** `demo-account.spec.js`.
+**DB:** none (login only; `last_active_at` may update). **Pass:** town is shown with Jordan's data.
 
 ### AUTH-10 · Wrong password and wrong email · High
 **Situation:** the presenter mistypes. **Objective:** errors and no code screen.
@@ -194,7 +197,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 2. Press again → hidden, mascots uncover.
 3. On Register the Confirm password field follows the same toggle.
 4. Move the pointer and click into each field → the mascots' eyes follow; floating books are pushed by the cursor.
-**DB:** none. **Pass:** type toggles; label flips. **Existing coverage:** `auth.spec.js` (toggle).
+**DB:** none. **Pass:** type toggles; label flips.
 
 ### AUTH-13 · Session survives a reload; log out; Back does not re-enter · Critical
 **Situation:** the presenter refreshes, then logs out. **Objective:** persistence and a real sign-out.
@@ -205,7 +208,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 4. Press **Log out**, then confirm in the dialog → the landing page or login page.
 5. Press the browser **Back** button → you are **not** returned to the town; you stay on a guest page.
 6. Open `/house` → redirected to `/login`.
-**DB:** none (Supabase session ended). **Pass:** steps 5 and 6 never show signed-in content. **Existing coverage:** `salon.spec.js`.
+**DB:** none (Supabase session ended). **Pass:** steps 5 and 6 never show signed-in content.
 
 ### AUTH-14 · Route guard for signed-in readers on guest pages · High
 **Situation:** a signed-in reader opens `/login` or `/start`. **Objective:** the guard sends them home.
@@ -213,7 +216,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 1. Open `/login`, `/register`, `/start`, `/verify` in turn → each ends on `/`.
 2. Open `/welcome` → ends on `/` (profile complete).
 3. Open `/nonexistent/path` → ends on `/`.
-**DB:** none. **Pass:** all redirects land on the town. **Existing coverage:** `onboarding.spec.js`.
+**DB:** none. **Pass:** all redirects land on the town.
 
 ### AUTH-15 · Incomplete profile is forced to Welcome · High
 **Situation:** a reader closed the browser mid-registration. **Objective:** every page sends them to Welcome until finished.
@@ -239,7 +242,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 3. Demo email with a 3-character password → 400; username `A B` → 400.
 4. Log in as a normal (non-demo) account's email and enter `111111` at its real code step → refused.
 5. Log in as `emma.reads@demo.ikda.app` with a guessed password → `Invalid login credentials` (sample readers have random passwords).
-**DB:** no new `auth.users` rows. **Pass:** every case refused. **Existing coverage:** `server/tests/demoAuth.check.js`.
+**DB:** no new `auth.users` rows. **Pass:** every case refused.
 
 ---
 
@@ -278,7 +281,7 @@ heading. 📸 = take a screenshot. Run signed-out scenarios in a fresh private w
 2. In the town the public/private chip says **PRIVATE** and cannot be turned to public (or shows the under-18 note); the location prompt is not shown.
 3. Salon → Profile → the **Public profile and location** switch is locked.
 **DB:** `profile_private.age = 16`; `profiles.discoverable = false` (trigger `keep_minors_private`); no `reader_areas` row.
-**Pass:** private in all places. **Existing coverage:** `nearby.spec.js`.
+**Pass:** private in all places.
 
 ### WEL-05 · Welcome after a failed profile load · Low
 **Situation:** the profile lookup fails. **Objective:** a retry, not a dead end. **(unverified)**

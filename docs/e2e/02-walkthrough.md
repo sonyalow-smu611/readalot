@@ -1,4 +1,7 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # E2E scenarios 02: the walkthrough (35 numbered stops)
+
+> Manual verification plan. The legacy automation citations have been removed; see the [active Playwright suite](../../tests/e2e/features/README.md) for current executable coverage.
 
 Suite **TOUR** (15 scenarios). Format, accounts and rules: header of
 [01-public-auth-onboarding.md](01-public-auth-onboarding.md) and C2/C3 of

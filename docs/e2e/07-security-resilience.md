@@ -1,4 +1,7 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # E2E scenarios 07: permissions and data safety, errors and empty states, responsive and accessibility
+
+> Manual verification plan. The legacy automation citations have been removed; see the [active Playwright suite](../../tests/e2e/features/README.md) for current executable coverage.
 
 Suites: **SEC** (8), **ERR** (8), **RSP** (6) = 22. Format, accounts and rules: header of
 [01-public-auth-onboarding.md](01-public-auth-onboarding.md) and C1 to C5 of [../E2E_GUIDE.md](../E2E_GUIDE.md). SEC scenarios call the API
@@ -23,7 +26,7 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 3. A calls `PATCH /api/user-books/<book>` for B's book id → only A's own row exists; B's is unaffected (404 if A doesn't have it).
 4. A calls `DELETE /api/friends/<B's friendship with C>` → refused / no effect.
 5. A calls `POST /api/messages/<B>` as A → creates a message **from A only** (the sender id cannot be forged in the body).
-**DB:** B's rows unchanged. **Pass:** every cross-account write is refused or scoped to the caller. **Existing coverage:** `visit-room.spec.js`, `friends.spec.js`.
+**DB:** B's rows unchanged. **Pass:** every cross-account write is refused or scoped to the caller.
 
 ### SEC-03 · The public key cannot read locked tables; coins are not writable · Critical
 **Pre:** `database/lock_down.sql` applied. Use the browser anon key (`visitorClient()` in `supabaseUser.js`).
@@ -31,7 +34,7 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 2. Call `rpc('daily_settled', { ... })` as anon → refused.
 3. As a signed-in reader: `update profiles set coins = 99999 where id = me` → refused; `select * from profile_private` → only your own row.
 4. As a signed-in reader read `reader_messages` → only rows you sent or received.
-**DB:** none changed. **Pass:** exactly the access listed in C5. **Existing coverage:** `database-access.spec.js`.
+**DB:** none changed. **Pass:** exactly the access listed in C5.
 
 ### SEC-04 · Messages are private · High
 1. A and B chat. C (a third account) calls `GET /api/messages/<A>` → only the C ↔ A thread (empty), never A ↔ B.
@@ -44,13 +47,13 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 1. B's Cafe, **Readers nearby** and `GET /api/people` do not list A; `GET /api/nearby` never returns coordinates.
 2. A's bell/visit entries name a visitor only if the visitor is a friend or public; otherwise "someone".
 3. A becomes public → listed; private again → unlisted.
-**DB:** `profiles.discoverable`. **Pass:** listing equals the setting; no exact coordinates anywhere. **Existing coverage:** `nearby.spec.js`, `notifications.spec.js`.
+**DB:** `profiles.discoverable`. **Pass:** listing equals the setting; no exact coordinates anywhere.
 
 ### SEC-06 · Under-18 rules · High
 1. A 16-year-old can never be public (switch locked; `discoverable` stays false even if the API is called to set it).
 2. Changing age from 21 to 16 in **Edit profile** while public → the profile becomes private (trigger).
 3. Age 12 is refused everywhere (Welcome, Edit profile).
-**DB:** `profile_private.age`, `profiles.discoverable`, `reader_areas` deleted. **Pass:** triggers hold. **Existing coverage:** `nearby.spec.js`.
+**DB:** `profile_private.age`, `profiles.discoverable`, `reader_areas` deleted. **Pass:** triggers hold.
 
 ### SEC-07 · User text is shown as text, never run · High
 1. Put `<img src=x onerror=alert(1)>` and `<script>alert(2)</script>` in: a username attempt, display name, a corkboard note, a chat message, a review, **Location**.
@@ -63,7 +66,7 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 2. The only Supabase key in the page is the anon key (decode its payload: `role = anon`).
 3. The demo route `POST /api/demo-auth/register`: non-demo email → 403; `a@demo.ikda.app@gmail.com` → 403; bad password/username → 400; 61 sign-ups from one address in an hour → **429** (the limit is 60).
 4. Setting `DEMO_CODE_DOMAINS=` (empty) on the server and `VITE_DEMO_CODE_DOMAINS=` on the client disables the bypass (a local check; do not change production).
-**DB:** none (use only throw-away demo-domain emails and delete them). **Pass:** no secrets; the bypass is bounded. **Existing coverage:** `server/tests/demoAuth.check.js`, `demo-account.spec.js`.
+**DB:** none (use only throw-away demo-domain emails and delete them). **Pass:** no secrets; the bypass is bounded.
 
 ---
 
@@ -73,7 +76,7 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 1. Block `/api/*` entirely (DevTools "Block request URL") and reload the town → the town renders; Friends/Daily/notifications show empty or error states; no white screen.
 2. Return 500 from `GET /api/user-books` → My Room shows a failure state for the shelf ("couldn't load") with a retry; the room itself still renders.
 3. Return 500 from `PUT /api/rooms/<me>/furniture` while placing → the placement is reported as unsaved or rolled back; reload shows the server's state.
-**DB:** none. **Pass:** each failure shows a message; no uncaught exception in the console. **Existing coverage:** `my-shelf.spec.js` ("a shelf that fails to load").
+**DB:** none. **Pass:** each failure shows a message; no uncaught exception in the console.
 
 ### ERR-02 · Going offline and back · Medium
 1. Go offline (DevTools) while on the town → actions that need the API (add friend, send message) show an error; the map keeps working.
@@ -111,7 +114,7 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 1. Double-click **Confirm** on a purchase → one charge, one piece.
 2. Double-click **Accept** on a request, **SEND →** twice quickly, **Post Review** twice, **Add to To be read** twice, **Post note** twice, **Claim** twice → exactly one row/effect each.
 3. Press **Register** twice quickly → one account (or the second is refused).
-**DB:** one row each; `xp_events` once. **Pass:** idempotent at every step. **Existing coverage:** partly in `friends.spec.js`, `furniture.spec.js`.
+**DB:** one row each; `xp_events` once. **Pass:** idempotent at every step.
 
 ---
 
@@ -121,7 +124,7 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 **Pre:** Phone 390 × 844. Visit: `/start`, `/login`, `/register`, `/verify`, `/welcome`, `/`, `/house`, `/house/shelf`, `/library`, `/search?q=dune`, `/cafe`, `/salon` (both tabs), a book card, the Shop, the Friends panel, the Daily panel, a chat box.
 1. No horizontal scrollbar on any (`scrollWidth ≤ innerWidth`); no clipped or overlapping controls; text readable; fixed buttons (back, Places, Daily, room menu) do not cover content you need.
 2. The Salon panel is a bottom sheet with a handle; the cafe popup is a bottom sheet.
-**DB:** none. **Pass:** usable on each page 📸. **Existing coverage:** `start.spec.js`, `house-desktop.spec.js`, `library-wide.spec.js`, `buttons.spec.js`.
+**DB:** none. **Pass:** usable on each page 📸.
 
 ### RSP-02 · Touch targets and gestures · Medium
 1. On the phone viewport every button is at least 44 × 44 px.
@@ -137,11 +140,11 @@ teammate's data: use only accounts you created (ACCT-A, ACCT-B) and the seeded s
 ### RSP-04 · Names, roles and announcements · Medium
 1. Inspect the accessibility tree: buttons have names (e.g. `Show password`, `Chat with Emma`, `Friends, 2 online, 1 friend request`), dialogs have names (`Book details`, `Meet Emma Tan`), tab lists have `aria-selected`, form fields have labels, errors use `role="alert"`, status messages `role="status"`, the walkthrough bubble `aria-live="polite"`.
 2. Images that matter have text alternatives; decorative sprites are hidden from the tree.
-**DB:** none. **Pass:** no unnamed interactive element. **Existing coverage:** the tests use role/name selectors throughout.
+**DB:** none. **Pass:** no unnamed interactive element.
 
 ### RSP-05 · Reduced motion · Medium
 1. Emulate `prefers-reduced-motion: reduce` → the book-open flight, clouds in the Salon, the walkthrough glide, the intro and floating books are skipped or calmer; all actions still complete.
-**DB:** none. **Pass:** nothing depends on an animation to work. **Existing coverage:** `bookshelf.spec.js` (reduced motion).
+**DB:** none. **Pass:** nothing depends on an animation to work.
 
 ### RSP-06 · Mid-size windows, zoom and contrast · Low
 1. 1024 × 768 and 1920 × 1080: pages fill the window sensibly (the town, buildings and sign-in fill the window; the Cafe keeps a 1:1 world and becomes draggable when narrow).

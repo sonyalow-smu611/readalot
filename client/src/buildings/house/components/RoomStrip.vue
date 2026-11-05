@@ -153,29 +153,67 @@
                 v-if="artOf(item)"
                 type="button"
                 class="strip__pin strip__hit placed-art"
-                :class="{ 'is-carried': carrying?.uid === item.uid, 'is-editable': showEditable }"
+                :class="{
+                  'is-carried': carrying?.uid === item.uid,
+                  'is-editable': showEditable && selected !== item.uid,
+                  'is-selected': selected === item.uid,
+                }"
                 :aria-label="decorName(item)"
+                :aria-pressed="editable ? selected === item.uid : undefined"
+                :data-selected="selected === item.uid || undefined"
                 :style="boxStyle(artOf(item).box)"
                 @pointerdown="holdItem($event, item)"
                 @click="pickItem(item.uid)"
               >
                 <span v-if="showEditable && selected !== item.uid" class="placed__pencil" aria-hidden="true">✎</span>
-                <span v-if="selected === item.uid" class="placed__actions">
-                  <span v-if="standsAnywhere(item.zone)" data-button class="btn btn-secondary btn-sm" @click.stop="startMove(item)">Move</span>
-                  <span data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
-                </span>
+                <template v-if="selected === item.uid">
+                  <span
+                    v-if="standsAnywhere(item.zone)"
+                    data-button
+                    role="button"
+                    tabindex="0"
+                    class="placed__badge placed__move"
+                    :aria-label="`Move ${decorName(item)}`"
+                    @pointerdown.stop
+                    @click.stop="startMove(item)"
+                    @keydown.enter.space.stop.prevent="startMove(item)"
+                  >✥</span>
+                  <span
+                    data-button
+                    role="button"
+                    tabindex="0"
+                    class="placed__badge placed__remove"
+                    :aria-label="`Remove ${decorName(item)}`"
+                    @pointerdown.stop
+                    @click.stop="askRemove(item)"
+                    @keydown.enter.space.stop.prevent="askRemove(item)"
+                  >×</span>
+                </template>
               </button>
               <button
                 data-hit
                 v-else-if="isPet(item)"
                 type="button"
                 class="strip__pin placed-cat"
+                :class="{ 'is-selected': selected === item.uid }"
                 :data-pet="item.uid"
                 :aria-label="decorName(item)"
+                :aria-pressed="editable ? selected === item.uid : undefined"
+                :data-selected="selected === item.uid || undefined"
                 :style="catStyle(item)"
                 @click="pickItem(item.uid)"
               >
-                <span v-if="selected === item.uid" data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
+                <span
+                  v-if="selected === item.uid"
+                  data-button
+                  role="button"
+                  tabindex="0"
+                  class="placed__badge placed__remove"
+                  :aria-label="`Remove ${decorName(item)}`"
+                  @pointerdown.stop
+                  @click.stop="askRemove(item)"
+                  @keydown.enter.space.stop.prevent="askRemove(item)"
+                >×</span>
               </button>
             </template>
 
@@ -236,7 +274,13 @@
       <button type="button" class="btn btn-secondary btn-sm" @click="stopMove(false)">Cancel</button>
     </div>
 
+    <!-- a picked piece (or one being dragged): what can be done with it -->
+    <p v-if="pickedHint" class="strip__placing strip__picked" role="status">{{ pickedHint }}</p>
+
     <PlacesMenu class="strip__menu" :places="PARTS" @go="goTo" />
+
+    <!-- the × on a picked piece asks first -->
+    <RemovePieceModal v-if="removing" :name="decorName(removing)" @close="removing = null" @remove="confirmRemove" />
   </div>
 </template>
 
@@ -251,6 +295,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, toRef,
 import stillArt from '@/buildings/house/assets/room-still.png'
 import WindowView from '@/buildings/house/components/WindowView.vue'
 import PlacesMenu from '@/buildings/house/components/PlacesMenu.vue'
+import RemovePieceModal from '@/buildings/house/components/RemovePieceModal.vue'
 import { decorMeta, useDecor } from '@/composables/useDecor'
 import { furnitureSprite } from '@/buildings/house/furniture.js'
 import { primaryAuthor } from '@/lib/book'
@@ -710,6 +755,55 @@ function pickItem(uid) {
   pick(uid)
 }
 
+// --- A picked piece: highlighted, with a × to take it out (and ✥ to move it) ----------------
+// The × asks first (RemovePieceModal). A tap anywhere but the picked piece, or Escape, lets it go.
+// the piece being asked about: a placed item, or null
+const removing = ref(null)
+
+// the line at the top while a piece is picked or carried
+const pickedHint = computed(() => {
+  if (!props.editable || placing.value || moving.value) return ''
+  const carried = carrying.value && placed.value.find((one) => one.uid === carrying.value.uid)
+  if (carried) return `Let go to put ${decorName(carried)} down`
+  const item = selected.value != null && placed.value.find((one) => one.uid === selected.value)
+  if (!item) return ''
+  if (!isPet(item) && standsAnywhere(item.zone)) return `Drag ${decorName(item)} to move it, or tap × to remove it`
+  return `Tap × to put ${decorName(item)} back in your inventory`
+})
+
+function askRemove(item) {
+  removing.value = item
+}
+
+function confirmRemove() {
+  const item = removing.value
+  removing.value = null
+  if (item) unplace(item.uid)
+}
+
+function onPickedOutside(event) {
+  // the dialog answers for itself; a tap on the picked piece is its own click (it lets go)
+  if (removing.value || event.target.closest?.('[data-selected]')) return
+  selected.value = null
+}
+
+function onPickedKey(event) {
+  if (event.key !== 'Escape' || removing.value) return
+  selected.value = null
+}
+
+function stopWatchingPicked() {
+  window.removeEventListener('pointerdown', onPickedOutside)
+  window.removeEventListener('keydown', onPickedKey)
+}
+
+watch(selected, (uid) => {
+  stopWatchingPicked()
+  if (uid == null || !props.editable) return
+  window.addEventListener('pointerdown', onPickedOutside)
+  window.addEventListener('keydown', onPickedKey)
+})
+
 // where a piece standing anywhere is, said the way the room says it ("on the wall", "on the side table")
 function zoneName(zone) {
   return zone === 'wall' ? 'on the wall' : ZONE_NAMES[zone]
@@ -843,15 +937,23 @@ function dropAt(entry, x, y) {
 // drag to look around the room, as anywhere else.
 const HOLD_MS = 300
 const HOLD_SLOP = 8 // px a press may wander and still be held
+const DRAG_SLOP = 4 // px a press on a picked piece moves before the piece follows (less is a tap)
 // the piece being carried: { uid, zone, at } (where it was picked up), and `landing`, where it would go now
 const carrying = ref(null)
 let hold = null
 let justCarried = false
 
+// A picked (highlighted) piece needs no hold: it follows the pointer as soon as the press moves,
+// and the room doesn't slide under it (it also has touch-action: none).
 function holdItem(event, item) {
   if (!props.editable || isPet(item) || !standsAnywhere(item.zone) || (event.button != null && event.button !== 0)) return
   const start = { x: event.clientX, y: event.clientY }
-  hold = { start, timer: window.setTimeout(() => pickUp(item), HOLD_MS) }
+  if (selected.value === item.uid) {
+    event.stopPropagation()
+    hold = { start, item, now: true }
+  } else {
+    hold = { start, timer: window.setTimeout(() => pickUp(item), HOLD_MS) }
+  }
   justCarried = false
   window.addEventListener('pointermove', onHoldMove)
   window.addEventListener('pointerup', onHoldUp)
@@ -872,8 +974,13 @@ function stopTouchScroll(event) {
 
 function onHoldMove(event) {
   if (hold) {
-    if (Math.hypot(event.clientX - hold.start.x, event.clientY - hold.start.y) > HOLD_SLOP) endHold()
-    return
+    const wandered = Math.hypot(event.clientX - hold.start.x, event.clientY - hold.start.y)
+    if (!hold.now) {
+      if (wandered > HOLD_SLOP) endHold()
+      return
+    }
+    if (wandered <= DRAG_SLOP) return
+    pickUp(hold.item)
   }
   const carried = carrying.value
   if (!carried) return
@@ -893,6 +1000,8 @@ function onHoldUp() {
   window.setTimeout(() => {
     justCarried = false
   })
+  // put down, it stays picked: drag it again, or tap × or elsewhere
+  selected.value = carried.uid
   const meta = decorMeta(placed.value.find((one) => one.uid === carried.uid)?.id)
   if (!carried.landing) {
     moveTo(carried.uid, carried.zone, carried.at)
@@ -1125,6 +1234,9 @@ onBeforeUnmount(() => {
   flight?.dispose()
   endHold()
   window.removeEventListener('keydown', onMoveKey, true)
+  stopWatchingPicked()
+  // the pick is shared (useDecor): coming back to the room finds nothing picked
+  if (props.editable) selected.value = null
 })
 
 defineExpose({ dropAt, putBack })
@@ -1334,18 +1446,66 @@ defineExpose({ dropAt, putBack })
   font-weight: 700;
 }
 
-.placed__actions {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  display: flex;
-  gap: var(--rl-btn-gap);
-  margin-bottom: 4px;
-  transform: translateX(-50%);
+/* a picked piece: lit with a solid edge and a soft glow, a × on its top right (and a ✥ on its
+   top left to move it) */
+.placed-art.is-selected,
+.placed-cat.is-selected {
+  z-index: 1;
+  outline: 3px solid var(--house-accent, var(--rl-accent));
+  outline-offset: 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 6px rgb(255 255 255 / 35%), 0 0 16px 4px rgb(255 209 102 / 65%);
 }
 
-.placed__actions .btn {
-  white-space: nowrap;
+.placed__badge {
+  position: absolute;
+  top: -12px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #2b2133;
+  border-radius: 50%;
+  color: #2b2133;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #2b2133;
+}
+
+/* a bigger invisible area round the badge, so a finger finds it */
+.placed__badge::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+
+.placed__badge:focus-visible {
+  outline: 2px solid #2b2133;
+  outline-offset: 2px;
+}
+
+.placed__remove {
+  right: -12px;
+  background: #ff6b6b;
+  color: #fff;
+}
+
+.placed__move {
+  left: -12px;
+  background: #ffd166;
+}
+
+@media (hover: hover) {
+  .placed__badge:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.placed__badge:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #2b2133;
 }
 
 /* a piece of furniture from the library: drawn in the room, its button an invisible box under
@@ -1566,6 +1726,25 @@ defineExpose({ dropAt, putBack })
 
 .strip__placing-text {
   flex: 1 1 100%;
+}
+
+/* the picked piece's line: centred under the top-left buttons (clear of the coins and their
+   messages), it says, never takes a tap */
+.strip__picked {
+  top: calc(var(--building-back-space, 0px) + 120px);
+  left: 50%;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  transform: translateX(-50%);
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* a picked piece: a press on it drags it, not the room */
+.placed-art.is-selected {
+  touch-action: none;
+  cursor: grab;
 }
 
 @media (min-width: 720px) {

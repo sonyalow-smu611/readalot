@@ -1,3 +1,4 @@
+<!-- Scaffolded with AI assistance — see AI_USAGE.md -->
 # IKDA
 
 **Social media, but for book lovers.** IKDA (읽다, Korean for "to read") is a mobile-first web app
@@ -763,6 +764,14 @@ Background sounds follow the live weather, also CC0 from OpenGameArt: rain ("Rai
 Music and background sounds play only once you are signed in. The note button beside the Daily task (🔥) button turns them on or off, and the choice is remembered on that device.
 
 ## 9. E2E testing guide (for the verification phase)
+
+The team's executable feature suite runs desktop first and then iPhone emulation:
+
+```bash
+pnpm test:e2e
+```
+
+See [feature scenarios and setup](tests/e2e/features/README.md) for individual cases, required test credentials, reports, and what is mocked. The old spec files have been removed; `pnpm test:e2e:features` is an alias for the same active suite.
 
 A complete user guide and 215 numbered end-to-end scenarios (with steps, expected results, database checks and
 priorities) are in **[docs/E2E_GUIDE.md](docs/E2E_GUIDE.md)** and the seven files in **[docs/e2e/](docs/e2e/)**:
