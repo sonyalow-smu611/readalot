@@ -417,7 +417,7 @@ test.describe("notes on the notice board", () => {
     }, picture);
   }
 
-  test("notes are pinned on the corkboard itself, three at most", async ({ page }) => {
+  test("notes are pinned on the corkboard itself, and it fills up as more come in", async ({ page }) => {
     // Mei's board: no other test leaves notes there, so nothing changes it meanwhile
     await visit(page, "mei.margins", "Mei");
     const plain = await corkboardPixels(page);
@@ -428,16 +428,55 @@ test.describe("notes on the notice board", () => {
     await leaveNote(page, "Mei", "Third");
     await nextPaint(page);
     const three = await corkboardPixels(page);
-    // a fourth note isn't drawn: the corkboard looks the same once it has repainted
+    // a fourth note gets a spot of its own: the board gets fuller
     await leaveNote(page, "Mei", "Fourth");
-    await nextPaint(page);
-    expect(await corkboardPixels(page)).toBe(three);
+    await expect.poll(() => corkboardPixels(page)).not.toBe(three);
 
     // all taken down: the plain corkboard again
     const board = await openBoard(page);
     for (let left = 4; left > 0; left -= 1) await board.getByRole("button", { name: "Take down" }).first().click();
     await board.getByRole("button", { name: "Close" }).click();
     await expect.poll(() => corkboardPixels(page)).toBe(plain);
+  });
+
+  // New notes on your own corkboard glow until you open the board.
+  test("new notes on my corkboard are highlighted until I open the board", async ({ page }) => {
+    const notes = [{ id: "n1", ownerId: "me", authorId: "sam", author: "Sam", text: "Hello!", createdAt: new Date().toISOString() }];
+    await page.route("**/api/rooms/*/notes", (route) => (route.request().method() === "GET" ? route.fulfill({ json: { notes } }) : route.fallback()));
+    await page.goto("/house");
+    await roomReady(page);
+    await nextPaint(page);
+    const glowing = await corkboardPixels(page);
+
+    const board = await openBoard(page);
+    await expect(board.locator(".board__note.is-new")).toHaveCount(1);
+    await board.getByRole("button", { name: "Close" }).click();
+    // read now: the same note, without the glow
+    await expect.poll(() => corkboardPixels(page)).not.toBe(glowing);
+  });
+
+  // Eight notes fill every spot; after that a "+N" tag says how many more there are.
+  test("past eight notes, the corkboard says how many more there are", async ({ page }) => {
+    let count = 8;
+    await page.route("**/api/rooms/*/notes", (route) => {
+      if (route.request().method() !== "GET") return route.fallback();
+      const notes = Array.from({ length: count }, (_, i) => ({ id: `n${i}`, ownerId: "mei", authorId: "someone", author: "Sam", text: `Note ${i}`, createdAt: new Date().toISOString() }));
+      return route.fulfill({ json: { notes } });
+    });
+    const boardWith = async (notes) => {
+      count = notes;
+      await visit(page, "mei.margins", "Mei");
+      await nextPaint(page);
+      return corkboardPixels(page);
+    };
+    const seven = await boardWith(7);
+    const eight = await boardWith(8);
+    const nine = await boardWith(9);
+    const twelve = await boardWith(12);
+    // the eighth note has a spot, the ninth brings the tag, and the tag's number changes
+    expect(eight).not.toBe(seven);
+    expect(nine).not.toBe(eight);
+    expect(twelve).not.toBe(nine);
   });
 
   test("My Room's notice board shows the notes others left, and I can take any of them down", async ({ page, request, reader }) => {

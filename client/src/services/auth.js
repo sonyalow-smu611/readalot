@@ -246,6 +246,19 @@ export async function saveNotificationTimes(userId, { readAt, clearedAt }) {
   return supabase.from('profiles').update(changes).eq('id', userId)
 }
 
+// When the reader last opened their own notice board (database/notes_seen.sql), or '' if never.
+export async function loadNotesReadAt(userId) {
+  if (!supabase) return missing()
+  const { data, error } = await supabase.from('profiles').select('notes_read_at').eq('id', userId).maybeSingle()
+  if (error) return { data: null, error }
+  return { data: data?.notes_read_at ?? '', error: null }
+}
+
+export async function saveNotesReadAt(userId, at) {
+  if (!supabase) return missing()
+  return supabase.from('profiles').update({ notes_read_at: at }).eq('id', userId)
+}
+
 export async function markTourSeen(userId) {
   if (!supabase) return missing()
   return supabase.from('profiles').update({ tour_seen_at: new Date().toISOString() }).eq('id', userId)

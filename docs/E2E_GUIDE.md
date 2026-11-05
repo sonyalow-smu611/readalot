@@ -105,7 +105,7 @@ This is the spine that the connecting journeys in Part B (suite JRN) follow.
    (`@demo.ikda.app`) needs no inbox and uses the code `111111`; any other email gets a real emailed code.
 3. **Confirm the code.** Enter the 6 digits on "Check your email". A new reader is taken to Welcome.
 4. **Welcome.** Six steps: name, gender, age, religion, genres, character (A6). The profile is saved.
-5. **Walkthrough.** The reader's own character floats round the app for 34 numbered stops and shows every part
+5. **Walkthrough.** The reader's own character floats round the app for 33 numbered stops and shows every part
    of it, ending with a friend request to Pip and a first message (A7). It can be skipped.
 6. **Use the town.** Daily tasks, friends, notifications, weather, privacy (A8).
 7. **Build the shelf.** Search or browse the Library, add a book to "To be read" (A12).
@@ -184,7 +184,7 @@ religion), then zooms into the town where the walkthrough starts. If the saved p
 the page offers **Try again**. A reader under 18 is always private (a database trigger); the minimum
 age is 13.
 
-## A7. The walkthrough (34 numbered stops)
+## A7. The walkthrough (33 numbered stops)
 
 **What it is.** After Welcome, the reader's own character floats over the app in a speech bubble and
 shows every part in order. It plays once (`profiles.tour_seen_at`), can be skipped, and can be replayed
@@ -192,12 +192,12 @@ from the Salon.
 
 **Observed in the professor pass (live app, Nov 2026).**
 
-- The counter now reads `N of 34 · <Section>`.
+- The counter now reads `N of 33 · <Section>`.
 - The flow includes **ask** steps with **Skip this step** (instead of forcing one action path).
 - Buttons are: **Back** (from step 2), **Next**, **Skip this step** (only on ask steps), **Skip this part**,
   **Skip tour**. The last stop has **Done**.
 - Some numbered stops contain more than one short card, so message cards can advance while the counter
-  stays on the same `N of 34` value.
+  stays on the same `N of 33` value.
 
 **Section map (current build):**
 
@@ -419,7 +419,7 @@ lost/leaked without it), High (a core feature), Medium (a supporting behaviour),
 | File | Suites | Scenarios |
 |---|---|---|
 | [01-public-auth-onboarding.md](e2e/01-public-auth-onboarding.md) | LND Landing, AUTH Register/login/code/logout/guards, WEL Welcome | 33 |
-| [02-walkthrough.md](e2e/02-walkthrough.md) | TOUR The walkthrough (34 numbered stops) | 14 |
+| [02-walkthrough.md](e2e/02-walkthrough.md) | TOUR The walkthrough (33 numbered stops) | 14 |
 | [03-town-social.md](e2e/03-town-social.md) | TWN Town and HUD, DLY Daily tasks, FRD Friends and chat, CAF Cafe, VIS Visiting rooms and notes | 51 |
 | [04-room-shelf-shop-mood.md](e2e/04-room-shelf-shop-mood.md) | ROOM My Room, SHF Bookshelf and My Shelf, MOOD Mood and quotes, SHOP Shop and Inventory | 41 |
 | [05-library-books.md](e2e/05-library-books.md) | LIB Library, BOOK Book cards, pages and reviews | 25 |
@@ -583,7 +583,7 @@ duplicates one of these, the file is named under **Existing coverage**; run it a
   `reader-profile.spec.js:276` (the Daily button beside Back to Discover). They concern **where the Daily button sits**.
 - Flaky under load, pass on re-run: `onboarding.spec.js:42`, `friends.spec.js:60`, `bookshelf.spec.js:262`,
   `room.spec.js:213`, `town-map.spec.js:64` (a townsperson jiggles).
-- The latest working tree adds an onboarding spec rewrite and a 34-stop walkthrough; automated TOUR coverage still needs a clean full run in CI.
+- The latest working tree adds an onboarding spec rewrite and a 33-stop walkthrough; automated TOUR coverage still needs a clean full run in CI.
 
 **Known product gaps:** no password reset, no account deletion, no moderation; any signed-in reader can message
 any other reader (no friendship needed); other signed-in readers can read all `profiles` columns; the
@@ -594,7 +594,7 @@ nearby stores (`/stores/nearby`) and the scan fallback are placeholders; nine cl
 (page title suffix, "from N Readalot readers", the old tour title); Daily and mood state: Daily is on the server, the mood check-in is per browser.
 **Remaining unverified in this pass:** the exact text/timing of friend-house appearance for a newly accepted friend;
 the dusty look of a long-away friend's house; the location prompt after walkthrough completion; Pip auto-reply when
-`neighbour.sql` is applied in the current environment; full ask-path completion for every walkthrough stop (the 34-stop
+`neighbour.sql` is applied in the current environment; full ask-path completion for every walkthrough stop (the 33-stop
 flow itself was observed); scanner behaviour with a real camera; "Where to get" links; the Bestsellers source; the
 notification line for "friend comes online"; behaviour on very small phones; `/discover/:genre` sort-chip behaviour;
 and the exact response to a 13-year-old's public setting.

@@ -26,7 +26,7 @@ import TownMap from '@/components/town/TownMap.vue'
 import TownHud from '@/components/town/TownHud.vue'
 import PlacesMenu from '@/components/town/PlacesMenu.vue'
 import PlaceCard from '@/components/town/PlaceCard.vue'
-import WeatherButton from '@/components/town/WeatherButton.vue'
+import WeatherChip from '@/components/town/WeatherChip.vue'
 import PlayerBadge from '@/components/town/PlayerBadge.vue'
 import FriendsList from '@/components/town/FriendsList.vue'
 import FriendCard from '@/components/town/FriendCard.vue'
@@ -93,7 +93,6 @@ const entering = ref(null)
 const walk = ref(null)
 const hint = ref(true)
 const weather = ref(null)
-const skyMode = ref('live')
 let weatherTimer = null
 let nearbyTimer = null
 
@@ -104,13 +103,10 @@ const walkingTo = computed(() => {
   return place.id === 'house' ? 'Walking home…' : `Walking to ${place.name}…`
 })
 
+// the town always follows the live weather
 const sky = computed(() => {
-  const mode = skyMode.value
-  if (mode === 'live') {
-    const w = weather.value
-    return { night: Boolean(w && !w.unavailable && !w.isDay), rain: w?.scene === 'rain' }
-  }
-  return { night: mode === 'night' || mode === 'rainyNight', rain: mode === 'rain' || mode === 'rainyNight' }
+  const w = weather.value
+  return { night: Boolean(w && !w.unavailable && !w.isDay), rain: w?.scene === 'rain' }
 })
 
 // Each friend with whether they are online, how kept their house is, and which house is theirs.
@@ -363,6 +359,8 @@ function openNotification(item) {
     if (friend) findFriend(friend)
     else router.push({ name: 'reader-room', params: { id: item.readerId } })
   } else if (item.kind === 'visit') router.push({ name: 'reader-room', params: { id: item.visitorId } })
+  // your own room, with the notice board open on the new notes
+  else if (item.kind === 'note') router.push({ name: 'house', query: { board: '1' } })
   else if (friend) findFriend(friend)
 }
 
@@ -561,7 +559,7 @@ function goInside(place) {
         @preview-reset="daily.previewReset"
       />
     </Transition>
-    <WeatherButton v-if="ready" data-tour="town-weather" :mode="skyMode" :weather="weather" @change="skyMode = $event" />
+    <WeatherChip v-if="ready" data-tour="town-weather" :weather="weather" />
     <!-- you, in the bottom-left corner: level, XP and coins; opens the salon -->
     <PlayerBadge
       data-tour="town-badge"
@@ -595,10 +593,12 @@ function goInside(place) {
       />
     </Transition>
 
-    <Transition name="town-card">
+    <!-- one reader's card at a time: a reader nearby you've just added (a demo reader says yes at
+         once) swaps to their friend card, the old one gone before the new one comes in -->
+    <Transition name="town-card" mode="out-in">
       <FriendCard
         v-if="selectedFriend"
-        :key="selectedFriend.id"
+        :key="`friend-${selectedFriend.id}`"
         :friend="selectedFriend"
         :house="selectedFriendHouse"
         @talk="sayHi"
@@ -606,12 +606,9 @@ function goInside(place) {
         @remove="removeFriend"
         @close="friendId = null"
       />
-    </Transition>
-
-    <Transition name="town-card">
       <FriendCard
-        v-if="selectedNearby"
-        :key="selectedNearby.id"
+        v-else-if="selectedNearby"
+        :key="`nearby-${selectedNearby.id}`"
         :friend="selectedNearby"
         :requested="selectedNearby.requested || nearby.outgoing.includes(selectedNearby.id)"
         :sending="sendingTo === selectedNearby.id"

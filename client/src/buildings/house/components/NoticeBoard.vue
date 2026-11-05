@@ -39,7 +39,8 @@
           {{ mine ? 'No notes yet. When readers visit, their notes show up here.' : 'No notes yet. Be the first to leave one.' }}
         </p>
         <ul v-else class="board__notes">
-          <li v-for="note in notes" :key="note.id" class="board__note">
+          <li v-for="note in notes" :key="note.id" class="board__note" :class="{ 'is-new': newIds.includes(note.id) }">
+            <span v-if="newIds.includes(note.id)" class="badge board__new">New</span>
             <p class="board__note-text">{{ note.text }}</p>
             <p class="board__note-by">From {{ note.author }} · {{ dateOf(note.createdAt) }}</p>
             <button v-if="mine || note.authorId === me" type="button" class="btn btn-danger btn-sm board__take-down" @click="$emit('remove', note.id)">Take down</button>
@@ -75,6 +76,8 @@ defineProps({
   notesError: { type: String, default: '' },
   // the visitor's reader id: their own notes can be taken down
   me: { type: String, default: '' },
+  // ids of the notes left since the reader last opened their own board: marked New
+  newIds: { type: Array, default: () => [] },
 })
 defineEmits(['close', 'remove', 'retry', 'write'])
 
@@ -169,6 +172,18 @@ onMounted(() => {
   border-radius: 4px;
   background: #fffbe9;
   box-shadow: 0 2px 6px rgba(63, 46, 36, 0.12);
+}
+
+.board__note.is-new {
+  border: 2px solid #f2b33d;
+  background: #fff1bf;
+  box-shadow: 0 0 0 3px rgba(242, 179, 61, 0.25), 0 2px 6px rgba(63, 46, 36, 0.12);
+}
+
+.board__new {
+  margin-bottom: 6px;
+  background: #c8553d;
+  color: #fff;
 }
 
 .board__note-text {

@@ -1,5 +1,5 @@
 // Scaffolded with AI assistance — see AI_USAGE.md
-import { expect, nextPaint, test, townReady } from "./fixtures.js";
+import { expect, goToPlace, nextPaint, skipMoodCheckIn, test, townReady } from "./fixtures.js";
 import { signInPage } from "./supabaseUser.js";
 import { EMMA, NOAH, friend, mockFriends, skipDailyPanel } from "./townFriends.js";
 
@@ -202,4 +202,27 @@ test.describe("on a phone", () => {
     await bell(page).click({ timeout: 5000 });
     await expect(panel(page)).toBeHidden();
   });
+});
+
+// A note someone left on your board: in the bell, and tapping it opens your board with it marked New.
+test("a new note on your board shows in the bell and opens the board, marked New", async ({ page }) => {
+  await skipMoodCheckIn(page);
+  const note = { id: "note-1", ownerId: "me", authorId: "sam", author: "Sam Lee", text: "Lovely shelf!", createdAt: new Date().toISOString() };
+  await mockFriends(page, { friends: [EMMA], notes: [note] });
+  await openTownLooked(page);
+  await expect(bell(page)).toHaveAccessibleName("Notifications, 1 new");
+  await bell(page).click();
+  await panel(page).getByRole("button", { name: /Sam Lee left a note on your board/ }).click();
+
+  await expect(page).toHaveURL(/\/house$/, { timeout: 15000 });
+  const board = page.getByRole("dialog", { name: "Notice board" });
+  const onBoard = board.locator(".board__note").filter({ hasText: "Lovely shelf!" });
+  await expect(onBoard).toContainText("New");
+
+  // once opened it's read: opened again, nothing is new
+  await board.getByRole("button", { name: "Close" }).click();
+  await goToPlace(page, "Corkboard");
+  await page.getByRole("button", { name: "Notice board" }).click();
+  await expect(onBoard).toBeVisible();
+  await expect(onBoard).not.toContainText("New");
 });

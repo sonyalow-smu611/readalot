@@ -36,6 +36,15 @@ async function slideAcross(page, selector) {
   await page.mouse.up();
 }
 
+// Next through the explaining steps until the words show (a step that asks the reader to do
+// something has no Next, so it stops there)
+async function nextUntil(page, words) {
+  for (let tries = 0; tries < 30 && !(await bubble(page).textContent()).includes(words); tries++) {
+    await tour(page).getByRole("button", { name: "Next" }).click();
+  }
+  await expect(bubble(page)).toContainText(words);
+}
+
 async function fillWelcome(page, name) {
   const next = page.getByRole("button", { name: "Next" });
   await page.getByLabel("Name").fill(name);
@@ -70,17 +79,10 @@ test.describe("a new reader", () => {
     await tour(page).getByRole("button", { name: "Next" }).click();
     await expect(stepLine(page)).toHaveText(/^2 of /);
 
-    // a step that asks the reader to try something: the pointer shows how, there is no Next, and
-    // nothing is done for them
-    await expect(bubble(page)).toContainText("Tap it to try another sky.");
-    await expect(page.locator(".guide__hand-art")).toBeVisible();
-    await expect(tour(page).getByRole("button", { name: "Next" })).toHaveCount(0);
+    // the weather chip is shown first: it follows the live sky, so there's nothing to tap
+    await expect(bubble(page)).toContainText("The weather: the town's sky follows the real weather");
     const bar = await bubble(page).boundingBox();
-    await page.waitForTimeout(1500);
-    await expect(stepLine(page)).toHaveText(/^2 of /);
-
-    // doing it moves on at once
-    await page.locator('[data-tour="town-weather"]').click();
+    await tour(page).getByRole("button", { name: "Next" }).click();
     await expect(bubble(page)).toContainText("You! The number is your level");
     // the text bar never moves, and the character floats clear of the thing it is showing
     expect(await bubble(page).boundingBox()).toEqual(bar);
@@ -88,8 +90,19 @@ test.describe("a new reader", () => {
       .poll(async () => overlaps(await page.locator(".guide__me").boundingBox(), await page.locator('[data-tour="town-badge"]').boundingBox()))
       .toBe(false);
 
+    // a step that asks the reader to try something: the pointer shows how, there is no Next, and
+    // nothing is done for them
+    await nextUntil(page, "Tap your house, then go in.");
+    await expect(page.locator(".guide__hand-art")).toBeVisible();
+    await expect(tour(page).getByRole("button", { name: "Next" })).toHaveCount(0);
+    const step = await stepLine(page).textContent();
+    await page.waitForTimeout(1500);
+    await expect(stepLine(page)).toHaveText(step);
+
     await tour(page).getByRole("button", { name: "Back" }).click();
-    await expect(bubble(page)).toContainText("Tap it to try another sky.");
+    await expect(bubble(page)).toContainText("Drag the map to look around");
+    await tour(page).getByRole("button", { name: "Next" }).click();
+    await expect(bubble(page)).toContainText("Tap your house, then go in.");
 
     // Skip this part: on to the house, which the walkthrough opens
     await tour(page).getByRole("button", { name: "Skip this part" }).click();
@@ -129,14 +142,6 @@ test.describe("a new reader", () => {
 test.describe("the walkthrough, done by the reader", () => {
   test.use({ readerOptions: { profile: { name: "Robin", favouriteGenres: ["Fantasy"] }, tourSeen: false } });
 
-  // Next through the explaining steps until one asks the reader to do something
-  async function nextUntil(page, words) {
-    for (let tries = 0; tries < 30 && !(await bubble(page).textContent()).includes(words); tries++) {
-      await tour(page).getByRole("button", { name: "Next" }).click();
-    }
-    await expect(bubble(page)).toContainText(words);
-  }
-
   // Past everything on the way (a step that asks for something is skipped, not done) to the words
   async function skipTo(page, words) {
     for (let tries = 0; tries < 80 && !(await bubble(page).textContent()).includes(words); tries++) {
@@ -149,8 +154,6 @@ test.describe("the walkthrough, done by the reader", () => {
   test("tapping, and sliding, takes the walkthrough on with them", async ({ page }) => {
     test.slow();
     await page.goto("/");
-    await nextUntil(page, "Tap it to try another sky.");
-    await page.locator('[data-tour="town-weather"]').click();
     await nextUntil(page, "Tap your house, then go in.");
 
     const house = await page.locator('[data-tour-spot="house"]').boundingBox({ timeout: 15000 });
@@ -168,10 +171,8 @@ test.describe("the walkthrough, done by the reader", () => {
 
   test("the walkthrough never moves on by itself while the reader reads", async ({ page }) => {
     await page.goto("/");
-    await nextUntil(page, "Tap it to try another sky.");
-    await page.locator('[data-tour="town-weather"]').click();
-    // a group: the first thing is lit, and it stays until Next is pressed
-    await expect(bubble(page)).toContainText("You! The number is your level");
+    // a group: each thing is lit in turn, and stays until Next is pressed
+    await nextUntil(page, "You! The number is your level");
     await page.waitForTimeout(6000);
     await expect(bubble(page)).toContainText("You! The number is your level");
     await tour(page).getByRole("button", { name: "Next" }).click();

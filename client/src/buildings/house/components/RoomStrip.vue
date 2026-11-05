@@ -153,12 +153,13 @@
                 v-if="artOf(item)"
                 type="button"
                 class="strip__pin strip__hit placed-art"
-                :class="{ 'is-carried': carrying?.uid === item.uid }"
+                :class="{ 'is-carried': carrying?.uid === item.uid, 'is-editable': showEditable }"
                 :aria-label="decorName(item)"
                 :style="boxStyle(artOf(item).box)"
                 @pointerdown="holdItem($event, item)"
                 @click="pickItem(item.uid)"
               >
+                <span v-if="showEditable && selected !== item.uid" class="placed__pencil" aria-hidden="true">✎</span>
                 <span v-if="selected === item.uid" class="placed__actions">
                   <span v-if="standsAnywhere(item.zone)" data-button class="btn btn-secondary btn-sm" @click.stop="startMove(item)">Move</span>
                   <span data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
@@ -177,6 +178,19 @@
                 <span v-if="selected === item.uid" data-button class="btn btn-danger btn-sm" @click.stop="unplace(item.uid)">Remove</span>
               </button>
             </template>
+
+            <!-- while placing a piece (or dragging one in from the inventory): where it can go,
+                 lit. A chair, curtains or bedding light the piece they take the place of. -->
+            <div
+              v-for="target in placeTargets"
+              :key="target.key"
+              class="strip__pin strip__target"
+              :class="{ 'is-swap': target.swap }"
+              :data-target="target.key"
+              :style="boxStyle(target.box)"
+            >
+              <span v-if="target.label" class="strip__target-label">{{ target.label }}</span>
+            </div>
 
             <!-- while placing a piece: a tap anywhere in the room puts it there (the keyboard has
                  "Place in the middle" by the prompt) -->
@@ -204,14 +218,14 @@
     />
 
     <p v-if="editable && placing" class="strip__placing" role="status">
-      Tap where the {{ placingMeta?.name }} should go.
+      <span class="strip__placing-text">{{ placingPrompt }}</span>
       <button type="button" class="btn btn-primary btn-sm" @click="placeInView">Place in the middle</button>
       <button type="button" class="btn btn-secondary btn-sm" @click="cancelPlace">Cancel</button>
     </p>
 
     <!-- moving a placed piece from its card: arrow buttons (or the arrow keys), Done, Cancel -->
     <div v-if="moving" class="strip__placing strip__moving" role="group" :aria-label="`Moving ${moving.name}`">
-      <span>Moving {{ moving.name }}</span>
+      <span class="strip__placing-text">Moving {{ moving.name }}</span>
       <button type="button" class="btn btn-secondary btn-icon" aria-label="Move left" @click="nudge(-1, 0)">←</button>
       <template v-if="moving.zone === 'wall'">
         <button type="button" class="btn btn-secondary btn-icon" aria-label="Move up" @click="nudge(0, -1)">↑</button>
@@ -248,7 +262,7 @@ import { layoutBooks, spineBox } from '@/buildings/house/strip/books.js'
 import { paintCats, paintRoom, spriteIds } from '@/buildings/house/strip/paint.js'
 import { createScroll } from '@/buildings/house/strip/scroll.js'
 import { createFlight } from '@/buildings/house/strip/flight.js'
-import { SURFACES, boxAt, landingFor, nudged, wallObstacles } from '@/buildings/house/strip/placement.js'
+import { FLOOR, SURFACES, WALL, boxAt, landingFor, nudged, wallObstacles } from '@/buildings/house/strip/placement.js'
 
 const ZONE_NAMES = {
   seat: 'on the window seat',
@@ -292,8 +306,10 @@ const props = defineProps({
   roomName: { type: String, default: 'Your room' },
   // what the corkboard opens: the Quote of the Day, or a visited reader's notice board
   boardLabel: { type: String, default: 'Quote of the day' },
-  // how many visitors' notes are on the corkboard (up to three are drawn on it)
+  // how many visitors' notes are on the corkboard (up to eight are drawn on it, then a "+N" tag)
   notes: { type: Number, default: 0 },
+  // how many of those are new since the reader last opened their board: they're highlighted
+  newNotes: { type: Number, default: 0 },
   // the house's look (from themes.js): its wall and floor colours and its own curtains, bedding,
   // lamps and rug
   theme: { type: Object, required: true },
@@ -305,7 +321,7 @@ const props = defineProps({
 // toggle-lamp: a lamp tapped, with its id
 const emit = defineEmits(['open-book', 'pick-book', 'open-shelf', 'quote', 'retry', 'toggle-lamp'])
 
-const { placing, placingMeta, selected, pick, unplace, placeOn, moveTo, saveRoom, cancelPlace, flash } = useDecor()
+const { placing, placingMeta, selected, drag, inventoryOpen, menuOpen, pick, unplace, placeOn, moveTo, saveRoom, cancelPlace, flash } = useDecor()
 const placed = toRef(props, 'furniture')
 
 const root = ref(null)
@@ -450,6 +466,7 @@ function paint() {
       time: readClock(),
       extras: extras.value,
       notes: props.notes,
+      newNotes: props.newNotes,
       theme: props.theme,
       lamps: props.lamps,
     })
@@ -714,6 +731,74 @@ const SWAP_INTO = {
 }
 // how far off those pieces one may be let go and still swap in, in art px
 const SWAP_REACH = 24
+// what the lit piece is called, and the part of the room (PARTS) the view slides to
+const SWAP_TARGETS = {
+  chair: { name: 'the armchair', part: 'chair' },
+  curtains: { name: 'the window', part: 'window' },
+  bed: { name: 'the bed', part: 'bed' },
+}
+// how tall the lit strip over a small surface is, in art px: room for what stands on it
+const SURFACE_LIT = 26
+
+// the box round several boxes
+function around(boxes) {
+  const x = Math.min(...boxes.map((box) => box.x))
+  const y = Math.min(...boxes.map((box) => box.y))
+  const right = Math.max(...boxes.map((box) => box.x + box.w))
+  const bottom = Math.max(...boxes.map((box) => box.y + box.h))
+  return { x, y, w: right - x, h: bottom - y }
+}
+
+// the piece being placed: picked in the inventory, or dragged out of it into the room
+const placingNow = computed(() => {
+  const entry = placing.value ?? (drag.value?.moved ? drag.value : null)
+  return entry ? decorMeta(entry.id) : null
+})
+
+// What lights up while a piece is being placed, [{ key, box, label, swap }]: for a chair, curtains
+// or bedding, the room's own piece they take the place of; for anything else, every area it can go.
+const placeTargets = computed(() => {
+  const meta = placingNow.value
+  if (!props.editable || !ready.value || !meta) return []
+  if (SWAP_INTO[meta.surface]) {
+    const boxes = SWAP_INTO[meta.surface].pieces.map((id) => boxOf(PIECES.find((piece) => piece.id === id)))
+    return [{ key: meta.surface, box: around(boxes), label: `Put it on ${SWAP_TARGETS[meta.surface].name}`, swap: true }]
+  }
+  if (meta.pet || meta.surface === 'floor') {
+    return [{ key: 'floor', box: { x: FLOOR.left, y: ROOM.floor - 4, w: FLOOR.right - FLOOR.left, h: ROOM.height - ROOM.floor + 4 } }]
+  }
+  if (meta.surface === 'wall') {
+    return [{ key: 'wall', box: { x: WALL.left, y: WALL.top, w: WALL.right - WALL.left, h: WALL.bottom - WALL.top } }]
+  }
+  if (meta.surface === 'shelf') {
+    return SURFACES.map((surface) => ({
+      key: surface.zone,
+      box: { x: surface.left, y: surface.y - SURFACE_LIT, w: surface.right - surface.left, h: SURFACE_LIT },
+    }))
+  }
+  return []
+})
+
+// what the prompt says while placing: where to tap, so a chair isn't tapped just anywhere
+const placingPrompt = computed(() => {
+  const meta = placingMeta.value
+  if (!meta) return ''
+  if (SWAP_INTO[meta.surface]) return `Tap ${SWAP_TARGETS[meta.surface].name} to put the ${meta.name} there.`
+  if (meta.pet || meta.surface === 'floor') return `Tap anywhere on the lit floor for the ${meta.name}.`
+  if (meta.surface === 'wall') return `Tap anywhere on the lit wall for the ${meta.name}.`
+  if (meta.surface === 'shelf') return `Tap the window seat, side table or nightstand for the ${meta.name}.`
+  return `Tap where the ${meta.name} should go.`
+})
+
+// a piece that takes the place of one of the room's own: the room slides over to that piece
+watch(placingNow, (meta, before) => {
+  if (!meta || meta === before || !ready.value || !SWAP_INTO[meta.surface]) return
+  if (placing.value) centreOn(PARTS.find((part) => part.id === SWAP_TARGETS[meta.surface].part).at)
+})
+
+// With the room menu or the inventory open, the pieces already in the room show they can be
+// tapped (to move or take down).
+const showEditable = computed(() => props.editable && (menuOpen.value || inventoryOpen.value) && !placing.value && !drag.value)
 
 function onSwapTarget(surface, point) {
   return SWAP_INTO[surface].pieces.some((id) => {
@@ -1000,7 +1085,7 @@ function setTime() {
   }
 }
 
-watch([shelf, lifted, out, extras, () => props.notes, () => props.theme,() => props.weather.scene, () => props.weather.night], () => paint())
+watch([shelf, lifted, out, extras, () => props.notes, () => props.newNotes, () => props.theme,() => props.weather.scene, () => props.weather.night], () => paint())
 
 watch(() => props.lamps, () => paint(), { deep: true })
 
@@ -1292,6 +1377,75 @@ defineExpose({ dropAt, putBack })
   cursor: pointer;
 }
 
+/* while placing a piece: where it can go, lit with a dashed edge; the piece a chair, curtains or
+   bedding take the place of glows and says so */
+.strip__target {
+  z-index: 2;
+  border: 3px dashed rgb(43 33 51 / 60%);
+  border-radius: 6px;
+  background: repeating-linear-gradient(45deg, rgb(255 209 102 / 38%) 0 10px, rgb(255 255 255 / 18%) 10px 20px);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 70%);
+  pointer-events: none;
+  animation: strip-target 1.2s ease-in-out infinite alternate;
+}
+
+.strip__target.is-swap {
+  border-color: #ffd166;
+  background: rgb(255 209 102 / 30%);
+  box-shadow: 0 0 0 3px rgb(43 33 51 / 45%), 0 0 18px 4px rgb(255 209 102 / 70%);
+}
+
+.strip__target-label {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  margin-bottom: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #2b2133;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+@keyframes strip-target {
+  from {
+    opacity: 0.65;
+  }
+}
+
+/* with the inventory open: each placed piece outlined, with a pencil, to show it can be tapped */
+.placed-art.is-editable {
+  outline: 2px dashed rgb(255 255 255 / 90%);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgb(43 33 51 / 30%);
+}
+
+.placed__pencil {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #2b2133;
+  border-radius: 50%;
+  background: #ffd166;
+  color: #2b2133;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strip__target {
+    animation: none;
+  }
+}
+
 /* while placing a piece: the whole room takes the tap that puts it down, over the room's buttons */
 .strip__drop {
   inset: 0;
@@ -1384,34 +1538,40 @@ defineExpose({ dropAt, putBack })
   cursor: pointer;
 }
 
+/* The placing prompt and the moving bar: on the Places button's row, in the room to its right
+   (--places-room keeps clear of the button), centred there on a wide screen. On a phone the words
+   wrap above the buttons rather than run under the Places button or off the screen. */
 .strip__placing {
+  --places-room: 124px;
   position: absolute;
-  top: 58px;
-  left: 50%;
+  top: calc(var(--building-back-space, 0px) + 6px);
+  left: max(var(--places-room), calc(50% - 280px));
   z-index: 6;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px 8px;
+  width: min(560px, calc(100% - var(--places-room) - 12px));
   margin: 0;
-  padding: 6px 6px 6px 12px;
-  transform: translateX(-50%);
-  border-radius: 999px;
+  padding: 8px 10px;
+  border-radius: 16px;
   background: var(--rl-surface);
   font-size: 12px;
-  white-space: nowrap;
+  line-height: 1.3;
+  text-align: center;
   color: var(--rl-text);
   box-shadow: 0 4px 12px rgba(63, 46, 36, 0.2);
 }
 
-/* the moving bar wraps on a narrow phone rather than run off the screen */
-.strip__moving {
-  flex-wrap: wrap;
-  justify-content: center;
-  width: max-content;
-  max-width: calc(100% - 32px);
-  padding: 6px 10px;
-  border-radius: 18px;
-  white-space: normal;
+.strip__placing-text {
+  flex: 1 1 100%;
+}
+
+@media (min-width: 720px) {
+  .strip__placing-text {
+    flex: 0 1 auto;
+  }
 }
 
 /* the Places menu, in the top left corner (the coins are in the top right) */

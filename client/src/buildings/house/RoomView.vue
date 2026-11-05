@@ -7,6 +7,7 @@ import { useBookshelfStore } from '@/stores/bookshelf'
 import { useUserStore } from '@/stores/user'
 import { useProgressStore } from '@/stores/progress.js'
 import { addNote, notesFor, removeNote } from '@/buildings/house/notes.js'
+import { useNotesSeenStore } from '@/stores/notesSeen.js'
 import NoteComposer from '@/buildings/house/components/NoteComposer.vue'
 import NoticeBoard from '@/buildings/house/components/NoticeBoard.vue'
 import { fetchWeather } from '@/services/weather.js'
@@ -201,6 +202,11 @@ const posting = ref(false)
 const noteError = ref('')
 const boardOpen = ref(false)
 let noteTrigger = null
+// on the reader's own board: the notes left since they last opened it (stores/notesSeen.js). The
+// corkboard highlights them; the board marks the ones that were new as it opened, until it closes.
+const notesSeen = useNotesSeenStore()
+const newNotes = computed(() => (props.visiting ? 0 : notes.value.filter((note) => notesSeen.isNew(note)).length))
+const newIds = ref([])
 
 function startNote() {
   noteTrigger = document.activeElement
@@ -254,9 +260,24 @@ async function takeDown(id) {
   notes.value = notes.value.filter((note) => note.id !== id)
 }
 
-// the corkboard: the notice board, with the Quote of the Day on top
+// the corkboard: the notice board, with the Quote of the Day on top. Opening your own reads
+// what's new on it.
 function openBoard() {
+  if (!props.visiting) {
+    newIds.value = notes.value.filter((note) => notesSeen.isNew(note)).map((note) => note.id)
+    if (newIds.value.length) notesSeen.markRead()
+  }
   boardOpen.value = true
+}
+
+// Your own board, opened from a note in the town's bell (?board=1): once the notes and what's
+// new have loaded, so the new ones are highlighted.
+async function openBoardFromBell() {
+  await Promise.all([loadNotes(), notesSeen.start(user.profile.id)])
+  if (route.query.board === '1') {
+    openBoard()
+    router.replace({ query: { ...route.query, board: undefined } })
+  }
 }
 
 // --- Mood check-in -----------------------------------------------------------------------
@@ -339,7 +360,8 @@ onMounted(() => {
     bookshelf.load()
     loadRoom(user.profile.id)
   }
-  loadNotes()
+  if (props.visiting) loadNotes()
+  else openBoardFromBell()
   loadWeather()
   weatherTimer = window.setInterval(loadWeather, WEATHER_REFRESH_MS)
 })
@@ -368,6 +390,7 @@ onBeforeUnmount(() => {
         :room-name="roomName"
         :board-label="'Notice board'"
         :notes="notes.length"
+        :new-notes="newNotes"
         :theme="theme"
         :lamps="lamps"
         @toggle-lamp="toggleLamp(lampRoom, $event)"
@@ -443,13 +466,14 @@ onBeforeUnmount(() => {
       :owner="visiting?.firstName ?? ''"
       :mine="!visiting"
       :notes="notes"
+      :new-ids="newIds"
       :notes-loading="notesLoading"
       :notes-error="notesError"
       :me="user.profile.id"
       @remove="takeDown"
       @retry="loadNotes"
       @write="startNote"
-      @close="boardOpen = false"
+      @close="boardOpen = false; newIds = []"
     />
     <!-- after the board, so the card opens over it when it's written from there -->
     <NoteComposer v-if="writing" :owner="visiting.firstName" :error="noteError" :busy="posting" @post="postNote" @cancel="stopNote" />

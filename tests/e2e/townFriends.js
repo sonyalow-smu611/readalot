@@ -32,6 +32,12 @@ export async function mockFriends(page, start = {}) {
   await page.route("**/api/notifications/activity*", (route) =>
     route.fulfill({ json: { sent: [], accepted: [], messages: [], ...town.activity } })
   );
+  // the notes on your own board, only when a test gives some (other tests use the test server's)
+  if (start.notes) {
+    await page.route("**/api/rooms/*/notes", (route) =>
+      route.request().method() === "GET" ? route.fulfill({ json: { notes: town.notes } }) : route.fallback()
+    );
+  }
   await page.route("**/api/friends/requests", (route) => {
     const { readerId } = route.request().postDataJSON();
     town.asked.push(readerId);

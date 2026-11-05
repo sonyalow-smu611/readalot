@@ -19,6 +19,8 @@ const inventory = ref([])
 const placed = ref([])
 const shopOpen = ref(false)
 const inventoryOpen = ref(false)
+// the room menu (Mood check-in, Inventory, Shop) is open: the room shows which pieces can be tapped
+const menuOpen = ref(false)
 const pending = ref(null)
 const placing = ref(null)
 const selected = ref(null)
@@ -230,6 +232,7 @@ export function useDecor() {
     placed,
     shopOpen,
     inventoryOpen,
+    menuOpen,
     pending,
     placing,
     placingMeta,
