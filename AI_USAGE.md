@@ -963,6 +963,7 @@ Written by Claude at Khaleil's request (changes to Aalric's salon and Dylan's to
 
 | Area | Files | What AI produced |
 |------|-------|------------------|
+<<<<<<< HEAD
 | Made-up readers hidden (backend, requested by Aalric) | `server/data/demoReaders.js` (`SAMPLE_READER_IDS`), `server/src/services/readers.js`, `friends.js`, `nearby.js` | With Supabase on, Emma, Ayaan, Sofia, Noah, Mei, Priya, Daniel and the demo account's reader no longer show in the Cafe, nearby, friend lists, profiles or add-by-username. Pip stays, and is the only reader who accepts a request at once. Real readers work as before. Their rows stay in the database; without Supabase (the e2e tests) the sample data still serves the app |
 | Sliding notification | `client/src/components/town/NotificationSlide.vue`, `client/src/views/TownView.vue`, `client/src/town/notificationsStore.js` | A new notification slides in from the right for about 5 seconds, then fades away; tapping it goes to it. Things you did yourself (a request you sent) don't slide in. The bell stays red until the list is opened |
 | Tests | `tests/e2e/notifications.spec.js` | Slide in, fade away, tap to open, and nothing for your own actions |
@@ -1006,3 +1007,20 @@ Written by Claude at Aalric's request. Remember me changes how the sign-in sessi
 | Remember me | `client/src/services/supabase.js`, `services/auth.js`, `client/src/views/LoginView.vue`, `client/src/components/shared/TickCheckbox.vue` | A "Remember me for 30 days" checkbox on Log in (ticked to start) whose tick draws itself. Ticked: the session is kept in `localStorage` with an end date 30 days away and the reader is signed out after it. Unticked: it is kept in `sessionStorage`, so closing the browser signs out. Readers already signed in are not signed out |
 | Walkthrough steps | `client/src/lib/walkthrough.js`, `GenreBookcase.vue`, `FavouriteGenres.vue`, `TownView.vue`, `SalonView.vue` | A stop for the music button in the town; in the salon's Profile, a stop for the favourite genres, a step that asks the reader to tap one, and two stops in the library bookcase it opens (35 steps in all). A step marked `optional` is skipped if its target never shows |
 | Walkthrough text | `client/src/components/GuideTour.vue`, `client/src/composables/useBarHeight.js`, `App.vue` | The words are centred and bigger; on a phone the bar is 232 px tall (200 px on a laptop) so the longest lines fit. Checked all 35 steps at 360, 390 and 1280 px wide |
+=======
+| Badge to Profile | `client/src/components/town/PlayerBadge.vue`, `client/src/views/TownView.vue` | The badge in the town's corner opens the salon on the Profile tab with the sheet pulled up (`?tab=profile&sheet=1`), and shows your @username under your name |
+| Username in the profile | `client/src/services/auth.js`, `client/src/stores/user.js` | The profile loads `profiles.username` into `profile.username` (as `town/username.js` asked for), and `saveProfile` can save it; a name taken in the meantime says so |
+| Editing the username | `client/src/buildings/salon/components/ProfileEditForm.vue`, `client/src/buildings/salon/components/ReaderCard.vue` | A Username field in Edit profile, checked as it's typed (format, then free or taken, with `readalot_username_free`), lowercase and without the @ as typed; only a new, free name is saved. The Profile card shows @username under the name |
+| Music button beside Daily | `client/src/components/MusicToggle.vue`, `client/src/components/town/DailyDock.vue`, `client/src/views/TownView.vue`, `client/src/components/town/NotificationsButton.vue`, `client/src/App.vue`, `client/src/buildings/house/RoomView.vue` | The note now shares a row with the Daily task button (the town's, and DailyDock's on every other page), on the side away from where Daily is pinned, so it slides along as Daily widens. The town's bell on a phone moves along one button; the room's error bar gets its full width back |
+| Tests | `tests/e2e/profile-username.spec.js` (new), `tests/e2e/supabaseUser.js`, `tests/e2e/salon.spec.js`, `tests/e2e/buttons.spec.js` | The badge's username and Profile shortcut; the username check and save; the music button beside Daily and sliding with it. `resetProfile` puts the test reader's username back; the Name field is found by its exact label, now that there's a Username field too |
+
+### Phone layout: the town's ☰ menu, a smaller badge, the library's top line (AI-generated)
+
+Written by Claude at Khaleil's request (changes to Dylan's town and Aasim's library, for review in the pull request). End-to-end tests were not updated in this change, at Khaleil's request; see the pull request.
+
+| Area | Files | What AI produced |
+|------|-------|------------------|
+| ☰ menu | `client/src/components/town/TownMenu.vue` (new), `client/src/views/TownView.vue` | On a phone (600 px and narrower), Daily, the music button, the bell and Public/Private fold into one ☰ under the weather chip; weather, Places and Friends stay. Each row does what its button did (Daily and Notifications open their panels and close the menu; Music and Public switch in place). A red dot on ☰ for unread notifications or a Daily reward. The walkthrough and wider screens keep the buttons |
+| Badge | `client/src/views/TownView.vue`, `client/src/components/town/PlayerBadge.vue` | A quarter smaller on a phone (`scale`, so the badge's own pop still works), kept in its corner; the @username sits midway between the name and the coins |
+| Library's top line | `client/src/buildings/library/LibraryView.vue`, `client/src/components/town/DailyDock.vue` | On a phone: "‹ Town", Daily and music, the magnifier and the weather share one line, and the search bar opens below it with a gap instead of over Daily and music |
+>>>>>>> origin/main
