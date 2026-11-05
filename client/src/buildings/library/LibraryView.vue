@@ -211,9 +211,11 @@ onBeforeUnmount(() => window.clearInterval(weatherTimer))
 </script>
 
 <template>
-  <!-- "‹ Town" on a phone, so the back button, Daily, music, the magnifier and the weather share
-       one line (DailyDock puts Daily and music beside the back button here) -->
   <BuildingShell :title="place.name" :subtitle="place.tab" :owner="place.owner" back-short="Town" flush>
+    <!-- "‹ Town" on a phone, so the back button, Daily, music, the magnifier and the weather share
+         one line (DailyDock puts Daily and music beside the back button here). This comment stays
+         inside BuildingShell: a comment above it gives the page two roots, and the page change in
+         App.vue (Transition mode="out-in") then never finishes, leaving a blank screen on Back -->
     <section class="library" :style="{ '--library-accent': place.accent }">
       <LibraryHall
         :active="openKey"

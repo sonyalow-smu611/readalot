@@ -1,5 +1,5 @@
 -- Scaffolded with AI assistance — see AI_USAGE.md
--- Saved profiles and the first tour (docs/specs/supabase-profiles-and-tour.md).
+-- Saved profiles and the first tour.
 -- Run after schema.sql. Safe to re-run.
 --
 -- A reader's profile row is created when they finish Welcome, so "has a row" means "profile

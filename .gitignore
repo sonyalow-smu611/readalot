@@ -23,11 +23,6 @@ playwright-report/
 test-results/
 blob-report/
 
-# Blender: backup saves (room.blend1, room.blend2, ...) and saves in progress. The .blend files
-# themselves are committed, and only in client/blender/
-*.blend[0-9]*
-*.blend@
-
 # AI and editor tool settings, scratch notes, plans and tickets: kept on each machine, not in
 # the repo
 .claude/

@@ -69,7 +69,7 @@ Log in → TownView (/) → tap a building → PlaceCard "Enter" → /house | /l
 - `stores/bookshelf.js` → the reader's books and reading status, used by the room and book pages.
 - `town/nearbyStore.js` → friends, friend requests and readers nearby, and `setPublic()`: public
   and sharing your last rough area are one setting (`profiles.discoverable`), shared by the map
-  chip and the salon. Spec: [docs/specs/nearby-readers-and-friend-houses.md](docs/specs/nearby-readers-and-friend-houses.md).
+  chip and the salon.
 - `town/notificationsStore.js` → the bell: friend requests, friends coming online and visits to
   your room. The town checks after each refresh. Visits come from `GET /api/notifications/visits`.
 - `town/username.js` → adding a friend by username. It lists what the salon's username needs to do.

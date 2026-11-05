@@ -1,5 +1,5 @@
 -- Scaffolded with AI assistance — see AI_USAGE.md
--- Security fixes from the Supabase audit (SUPABASE_AUDIT.md). Run after every other file in
+-- Security fixes from the team's Supabase audit (3 Nov 2026). Run after every other file in
 -- database/, in the Supabase SQL editor. Safe to re-run.
 --
 -- 1. schema.sql made books, user_books, reviews, quotes, featured_quotes and saved_quotes without

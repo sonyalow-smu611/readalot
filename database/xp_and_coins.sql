@@ -1,5 +1,5 @@
 -- Scaffolded with AI assistance — see AI_USAGE.md
--- Reader levels and coins (docs/specs/tour-pixel-salon-xp.md, PR 3).
+-- Reader levels and coins.
 -- Run after profiles_and_tour.sql. Safe to re-run.
 --
 -- XP is one row per thing a reader did, in xp_events; their XP is the sum. Readers never write

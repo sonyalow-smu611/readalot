@@ -1,5 +1,5 @@
 -- Scaffolded with AI assistance — see AI_USAGE.md
--- Nearby readers and friends (docs/specs/nearby-readers-and-friend-houses.md).
+-- Nearby readers and friends.
 -- Run after xp_and_coins.sql. Safe to re-run.
 --
 -- discoverable is the one public/private setting: public shares your last rough area, private
